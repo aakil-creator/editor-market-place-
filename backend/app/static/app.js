@@ -2702,6 +2702,7 @@ let activeSettingsTab = 'account';
 
 function Settings() {
     let profile = {};
+    let portfolioItems = [];
     let error = '';
     let success = '';
     let loading = true;
@@ -2719,6 +2720,11 @@ function Settings() {
                     profile = await apiFetch('/profile');
                 } catch (_) {
                     profile = {};
+                }
+                try {
+                    portfolioItems = await apiFetch(`/profile/${currentUser.id}/portfolio`);
+                } catch (_) {
+                    portfolioItems = [];
                 }
             } else if (currentUser.user_type === 'ADMIN') {
                 try {
@@ -2746,18 +2752,76 @@ function Settings() {
         e.preventDefault();
         try {
             showLoading();
+            const usernameInput = document.getElementById('setting-username');
             const data = {
                 name: document.getElementById('setting-name').value.trim(),
                 email: document.getElementById('setting-email').value.trim(),
                 phone: document.getElementById('setting-phone').value.trim()
             };
+            if (usernameInput) {
+                data.username = usernameInput.value.trim().replace(/^@/, '');
+            }
             currentUser = await apiFetch('/auth/me', {
                 method: 'PATCH',
                 body: JSON.stringify(data)
             });
-            showToast('Account details updated', 'success');
+            showToast('Account details & handle updated', 'success');
         } catch (e) {
             showToast(e.message || 'Update failed', 'error');
+        } finally {
+            hideLoading();
+            mount(renderSettingsView());
+        }
+    };
+
+    window.handleAddPortfolioItem = async (e) => {
+        e.preventDefault();
+        try {
+            showLoading();
+            const title = document.getElementById('port-title').value.trim();
+            const media_url = document.getElementById('port-media-url').value.trim();
+            const media_type = document.getElementById('port-media-type').value;
+            const thumbnail_url = document.getElementById('port-thumb-url').value.trim() || (media_type === 'image' ? media_url : '');
+            const description = document.getElementById('port-desc').value.trim();
+
+            if (!title || !media_url) {
+                showToast('Please provide a title and media URL', 'error');
+                return;
+            }
+
+            const item = await apiFetch('/profile/portfolio', {
+                method: 'POST',
+                body: JSON.stringify({
+                    title,
+                    media_url,
+                    media_type,
+                    thumbnail_url,
+                    description
+                })
+            });
+            showToast('Work sample added to your portfolio showcase!', 'success');
+            portfolioItems.unshift(item);
+            document.getElementById('port-title').value = '';
+            document.getElementById('port-media-url').value = '';
+            document.getElementById('port-thumb-url').value = '';
+            document.getElementById('port-desc').value = '';
+        } catch (err) {
+            showToast(err.message || 'Failed to add portfolio item', 'error');
+        } finally {
+            hideLoading();
+            mount(renderSettingsView());
+        }
+    };
+
+    window.handleDeletePortfolioItem = async (itemId) => {
+        if (!confirm('Are you sure you want to remove this project from your showcase?')) return;
+        try {
+            showLoading();
+            await apiFetch(`/profile/portfolio/${itemId}`, { method: 'DELETE' });
+            showToast('Portfolio item removed', 'success');
+            portfolioItems = portfolioItems.filter(i => i.id !== itemId);
+        } catch (err) {
+            showToast(err.message || 'Failed to remove portfolio item', 'error');
         } finally {
             hideLoading();
             mount(renderSettingsView());
