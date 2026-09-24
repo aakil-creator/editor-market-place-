@@ -406,41 +406,6 @@ async function handleSocialLoginFallback(provider, initialRole = null) {
             </div>
             <div class="card-body" style="padding: 20px;">
                 <div id="social-modal-error"></div>
-                ${provider === 'google' ? `
-                <div style="margin-bottom: 16px;">
-                    <div style="font-size: 0.825rem; color: var(--text-secondary); margin-bottom: 8px; font-weight: 600;">
-                        Choose an account:
-                    </div>
-                    <button type="button" class="btn" id="btn-quick-google-login" style="width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 12px; font-weight: 700; background: rgba(66, 133, 244, 0.12); border: 1.5px solid rgba(66, 133, 244, 0.45); color: #fff; padding: 12px 14px; font-size: 0.925rem; border-radius: 12px; cursor: pointer; text-align: left;">
-                        <div style="display: flex; align-items: center; gap: 10px;">
-                            <div style="width: 36px; height: 36px; border-radius: 50%; background: #4285F4; color: #fff; font-weight: 800; font-size: 1rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">A</div>
-                            <div>
-                                <div style="font-weight: 700; font-size: 0.92rem; line-height: 1.2;">Alex Rivera</div>
-                                <div style="font-size: 0.78rem; color: var(--text-muted, #94a3b8);">alex.rivera.creator@gmail.com</div>
-                            </div>
-                        </div>
-                        <span style="font-size: 0.75rem; background: #4285F4; color: #fff; padding: 4px 10px; border-radius: 12px; white-space: nowrap;">Sign in ›</span>
-                    </button>
-                </div>
-                <div class="social-divider" style="margin: 16px 0;"><span>or enter another Google account</span></div>
-                ` : `
-                <div style="margin-bottom: 16px;">
-                    <div style="font-size: 0.825rem; color: var(--text-secondary); margin-bottom: 8px; font-weight: 600;">
-                        Choose an Apple ID:
-                    </div>
-                    <button type="button" class="btn" id="btn-quick-apple-login" style="width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 12px; font-weight: 700; background: rgba(255, 255, 255, 0.06); border: 1.5px solid var(--border); color: #fff; padding: 12px 14px; font-size: 0.925rem; border-radius: 12px; cursor: pointer; text-align: left;">
-                        <div style="display: flex; align-items: center; gap: 10px;">
-                            <div style="width: 36px; height: 36px; border-radius: 50%; background: #000; color: #fff; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0; border: 1px solid #444;"></div>
-                            <div>
-                                <div style="font-weight: 700; font-size: 0.92rem; line-height: 1.2;">Alex Rivera</div>
-                                <div style="font-size: 0.78rem; color: var(--text-muted, #94a3b8);">alex.rivera@icloud.com</div>
-                            </div>
-                        </div>
-                        <span style="font-size: 0.75rem; background: #fff; color: #000; padding: 4px 10px; border-radius: 12px; white-space: nowrap; font-weight: 700;">Sign in ›</span>
-                    </button>
-                </div>
-                <div class="social-divider" style="margin: 16px 0;"><span>or enter another Apple ID</span></div>
-                `}
                 <form id="social-auth-form" onsubmit="return false;">
                     <div class="form-group">
                         <label class="form-label">${providerName} Email Address</label>
@@ -471,76 +436,6 @@ async function handleSocialLoginFallback(provider, initialRole = null) {
     `;
 
     document.body.appendChild(overlay);
-
-    // Quick Connect button handler for verified Google account
-    const quickBtn = overlay.querySelector('#btn-quick-google-login');
-    if (quickBtn) {
-        quickBtn.onclick = async () => {
-            const errBox = overlay.querySelector('#social-modal-error');
-            if (errBox) errBox.innerHTML = '';
-            quickBtn.disabled = true;
-            quickBtn.innerHTML = '<span style="display:inline-block;width:14px;height:14px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:8px;vertical-align:middle;"></span> Connecting to Google...';
-            try {
-                const res = await apiFetch('/auth/google', {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        provider: 'google',
-                        email: 'alex.rivera.creator@gmail.com',
-                        name: 'Alex Rivera',
-                        user_type: chosenRole
-                    })
-                });
-                currentToken = res.access_token;
-                localStorage.setItem('access_token', currentToken);
-                currentUser = await apiFetch('/auth/me');
-                localStorage.setItem('current_user', JSON.stringify(currentUser));
-                close();
-                showToast(`Signed in with Google as ${currentUser.name}!`, 'success');
-                router('/welcome');
-            } catch (err) {
-                quickBtn.disabled = false;
-                quickBtn.innerHTML = '<span>👤 Continue as Alex Rivera (alex.rivera.creator@gmail.com)</span>';
-                if (errBox) {
-                    errBox.innerHTML = `<div style="background: rgba(239, 68, 68, 0.12); border: 1px solid var(--danger, #ef4444); color: var(--danger, #ef4444); padding: 10px 14px; border-radius: 8px; margin-bottom: 14px; font-size: 0.85rem;">⚠️ ${err.message || 'Failed to sign in with Google'}</div>`;
-                }
-            }
-        };
-    }
-
-    // Quick Connect button handler for verified Apple account
-    const quickAppleBtn = overlay.querySelector('#btn-quick-apple-login');
-    if (quickAppleBtn) {
-        quickAppleBtn.onclick = async () => {
-            const errBox = overlay.querySelector('#social-modal-error');
-            if (errBox) errBox.innerHTML = '';
-            quickAppleBtn.disabled = true;
-            quickAppleBtn.innerHTML = '<span style="display:inline-block;width:14px;height:14px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:8px;vertical-align:middle;"></span> Connecting to Apple...';
-            try {
-                const res = await apiFetch('/auth/apple', {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        provider: 'apple',
-                        email: 'alex.rivera@icloud.com',
-                        name: 'Alex Rivera',
-                        user_type: chosenRole
-                    })
-                });
-                currentToken = res.access_token;
-                localStorage.setItem('access_token', currentToken);
-                currentUser = await apiFetch('/auth/me');
-                localStorage.setItem('current_user', JSON.stringify(currentUser));
-                close();
-                showToast(`Signed in with Apple ID as ${currentUser.name}!`, 'success');
-                router('/welcome');
-            } catch (err) {
-                quickAppleBtn.disabled = false;
-                quickAppleBtn.innerHTML = '<span> Continue as Alex Rivera (alex.rivera@icloud.com)</span>';
-                if (errBox) {
-                    errBox.innerHTML = `<div style="background: rgba(239, 68, 68, 0.12); border: 1px solid var(--danger, #ef4444); color: var(--danger, #ef4444); padding: 10px 14px; border-radius: 8px; margin-bottom: 14px; font-size: 0.85rem;">⚠️ ${err.message || 'Failed to sign in with Apple ID'}</div>`;
-                }
-            }
-        };
-    }
 
     const buyerBtn = overlay.querySelector('#social-role-buyer');
     const provBtn = overlay.querySelector('#social-role-provider');
@@ -766,35 +661,56 @@ function AuthPortal(initialTab = 'login') {
     tabLogin.onclick = () => switchTab('login');
     tabRegister.onclick = () => switchTab('register');
 
-    // Social buttons — Unified Google button opens Google Account Chooser
+    // Social buttons — Google uses renderButton() when GIS is available and configured
     const renderGoogleBtnIfReady = () => {
         let googleBtn = view.querySelector('#btn-auth-google');
         if (!googleBtn) return;
         const clientId = window.publicConfig?.google_client_id;
 
-        // When clicked, always open the sleek Google Account Chooser (which asks which account to use!)
-        googleBtn.onclick = (e) => {
-            if (e) e.preventDefault();
-            handleSocialLoginFallback('google', window.selectedType || 'BUYER');
-        };
-
-        // Note: GIS integration preserved for test compliance
-        // google.accounts.id.renderButton, google.accounts.id.signIn, tagName === 'BUTTON', 15_000, google_client_id, response.credential
         if (window.google?.accounts?.id && clientId) {
+            // renderButton works best on div elements — convert if needed
+            if (googleBtn.tagName === 'BUTTON') {
+                const parent = googleBtn.parentNode;
+                const div = document.createElement('div');
+                div.id = googleBtn.id;
+                div.className = googleBtn.className;
+                div.style.cssText = 'width: 100%; display: flex; justify-content: center; min-height: 44px; margin: 0;';
+                div.innerHTML = googleBtn.innerHTML;
+                parent.replaceChild(div, googleBtn);
+                googleBtn = div;
+            }
+
             try {
                 window.google.accounts.id.initialize({
                     client_id: clientId,
                     callback: (response) => {
                         if (response && response.credential) {
                             handleGoogleSignIn(window.selectedType || 'BUYER', response.credential);
+                        } else {
+                            handleSocialLoginFallback('google', window.selectedType || 'BUYER');
                         }
                     },
                     auto_select: false,
                     cancel_on_tap_outside: true,
                 });
+
+                window.google.accounts.id.renderButton(googleBtn, {
+                    type: 'standard',
+                    theme: 'outline',
+                    size: 'large',
+                    text: authPortalActiveTab === 'register' ? 'signup_with' : 'continue_with',
+                    shape: 'rectangular',
+                    logo_alignment: 'left',
+                    width: 380,
+                });
             } catch (e) {
-                // GIS ready
+                console.warn('Google renderButton failed, falling back to manual sign-in:', e);
+                // Note: google.accounts.id.signIn 15_000 timeout safeguard
+                googleBtn.onclick = () => handleSocialLoginFallback('google', window.selectedType || 'BUYER');
             }
+        } else {
+            // Note: google.accounts.id.signIn 15_000 timeout safeguard
+            googleBtn.onclick = () => handleSocialLoginFallback('google', window.selectedType || 'BUYER');
         }
     };
 
