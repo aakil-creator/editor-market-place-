@@ -799,7 +799,9 @@ h1, h2, h3, h4, h5, h6, .logo {
 }
 
 .gis-btn-container,
-div#btn-auth-google {
+div#btn-auth-google,
+#btn-auth-google.gis-btn-container,
+#btn-auth-google:has(iframe) {
     width: 100% !important;
     display: flex !important;
     justify-content: center !important;

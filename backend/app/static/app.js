@@ -143,15 +143,11 @@ function toggleTheme() {
 window.toggleTheme = toggleTheme;
 
 // App Brand Logo Component
-function renderLogo(size = 24, showText = true) {
+function renderLogo(size = 28, showText = true) {
     return `
-        <div class="logo" style="cursor: pointer;" onclick="router('/')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="${size}" height="${size}">
-                <path d="M12 2L2 7l10 5 10-5-10-5z"/>
-                <path d="M2 17l10 5 10-5"/>
-                <path d="M2 12l10 5 10-5"/>
-            </svg>
-            ${showText ? `<span>Groove Hub</span>` : ''}
+        <div class="logo" style="cursor: pointer; display: inline-flex; align-items: center; gap: 8px;" onclick="router('/')">
+            <img src="/static/icons/grove_hub_emblem.png" alt="Grove Hub" style="height: ${size}px; width: auto; max-width: ${Math.round(size * 1.5)}px; object-fit: contain; vertical-align: middle; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.15));" />
+            ${showText ? `<span style="font-weight: 800; font-size: ${Math.max(16, Math.round(size * 0.62))}px; letter-spacing: -0.4px; color: var(--text-primary);">Grove Hub</span>` : ''}
         </div>
     `;
 }
@@ -517,7 +513,7 @@ function AuthPortal(initialTab = 'login') {
     const view = el`<div class="main" style="padding: 24px 16px;">
         <div class="card" style="max-width: 440px; margin: 20px auto 40px; box-shadow: var(--shadow-lg); border: 1px solid var(--border);">
             <div class="card-header" style="display: flex; flex-direction: column; align-items: center; padding: 24px 20px 16px; border-bottom: 1px solid var(--border);">
-                ${renderLogo(36, true)}
+                <img src="/static/icons/grove_hub_logo.png" alt="Grove Hub" style="height: 64px; width: auto; max-width: 220px; object-fit: contain; margin-bottom: 6px; cursor: pointer; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.12));" onclick="router('/')" />
                 <!-- Auth Tabs -->
                 <div class="tabs" style="width: 100%; margin-top: 18px; display: flex;">
                     <button type="button" class="tab ${authPortalActiveTab === 'login' ? 'active' : ''}" id="auth-tab-login" style="flex: 1; text-align: center; font-weight: 700;">
