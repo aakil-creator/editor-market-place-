@@ -560,10 +560,117 @@ function getTypeIconSvg(typeId, fallbackIcon = '✨', size = 32) {
             <path class="anim-arrow" d="M12 28L20 18L26 22L32 14" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>`;
     }
+    if (typeId === 'ielts') {
+        return `<svg class="type-svg type-svg-ielts" style="width: ${size}px; height: ${size}px;" viewBox="0 0 36 36" fill="none">
+            <circle cx="18" cy="18" r="14" fill="#059669" stroke="#047857" stroke-width="1.2"/>
+            <circle cx="18" cy="18" r="9" fill="#10b981"/>
+            <circle cx="18" cy="18" r="4.5" fill="#ffffff"/>
+            <path d="M18 6V11M18 25V30M6 18H11M25 18H30" stroke="#a7f3d0" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>`;
+    }
+    if (typeId === 'accent') {
+        return `<svg class="type-svg type-svg-accent" style="width: ${size}px; height: ${size}px;" viewBox="0 0 36 36" fill="none">
+            <rect x="13" y="6" width="10" height="16" rx="5" fill="#3b82f6" stroke="#1d4ed8" stroke-width="1.2"/>
+            <path d="M9 16C9 21 13 25 18 25C23 25 27 21 27 16" stroke="#93c5fd" stroke-width="2" stroke-linecap="round"/>
+            <line x1="18" y1="25" x2="18" y2="30" stroke="#93c5fd" stroke-width="2" stroke-linecap="round"/>
+            <line x1="13" y1="30" x2="23" y2="30" stroke="#93c5fd" stroke-width="2" stroke-linecap="round"/>
+        </svg>`;
+    }
+    if (typeId === 'business') {
+        return `<svg class="type-svg type-svg-business" style="width: ${size}px; height: ${size}px;" viewBox="0 0 36 36" fill="none">
+            <rect x="6" y="12" width="24" height="18" rx="4" fill="#f59e0b" stroke="#b45309" stroke-width="1.2"/>
+            <path d="M13 12V9C13 7.5 14.5 6 16 6H20C21.5 6 23 7.5 23 9V12" stroke="#fef3c7" stroke-width="1.8" stroke-linecap="round"/>
+            <line x1="6" y1="18" x2="30" y2="18" stroke="#78350f" stroke-width="1.5"/>
+            <circle cx="18" cy="18" r="2.5" fill="#ffffff" stroke="#78350f" stroke-width="1"/>
+        </svg>`;
+    }
+    if (typeId === 'speaking') {
+        return `<svg class="type-svg type-svg-speaking" style="width: ${size}px; height: ${size}px;" viewBox="0 0 36 36" fill="none">
+            <path d="M7 16C7 10 11 7 18 7C25 7 29 10 29 16C29 21 25 24 19 24L12 28L13 23.5C9 22 7 19.5 7 16Z" fill="#10b981" stroke="#047857" stroke-width="1.2"/>
+            <circle cx="13" cy="15.5" r="1.5" fill="#ffffff"/>
+            <circle cx="18" cy="15.5" r="1.5" fill="#ffffff"/>
+            <circle cx="23" cy="15.5" r="1.5" fill="#ffffff"/>
+        </svg>`;
+    }
+    if (typeId === 'script') {
+        return `<svg class="type-svg type-svg-script" style="width: ${size}px; height: ${size}px;" viewBox="0 0 36 36" fill="none">
+            <rect x="7" y="6" width="22" height="24" rx="3" fill="#6366f1" stroke="#4338ca" stroke-width="1.2"/>
+            <line x1="12" y1="12" x2="24" y2="12" stroke="#e0e7ff" stroke-width="2" stroke-linecap="round"/>
+            <line x1="12" y1="17" x2="24" y2="17" stroke="#c7d2fe" stroke-width="1.5" stroke-linecap="round"/>
+            <line x1="12" y1="22" x2="19" y2="22" stroke="#c7d2fe" stroke-width="1.5" stroke-linecap="round"/>
+            <circle cx="25" cy="24" r="3" fill="#fbbf24"/>
+        </svg>`;
+    }
+    if (typeId === 'copy') {
+        return `<svg class="type-svg type-svg-copy" style="width: ${size}px; height: ${size}px;" viewBox="0 0 36 36" fill="none">
+            <path d="M20 4L8 19H18L16 32L28 17H18L20 4Z" fill="#ec4899" stroke="#be185d" stroke-width="1.2" stroke-linejoin="round"/>
+            <circle cx="18" cy="18" r="2" fill="#ffffff"/>
+        </svg>`;
+    }
+    if (typeId === 'seo') {
+        return `<svg class="type-svg type-svg-seo" style="width: ${size}px; height: ${size}px;" viewBox="0 0 36 36" fill="none">
+            <circle cx="16" cy="16" r="9" stroke="#0ea5e9" stroke-width="2"/>
+            <line x1="23" y1="23" x2="30" y2="30" stroke="#0ea5e9" stroke-width="2.5" stroke-linecap="round"/>
+            <path d="M12 18L15 14L18 16L21 12" stroke="#38bdf8" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>`;
+    }
+    if (typeId === 'email') {
+        return `<svg class="type-svg type-svg-email" style="width: ${size}px; height: ${size}px;" viewBox="0 0 36 36" fill="none">
+            <rect x="5" y="8" width="26" height="20" rx="3" fill="#8b5cf6" stroke="#6d28d9" stroke-width="1.2"/>
+            <path d="M5 10L18 19L31 10" stroke="#f5f3ff" stroke-width="1.5" stroke-linejoin="round"/>
+            <circle cx="28" cy="12" r="2" fill="#34d399"/>
+        </svg>`;
+    }
     return `<span style="font-size: ${Math.round(size * 0.7)}px; line-height: 1;">${fallbackIcon}</span>`;
 }
 window.getTypeIconSvg = getTypeIconSvg;
 window.getCategoryPeekIconSvg = getCategoryPeekIconSvg;
+
+window.__initSliderMouseDrag = (sliderEl) => {
+    if (!sliderEl || sliderEl.__mouseDragInit) return;
+    sliderEl.__mouseDragInit = true;
+    let isDown = false;
+    let startX = 0;
+    let scrollLeft = 0;
+    let hasMoved = false;
+
+    sliderEl.addEventListener('mousedown', (e) => {
+        isDown = true;
+        hasMoved = false;
+        sliderEl.classList.add('grabbing');
+        startX = e.pageX - sliderEl.offsetLeft;
+        scrollLeft = sliderEl.scrollLeft;
+    });
+
+    sliderEl.addEventListener('mouseleave', () => {
+        isDown = false;
+        sliderEl.classList.remove('grabbing');
+    });
+
+    sliderEl.addEventListener('mouseup', () => {
+        isDown = false;
+        sliderEl.classList.remove('grabbing');
+    });
+
+    sliderEl.addEventListener('mousemove', (e) => {
+        if (!isDown) return;
+        e.preventDefault();
+        const x = e.pageX - sliderEl.offsetLeft;
+        const walk = (x - startX) * 1.5;
+        if (Math.abs(walk) > 4) {
+            hasMoved = true;
+        }
+        sliderEl.scrollLeft = scrollLeft - walk;
+    });
+
+    sliderEl.addEventListener('click', (e) => {
+        if (hasMoved) {
+            e.preventDefault();
+            e.stopPropagation();
+            hasMoved = false;
+        }
+    }, true);
+};
 
 async function updateUnreadCountBadge() {
     if (!currentToken) return;
@@ -2160,6 +2267,45 @@ function BuyerDashboard() {
         window.__currentBuyerFilter = activeFilter;
         window.__buyerCategoryOptionsMap = categoryOptionsMap;
 
+        const categorySlidersData = {
+            editors: {
+                badge: '🎬 Video Editing Specialties',
+                items: [
+                    { id: 'ads_social', label: 'Social Ads & Reels', sub: 'TikTok, Reels & UGC hooks', query: 'ads_social', icon: '📱' },
+                    { id: 'gaming', label: 'Gaming Streams & Edits', sub: 'Twitch highlights & stream cuts', query: 'gaming', icon: '🎮' },
+                    { id: 'youtube', label: 'YouTube Longform', sub: 'Retention edits & viral pacing', query: 'youtube', icon: '📺' },
+                    { id: 'animations', label: '2D & 3D Animations', sub: 'Character animation & 3D models', query: 'animations', icon: '🎨' },
+                    { id: 'motion_graphics', label: 'Motion Graphics & VFX', sub: 'After Effects lower thirds & titles', query: 'motion_graphics', icon: '✨' },
+                    { id: 'music', label: 'Music & Cinematic', sub: 'Beat-sync VFX & color grading', query: 'music', icon: '🎬' },
+                    { id: 'express', label: '24h Rush Delivery', sub: 'Same-day express turnaround', query: '24', icon: '⚡' }
+                ]
+            },
+            tutors: {
+                badge: '🗣️ English Tutoring Specialties',
+                items: [
+                    { id: 'ielts', label: 'IELTS & TOEFL Prep', sub: 'Band 7.5+ speaking & mock tests', query: 'ielts', icon: '🎯' },
+                    { id: 'accent', label: 'Accent Reduction', sub: 'Neutral pronunciation & clarity', query: 'accent', icon: '🗣️' },
+                    { id: 'business', label: 'Business English', sub: 'Corporate emails, pitches & interviews', query: 'business', icon: '💼' },
+                    { id: 'speaking', label: 'Daily Fluency', sub: 'Casual conversation & speaking confidence', query: 'speaking', icon: '💬' },
+                    { id: 'grammar', label: 'Grammar & Academic', sub: 'Essay review & sentence structure', query: 'grammar', icon: '📝' },
+                    { id: 'trial', label: 'Instant Trial Lesson', sub: '30-min evaluation & intro session', query: 'trial', icon: '⚡' }
+                ]
+            },
+            writers: {
+                badge: '✍️ Scriptwriter & Copy Specialties',
+                items: [
+                    { id: 'script', label: 'YouTube Video Scripts', sub: 'Retention storytelling, hooks & outlines', query: 'script', icon: '📺' },
+                    { id: 'copy', label: 'Social Ad Copy & UGC', sub: 'Converting hooks for TikTok & Meta ads', query: 'copy', icon: '📱' },
+                    { id: 'seo', label: 'SEO Blog Posts & Guides', sub: 'Keyword-ranked articles & pillar posts', query: 'seo', icon: '📰' },
+                    { id: 'caption', label: 'Social Media Captions', sub: 'Carousel slides, X threads & posts', query: 'caption', icon: '💬' },
+                    { id: 'email', label: 'Email Newsletters', sub: 'High open-rate subject lines & sequences', query: 'email', icon: '📧' },
+                    { id: 'express', label: '24h Rush Scripts', sub: 'Urgent same-day turnaround copy', query: '24', icon: '⚡' }
+                ]
+            }
+        };
+
+        const activeSliderConfig = categorySlidersData[activeFilter] || null;
+
         if (!window.__placeholderBlinkLoopStarted) {
             window.__placeholderBlinkLoopStarted = true;
             let optIdx = 0;
@@ -2315,36 +2461,29 @@ function BuyerDashboard() {
                         </button>
                     </div>
 
-                    <!-- Popular Options Slider (Down of Icons & Only Shown when Video Editors is Open) -->
-                    ${activeFilter === 'editors' ? `
+                    <!-- Popular Options Slider (Down of Icons & Shown for Editors, Tutors, and Writers) -->
+                    ${activeSliderConfig ? `
                     <div class="editor-slider-container">
                         <div class="editor-slider-header">
                             <div style="display: flex; align-items: center; gap: 8px;">
-                                <span class="editor-slider-badge">🎬 Popular Editing Options</span>
-                                <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 500;">Slide to explore video specialties</span>
-                            </div>
-                            <div class="editor-slider-arrows">
-                                <button type="button" class="slider-arrow-btn" onclick="const el=document.getElementById('editor-popular-slider'); if(el) el.scrollBy({ left: -220, behavior: 'smooth' });" title="Slide Left">‹</button>
-                                <button type="button" class="slider-arrow-btn" onclick="const el=document.getElementById('editor-popular-slider'); if(el) el.scrollBy({ left: 220, behavior: 'smooth' });" title="Slide Right">›</button>
+                                <span class="editor-slider-badge">${activeSliderConfig.badge}</span>
+                                <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 500;">🖱️ Scroll with mouse wheel or drag to slide</span>
                             </div>
                         </div>
 
-                        <div class="editor-popular-slider-track" id="editor-popular-slider">
-                            ${[
-                                { id: 'youtube', label: 'YouTube Longform', sub: 'Retention edits & viral pacing', query: 'youtube', icon: '📺' },
-                                { id: 'ads_social', label: 'Social Ads & Reels', sub: 'TikTok, Reels & UGC hooks', query: 'ads_social', icon: '📱' },
-                                { id: 'gaming', label: 'Gaming Edits', sub: 'Montages & stream highlights', query: 'gaming', icon: '🎮' },
-                                { id: 'animations', label: '2D/3D Animations', sub: 'Character & 3D Blender models', query: 'animations', icon: '🎨' },
-                                { id: 'motion_graphics', label: 'Motion Graphics', sub: 'After Effects VFX & dynamic intros', query: 'motion_graphics', icon: '✨' },
-                                { id: 'music', label: 'Music & Cinematic', sub: 'Beat-sync VFX & color grading', query: 'music', icon: '🎬' },
-                                { id: 'express', label: '24h Rush Delivery', sub: 'Same-day express turnaround', query: '24', icon: '⚡' }
-                            ].map((opt, idx) => {
+                        <div 
+                            class="editor-popular-slider-track" 
+                            id="category-popular-slider"
+                            onwheel="if (Math.abs(event.deltaY) > Math.abs(event.deltaX)) { this.scrollLeft += event.deltaY; event.preventDefault(); }"
+                            onmouseenter="window.__initSliderMouseDrag(this)"
+                        >
+                            ${activeSliderConfig.items.map((opt, idx) => {
                                 const isSelected = searchQuery.toLowerCase() === opt.query.toLowerCase();
                                 return `
                                 <div 
                                     class="editor-slide-card ${isSelected ? 'active' : ''}" 
-                                    onclick="${isSelected ? `window.__clearBuyerSearch()` : `window.__applyPopularTag('${escapeJs(opt.query)}', 'editors')`}"
-                                    style="animation-delay: ${(idx * 0.05).toFixed(2)}s;"
+                                    onclick="${isSelected ? `window.__clearBuyerSearch()` : `window.__applyPopularTag('${escapeJs(opt.query)}', '${escapeJs(activeFilter)}')`}"
+                                    style="animation-delay: ${(idx * 0.04).toFixed(2)}s;"
                                     title="Filter by ${opt.label}"
                                 >
                                     <div class="slide-card-top">
@@ -6098,6 +6237,8 @@ function ProvidersList() {
             ${renderLeftEdgePeekDock(providerSearchState.niche)}
             <div class="main">
                 <!-- Search Bar -->
+                ${!isClassified ? `
+                <!-- Search Bar (All Talent Directory) -->
                 <div class="card" style="padding: 14px 16px; margin-bottom: 20px;">
                     <form onsubmit="handleProviderSearch(event)" style="display: flex; gap: 8px;">
                         <div style="position: relative; flex: 1;">
@@ -6124,63 +6265,21 @@ function ProvidersList() {
                         ` : ''}
                     </form>
                 </div>
+                ` : ''}
 
                 <!-- FIVERR CLASSIFIED CATEGORY VIEW -->
                 ${isClassified ? `
-                    <!-- Top Back Navigation -->
-                    <div class="fiverr-nav-top">
-                        <button class="fiverr-back-btn" onclick="setProviderNiche('')">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
-                                <line x1="19" y1="12" x2="5" y2="12"></line>
-                                <polyline points="12 19 5 12 12 5"></polyline>
-                            </svg>
-                            <span><-- Back to All Talent</span>
-                        </button>
-                        <button class="fiverr-back-btn" onclick="router('/')" style="opacity: 0.85;">
-                            <span>🏠 Dashboard</span>
-                        </button>
-                    </div>
-
-                    <!-- Breadcrumbs -->
-                    <div class="fiverr-breadcrumb">
-                        <button onclick="setProviderNiche('')">Home</button>
-                        <span class="fiverr-breadcrumb-sep">/</span>
-                        <button onclick="setProviderNiche('')">${activeCfg.parentCategory}</button>
-                        <span class="fiverr-breadcrumb-sep">/</span>
-                        <span class="fiverr-breadcrumb-current">${activeCfg.title}</span>
-                    </div>
-
-                    <!-- Category Switcher Ribbon -->
-                    <div class="fiverr-category-ribbon">
-                        <button class="fiverr-ribbon-btn ${providerSearchState.niche === '' ? 'active' : ''}" onclick="setProviderNiche('')" title="Back to All Categories">
-                            <span class="ribbon-icon-wrap">${getCategoryPeekIconSvg('all', 28)}</span>
-                            <span>All Talent</span>
-                        </button>
-                        ${providerSearchState.niche === '' || providerSearchState.niche === 'editors_animators' ? `
-                            <button class="fiverr-ribbon-btn ${providerSearchState.niche === 'editors_animators' ? 'active' : ''}" onclick="setProviderNiche('editors_animators')">
-                                <span class="ribbon-icon-wrap">${getCategoryPeekIconSvg('editors_animators', 28)}</span>
-                                <span>Video &amp; Animation</span>
-                            </button>
-                        ` : ''}
-                        ${providerSearchState.niche === '' || providerSearchState.niche === 'tutors' ? `
-                            <button class="fiverr-ribbon-btn ${providerSearchState.niche === 'tutors' ? 'active' : ''}" onclick="setProviderNiche('tutors')">
-                                <span class="ribbon-icon-wrap">${getCategoryPeekIconSvg('tutors', 28)}</span>
-                                <span>English Tutors</span>
-                            </button>
-                        ` : ''}
-                        ${providerSearchState.niche === '' || providerSearchState.niche === 'writers' ? `
-                            <button class="fiverr-ribbon-btn ${providerSearchState.niche === 'writers' ? 'active' : ''}" onclick="setProviderNiche('writers')">
-                                <span class="ribbon-icon-wrap">${getCategoryPeekIconSvg('writers', 28)}</span>
-                                <span>Writers &amp; Copy</span>
-                            </button>
-                        ` : ''}
-                    </div>
-
                     <!-- Category Header -->
-                    <div class="fiverr-cat-header">
-                        <h1 class="fiverr-cat-title">${activeCfg.title}</h1>
-                        <div class="fiverr-cat-desc">
-                            <span>${activeCfg.description}</span>
+                    <div class="fiverr-cat-header" style="margin-top: 4px; margin-bottom: 22px;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; flex-wrap: wrap;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <button type="button" class="fiverr-back-btn" onclick="router('/')" style="padding: 7px 14px; font-size: 0.84rem; font-weight: 700; border-radius: 10px; background: var(--bg-card); border: 1.5px solid var(--border); color: var(--text-primary); cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                                    ← Dashboard
+                                </button>
+                                <button type="button" class="fiverr-back-btn" onclick="setProviderNiche('')" style="padding: 7px 14px; font-size: 0.84rem; font-weight: 700; border-radius: 10px; background: var(--bg-card); border: 1.5px solid var(--border); color: var(--text-secondary); cursor: pointer;">
+                                    All Talent
+                                </button>
+                            </div>
                             <button class="fiverr-how-it-works-btn" onclick="openFiverrEscrowModal()">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
                                     <circle cx="12" cy="12" r="10"/>
@@ -6188,6 +6287,10 @@ function ProvidersList() {
                                 </svg>
                                 How Escrow Works
                             </button>
+                        </div>
+                        <h1 class="fiverr-cat-title" style="margin: 0 0 6px 0;">${activeCfg.title}</h1>
+                        <div class="fiverr-cat-desc">
+                            <span>${activeCfg.description}</span>
                         </div>
                     </div>
 

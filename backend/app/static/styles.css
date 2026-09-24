@@ -5562,8 +5562,6 @@ textarea::placeholder,
     cursor: grabbing !important;
     scroll-behavior: auto !important;
 }
-    scrollbar-width: none;
-}
 
 .editor-popular-slider-track::-webkit-scrollbar {
     display: none;
