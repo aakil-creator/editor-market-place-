@@ -10,3 +10,6 @@ services:
         value: 3.12.0
       - key: SECRET_KEY
         generateValue: true
+      - key: GOOGLE_CLIENT_ID
+        value: 242721714365-b51jtgln62q8eev212c1737ol5d46mpt.apps.googleusercontent.com
+

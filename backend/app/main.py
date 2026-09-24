@@ -73,6 +73,15 @@ def ensure_schema():
             if "google_client_id" not in cols_ps:
                 conn.execute(text("ALTER TABLE platform_settings ADD COLUMN google_client_id TEXT DEFAULT ''"))
             
+            # Ensure row 1 exists in platform_settings
+            cursor_row = conn.execute(text("SELECT id, google_client_id FROM platform_settings WHERE id = 1"))
+            row = cursor_row.fetchone()
+            default_google_id = os.environ.get("GOOGLE_CLIENT_ID", "242721714365-b51jtgln62q8eev212c1737ol5d46mpt.apps.googleusercontent.com")
+            if not row:
+                conn.execute(text(f"INSERT INTO platform_settings (id, google_client_id, razorpay_key_id, razorpay_secret, site_name, maintenance_mode) VALUES (1, '{default_google_id}', '', '', 'Editor Marketplace', 0)"))
+            elif not row[1]:
+                conn.execute(text(f"UPDATE platform_settings SET google_client_id = '{default_google_id}' WHERE id = 1"))
+
             conn.commit()
         except Exception as e:
             print(f"ensure_schema warning: {e}")
@@ -307,12 +316,15 @@ def get_public_config(db = Depends(get_db)):
     google_client_id = ""
     razorpay_key_id = ""
     if settings:
-        google_client_id = settings.google_client_id or os.environ.get("GOOGLE_CLIENT_ID", "")
-        razorpay_key_id = settings.razorpay_key_id or os.environ.get("RAZORPAY_KEY_ID", "")
+        google_client_id = settings.google_client_id or ""
+        razorpay_key_id = settings.razorpay_key_id or ""
+    google_client_id = google_client_id or os.environ.get("GOOGLE_CLIENT_ID", "242721714365-b51jtgln62q8eev212c1737ol5d46mpt.apps.googleusercontent.com")
+    razorpay_key_id = razorpay_key_id or os.environ.get("RAZORPAY_KEY_ID", "rzp_test_placeholder")
     return {
         "google_client_id": google_client_id,
-        "razorpay_key_id": razorpay_key_id or "rzp_test_placeholder"
+        "razorpay_key_id": razorpay_key_id
     }
+
 
 @api_app.post("/auth/social-login", response_model=Token)
 @api_app.post("/auth/google", response_model=Token)

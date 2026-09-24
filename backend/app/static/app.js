@@ -409,7 +409,7 @@ async function handleSocialLoginFallback(provider, initialRole = null) {
                         Verified Google Account:
                     </div>
                     <button type="button" class="btn btn-primary" id="btn-quick-google-login" style="width: 100%; justify-content: center; gap: 8px; font-weight: 700; background: #4285F4; border-color: #4285F4; padding: 12px; font-size: 0.925rem;">
-                        <span>👤 Continue as aaqiul (rahura2026@gmail.com)</span>
+                        <span>👤 Continue as aaqil (aaqil2025@gmail.com)</span>
                     </button>
                     <div style="font-size: 0.725rem; color: var(--text-muted); margin-top: 6px;">
                         Instant verified connection · 100% Escrow protected
@@ -422,7 +422,7 @@ async function handleSocialLoginFallback(provider, initialRole = null) {
                         Verified Apple ID:
                     </div>
                     <button type="button" class="btn" id="btn-quick-apple-login" style="width: 100%; justify-content: center; gap: 8px; font-weight: 700; background: #000; color: #fff; border: 1px solid #444; padding: 12px; font-size: 0.925rem; border-radius: 8px; cursor: pointer;">
-                        <span> Continue as aaqiul (rahura2026@icloud.com)</span>
+                        <span> Continue as aaqil (aaqil2025@icloud.com)</span>
                     </button>
                     <div style="font-size: 0.725rem; color: var(--text-muted); margin-top: 6px;">
                         Instant verified Apple ID connection · 100% Escrow protected
@@ -433,11 +433,11 @@ async function handleSocialLoginFallback(provider, initialRole = null) {
                 <form id="social-auth-form" onsubmit="return false;">
                     <div class="form-group">
                         <label class="form-label">${providerName} Email Address</label>
-                        <input type="email" class="form-input" id="social-email" placeholder="name@${provider === 'google' ? 'gmail.com' : 'icloud.com'}" value="${provider === 'google' ? 'rahura2026@gmail.com' : 'rahura2026@icloud.com'}" required autofocus>
+                        <input type="email" class="form-input" id="social-email" placeholder="name@${provider === 'google' ? 'gmail.com' : 'icloud.com'}" value="${provider === 'google' ? 'aaqil2025@gmail.com' : 'aaqil2025@icloud.com'}" required autofocus>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Full Name</label>
-                        <input type="text" class="form-input" id="social-name" placeholder="Your full name" value="aaqiul" required>
+                        <input type="text" class="form-input" id="social-name" placeholder="Your full name" value="aaqil" required>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Account Role</label>
@@ -474,8 +474,8 @@ async function handleSocialLoginFallback(provider, initialRole = null) {
                     method: 'POST',
                     body: JSON.stringify({
                         provider: 'google',
-                        email: 'rahura2026@gmail.com',
-                        name: 'aaqiul',
+                        email: 'aaqil2025@gmail.com',
+                        name: 'aaqil',
                         user_type: chosenRole
                     })
                 });
@@ -488,7 +488,7 @@ async function handleSocialLoginFallback(provider, initialRole = null) {
                 router('/welcome');
             } catch (err) {
                 quickBtn.disabled = false;
-                quickBtn.innerHTML = '<span>👤 Continue as aaqiul (rahura2026@gmail.com)</span>';
+                quickBtn.innerHTML = '<span>👤 Continue as aaqil (aaqil2025@gmail.com)</span>';
                 if (errBox) {
                     errBox.innerHTML = `<div style="background: rgba(239, 68, 68, 0.12); border: 1px solid var(--danger, #ef4444); color: var(--danger, #ef4444); padding: 10px 14px; border-radius: 8px; margin-bottom: 14px; font-size: 0.85rem;">⚠️ ${err.message || 'Failed to sign in with Google'}</div>`;
                 }
@@ -509,8 +509,8 @@ async function handleSocialLoginFallback(provider, initialRole = null) {
                     method: 'POST',
                     body: JSON.stringify({
                         provider: 'apple',
-                        email: 'rahura2026@icloud.com',
-                        name: 'aaqiul',
+                        email: 'aaqil2025@icloud.com',
+                        name: 'aaqil',
                         user_type: chosenRole
                     })
                 });
@@ -523,7 +523,7 @@ async function handleSocialLoginFallback(provider, initialRole = null) {
                 router('/welcome');
             } catch (err) {
                 quickAppleBtn.disabled = false;
-                quickAppleBtn.innerHTML = '<span> Continue as aaqiul (rahura2026@icloud.com)</span>';
+                quickAppleBtn.innerHTML = '<span> Continue as aaqil (aaqil2025@icloud.com)</span>';
                 if (errBox) {
                     errBox.innerHTML = `<div style="background: rgba(239, 68, 68, 0.12); border: 1px solid var(--danger, #ef4444); color: var(--danger, #ef4444); padding: 10px 14px; border-radius: 8px; margin-bottom: 14px; font-size: 0.85rem;">⚠️ ${err.message || 'Failed to sign in with Apple ID'}</div>`;
                 }
@@ -639,8 +639,8 @@ function AuthPortal(initialTab = 'login') {
                             </div>
                             <div style="min-width: 0;">
                                 <div style="font-size: 0.68rem; color: #4285F4; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Google Account</div>
-                                <div style="font-weight: 700; font-size: 0.9rem; color: var(--text-primary, #fff); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">aaqiul</div>
-                                <div style="font-size: 0.75rem; color: var(--text-muted, #94a3b8); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">rahura2026@gmail.com</div>
+                                <div style="font-weight: 700; font-size: 0.9rem; color: var(--text-primary, #fff); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">aaqil</div>
+                                <div style="font-size: 0.75rem; color: var(--text-muted, #94a3b8); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">aaqil2025@gmail.com</div>
                             </div>
                         </div>
                         <button type="button" id="btn-quick-google-connect" class="btn btn-primary" style="background: #4285F4; border-color: #4285F4; padding: 8px 14px; font-weight: 700; font-size: 0.825rem; border-radius: 8px; white-space: nowrap; cursor: pointer; flex-shrink: 0; box-shadow: 0 2px 6px rgba(66, 133, 244, 0.3);">
@@ -831,7 +831,7 @@ function AuthPortal(initialTab = 'login') {
     renderGoogleBtnIfReady();
     window.__refreshGoogleBtn = renderGoogleBtnIfReady;
 
-    // Quick Connect banner for verified Google account (rahura2026@gmail.com)
+    // Quick Connect banner for verified Google account (aaqil2025@gmail.com)
     const quickConnectBtn = view.querySelector('#btn-quick-google-connect');
     const quickCard = view.querySelector('#google-quick-card');
     const performQuickConnect = async () => {
@@ -843,8 +843,8 @@ function AuthPortal(initialTab = 'login') {
                 method: 'POST',
                 body: JSON.stringify({
                     provider: 'google',
-                    email: 'rahura2026@gmail.com',
-                    name: 'aaqiul',
+                    email: 'aaqil2025@gmail.com',
+                    name: 'aaqil',
                     user_type: window.selectedType || 'BUYER'
                 })
             });
