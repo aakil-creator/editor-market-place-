@@ -13,11 +13,12 @@ from fastapi import FastAPI, Depends, HTTPException, status, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
+import re
 from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime
 
-from sqlalchemy import func, text
+from sqlalchemy import func, text, or_, and_
 from .database import get_db, engine, Base, SessionLocal
 from .models import (
     User, Profile, Package, Booking, Payment, Release, Review, Dispute, Niche,
@@ -33,7 +34,7 @@ from .schemas import (
     ReviewCreate, ReviewResponse,
     DisputeCreate, DisputeResponse, DisputeResolve,
     AdminStats, NicheCreate, NicheUpdate, NicheResponse,
-    MessageCreate, MessageResponse, PortfolioItemCreate, PortfolioItemResponse,
+    MessageCreate, MessageResponse, DirectMessageCreate, ConversationSummary, PortfolioItemCreate, PortfolioItemResponse,
     BankDetailsUpdate, PlatformSettingsUpdate, PlatformSettingsResponse,
     SocialLoginRequest,
     ForgotPasswordRequest, ForgotPasswordResponse, ResetPasswordWithTokenRequest, VerifyEmailRequest,
@@ -113,6 +114,49 @@ def ensure_schema():
 
             # Ensure primary admin rahura2026@gmail.com has ADMIN role
             conn.execute(text("UPDATE users SET user_type = 'ADMIN', is_verified = 1, is_active = 1 WHERE lower(email) = 'rahura2026@gmail.com'"))
+
+            # Check users table columns for moderation
+            cursor_users = conn.execute(text("PRAGMA table_info(users)"))
+            cols_users = [row[1] for row in cursor_users.fetchall()]
+            if "is_blocked" not in cols_users:
+                conn.execute(text("ALTER TABLE users ADD COLUMN is_blocked BOOLEAN DEFAULT 0"))
+            if "block_reason" not in cols_users:
+                conn.execute(text("ALTER TABLE users ADD COLUMN block_reason TEXT"))
+
+            # Check messages table columns and constraints
+            cursor_msgs = conn.execute(text("PRAGMA table_info(messages)"))
+            msgs_info = {row[1]: row for row in cursor_msgs.fetchall()}
+            booking_col = msgs_info.get("booking_id")
+            # If booking_id has NOT NULL constraint (index 3 is notnull)
+            if booking_col and booking_col[3] == 1:
+                conn.execute(text("""
+                    CREATE TABLE messages_new (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        booking_id INTEGER REFERENCES bookings(id),
+                        sender_id INTEGER NOT NULL REFERENCES users(id),
+                        receiver_id INTEGER NOT NULL REFERENCES users(id),
+                        message TEXT NOT NULL,
+                        file_url VARCHAR,
+                        is_read BOOLEAN DEFAULT 0,
+                        is_flagged BOOLEAN DEFAULT 0,
+                        flag_reason VARCHAR,
+                        created_at DATETIME
+                    )
+                """))
+                conn.execute(text("""
+                    INSERT INTO messages_new (id, booking_id, sender_id, receiver_id, message, file_url, is_read, created_at)
+                    SELECT id, booking_id, sender_id, receiver_id, message, file_url, is_read, created_at FROM messages
+                """))
+                conn.execute(text("DROP TABLE messages"))
+                conn.execute(text("ALTER TABLE messages_new RENAME TO messages"))
+                conn.execute(text("CREATE INDEX IF NOT EXISTS ix_messages_booking_id ON messages(booking_id)"))
+                conn.execute(text("CREATE INDEX IF NOT EXISTS ix_messages_sender_id ON messages(sender_id)"))
+                conn.execute(text("CREATE INDEX IF NOT EXISTS ix_messages_receiver_id ON messages(receiver_id)"))
+            else:
+                if "is_flagged" not in msgs_info:
+                    conn.execute(text("ALTER TABLE messages ADD COLUMN is_flagged BOOLEAN DEFAULT 0"))
+                if "flag_reason" not in msgs_info:
+                    conn.execute(text("ALTER TABLE messages ADD COLUMN flag_reason TEXT"))
 
             # Ensure default core niches exist
             existing_niches = [r[0] for r in conn.execute(text("SELECT name FROM niches")).fetchall()]
@@ -1517,7 +1561,7 @@ def get_providers(
     if search:
         search_term = f"%{search}%"
         query = query.filter(
-            db.or_(
+            or_(
                 User.name.ilike(search_term),
                 User.email.ilike(search_term)
             )
@@ -1733,7 +1777,71 @@ def health_check(db = Depends(get_db)):
     }
 
 
-# ============== MESSAGING ROUTES ==============
+# ============== MESSAGING & MODERATION ROUTES ==============
+
+NUMBER_WORDS = {
+    'zero': '0', 'one': '1', 'two': '2', 'three': '3', 'four': '4',
+    'five': '5', 'six': '6', 'seven': '7', 'eight': '8', 'nine': '9'
+}
+
+def detect_contact_sharing(text_content: str):
+    """
+    Scans text for anti-disintermediation violations:
+    1. Phone numbers (standard 10-digit, spaced, spelled-out, +91/0 prefixed)
+    2. Off-platform chat handles (WhatsApp, Telegram, Instagram)
+    3. Off-platform payment handles (UPI, GPay, PhonePe, Paytm bypass)
+    4. Email addresses
+    Returns: (is_flagged: bool, reason: Optional[str])
+    """
+    if not text_content:
+        return False, None
+    lower = text_content.lower()
+
+    # 1. Email pattern
+    email_pattern = r'\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b'
+    if re.search(email_pattern, text_content):
+        return True, "Sharing personal email address"
+
+    # 2. UPI / Direct payment pattern
+    upi_pattern = r'[a-zA-Z0-9.\-_]{2,}@(okhdfcbank|okaxis|oksbi|okicici|paytm|ybl|axl|ibl|barodampay|upi)'
+    if re.search(upi_pattern, lower):
+        return True, "Sharing direct UPI handle"
+
+    # 3. Off-platform chat & social handles
+    chat_patterns = [
+        (r'wa\.me/\d+', "WhatsApp link"),
+        (r't\.me/[a-zA-Z0-9_]+', "Telegram link"),
+        (r'\b(whatsapp|whats app|watsapp|watsap|wa\.me)\b', "WhatsApp mention"),
+        (r'\b(telegram|tele gram|t\.me)\b', "Telegram mention"),
+        (r'\b(instagram\.com|instagr\.am)\b', "Instagram link"),
+        (r'\b(gpay|phonepe|paytm)\b.*(?:number|no|transfer|send|direct|id|acc)', "Off-platform payment")
+    ]
+    for pattern, label in chat_patterns:
+        if re.search(pattern, lower):
+            return True, f"Sharing {label}"
+
+    # 4. Spelled-out numbers normalization
+    normalized = lower
+    for word, digit in NUMBER_WORDS.items():
+        normalized = re.sub(r'\b' + word + r'\b', digit, normalized)
+
+    # 5. Phone number detection
+    # Match patterns like: +91 9876543210, 98765-43210, 9 8 7 6 5 4 3 2 1 0, 9876543210
+    clusters = re.findall(r'(?:(?:\+?91|0)[\s.-]?)?[6-9](?:[\s.-]?\d){9}', normalized)
+    if clusters:
+        return True, f"Sharing personal phone number ({clusters[0].strip()})"
+
+    # Clean non-digits and test contiguous digit streams
+    digits_only = re.sub(r'[^\d]', '', normalized)
+    if re.search(r'(?:^|[^0-9])(?:91|0)?([6-9]\d{9})(?:[^0-9]|$)', digits_only):
+        return True, "Sharing personal phone number"
+
+    # 6. Bypass phrases combined with numbers
+    if re.search(r'\b(call me|call on|ring me|my number|my ph|my contact|contact me on|reach me at|dial|ping me)\b.*?\d{5,}', lower):
+        return True, "Exchanging direct phone contact"
+
+    return False, None
+
 
 @api_app.post("/bookings/{booking_id}/messages", response_model=MessageResponse)
 def send_booking_message(
@@ -1752,6 +1860,8 @@ def send_booking_message(
     if not msg_data.message or not msg_data.message.strip():
         raise HTTPException(status_code=400, detail="Message content cannot be empty")
 
+    clean_content = msg_data.message.strip()
+
     if current_user.id == booking.buyer_id:
         receiver_id = booking.provider_id
     elif current_user.id == booking.provider_id:
@@ -1759,13 +1869,43 @@ def send_booking_message(
     else:
         receiver_id = booking.provider_id
 
+    # Anti-disintermediation check
+    flagged, reason = detect_contact_sharing(clean_content)
+    if flagged:
+        # Save flagged message for admin inspection
+        flagged_msg = Message(
+            booking_id=booking_id,
+            sender_id=current_user.id,
+            receiver_id=receiver_id,
+            message=clean_content,
+            file_url=msg_data.file_url.strip() if msg_data.file_url else None,
+            is_read=False,
+            is_flagged=True,
+            flag_reason=reason,
+            created_at=datetime.utcnow()
+        )
+        db.add(flagged_msg)
+
+        # Block sender immediately
+        current_user.is_blocked = True
+        current_user.is_active = False
+        current_user.block_reason = f"Account suspended: Sharing direct contact details ({reason}) violates Grove Hub platform safety rules."
+        db.commit()
+
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Security Alert: Your message was blocked and your account has been suspended for attempting to share off-platform contact details ({reason}). To protect buyers and sellers under escrow, all communications and payments must stay on Grove Hub."
+        )
+
     msg = Message(
         booking_id=booking_id,
         sender_id=current_user.id,
         receiver_id=receiver_id,
-        message=msg_data.message.strip(),
+        message=clean_content,
         file_url=msg_data.file_url.strip() if msg_data.file_url else None,
         is_read=False,
+        is_flagged=False,
+        flag_reason=None,
         created_at=datetime.utcnow()
     )
     db.add(msg)
@@ -1781,6 +1921,8 @@ def send_booking_message(
         message=msg.message,
         file_url=msg.file_url,
         is_read=msg.is_read,
+        is_flagged=False,
+        flag_reason=None,
         created_at=msg.created_at
     )
 
@@ -1806,23 +1948,227 @@ def get_booking_messages(
         db.query(Message).filter(Message.id.in_(unread_ids)).update({Message.is_read: True}, synchronize_session=False)
         db.commit()
 
-    user_ids = list(set([m.sender_id for m in messages]))
+    user_ids = list(set([m.sender_id for m in messages] + [m.receiver_id for m in messages]))
     users_map = {u.id: u.name for u in db.query(User).filter(User.id.in_(user_ids)).all()} if user_ids else {}
 
     result = []
     for m in messages:
+        # Hide flagged messages from recipient, but show to sender or admin
+        if m.is_flagged and m.sender_id != current_user.id and current_user.user_type != UserType.ADMIN:
+            continue
         result.append(MessageResponse(
             id=m.id,
             booking_id=m.booking_id,
             sender_id=m.sender_id,
             receiver_id=m.receiver_id,
             sender_name=users_map.get(m.sender_id, "User"),
+            receiver_name=users_map.get(m.receiver_id, "User"),
             message=m.message,
             file_url=m.file_url,
             is_read=True if m.id in unread_ids else m.is_read,
+            is_flagged=m.is_flagged,
+            flag_reason=m.flag_reason,
             created_at=m.created_at
         ))
     return result
+
+
+@api_app.get("/conversations", response_model=List[ConversationSummary])
+def get_user_conversations(
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    """
+    Returns all active conversations (pre-booking and booking) for the current user.
+    """
+    user_id = current_user.id
+    messages = db.query(Message).filter(
+        or_(Message.sender_id == user_id, Message.receiver_id == user_id)
+    ).order_by(Message.created_at.desc()).all()
+
+    conversations_map = {}
+    for msg in messages:
+        # Hide flagged messages if sender was someone else
+        if msg.is_flagged and msg.sender_id != user_id and current_user.user_type != UserType.ADMIN:
+            continue
+
+        other_id = msg.receiver_id if msg.sender_id == user_id else msg.sender_id
+        if other_id not in conversations_map:
+            conversations_map[other_id] = {
+                "latest_msg": msg,
+                "unread_count": 0,
+                "booking_id": msg.booking_id
+            }
+        if msg.receiver_id == user_id and not msg.is_read:
+            conversations_map[other_id]["unread_count"] += 1
+
+    other_users = db.query(User).filter(User.id.in_(conversations_map.keys())).all() if conversations_map else []
+    user_obj_map = {u.id: u for u in other_users}
+
+    booking_ids = [c["booking_id"] for c in conversations_map.values() if c["booking_id"]]
+    packages_map = {}
+    if booking_ids:
+        b_list = db.query(Booking).filter(Booking.id.in_(booking_ids)).all()
+        for b in b_list:
+            if b.package:
+                packages_map[b.id] = b.package.title
+
+    result = []
+    sorted_convos = sorted(conversations_map.items(), key=lambda x: x[1]["latest_msg"].created_at, reverse=True)
+    for other_id, data in sorted_convos:
+        u = user_obj_map.get(other_id)
+        if not u:
+            continue
+        last_m = data["latest_msg"]
+        result.append(ConversationSummary(
+            other_user_id=u.id,
+            other_user_name=u.name,
+            other_user_type=u.user_type.value,
+            last_message=last_m.message,
+            last_message_at=last_m.created_at,
+            unread_count=data["unread_count"],
+            booking_id=data["booking_id"],
+            is_blocked=u.is_blocked,
+            package_title=packages_map.get(data["booking_id"])
+        ))
+    return result
+
+
+@api_app.get("/messages/user/{other_user_id}", response_model=List[MessageResponse])
+def get_direct_messages_with_user(
+    other_user_id: int,
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    """
+    Returns full message history between current_user and other_user (both pre-booking direct chats & booking chats).
+    """
+    other_user = db.query(User).filter(User.id == other_user_id).first()
+    if not other_user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    messages = db.query(Message).filter(
+        or_(
+            and_(Message.sender_id == current_user.id, Message.receiver_id == other_user_id),
+            and_(Message.sender_id == other_user_id, Message.receiver_id == current_user.id)
+        )
+    ).order_by(Message.created_at.asc()).all()
+
+    # Mark incoming unread messages as read
+    unread_ids = [m.id for m in messages if m.receiver_id == current_user.id and not m.is_read]
+    if unread_ids:
+        db.query(Message).filter(Message.id.in_(unread_ids)).update({Message.is_read: True}, synchronize_session=False)
+        db.commit()
+
+    users_map = {
+        current_user.id: current_user.name,
+        other_user.id: other_user.name
+    }
+
+    result = []
+    for m in messages:
+        # Recipient never sees flagged bypass attempts; sender or admin can see it with violation tag
+        if m.is_flagged and m.sender_id != current_user.id and current_user.user_type != UserType.ADMIN:
+            continue
+        result.append(MessageResponse(
+            id=m.id,
+            booking_id=m.booking_id,
+            sender_id=m.sender_id,
+            receiver_id=m.receiver_id,
+            sender_name=users_map.get(m.sender_id, "User"),
+            receiver_name=users_map.get(m.receiver_id, "User"),
+            message=m.message,
+            file_url=m.file_url,
+            is_read=True if m.id in unread_ids else m.is_read,
+            is_flagged=m.is_flagged,
+            flag_reason=m.flag_reason,
+            created_at=m.created_at
+        ))
+    return result
+
+
+@api_app.post("/messages/user/{other_user_id}", response_model=MessageResponse)
+def send_direct_message_to_user(
+    other_user_id: int,
+    msg_data: DirectMessageCreate,
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    """
+    Send pre-booking direct message to a provider or buyer.
+    Automatically checks for phone number or contact sharing violations and blocks offenders.
+    """
+    if current_user.id == other_user_id:
+        raise HTTPException(status_code=400, detail="Cannot message yourself")
+
+    other_user = db.query(User).filter(User.id == other_user_id).first()
+    if not other_user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if not msg_data.message or not msg_data.message.strip():
+        raise HTTPException(status_code=400, detail="Message content cannot be empty")
+
+    clean_content = msg_data.message.strip()
+
+    # Anti-disintermediation check: scan for phone numbers, WhatsApp, UPI, email, etc.
+    flagged, reason = detect_contact_sharing(clean_content)
+    if flagged:
+        # 1. Record flagged message for admin inspection
+        flagged_msg = Message(
+            booking_id=msg_data.booking_id,
+            sender_id=current_user.id,
+            receiver_id=other_user_id,
+            message=clean_content,
+            file_url=msg_data.file_url.strip() if msg_data.file_url else None,
+            is_read=False,
+            is_flagged=True,
+            flag_reason=reason,
+            created_at=datetime.utcnow()
+        )
+        db.add(flagged_msg)
+
+        # 2. Block the offender immediately
+        current_user.is_blocked = True
+        current_user.is_active = False
+        current_user.block_reason = f"Account suspended: Sharing direct contact details ({reason}) violates Grove Hub platform safety rules."
+        db.commit()
+
+        # 3. Deny request with 403 Forbidden explaining suspension
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Security Alert: Your message was blocked and your account has been suspended for attempting to share off-platform contact details ({reason}). To protect buyers and sellers under escrow, all communications and payments must stay on Grove Hub."
+        )
+
+    # Clean message - deliver normally
+    msg = Message(
+        booking_id=msg_data.booking_id,
+        sender_id=current_user.id,
+        receiver_id=other_user_id,
+        message=clean_content,
+        file_url=msg_data.file_url.strip() if msg_data.file_url else None,
+        is_read=False,
+        is_flagged=False,
+        flag_reason=None,
+        created_at=datetime.utcnow()
+    )
+    db.add(msg)
+    db.commit()
+    db.refresh(msg)
+
+    return MessageResponse(
+        id=msg.id,
+        booking_id=msg.booking_id,
+        sender_id=msg.sender_id,
+        receiver_id=msg.receiver_id,
+        sender_name=current_user.name,
+        receiver_name=other_user.name,
+        message=msg.message,
+        file_url=msg.file_url,
+        is_read=msg.is_read,
+        is_flagged=False,
+        flag_reason=None,
+        created_at=msg.created_at
+    )
 
 
 @api_app.get("/messages/unread-count")
@@ -1832,9 +2178,229 @@ def get_unread_messages_count(
 ):
     count = db.query(Message).filter(
         Message.receiver_id == current_user.id,
-        Message.is_read == False
+        Message.is_read == False,
+        Message.is_flagged == False
     ).count()
     return {"unread_count": count}
+
+
+# ============== ADMIN MODERATION & CHAT ROUTES ==============
+
+@api_app.get("/admin/chats")
+def get_admin_all_chats(
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    """
+    Admin endpoint to view all conversations across Grove Hub,
+    including flagged messages and blocked user statuses.
+    """
+    if current_user.user_type != UserType.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin only")
+
+    messages = db.query(Message).order_by(Message.created_at.desc()).all()
+
+    convos = {}
+    for m in messages:
+        pair_key = (min(m.sender_id, m.receiver_id), max(m.sender_id, m.receiver_id))
+        if pair_key not in convos:
+            convos[pair_key] = {
+                "user1_id": pair_key[0],
+                "user2_id": pair_key[1],
+                "latest_message": m.message,
+                "latest_message_at": m.created_at,
+                "total_messages": 0,
+                "flagged_count": 0,
+                "booking_id": m.booking_id
+            }
+        convos[pair_key]["total_messages"] += 1
+        if m.is_flagged:
+            convos[pair_key]["flagged_count"] += 1
+
+    all_user_ids = set()
+    for pair in convos.keys():
+        all_user_ids.add(pair[0])
+        all_user_ids.add(pair[1])
+
+    users = db.query(User).filter(User.id.in_(all_user_ids)).all() if all_user_ids else []
+    u_map = {u.id: u for u in users}
+
+    result = []
+    for pair_key, info in sorted(convos.items(), key=lambda x: x[1]["latest_message_at"], reverse=True):
+        u1 = u_map.get(info["user1_id"])
+        u2 = u_map.get(info["user2_id"])
+        if not u1 or not u2:
+            continue
+        result.append({
+            "pair_key": f"{u1.id}_{u2.id}",
+            "user1": {
+                "id": u1.id,
+                "name": u1.name,
+                "email": u1.email,
+                "phone": u1.phone,
+                "user_type": u1.user_type.value,
+                "is_blocked": u1.is_blocked,
+                "block_reason": u1.block_reason
+            },
+            "user2": {
+                "id": u2.id,
+                "name": u2.name,
+                "email": u2.email,
+                "phone": u2.phone,
+                "user_type": u2.user_type.value,
+                "is_blocked": u2.is_blocked,
+                "block_reason": u2.block_reason
+            },
+            "total_messages": info["total_messages"],
+            "flagged_count": info["flagged_count"],
+            "latest_message": info["latest_message"],
+            "latest_message_at": info["latest_message_at"].isoformat() if info["latest_message_at"] else None,
+            "has_violation": info["flagged_count"] > 0
+        })
+
+    return result
+
+
+@api_app.get("/admin/chats/user/{user1_id}/with/{user2_id}")
+def get_admin_chat_transcript(
+    user1_id: int,
+    user2_id: int,
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    """
+    Admin endpoint to view the full unredacted transcript between any two users.
+    """
+    if current_user.user_type != UserType.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin only")
+
+    u1 = db.query(User).filter(User.id == user1_id).first()
+    u2 = db.query(User).filter(User.id == user2_id).first()
+    if not u1 or not u2:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    messages = db.query(Message).filter(
+        or_(
+            and_(Message.sender_id == user1_id, Message.receiver_id == user2_id),
+            and_(Message.sender_id == user2_id, Message.receiver_id == user1_id)
+        )
+    ).order_by(Message.created_at.asc()).all()
+
+    u_map = {u1.id: u1.name, u2.id: u2.name}
+
+    return {
+        "user1": {"id": u1.id, "name": u1.name, "email": u1.email, "is_blocked": u1.is_blocked, "block_reason": u1.block_reason},
+        "user2": {"id": u2.id, "name": u2.name, "email": u2.email, "is_blocked": u2.is_blocked, "block_reason": u2.block_reason},
+        "messages": [
+            {
+                "id": m.id,
+                "booking_id": m.booking_id,
+                "sender_id": m.sender_id,
+                "sender_name": u_map.get(m.sender_id, "User"),
+                "receiver_id": m.receiver_id,
+                "receiver_name": u_map.get(m.receiver_id, "User"),
+                "message": m.message,
+                "file_url": m.file_url,
+                "is_read": m.is_read,
+                "is_flagged": m.is_flagged,
+                "flag_reason": m.flag_reason,
+                "created_at": m.created_at.isoformat() if m.created_at else None
+            }
+            for m in messages
+        ]
+    }
+
+
+@api_app.get("/admin/flagged-messages")
+def get_admin_flagged_messages(
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    """
+    Admin endpoint to view all detected contact exchange violations.
+    """
+    if current_user.user_type != UserType.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin only")
+
+    flagged_msgs = db.query(Message).filter(Message.is_flagged == True).order_by(Message.created_at.desc()).all()
+
+    user_ids = list(set([m.sender_id for m in flagged_msgs] + [m.receiver_id for m in flagged_msgs]))
+    users = db.query(User).filter(User.id.in_(user_ids)).all() if user_ids else []
+    u_map = {u.id: u for u in users}
+
+    result = []
+    for m in flagged_msgs:
+        sender = u_map.get(m.sender_id)
+        receiver = u_map.get(m.receiver_id)
+        result.append({
+            "message_id": m.id,
+            "sender": {
+                "id": sender.id if sender else m.sender_id,
+                "name": sender.name if sender else "Unknown",
+                "email": sender.email if sender else "",
+                "phone": sender.phone if sender else "",
+                "is_blocked": sender.is_blocked if sender else False,
+                "block_reason": sender.block_reason if sender else None
+            },
+            "receiver": {
+                "id": receiver.id if receiver else m.receiver_id,
+                "name": receiver.name if receiver else "Unknown",
+                "email": receiver.email if receiver else ""
+            },
+            "message": m.message,
+            "flag_reason": m.flag_reason,
+            "created_at": m.created_at.isoformat() if m.created_at else None
+        })
+    return result
+
+
+@api_app.post("/admin/users/{user_id}/unblock")
+def admin_unblock_user(
+    user_id: int,
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    """
+    Admin action to unblock/reinstate a user account.
+    """
+    if current_user.user_type != UserType.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin only")
+
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    user.is_blocked = False
+    user.is_active = True
+    user.block_reason = None
+    db.commit()
+
+    return {"message": f"User {user.name} (ID: {user.id}) has been unblocked successfully.", "is_blocked": False, "is_active": True}
+
+
+@api_app.post("/admin/users/{user_id}/block")
+def admin_block_user(
+    user_id: int,
+    reason: Optional[str] = None,
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    """
+    Admin action to manually suspend a user.
+    """
+    if current_user.user_type != UserType.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin only")
+
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    user.is_blocked = True
+    user.is_active = False
+    user.block_reason = reason or "Manually suspended by Administrator."
+    db.commit()
+
+    return {"message": f"User {user.name} (ID: {user.id}) has been blocked.", "is_blocked": True, "is_active": False}
 
 
 # ============== PORTFOLIO ROUTES ==============

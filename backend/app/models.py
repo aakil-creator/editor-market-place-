@@ -45,6 +45,8 @@ class User(Base):
     password_hash = Column(String, nullable=False)
     is_verified = Column(Boolean, default=False)
     is_active = Column(Boolean, default=True)
+    is_blocked = Column(Boolean, default=False)
+    block_reason = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -245,7 +247,7 @@ class Message(Base):
     __tablename__ = "messages"
 
     id = Column(Integer, primary_key=True, index=True)
-    booking_id = Column(Integer, ForeignKey("bookings.id"), nullable=False, index=True)
+    booking_id = Column(Integer, ForeignKey("bookings.id"), nullable=True, index=True)
     booking = relationship("Booking", back_populates="messages")
 
     sender_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
@@ -257,6 +259,8 @@ class Message(Base):
     message = Column(Text, nullable=False)
     file_url = Column(String, nullable=True)
     is_read = Column(Boolean, default=False)
+    is_flagged = Column(Boolean, default=False)
+    flag_reason = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
 class PortfolioItem(Base):

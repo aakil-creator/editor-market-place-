@@ -318,19 +318,38 @@ class MessageCreate(BaseModel):
     message: str
     file_url: Optional[str] = None
 
+class DirectMessageCreate(BaseModel):
+    message: str
+    file_url: Optional[str] = None
+    booking_id: Optional[int] = None
+
 class MessageResponse(BaseModel):
     id: int
-    booking_id: int
+    booking_id: Optional[int] = None
     sender_id: int
     receiver_id: int
     sender_name: Optional[str] = None
+    receiver_name: Optional[str] = None
     message: str
     file_url: Optional[str] = None
     is_read: bool
+    is_flagged: Optional[bool] = False
+    flag_reason: Optional[str] = None
     created_at: datetime
 
     class Config:
         from_attributes = True
+
+class ConversationSummary(BaseModel):
+    other_user_id: int
+    other_user_name: str
+    other_user_type: str
+    last_message: str
+    last_message_at: datetime
+    unread_count: int = 0
+    booking_id: Optional[int] = None
+    is_blocked: Optional[bool] = False
+    package_title: Optional[str] = None
 
 # Portfolio schemas
 class PortfolioItemCreate(BaseModel):
@@ -434,6 +453,12 @@ async def get_current_user(
     user = db.query(User).filter(User.id == int(user_id)).first()
     if user is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
+    if getattr(user, "is_blocked", False):
+        reason = getattr(user, "block_reason", None) or "Your account has been suspended for violating platform policies."
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Account Suspended: {reason}"
+        )
     if not user.is_active:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User inactive")
     return user

@@ -81,11 +81,56 @@ async function apiFetch(endpoint, options = {}) {
     try { data = text ? JSON.parse(text) : {}; } catch (_) { data = { detail: text }; }
 
     if (!response.ok) {
+        if (response.status === 403 && data.detail && (
+            data.detail.toLowerCase().includes('suspended') ||
+            data.detail.toLowerCase().includes('security alert') ||
+            data.detail.toLowerCase().includes('blocked')
+        )) {
+            showSuspendedModal(data.detail);
+            currentToken = null;
+            currentUser = null;
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('current_user');
+            if (typeof renderAppHeader === 'function') {
+                const header = document.querySelector('.header');
+                if (header) header.replaceWith(renderAppHeader());
+            }
+        }
         throw new Error(data.detail || 'Request failed');
     }
 
     return data;
 }
+
+// Security Suspension Modal
+function showSuspendedModal(detail) {
+    const existing = document.getElementById('security-suspended-modal');
+    if (existing) existing.remove();
+
+    const overlay = document.createElement('div');
+    overlay.id = 'security-suspended-modal';
+    overlay.className = 'security-alert-modal-overlay';
+    overlay.innerHTML = `
+        <div class="security-alert-modal-card">
+            <div style="width: 64px; height: 64px; border-radius: 50%; background: rgba(239, 68, 68, 0.15); color: #ef4444; font-size: 2rem; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
+                🛑
+            </div>
+            <h2 style="color: #ef4444; font-size: 1.35rem; font-weight: 800; margin: 0 0 10px;">Account Suspended</h2>
+            <div style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 10px; padding: 12px 14px; margin-bottom: 18px; font-size: 0.85rem; color: var(--text-primary); text-align: left; line-height: 1.45;">
+                ${detail || 'Your account was suspended for attempting to exchange phone numbers or direct contact information outside Groove Hub.'}
+            </div>
+            <p style="font-size: 0.8125rem; color: var(--text-secondary); line-height: 1.5; margin: 0 0 20px;">
+                To protect buyers and creators under our <strong>100% Escrow Guarantee</strong>, Groove Hub strictly prohibits sharing phone numbers, WhatsApp, UPI, or external channels. All transactions and chats must remain on the platform.
+            </p>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn btn-secondary" onclick="document.getElementById('security-suspended-modal').remove(); router('/')" style="flex: 1;">Close</button>
+                <a href="mailto:rahura2026@gmail.com?subject=Groove Hub Account Suspension Appeal" class="btn btn-primary" style="flex: 1.5; text-decoration: none; display: flex; align-items: center; justify-content: center;">Contact Admin Support</a>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+}
+window.showSuspendedModal = showSuspendedModal;
 
 // Toast notification
 function showToast(message, type = 'info') {
@@ -178,6 +223,9 @@ function renderAppHeader(activeRoute = '') {
             <div class="header-nav" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
                 <button class="nav-btn ${activeRoute === '/' ? 'active' : ''}" onclick="router('/')">Dashboard</button>
                 <button class="nav-btn ${activeRoute === '/providers' ? 'active' : ''}" onclick="router('/providers')">Browse Talent</button>
+                <button class="nav-btn ${activeRoute === '/messages' ? 'active' : ''}" onclick="router('/messages')" id="nav-btn-messages">
+                    💬 Messages <span class="nav-unread-badge" id="header-unread-count" style="display:none; background:#ff4757; color:#fff; font-size:0.7rem; font-weight:700; padding:1px 6px; border-radius:10px; margin-left:4px;"></span>
+                </button>
                 <button class="nav-btn ${activeRoute === '/bookings' ? 'active' : ''}" onclick="router('/bookings')">My Bookings</button>
                 <button class="nav-btn ${activeRoute === '/payments' ? 'active' : ''}" onclick="router('/payments')">💳 Payments</button>
                 ${isProvider ? `<button class="nav-btn ${activeRoute === '/packages' ? 'active' : ''}" onclick="router('/packages')">My Packages</button>` : ''}
@@ -197,6 +245,11 @@ function renderAppHeader(activeRoute = '') {
             <button class="bottom-nav-item ${activeRoute === '/providers' ? 'active' : ''}" onclick="router('/providers')">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                 <span>Talent</span>
+            </button>
+            <button class="bottom-nav-item ${activeRoute === '/messages' ? 'active' : ''}" onclick="router('/messages')" style="position: relative;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                <span class="nav-unread-dot" id="bottom-unread-dot" style="display:none; position:absolute; top:4px; right:18px; width:8px; height:8px; border-radius:50%; background:#ff4757;"></span>
+                <span>Messages</span>
             </button>
             <button class="bottom-nav-item ${activeRoute === '/bookings' ? 'active' : ''}" onclick="router('/bookings')">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
@@ -220,6 +273,30 @@ function renderAppHeader(activeRoute = '') {
 }
 window.renderAppHeader = renderAppHeader;
 
+async function updateUnreadCountBadge() {
+    if (!currentToken) return;
+    try {
+        const res = await apiFetch('/messages/unread-count');
+        const count = res.unread_count || 0;
+        const topBadge = document.getElementById('header-unread-count');
+        if (topBadge) {
+            if (count > 0) {
+                topBadge.textContent = count > 99 ? '99+' : count;
+                topBadge.style.display = 'inline-block';
+            } else {
+                topBadge.style.display = 'none';
+            }
+        }
+        const bottomDot = document.getElementById('bottom-unread-dot');
+        if (bottomDot) {
+            bottomDot.style.display = count > 0 ? 'block' : 'none';
+        }
+    } catch (_) {}
+}
+window.updateUnreadCountBadge = updateUnreadCountBadge;
+setInterval(updateUnreadCountBadge, 12000);
+setTimeout(updateUnreadCountBadge, 2000);
+
 // Router
 function router(path) {
     const routes = {
@@ -235,11 +312,13 @@ function router(path) {
         '/bookings': (currentToken ? BookingsList : Login),
         '/create-booking': (currentToken ? CreateBooking : Login),
         '/providers': (currentToken ? ProvidersList : Login),
+        '/messages': (currentToken ? MessagesInbox : Login),
         '/admin': (currentToken ? AdminDashboard : Login),
         '/admin/niches': (currentToken ? AdminNiches : Login),
         '/admin/providers': (currentToken ? AdminProviders : Login),
         '/admin/bookings': (currentToken ? AdminBookings : Login),
         '/admin/disputes': (currentToken ? AdminDisputes : Login),
+        '/admin/chats': (currentToken ? AdminChatsView : Login),
         '/groove-chat': (currentToken ? GrooveChat : Login),
         '/privacy': PrivacyPolicy,
         '/terms': TermsOfService,
@@ -1600,29 +1679,47 @@ function adminStatsCard(stats) {
 }
 
 function providerWelcomeCard(profile) {
-    return el`<div class="card">
+    return el`<div class="card" style="box-shadow: 0 10px 30px rgba(0,0,0,0.12); margin-bottom: 24px;">
         <div class="card-header">
-            <div class="card-title">Welcome back, ${currentUser?.name}</div>
-            <span class="badge badge-success">Provider</span>
+            <div>
+                <div class="card-title" style="font-size: 1.25rem; font-weight: 800; color: var(--text-primary);">
+                    Welcome back, ${currentUser?.name || 'Creator'}
+                </div>
+                <div style="font-size: 0.8125rem; color: var(--text-secondary); margin-top: 3px;">
+                    Creator & Provider Command Center • 100% Escrow Protected
+                </div>
+            </div>
+            <span class="badge badge-success" style="font-weight: 700; padding: 6px 12px; font-size: 0.8rem;">PROVIDER</span>
         </div>
-        <div class="grid grid-2" style="margin-top: 12px;">
-            <div class="card-body">
-                <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px;">Total Bookings</div>
-                <div style="font-size: 1.5rem; font-weight: 700;">${profile?.total_bookings || 0}</div>
+        <div class="grid grid-2" style="margin-top: 16px; gap: 14px;">
+            <div style="background: var(--bg-hover); padding: 16px; border-radius: var(--radius-sm); border: 1px solid var(--border);">
+                <div style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 6px;">Total Bookings</div>
+                <div style="font-size: 1.85rem; font-weight: 800; color: var(--text-primary); line-height: 1;">${profile?.total_bookings || 0}</div>
+                <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 4px;">Orders completed</div>
             </div>
-            <div class="card-body">
-                <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px;">Earnings (This Month)</div>
-                <div style="font-size: 1.5rem; font-weight: 700; color: var(--success);">₹${(profile?.monthly_earnings || 0).toLocaleString()}</div>
+            <div style="background: var(--bg-hover); padding: 16px; border-radius: var(--radius-sm); border: 1px solid var(--border);">
+                <div style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 6px;">Earnings (This Month)</div>
+                <div style="font-size: 1.85rem; font-weight: 800; color: var(--success); line-height: 1;">₹${(profile?.monthly_earnings || 0).toLocaleString()}</div>
+                <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 4px;">Net provider payout</div>
             </div>
-            <div class="card-body" style="grid-column: span 2;">
-                <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px;">Rating</div>
-                <div style="font-size: 1.25rem; font-weight: 700; color: var(--warning);">${profile?.rating || 0} ⭐</div>
+            <div style="grid-column: span 2; background: var(--bg-hover); padding: 16px; border-radius: var(--radius-sm); border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <div>
+                    <div style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 4px;">Rating & Reputation</div>
+                    <div style="font-size: 1.4rem; font-weight: 800; color: var(--warning); display: flex; align-items: center; gap: 6px;">
+                        <span>⭐</span>
+                        <span>${profile?.rating ? Number(profile.rating).toFixed(1) : '5.0'}</span>
+                        <span style="font-size: 0.8125rem; font-weight: 500; color: var(--text-secondary); margin-left: 4px;">(${profile?.total_bookings || 0} reviews)</span>
+                    </div>
+                </div>
+                <div style="font-size: 0.8125rem; color: var(--text-secondary); text-align: right;">
+                    Guaranteed 80% Payout • Direct Bank Transfer
+                </div>
             </div>
         </div>
-        <div class="card-footer" style="display: flex; gap: 8px; flex-wrap: wrap;">
-            <button class="btn btn-primary btn-sm" onclick="router('/packages')">Manage Packages</button>
-            <button class="btn btn-secondary btn-sm" onclick="router('/payments')">💳 Earnings & Payouts</button>
-            <button class="btn btn-secondary btn-sm" onclick="router('/profile')">Edit Profile</button>
+        <div class="card-footer" style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px;">
+            <button class="btn btn-primary" onclick="router('/packages')" style="flex: 1; min-width: 140px;">Manage Packages</button>
+            <button class="btn btn-secondary" onclick="router('/payments')" style="flex: 1; min-width: 140px;">💳 Earnings & Payouts</button>
+            <button class="btn btn-secondary" onclick="router('/profile')" style="flex: 1; min-width: 120px;">Edit Profile</button>
         </div>
     </div>`;
 }
@@ -1708,7 +1805,7 @@ function providerBuySection() {
 function providerSection(profile, recentPackages) {
     return el`<div class="section">
         <div class="section-title">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20" style="color: var(--accent);">
                 <rect x="3" y="3" width="18" height="18" rx="2"/>
                 <path d="M3 9h18"/>
                 <path d="M9 21V9"/>
@@ -1716,42 +1813,42 @@ function providerSection(profile, recentPackages) {
             Quick Actions
         </div>
         <div class="grid grid-2">
-            <button class="card" onclick="router('/create-package')" style="cursor: pointer; border-color: var(--accent);">
-                <div class="card-header">
-                    <div class="card-title">Create Package</div>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20" style="color: var(--accent);">
+            <button type="button" class="card" onclick="router('/create-package')" style="cursor: pointer; border-color: rgba(99, 102, 241, 0.4); text-align: left; background: var(--bg-card); transition: all 0.25s ease;">
+                <div class="card-header" style="margin-bottom: 6px;">
+                    <div class="card-title" style="color: var(--text-primary); font-size: 1.05rem; font-weight: 700;">Create Package</div>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20" style="color: var(--accent);">
                         <line x1="12" y1="5" x2="12" y2="19"/>
                         <line x1="5" y1="12" x2="19" y2="12"/>
                     </svg>
                 </div>
-                <div class="card-body">Create a new service package for buyers</div>
+                <div class="card-body" style="color: var(--text-secondary); font-size: 0.875rem; line-height: 1.5;">Create a new service package for buyers</div>
             </button>
-            <button class="card" onclick="router('/profile')" style="cursor: pointer;">
-                <div class="card-header">
-                    <div class="card-title">Edit Profile</div>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+            <button type="button" class="card" onclick="router('/profile')" style="cursor: pointer; text-align: left; background: var(--bg-card); transition: all 0.25s ease;">
+                <div class="card-header" style="margin-bottom: 6px;">
+                    <div class="card-title" style="color: var(--text-primary); font-size: 1.05rem; font-weight: 700;">Edit Profile</div>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20" style="color: var(--text-secondary);">
                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                     </svg>
                 </div>
-                <div class="card-body">Update your profile and availability</div>
+                <div class="card-body" style="color: var(--text-secondary); font-size: 0.875rem; line-height: 1.5;">Update your profile and availability</div>
             </button>
         </div>
         ${recentPackages && recentPackages.length > 0 ? `
-        <div class="section-title mt-4">Your Recent Packages</div>
+        <div class="section-title mt-4" style="margin-top: 24px;">Your Recent Packages</div>
         <div class="grid grid-2">
             ${recentPackages.slice(0, 4).map(pkg => `
                 <div class="card">
-                    <div class="card-header">
-                        <div class="card-title">${pkg.title}</div>
+                    <div class="card-header" style="margin-bottom: 8px;">
+                        <div class="card-title" style="color: var(--text-primary); font-weight: 700; font-size: 1.05rem;">${pkg.title}</div>
                         <span class="badge ${pkg.status === 'approved' ? 'badge-success' : 'badge-warning'}">${pkg.status}</span>
                     </div>
                     <div class="card-body">
-                        <div class="price">₹${pkg.price.toLocaleString()}</div>
-                        <div class="price-range">${pkg.turnaround} • ${pkg.revision_limit} revision${pkg.revision_limit > 1 ? 's' : ''}</div>
+                        <div class="price" style="color: var(--accent); font-weight: 800; font-size: 1.45rem; margin-bottom: 4px;">₹${pkg.price.toLocaleString()}</div>
+                        <div class="price-range" style="color: var(--text-secondary); font-size: 0.8125rem;">${pkg.turnaround || '24 hours'} • ${pkg.revision_limit || 1} revision${(pkg.revision_limit || 1) > 1 ? 's' : ''}</div>
                     </div>
-                    <div class="card-footer">
-                        <button class="btn btn-secondary btn-sm" onclick="router('/packages')">View All</button>
+                    <div class="card-footer" style="margin-top: 14px; padding-top: 12px;">
+                        <button class="btn btn-secondary btn-sm" onclick="router('/packages')" style="width: 100%;">View All</button>
                     </div>
                 </div>
             `).join('')}
@@ -4096,13 +4193,7 @@ const fiverrCategoryConfigs = {
             { id: 'executive', label: 'Executive Business Drill', match: ['business', 'executive', 'presentation'] },
             { id: 'interview', label: 'Job Interview Simulation', match: ['interview', 'behavioral', 'star'] }
         ],
-        sellerDetails: [
-            { id: '', label: 'Any Tutor' },
-            { id: 'top_rated', label: '⭐ Top Rated (4.9+)' },
-            { id: 'level_2', label: '💎 Level 2 (30+ Sessions)' },
-            { id: 'pro_verified', label: '👑 CELTA / TEFL Certified' },
-            { id: 'fast_turnaround', label: '⚡ Instant Trial Available' }
-        ],
+        sellerDetails: [],
         budgets: [
             { id: '', label: 'Any Budget' },
             { id: 'under1000', label: 'Under ₹1,000 / session' },
@@ -4111,8 +4202,6 @@ const fiverrCategoryConfigs = {
         ],
         deliveryTimes: [
             { id: '', label: 'Any Availability' },
-            { id: 'instant', label: '⚡ Today (Instant)' },
-            { id: '24h', label: '📅 Within 24 Hours' },
             { id: 'flexible', label: '🗓️ Flexible Schedule' }
         ],
         defaultBadge: 'CERTIFIED ENGLISH COACH',
@@ -4147,13 +4236,7 @@ const fiverrCategoryConfigs = {
             { id: 'scripts', label: 'YouTube & Video Scripting', match: ['script', 'youtube', 'video'] },
             { id: 'case_studies', label: 'Whitepapers & Case Studies', match: ['whitepaper', 'case study', 'technical'] }
         ],
-        sellerDetails: [
-            { id: '', label: 'Any Writer' },
-            { id: 'top_rated', label: '⭐ Top Rated (4.9+)' },
-            { id: 'level_2', label: '💎 Level 2 (30+ Published)' },
-            { id: 'pro_verified', label: '👑 Pro Verified Copywriter' },
-            { id: 'fast_turnaround', label: '⚡ 24h Express Delivery' }
-        ],
+        sellerDetails: [],
         budgets: [
             { id: '', label: 'Any Budget' },
             { id: 'under1500', label: 'Under ₹1,500' },
@@ -4531,10 +4614,10 @@ function ProvidersList() {
                 </div>
 
                 <div style="display: flex; gap: 10px;">
-                    <button class="btn btn-secondary" onclick="this.closest('.fiverr-escrow-modal').remove()" style="flex: 1; min-height: 46px; font-weight: 600;">
-                        <-- Back
+                    <button class="btn btn-outline" onclick="this.closest('.fiverr-escrow-modal').remove(); openPreBookingChat(${providerId}, '${name.replace(/'/g, "\\'")}')" style="flex: 1; min-height: 46px; font-weight: 700; border-color: var(--accent); color: var(--accent); display: flex; align-items: center; justify-content: center; gap: 6px;">
+                        💬 Chat with ${name}
                     </button>
-                    <button class="btn btn-primary" onclick="this.closest('.fiverr-escrow-modal').remove(); selectProvider(${providerId})" style="flex: 2; font-weight: 700; min-height: 46px;">
+                    <button class="btn btn-primary" onclick="this.closest('.fiverr-escrow-modal').remove(); selectProvider(${providerId})" style="flex: 1.5; font-weight: 700; min-height: 46px;">
                         ${cfg.primaryBtnText}
                     </button>
                 </div>
@@ -4547,9 +4630,18 @@ function ProvidersList() {
 
     window.viewProviderPortfolio = window.openFiverrPortfolioModal;
 
-    window.openProviderChatModal = (providerId, providerName) => {
-        selectProvider(providerId);
+    window.openPreBookingChat = (providerId, providerName) => {
+        if (!currentToken) {
+            showToast('Please log in to chat with creators', 'info');
+            sessionStorage.setItem('redirect_after_login', `/messages?user_id=${providerId}`);
+            router('/login');
+            return;
+        }
+        window.__selectedChatUserId = providerId;
+        window.__selectedChatUserName = providerName;
+        router('/messages');
     };
+    window.openProviderChatModal = window.openPreBookingChat;
 
     window.triggerCardAnim = (cardEl, type) => {
         const overlay = cardEl.querySelector('.anim-overlay');
@@ -4899,13 +4991,13 @@ function ProvidersList() {
                         </div>
                     </div>
 
-                    <!-- Action Buttons -->
-                    <div class="fiverr-gig-actions">
-                        <button class="btn btn-primary btn-sm" style="flex: 1.6; font-weight: 700;" onclick="selectProvider(${provider.id}, ${mainPkg ? mainPkg.id : 'null'})">
-                            ${primaryText}
+                    <!-- Action Buttons: Chat & Order -->
+                    <div class="fiverr-gig-actions" style="display: flex; gap: 6px; margin-top: 10px;">
+                        <button class="btn btn-outline btn-sm" style="flex: 1; font-weight: 700; border-color: var(--accent); color: var(--accent); display: flex; align-items: center; justify-content: center; gap: 4px;" onclick="event.stopPropagation(); openPreBookingChat(${provider.id}, '${(provider.name || '').replace(/'/g, "\\'")}')" title="Chat with ${provider.name} before booking">
+                            💬 Chat
                         </button>
-                        <button class="btn btn-secondary btn-sm" style="flex: 1;" onclick="openFiverrPortfolioModal(${provider.id})">
-                            ${secondaryText}
+                        <button class="btn btn-primary btn-sm" style="flex: 1.4; font-weight: 700;" onclick="selectProvider(${provider.id}, ${mainPkg ? mainPkg.id : 'null'})">
+                            ${primaryText}
                         </button>
                     </div>
                 </div>
@@ -5091,6 +5183,7 @@ function ProvidersList() {
                                 </div>
                             </div>
 
+                            ${providerSearchState.niche !== 'tutors' && providerSearchState.niche !== 'writers' && activeCfg.sellerDetails && activeCfg.sellerDetails.length > 0 ? `
                             <!-- Seller details dropdown -->
                             <div class="fiverr-filter-dropdown-wrap">
                                 <button class="fiverr-filter-btn ${providerSearchState.sellerDetail ? 'active' : ''}" onclick="toggleFiverrFilterMenu('menu-seller-details')">
@@ -5109,6 +5202,7 @@ function ProvidersList() {
                                     `).join('')}
                                 </div>
                             </div>
+                            ` : ''}
 
                             <!-- Budget dropdown -->
                             <div class="fiverr-filter-dropdown-wrap">
@@ -5191,7 +5285,7 @@ function ProvidersList() {
                                     <span class="chip-x">✕</span>
                                 </button>
                             ` : ''}
-                            ${activeSellerDetailLabel ? `
+                            ${activeSellerDetailLabel && providerSearchState.niche !== 'tutors' && providerSearchState.niche !== 'writers' ? `
                                 <button class="fiverr-active-filter-chip" onclick="setFiverrFilter('sellerDetail', '')" title="Remove filter">
                                     <span>Seller: ${activeSellerDetailLabel}</span>
                                     <span class="chip-x">✕</span>
@@ -5415,6 +5509,13 @@ function AdminDashboard() {
                                 <span class="badge badge-danger">Resolutions</span>
                             </div>
                             <div class="card-body">Review dispute claims, issue full buyer refunds or provider payouts</div>
+                        </button>
+                        <button class="card" onclick="router('/admin/chats')" style="cursor: pointer; text-align: left; border-color: rgba(99, 102, 241, 0.4);">
+                            <div class="card-header">
+                                <div class="card-title">💬 Chats & Safety Guard</div>
+                                <span class="badge badge-primary">Moderation</span>
+                            </div>
+                            <div class="card-body">Inspect buyer-provider messages, review phone-sharing blocks, and unblock accounts</div>
                         </button>
                     </div>
                 ` : ''}
@@ -7027,6 +7128,670 @@ function GrooveChat() {
     GrooveChat.send = send;
 
     return container;
+}
+
+
+// =============== FIVERR-STYLE INBOX & DIRECT CHAT COMPONENT ===============
+
+function escapeHTML(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+function formatRelativeTime(dateStr) {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffSec = Math.floor((now - date) / 1000);
+    if (diffSec < 60) return 'Just now';
+    if (diffSec < 3600) return `${Math.floor(diffSec / 60)}m ago`;
+    if (diffSec < 86400) return `${Math.floor(diffSec / 3600)}h ago`;
+    if (diffSec < 172800) return 'Yesterday';
+    return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
+function MessagesInbox() {
+    let conversations = [];
+    let activeUserId = window.__selectedChatUserId ? parseInt(window.__selectedChatUserId) : null;
+    let activeUserName = window.__selectedChatUserName || '';
+    let activeUserRole = 'PROVIDER';
+    let messages = [];
+    let loadingConvos = true;
+    let loadingMsgs = false;
+    let pollInterval = null;
+    let searchQuery = '';
+
+    async function loadConversations(isPolling = false) {
+        if (!currentToken) return;
+        if (!isPolling) loadingConvos = true;
+        try {
+            conversations = await apiFetch('/conversations');
+            if (activeUserId) {
+                const found = conversations.find(c => c.other_user_id === activeUserId);
+                if (found) {
+                    activeUserName = found.other_user_name;
+                    activeUserRole = found.other_user_type;
+                }
+            } else if (conversations.length > 0) {
+                activeUserId = conversations[0].other_user_id;
+                activeUserName = conversations[0].other_user_name;
+                activeUserRole = conversations[0].other_user_type;
+            }
+        } catch (e) {
+            console.error('Failed to load conversations', e);
+        } finally {
+            loadingConvos = false;
+            if (!isPolling) {
+                mount(renderInbox());
+                if (activeUserId) loadMessages();
+            } else {
+                updateInboxDOM();
+            }
+        }
+    }
+
+    async function loadMessages(isPolling = false) {
+        if (!activeUserId || !currentToken) return;
+        if (!isPolling) loadingMsgs = true;
+        try {
+            const fetched = await apiFetch(`/messages/user/${activeUserId}`);
+            messages = fetched;
+            updateUnreadCountBadge();
+        } catch (e) {
+            console.error('Failed to load messages', e);
+        } finally {
+            loadingMsgs = false;
+            renderMessagesStream();
+        }
+    }
+
+    function startPolling() {
+        stopPolling();
+        pollInterval = setInterval(() => {
+            if (window.location.pathname !== '/messages') {
+                stopPolling();
+                return;
+            }
+            if (activeUserId) {
+                loadMessages(true);
+            }
+            loadConversations(true);
+        }, 3500);
+    }
+
+    function stopPolling() {
+        if (pollInterval) {
+            clearInterval(pollInterval);
+            pollInterval = null;
+        }
+    }
+
+    async function sendMessage(text) {
+        if (!text || !text.trim() || !activeUserId) return;
+        const clean = text.trim();
+        const inputEl = document.getElementById('inbox-message-input');
+        if (inputEl) inputEl.value = '';
+
+        const tempId = Date.now();
+        messages.push({
+            id: tempId,
+            sender_id: currentUser?.id,
+            receiver_id: activeUserId,
+            sender_name: currentUser?.name || 'You',
+            message: clean,
+            created_at: new Date().toISOString(),
+            is_read: false,
+            is_flagged: false
+        });
+        renderMessagesStream();
+
+        try {
+            const res = await apiFetch(`/messages/user/${activeUserId}`, {
+                method: 'POST',
+                body: JSON.stringify({ message: clean })
+            });
+            const idx = messages.findIndex(m => m.id === tempId);
+            if (idx !== -1) messages[idx] = res;
+            renderMessagesStream();
+            loadConversations(true);
+        } catch (err) {
+            messages = messages.filter(m => m.id !== tempId);
+            renderMessagesStream();
+            showToast(err.message, 'error');
+        }
+    }
+
+    window.__inboxSendMessage = sendMessage;
+
+    window.__selectInboxConversation = (otherId, otherName, otherRole) => {
+        activeUserId = otherId;
+        activeUserName = otherName;
+        activeUserRole = otherRole || 'PROVIDER';
+        window.__selectedChatUserId = otherId;
+        window.__selectedChatUserName = otherName;
+
+        const container = document.querySelector('.inbox-container');
+        if (container) container.classList.add('show-chat');
+
+        document.querySelectorAll('.inbox-item').forEach(item => {
+            item.classList.toggle('active', item.dataset.userId == otherId);
+        });
+
+        loadMessages();
+    };
+
+    window.__inboxMobileBackToList = () => {
+        const container = document.querySelector('.inbox-container');
+        if (container) container.classList.remove('show-chat');
+    };
+
+    function renderInbox() {
+        startPolling();
+
+        return el`<div>
+            ${renderAppHeader('/messages')}
+            ${renderLeftEdgePeekDock('')}
+            <div class="inbox-wrapper">
+                <div class="inbox-container ${activeUserId ? 'show-chat' : ''}">
+                    <!-- Left Sidebar: Conversations List -->
+                    <div class="inbox-sidebar">
+                        <div class="inbox-sidebar-header">
+                            <h3 style="margin: 0; font-size: 1.1rem; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+                                <span>💬</span> Direct Messages
+                            </h3>
+                            <span class="badge badge-info" style="font-size: 0.72rem;">Escrow Protected</span>
+                        </div>
+                        <div class="inbox-search-box">
+                            <input
+                                type="text"
+                                class="inbox-search-input"
+                                placeholder="Search conversations..."
+                                oninput="window.__filterInboxConversations(this.value)"
+                            />
+                        </div>
+                        <div class="inbox-conversations-list" id="inbox-conversations-list">
+                            ${renderConversationsListHTML()}
+                        </div>
+                    </div>
+
+                    <!-- Right Pane: Active Chat Conversation -->
+                    <div class="inbox-chat-pane">
+                        ${renderChatPaneHTML()}
+                    </div>
+                </div>
+            </div>
+        </div>`;
+    }
+
+    function renderConversationsListHTML() {
+        if (loadingConvos) {
+            return '<div style="padding: 24px; text-align: center; color: var(--text-muted);"><div class="spinner"></div></div>';
+        }
+
+        let filtered = conversations;
+        if (searchQuery && searchQuery.trim()) {
+            const q = searchQuery.toLowerCase().trim();
+            filtered = conversations.filter(c => (c.other_user_name || '').toLowerCase().includes(q) || (c.last_message && c.last_message.toLowerCase().includes(q)));
+        }
+
+        if (activeUserId && !conversations.some(c => c.other_user_id === activeUserId)) {
+            filtered = [{
+                other_user_id: activeUserId,
+                other_user_name: activeUserName || 'Talent',
+                other_user_type: activeUserRole || 'PROVIDER',
+                last_message: 'Start talking before ordering a package...',
+                last_message_at: new Date().toISOString(),
+                unread_count: 0,
+                is_draft: true
+            }, ...filtered];
+        }
+
+        if (filtered.length === 0) {
+            return `
+                <div style="padding: 36px 20px; text-align: center; color: var(--text-muted);">
+                    <div style="font-size: 2.2rem; margin-bottom: 8px;">💬</div>
+                    <div style="font-weight: 700; color: var(--text-primary); margin-bottom: 4px;">No messages yet</div>
+                    <p style="font-size: 0.8125rem; line-height: 1.4; margin-bottom: 16px;">Browse verified video editors and english tutors to start talking directly.</p>
+                    <button class="btn btn-primary btn-sm" onclick="router('/providers')">Browse Talent</button>
+                </div>
+            `;
+        }
+
+        return filtered.map(c => {
+            const isActive = c.other_user_id === activeUserId;
+            const timeStr = formatRelativeTime(c.last_message_at);
+            const initial = (c.other_user_name || 'U').charAt(0).toUpperCase();
+            const roleBadge = c.other_user_type === 'PROVIDER' ? 'Creator' : 'Client';
+
+            return `
+                <div class="inbox-item ${isActive ? 'active' : ''}" data-user-id="${c.other_user_id}" onclick="window.__selectInboxConversation(${c.other_user_id}, '${(c.other_user_name || '').replace(/'/g, "\\'")}', '${c.other_user_type}')">
+                    <div class="inbox-item-avatar">
+                        ${initial}
+                        <div class="online-dot"></div>
+                    </div>
+                    <div class="inbox-item-content">
+                        <div class="inbox-item-name">
+                            <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${c.other_user_name}</span>
+                            <span class="inbox-item-time">${timeStr}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 2px;">
+                            <div class="inbox-item-snippet">
+                                <span style="font-size: 0.65rem; background: var(--bg-hover); padding: 1px 4px; border-radius: 4px; margin-right: 4px; border: 1px solid var(--border);">${roleBadge}</span>
+                                ${escapeHTML(c.last_message || 'No messages')}
+                            </div>
+                            ${c.unread_count > 0 ? `<span class="inbox-item-unread-badge">${c.unread_count}</span>` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function renderChatPaneHTML() {
+        if (!activeUserId) {
+            return `
+                <div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; text-align: center; color: var(--text-muted);">
+                    <div style="width: 64px; height: 64px; border-radius: 50%; background: rgba(99, 102, 241, 0.1); color: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 2rem; margin-bottom: 14px;">
+                        💬
+                    </div>
+                    <h3 style="margin: 0 0 6px 0; color: var(--text-primary); font-weight: 800;">Your Groove Hub Inbox</h3>
+                    <p style="font-size: 0.85rem; max-width: 380px; line-height: 1.45; margin: 0 0 18px 0;">Select a conversation on the left, or browse talent to talk with creators before placing your order.</p>
+                    <button class="btn btn-primary" onclick="router('/providers')">Explore Creators</button>
+                </div>
+            `;
+        }
+
+        const initial = (activeUserName || 'U').charAt(0).toUpperCase();
+
+        return `
+            <!-- Chat Header -->
+            <div class="inbox-chat-header">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <button class="inbox-mobile-back-btn" onclick="window.__inboxMobileBackToList()" style="display: none; background: none; border: none; font-size: 1.2rem; cursor: pointer; color: var(--text-primary); padding: 4px;">
+                        ←
+                    </button>
+                    <div class="inbox-item-avatar" style="width: 38px; height: 38px; font-size: 0.95rem;">
+                        ${initial}
+                        <div class="online-dot"></div>
+                    </div>
+                    <div>
+                        <div style="font-weight: 800; font-size: 0.95rem; color: var(--text-primary); display: flex; align-items: center; gap: 6px;">
+                            <span>${activeUserName}</span>
+                            <span style="font-size: 0.65rem; padding: 1px 6px; border-radius: 4px; background: rgba(16, 185, 129, 0.1); color: var(--success); font-weight: 700;">🟢 Online</span>
+                        </div>
+                        <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 1px;">
+                            100% Escrow Protected • Instant In-App Chat
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn btn-primary btn-sm" onclick="selectProvider(${activeUserId})" style="font-weight: 700; display: flex; align-items: center; gap: 6px;">
+                        <span>📦 View Packages / Hire</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Escrow Safety Guarantee Notice -->
+            <div class="inbox-escrow-trust-banner">
+                <span style="font-size: 1.15rem;">🛡️</span>
+                <div>
+                    <strong>Platform Trust & Safety:</strong> Keep all communications and payments on Groove Hub. Attempting to share phone numbers, WhatsApp, UPI, or off-platform contact details triggers <strong>instant account suspension</strong>.
+                </div>
+            </div>
+
+            <!-- Messages Stream -->
+            <div class="inbox-messages-stream" id="inbox-messages-stream">
+                ${renderMessagesHTML()}
+            </div>
+
+            <!-- Bottom Input Bar -->
+            <div class="inbox-chat-input-bar">
+                <textarea
+                    id="inbox-message-input"
+                    class="inbox-chat-textarea"
+                    placeholder="Type your message to ${activeUserName}... (Press Enter to send)"
+                    rows="1"
+                    onkeydown="if(event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); window.__inboxSendMessage(this.value); }"
+                ></textarea>
+                <button class="inbox-send-btn" onclick="window.__inboxSendMessage(document.getElementById('inbox-message-input')?.value)" title="Send Message">
+                    ➤
+                </button>
+            </div>
+        `;
+    }
+
+    function renderMessagesHTML() {
+        if (loadingMsgs && messages.length === 0) {
+            return '<div style="padding: 24px; text-align: center; color: var(--text-muted);"><div class="spinner"></div></div>';
+        }
+
+        if (messages.length === 0) {
+            return `
+                <div style="margin: auto; text-align: center; padding: 24px; color: var(--text-muted); max-width: 420px;">
+                    <div style="font-size: 2.2rem; margin-bottom: 8px;">👋</div>
+                    <div style="font-weight: 700; color: var(--text-primary); margin-bottom: 4px;">Say hi to ${activeUserName}!</div>
+                    <p style="font-size: 0.8125rem; line-height: 1.45;">Discuss project requirements, turnaround times, or revision expectations. When you're ready, click <strong>"View Packages / Hire"</strong> at the top to place your order with 100% Escrow Protection.</p>
+                </div>
+            `;
+        }
+
+        return messages.map(m => {
+            const isMe = m.sender_id === currentUser?.id;
+            const timeStr = new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            if (m.is_flagged) {
+                return `
+                    <div class="inbox-msg-row sent flagged">
+                        <div class="inbox-bubble">
+                            <div style="display: flex; align-items: center; gap: 6px; font-weight: 700; margin-bottom: 4px;">
+                                <span>🛑 Message Blocked by Safety Guard</span>
+                            </div>
+                            <div style="text-decoration: line-through; opacity: 0.7;">${escapeHTML(m.message)}</div>
+                            <div style="font-size: 0.75rem; margin-top: 6px; font-weight: 600;">
+                                Reason: ${m.flag_reason || 'Personal contact sharing policy violation'}
+                            </div>
+                        </div>
+                        <div class="inbox-meta" style="color: #ef4444;">Blocked • Not delivered</div>
+                    </div>
+                `;
+            }
+
+            return `
+                <div class="inbox-msg-row ${isMe ? 'sent' : 'received'}">
+                    <div class="inbox-bubble">
+                        ${escapeHTML(m.message)}
+                        ${m.file_url ? `<div style="margin-top: 6px;"><a href="${m.file_url}" target="_blank" rel="noopener noreferrer" style="color: inherit; text-decoration: underline; font-size: 0.8rem;">📎 Attachment Link</a></div>` : ''}
+                    </div>
+                    <div class="inbox-meta">
+                        ${timeStr} ${isMe ? (m.is_read ? '✓✓' : '✓') : ''}
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function renderMessagesStream() {
+        const streamEl = document.getElementById('inbox-messages-stream');
+        if (streamEl) {
+            streamEl.innerHTML = renderMessagesHTML();
+            streamEl.scrollTop = streamEl.scrollHeight;
+        }
+    }
+
+    function updateInboxDOM() {
+        const listEl = document.getElementById('inbox-conversations-list');
+        if (listEl) listEl.innerHTML = renderConversationsListHTML();
+    }
+
+    window.__filterInboxConversations = (q) => {
+        searchQuery = q;
+        updateInboxDOM();
+    };
+
+    loadConversations();
+    return renderInbox();
+}
+
+// =============== ADMIN CHATS & SAFETY MODERATION VIEW ===============
+
+function AdminChatsView() {
+    let chats = [];
+    let flaggedMessages = [];
+    let loading = true;
+    let activeTab = 'all';
+
+    async function loadData() {
+        showLoading();
+        try {
+            const [cList, fList] = await Promise.all([
+                apiFetch('/admin/chats'),
+                apiFetch('/admin/flagged-messages')
+            ]);
+            chats = cList || [];
+            flaggedMessages = fList || [];
+        } catch (e) {
+            showToast(e.message, 'error');
+        } finally {
+            loading = false;
+            mount(renderAdminChatsView());
+        }
+    }
+
+    window.__adminUnblockUser = async (userId, userName) => {
+        if (!confirm(`Are you sure you want to unblock user "${userName}" (ID: ${userId})? Their account and messaging access will be reinstated.`)) return;
+        try {
+            const res = await apiFetch(`/admin/users/${userId}/unblock`, { method: 'POST' });
+            showToast(res.message || 'User unblocked successfully', 'success');
+            loadData();
+        } catch (err) {
+            showToast(err.message, 'error');
+        }
+    };
+
+    window.__adminInspectChatTranscript = async (user1Id, user2Id) => {
+        try {
+            const data = await apiFetch(`/admin/chats/user/${user1Id}/with/${user2Id}`);
+            openTranscriptModal(data);
+        } catch (err) {
+            showToast(err.message, 'error');
+        }
+    };
+
+    function openTranscriptModal(data) {
+        const u1 = data.user1;
+        const u2 = data.user2;
+        const msgs = data.messages || [];
+
+        const modal = document.createElement('div');
+        modal.className = 'fiverr-escrow-modal';
+        modal.innerHTML = `
+            <div class="fiverr-escrow-card" style="max-width: 680px; max-height: 85vh; display: flex; flex-direction: column;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid var(--border);">
+                    <div>
+                        <h3 style="margin: 0; font-size: 1.15rem; color: var(--text-primary); font-weight: 800;">
+                            Conversation Transcript
+                        </h3>
+                        <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 3px;">
+                            ${u1.name} (${u1.email}) &harr; ${u2.name} (${u2.email})
+                        </div>
+                    </div>
+                    <button class="modal-close" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--text-muted);">&times;</button>
+                </div>
+
+                <div style="flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 10px; background: var(--bg-hover); border-radius: 10px; margin-bottom: 16px;">
+                    ${msgs.length === 0 ? '<div style="text-align: center; color: var(--text-muted); padding: 20px;">No messages</div>' : msgs.map(m => {
+                        const isFlagged = m.is_flagged;
+                        const isU1 = m.sender_id === u1.id;
+                        return `
+                            <div style="padding: 10px 14px; border-radius: 12px; background: ${isFlagged ? 'rgba(239, 68, 68, 0.12)' : (isU1 ? 'var(--bg-card)' : 'rgba(99, 102, 241, 0.08)')}; border: 1px solid ${isFlagged ? 'rgba(239, 68, 68, 0.4)' : 'var(--border)'};">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 0.75rem;">
+                                    <strong>${m.sender_name}</strong>
+                                    <span style="color: var(--text-muted);">${m.created_at ? new Date(m.created_at).toLocaleString() : ''}</span>
+                                </div>
+                                <div style="font-size: 0.875rem; color: var(--text-primary); word-break: break-word;">
+                                    ${escapeHTML(m.message)}
+                                </div>
+                                ${isFlagged ? `<div style="font-size: 0.75rem; color: #ef4444; font-weight: 700; margin-top: 4px;">🛑 Flagged Violation: ${m.flag_reason || 'Contact exchange attempt'}</div>` : ''}
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; gap: 8px;">
+                        ${u1.is_blocked ? `<button class="btn btn-sm btn-danger" onclick="window.__adminUnblockUser(${u1.id}, '${u1.name}'); this.closest('.fiverr-escrow-modal').remove();">Unblock ${u1.name}</button>` : ''}
+                        ${u2.is_blocked ? `<button class="btn btn-sm btn-danger" onclick="window.__adminUnblockUser(${u2.id}, '${u2.name}'); this.closest('.fiverr-escrow-modal').remove();">Unblock ${u2.name}</button>` : ''}
+                    </div>
+                    <button class="btn btn-secondary" onclick="this.closest('.fiverr-escrow-modal').remove()">Close</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        modal.querySelector('.modal-close').onclick = () => modal.remove();
+        modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+    }
+
+    function renderAdminChatsView() {
+        return el`<div>
+            ${renderAppHeader('/admin')}
+            ${renderLeftEdgePeekDock('')}
+            <div class="main">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <div>
+                        <div class="section-title" style="margin: 0;">💬 Platform Chats & Safety Moderation</div>
+                        <p style="color: var(--text-secondary); font-size: 0.85rem; margin: 4px 0 0 0;">Inspect user conversations, investigate anti-disintermediation violations, and unblock reinstated users.</p>
+                    </div>
+                    <button class="btn btn-secondary btn-sm" onclick="router('/admin')">← Back to Admin</button>
+                </div>
+
+                <!-- Tabs -->
+                <div class="tabs mb-4" style="display: flex; gap: 8px; border-bottom: 1px solid var(--border); padding-bottom: 8px;">
+                    <button class="tab-btn ${activeTab === 'all' ? 'active' : ''}" onclick="window.__setAdminChatTab('all')">
+                        All Conversations (${chats.length})
+                    </button>
+                    <button class="tab-btn ${activeTab === 'flagged' ? 'active' : ''}" onclick="window.__setAdminChatTab('flagged')">
+                        ⚠️ Flagged Violations (${flaggedMessages.length})
+                    </button>
+                </div>
+
+                ${activeTab === 'all' ? renderAllChatsTable() : renderFlaggedViolationsTable()}
+            </div>
+        </div>`;
+    }
+
+    window.__setAdminChatTab = (tab) => {
+        activeTab = tab;
+        mount(renderAdminChatsView());
+    };
+
+    function renderAllChatsTable() {
+        if (chats.length === 0) {
+            return '<div class="card" style="padding: 30px; text-align: center; color: var(--text-muted);">No chat conversations found on platform.</div>';
+        }
+
+        return `
+            <div class="card" style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem;">
+                    <thead>
+                        <tr style="border-bottom: 1px solid var(--border); background: var(--bg-hover);">
+                            <th style="padding: 12px 16px;">Participant 1</th>
+                            <th style="padding: 12px 16px;">Participant 2</th>
+                            <th style="padding: 12px 16px;">Messages</th>
+                            <th style="padding: 12px 16px;">Safety Status</th>
+                            <th style="padding: 12px 16px;">Last Activity</th>
+                            <th style="padding: 12px 16px; text-align: right;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${chats.map(c => {
+                            const u1 = c.user1;
+                            const u2 = c.user2;
+                            const hasViolation = c.has_violation;
+
+                            return `
+                                <tr style="border-bottom: 1px solid var(--border); transition: background 0.15s ease;">
+                                    <td style="padding: 12px 16px;">
+                                        <strong>${u1.name}</strong> <span class="badge ${u1.user_type === 'PROVIDER' ? 'badge-primary' : 'badge-secondary'}" style="font-size: 0.65rem;">${u1.user_type}</span>
+                                        ${u1.is_blocked ? '<span class="badge badge-danger" style="margin-left: 4px; font-size: 0.65rem;">BLOCKED</span>' : ''}
+                                        <div style="font-size: 0.72rem; color: var(--text-muted);">${u1.email}</div>
+                                    </td>
+                                    <td style="padding: 12px 16px;">
+                                        <strong>${u2.name}</strong> <span class="badge ${u2.user_type === 'PROVIDER' ? 'badge-primary' : 'badge-secondary'}" style="font-size: 0.65rem;">${u2.user_type}</span>
+                                        ${u2.is_blocked ? '<span class="badge badge-danger" style="margin-left: 4px; font-size: 0.65rem;">BLOCKED</span>' : ''}
+                                        <div style="font-size: 0.72rem; color: var(--text-muted);">${u2.email}</div>
+                                    </td>
+                                    <td style="padding: 12px 16px;">
+                                        ${c.total_messages} msgs
+                                    </td>
+                                    <td style="padding: 12px 16px;">
+                                        ${hasViolation ? `<span class="badge badge-danger" style="font-size: 0.72rem;">⚠️ ${c.flagged_count} Flagged</span>` : '<span class="badge badge-success" style="font-size: 0.72rem;">✓ Clean</span>'}
+                                    </td>
+                                    <td style="padding: 12px 16px; color: var(--text-muted); font-size: 0.78rem;">
+                                        ${formatRelativeTime(c.latest_message_at)}
+                                    </td>
+                                    <td style="padding: 12px 16px; text-align: right;">
+                                        <div style="display: flex; gap: 6px; justify-content: flex-end;">
+                                            <button class="btn btn-secondary btn-sm" onclick="window.__adminInspectChatTranscript(${u1.id}, ${u2.id})">
+                                                Inspect
+                                            </button>
+                                            ${u1.is_blocked ? `<button class="btn btn-primary btn-sm" style="background: #10b981; border-color: #10b981;" onclick="window.__adminUnblockUser(${u1.id}, '${u1.name}')">Unblock ${u1.name.split(' ')[0]}</button>` : ''}
+                                            ${u2.is_blocked ? `<button class="btn btn-primary btn-sm" style="background: #10b981; border-color: #10b981;" onclick="window.__adminUnblockUser(${u2.id}, '${u2.name}')">Unblock ${u2.name.split(' ')[0]}</button>` : ''}
+                                        </div>
+                                    </td>
+                                </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
+            </div>
+        `;
+    }
+
+    function renderFlaggedViolationsTable() {
+        if (flaggedMessages.length === 0) {
+            return '<div class="card" style="padding: 30px; text-align: center; color: var(--text-muted);">🎉 Zero flagged violations! All platform chats are complying with platform safety rules.</div>';
+        }
+
+        return `
+            <div class="card" style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem;">
+                    <thead>
+                        <tr style="border-bottom: 1px solid var(--border); background: var(--bg-hover);">
+                            <th style="padding: 12px 16px;">Offending Sender</th>
+                            <th style="padding: 12px 16px;">Target Receiver</th>
+                            <th style="padding: 12px 16px;">Blocked Content</th>
+                            <th style="padding: 12px 16px;">Violation Type</th>
+                            <th style="padding: 12px 16px;">User Status</th>
+                            <th style="padding: 12px 16px; text-align: right;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${flaggedMessages.map(m => `
+                            <tr style="border-bottom: 1px solid var(--border);">
+                                <td style="padding: 12px 16px;">
+                                    <strong>${m.sender.name}</strong> (ID: ${m.sender.id})
+                                    <div style="font-size: 0.72rem; color: var(--text-muted);">${m.sender.email}</div>
+                                </td>
+                                <td style="padding: 12px 16px;">
+                                    <strong>${m.receiver.name}</strong>
+                                    <div style="font-size: 0.72rem; color: var(--text-muted);">${m.receiver.email}</div>
+                                </td>
+                                <td style="padding: 12px 16px; max-width: 240px; word-break: break-word;">
+                                    <span style="background: rgba(239, 68, 68, 0.1); color: #ef4444; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem;">
+                                        ${escapeHTML(m.message)}
+                                    </span>
+                                </td>
+                                <td style="padding: 12px 16px; color: #ef4444; font-weight: 700;">
+                                    🛑 ${m.flag_reason}
+                                </td>
+                                <td style="padding: 12px 16px;">
+                                    ${m.sender.is_blocked ? '<span class="badge badge-danger">BLOCKED</span>' : '<span class="badge badge-success">ACTIVE</span>'}
+                                </td>
+                                <td style="padding: 12px 16px; text-align: right;">
+                                    ${m.sender.is_blocked ? `
+                                        <button class="btn btn-primary btn-sm" style="background: #10b981; border-color: #10b981;" onclick="window.__adminUnblockUser(${m.sender.id}, '${m.sender.name}')">
+                                            Re-instate / Unblock
+                                        </button>
+                                    ` : `
+                                        <span style="color: var(--text-muted); font-size: 0.75rem;">Not suspended</span>
+                                    `}
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        `;
+    }
+
+    loadData();
+    return renderAdminChatsView();
 }
 
 
