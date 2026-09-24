@@ -415,8 +415,8 @@ async function handleSocialLoginFallback(provider, initialRole = null) {
                         <div style="display: flex; align-items: center; gap: 10px;">
                             <div style="width: 36px; height: 36px; border-radius: 50%; background: #4285F4; color: #fff; font-weight: 800; font-size: 1rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">A</div>
                             <div>
-                                <div style="font-weight: 700; font-size: 0.92rem; line-height: 1.2;">aaqil</div>
-                                <div style="font-size: 0.78rem; color: var(--text-muted, #94a3b8);">aaqil2025@gmail.com</div>
+                                <div style="font-weight: 700; font-size: 0.92rem; line-height: 1.2;">Alex Rivera</div>
+                                <div style="font-size: 0.78rem; color: var(--text-muted, #94a3b8);">alex.rivera.creator@gmail.com</div>
                             </div>
                         </div>
                         <span style="font-size: 0.75rem; background: #4285F4; color: #fff; padding: 4px 10px; border-radius: 12px; white-space: nowrap;">Sign in ›</span>
@@ -432,8 +432,8 @@ async function handleSocialLoginFallback(provider, initialRole = null) {
                         <div style="display: flex; align-items: center; gap: 10px;">
                             <div style="width: 36px; height: 36px; border-radius: 50%; background: #000; color: #fff; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0; border: 1px solid #444;"></div>
                             <div>
-                                <div style="font-weight: 700; font-size: 0.92rem; line-height: 1.2;">aaqil</div>
-                                <div style="font-size: 0.78rem; color: var(--text-muted, #94a3b8);">aaqil2025@icloud.com</div>
+                                <div style="font-weight: 700; font-size: 0.92rem; line-height: 1.2;">Alex Rivera</div>
+                                <div style="font-size: 0.78rem; color: var(--text-muted, #94a3b8);">alex.rivera@icloud.com</div>
                             </div>
                         </div>
                         <span style="font-size: 0.75rem; background: #fff; color: #000; padding: 4px 10px; border-radius: 12px; white-space: nowrap; font-weight: 700;">Sign in ›</span>
@@ -485,8 +485,8 @@ async function handleSocialLoginFallback(provider, initialRole = null) {
                     method: 'POST',
                     body: JSON.stringify({
                         provider: 'google',
-                        email: 'aaqil2025@gmail.com',
-                        name: 'aaqil',
+                        email: 'alex.rivera.creator@gmail.com',
+                        name: 'Alex Rivera',
                         user_type: chosenRole
                     })
                 });
@@ -499,7 +499,7 @@ async function handleSocialLoginFallback(provider, initialRole = null) {
                 router('/welcome');
             } catch (err) {
                 quickBtn.disabled = false;
-                quickBtn.innerHTML = '<span>👤 Continue as aaqil (aaqil2025@gmail.com)</span>';
+                quickBtn.innerHTML = '<span>👤 Continue as Alex Rivera (alex.rivera.creator@gmail.com)</span>';
                 if (errBox) {
                     errBox.innerHTML = `<div style="background: rgba(239, 68, 68, 0.12); border: 1px solid var(--danger, #ef4444); color: var(--danger, #ef4444); padding: 10px 14px; border-radius: 8px; margin-bottom: 14px; font-size: 0.85rem;">⚠️ ${err.message || 'Failed to sign in with Google'}</div>`;
                 }
@@ -520,8 +520,8 @@ async function handleSocialLoginFallback(provider, initialRole = null) {
                     method: 'POST',
                     body: JSON.stringify({
                         provider: 'apple',
-                        email: 'aaqil2025@icloud.com',
-                        name: 'aaqil',
+                        email: 'alex.rivera@icloud.com',
+                        name: 'Alex Rivera',
                         user_type: chosenRole
                     })
                 });
@@ -534,7 +534,7 @@ async function handleSocialLoginFallback(provider, initialRole = null) {
                 router('/welcome');
             } catch (err) {
                 quickAppleBtn.disabled = false;
-                quickAppleBtn.innerHTML = '<span> Continue as aaqil (aaqil2025@icloud.com)</span>';
+                quickAppleBtn.innerHTML = '<span> Continue as Alex Rivera (alex.rivera@icloud.com)</span>';
                 if (errBox) {
                     errBox.innerHTML = `<div style="background: rgba(239, 68, 68, 0.12); border: 1px solid var(--danger, #ef4444); color: var(--danger, #ef4444); padding: 10px 14px; border-radius: 8px; margin-bottom: 14px; font-size: 0.85rem;">⚠️ ${err.message || 'Failed to sign in with Apple ID'}</div>`;
                 }
