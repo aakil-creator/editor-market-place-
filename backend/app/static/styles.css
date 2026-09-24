@@ -522,6 +522,30 @@ h1, h2, h3, h4, h5, h6, .logo {
     transform: scale(1.02);
 }
 
+/* Dynamic Adaptive Logo for Light & Dark Mode */
+.logo-dark-mode {
+    display: none !important;
+}
+.logo-light-mode {
+    display: inline-block !important;
+}
+
+[data-theme="dark"] .logo-dark-mode {
+    display: inline-block !important;
+}
+[data-theme="dark"] .logo-light-mode {
+    display: none !important;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .logo-dark-mode {
+        display: inline-block !important;
+    }
+    :root:not([data-theme="light"]) .logo-light-mode {
+        display: none !important;
+    }
+}
+
 .logo-text {
     display: inline-flex;
     align-items: center;
