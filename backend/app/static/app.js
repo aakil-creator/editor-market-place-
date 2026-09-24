@@ -428,6 +428,66 @@ function openPreBookingChat(providerId, providerName) {
 window.openPreBookingChat = openPreBookingChat;
 window.openProviderChatModal = openPreBookingChat;
 
+function getCategoryPeekIconSvg(niche, size = 22) {
+    if (niche === 'editors_animators' || niche === 'editors') {
+        return `<svg class="peek-svg peek-svg-clapper" style="width: ${size}px; height: ${size}px;" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="8" y="20" width="32" height="21" rx="4" fill="#6c5ce7" stroke="#4c3fb5" stroke-width="1.5"/>
+            <rect x="8" y="20" width="32" height="7" fill="#221d3b"/>
+            <path d="M14 20 L18 27 M22 20 L26 27 M30 20 L34 27 M38 20 L40 23.5" stroke="#e0e7ff" stroke-width="2.2" stroke-linecap="round"/>
+            <line x1="13" y1="32" x2="23" y2="32" stroke="#ffffff" stroke-opacity="0.5" stroke-width="2" stroke-linecap="round"/>
+            <line x1="13" y1="36" x2="35" y2="36" stroke="#ffffff" stroke-opacity="0.35" stroke-width="1.5" stroke-linecap="round"/>
+            <g class="clapper-stick-group">
+                <rect x="6" y="11" width="34" height="7.5" rx="2.5" fill="#221d3b" stroke="#4c3fb5" stroke-width="1.5"/>
+                <path d="M11 11.5 L15 18 M19 11.5 L23 18 M27 11.5 L31 18 M35 11.5 L39 18" stroke="#e0e7ff" stroke-width="2.2" stroke-linecap="round"/>
+                <circle cx="9" cy="14.5" r="2.2" fill="#c7d2fe" stroke="#4c3fb5" stroke-width="1"/>
+            </g>
+        </svg>`;
+    } else if (niche === 'tutors') {
+        return `<svg class="peek-svg peek-svg-tutor" style="width: ${size}px; height: ${size}px;" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M8 22C8 14.268 15.163 8 24 8C32.837 8 40 14.268 40 22C40 29.732 32.837 36 24 36C21.6 36 19.33 35.53 17.3 34.7L10 38L11.8 32.1C9.46 29.35 8 25.86 8 22Z" fill="#059669" stroke="#065f46" stroke-width="1.5"/>
+            <g class="tutor-wave-group">
+                <path class="wave-1" d="M16 22C16 18.5 19 16 24 16" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
+                <path class="wave-2" d="M19 22C19 19.8 21 18.2 24 18.2" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
+                <path class="wave-3" d="M18 25C18 27.5 20.5 29.5 24 29.5C26.5 29.5 28.5 28.3 29.3 26.5" stroke="#a7f3d0" stroke-width="2" stroke-linecap="round"/>
+                <circle cx="30" cy="26.5" r="2" fill="#ecfdf5"/>
+            </g>
+        </svg>`;
+    } else if (niche === 'writers') {
+        return `<svg class="peek-svg peek-svg-writer" style="width: ${size}px; height: ${size}px;" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="8" y="10" width="22" height="30" rx="3" fill="#1e293b" stroke="#334155" stroke-width="1.5"/>
+            <line x1="13" y1="17" x2="22" y2="17" stroke="#38bdf8" stroke-width="2" stroke-linecap="round"/>
+            <line x1="13" y1="23" x2="25" y2="23" stroke="#64748b" stroke-width="1.8" stroke-linecap="round"/>
+            <line x1="13" y1="29" x2="20" y2="29" stroke="#64748b" stroke-width="1.8" stroke-linecap="round"/>
+            <path class="writer-ink-trail" d="M13 34 C16 32, 19 36, 23 34" stroke="#38bdf8" stroke-width="1.8" stroke-linecap="round"/>
+            <g class="writer-pen-group">
+                <path d="M38 8L41 11L28 27L23 28L24 23L38 8Z" fill="#0284c7" stroke="#0369a1" stroke-width="1.2"/>
+                <path d="M23 28L26 25L24 23L23 28Z" fill="#f8fafc"/>
+                <circle cx="34" cy="14" r="1" fill="#ffffff"/>
+            </g>
+        </svg>`;
+    } else if (niche === 'express') {
+        return `<svg class="peek-svg peek-svg-express" style="width: ${size}px; height: ${size}px;" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="24" cy="24" r="18" fill="rgba(245, 158, 11, 0.15)" stroke="rgba(245, 158, 11, 0.35)" stroke-width="1.2"/>
+            <g class="express-pulse-group">
+                <path d="M26 8L15 24H25L22 40L33 24H23L26 8Z" fill="#f59e0b" stroke="#b45309" stroke-width="1.5" stroke-linejoin="round"/>
+                <circle cx="24" cy="24" r="2.5" fill="#ffffff"/>
+            </g>
+        </svg>`;
+    } else {
+        return `<svg class="peek-svg peek-svg-all" style="width: ${size}px; height: ${size}px;" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="24" cy="24" r="18" fill="rgba(245, 158, 11, 0.12)" stroke="rgba(245, 158, 11, 0.3)" stroke-width="1"/>
+            <g class="star-sparkle-group">
+                <path d="M24 6 C24 16, 24 16, 34 24 C24 24, 24 24, 24 34 C24 24, 24 24, 14 24 C24 16, 24 16, 24 6 Z" fill="#f59e0b" stroke="#b45309" stroke-width="1"/>
+                <circle cx="24" cy="24" r="3" fill="#ffffff"/>
+                <circle cx="13" cy="13" r="1.5" fill="#fde68a"/>
+                <circle cx="35" cy="14" r="1.8" fill="#fde68a"/>
+                <circle cx="33" cy="33" r="1.2" fill="#fde68a"/>
+            </g>
+        </svg>`;
+    }
+}
+window.getCategoryPeekIconSvg = getCategoryPeekIconSvg;
+
 async function updateUnreadCountBadge() {
     if (!currentToken) return;
     try {
@@ -2078,13 +2138,28 @@ function BuyerDashboard() {
                         </button>
                     </div>
 
-                    <!-- Category Pills -->
+                    <!-- Category Pills with Animated Icons -->
                     <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
-                        <button class="filter-chip ${activeFilter === 'all' ? 'active' : ''}" onclick="window.__setBuyerFilter('all')">✨ All Services</button>
-                        <button class="filter-chip ${activeFilter === 'editors' ? 'active' : ''}" onclick="window.__setBuyerFilter('editors')">🎬 Video Editors</button>
-                        <button class="filter-chip ${activeFilter === 'tutors' ? 'active' : ''}" onclick="window.__setBuyerFilter('tutors')">🗣️ English Tutors</button>
-                        <button class="filter-chip ${activeFilter === 'writers' ? 'active' : ''}" onclick="window.__setBuyerFilter('writers')">✍️ Writers &amp; Copy</button>
-                        <button class="filter-chip ${activeFilter === 'express' ? 'active' : ''}" onclick="window.__setBuyerFilter('express')">⚡ 24h Express</button>
+                        <button type="button" class="filter-chip ${activeFilter === 'all' ? 'active' : ''}" onclick="window.__setBuyerFilter('all')">
+                            <span class="chip-icon-box">${getCategoryPeekIconSvg('all', 18)}</span>
+                            <span>All Services</span>
+                        </button>
+                        <button type="button" class="filter-chip ${activeFilter === 'editors' ? 'active' : ''}" onclick="window.__setBuyerFilter('editors')">
+                            <span class="chip-icon-box">${getCategoryPeekIconSvg('editors_animators', 18)}</span>
+                            <span>Video Editors</span>
+                        </button>
+                        <button type="button" class="filter-chip ${activeFilter === 'tutors' ? 'active' : ''}" onclick="window.__setBuyerFilter('tutors')">
+                            <span class="chip-icon-box">${getCategoryPeekIconSvg('tutors', 18)}</span>
+                            <span>English Tutors</span>
+                        </button>
+                        <button type="button" class="filter-chip ${activeFilter === 'writers' ? 'active' : ''}" onclick="window.__setBuyerFilter('writers')">
+                            <span class="chip-icon-box">${getCategoryPeekIconSvg('writers', 18)}</span>
+                            <span>Writers &amp; Copy</span>
+                        </button>
+                        <button type="button" class="filter-chip ${activeFilter === 'express' ? 'active' : ''}" onclick="window.__setBuyerFilter('express')">
+                            <span class="chip-icon-box">${getCategoryPeekIconSvg('express', 18)}</span>
+                            <span>24h Express</span>
+                        </button>
                     </div>
                 </div>
 
@@ -4823,56 +4898,7 @@ const fiverrCategoryConfigs = {
     }
 };
 
-function getCategoryPeekIconSvg(niche) {
-    if (niche === 'editors_animators') {
-        return `<svg class="peek-svg peek-svg-clapper" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect x="8" y="20" width="32" height="21" rx="4" fill="#6c5ce7" stroke="#4c3fb5" stroke-width="1.5"/>
-            <rect x="8" y="20" width="32" height="7" fill="#221d3b"/>
-            <path d="M14 20 L18 27 M22 20 L26 27 M30 20 L34 27 M38 20 L40 23.5" stroke="#e0e7ff" stroke-width="2.2" stroke-linecap="round"/>
-            <line x1="13" y1="32" x2="23" y2="32" stroke="#ffffff" stroke-opacity="0.5" stroke-width="2" stroke-linecap="round"/>
-            <line x1="13" y1="36" x2="35" y2="36" stroke="#ffffff" stroke-opacity="0.35" stroke-width="1.5" stroke-linecap="round"/>
-            <g class="clapper-stick-group">
-                <rect x="6" y="11" width="34" height="7.5" rx="2.5" fill="#221d3b" stroke="#4c3fb5" stroke-width="1.5"/>
-                <path d="M11 11.5 L15 18 M19 11.5 L23 18 M27 11.5 L31 18 M35 11.5 L39 18" stroke="#e0e7ff" stroke-width="2.2" stroke-linecap="round"/>
-                <circle cx="9" cy="14.5" r="2.2" fill="#c7d2fe" stroke="#4c3fb5" stroke-width="1"/>
-            </g>
-        </svg>`;
-    } else if (niche === 'tutors') {
-        return `<svg class="peek-svg peek-svg-tutor" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M8 22C8 14.268 15.163 8 24 8C32.837 8 40 14.268 40 22C40 29.732 32.837 36 24 36C21.6 36 19.33 35.53 17.3 34.7L10 38L11.8 32.1C9.46 29.35 8 25.86 8 22Z" fill="#059669" stroke="#065f46" stroke-width="1.5"/>
-            <g class="tutor-wave-group">
-                <path class="wave-1" d="M16 22C16 18.5 19 16 24 16" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
-                <path class="wave-2" d="M19 22C19 19.8 21 18.2 24 18.2" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
-                <path d="M18 25C18 27.5 20.5 29.5 24 29.5C26.5 29.5 28.5 28.3 29.3 26.5" stroke="#a7f3d0" stroke-width="2" stroke-linecap="round"/>
-                <circle cx="30" cy="26.5" r="2" fill="#ecfdf5"/>
-            </g>
-        </svg>`;
-    } else if (niche === 'writers') {
-        return `<svg class="peek-svg peek-svg-writer" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect x="8" y="10" width="22" height="30" rx="3" fill="#1e293b" stroke="#334155" stroke-width="1.5"/>
-            <line x1="13" y1="17" x2="22" y2="17" stroke="#38bdf8" stroke-width="2" stroke-linecap="round"/>
-            <line x1="13" y1="23" x2="25" y2="23" stroke="#64748b" stroke-width="1.8" stroke-linecap="round"/>
-            <line x1="13" y1="29" x2="20" y2="29" stroke="#64748b" stroke-width="1.8" stroke-linecap="round"/>
-            <path class="writer-ink-trail" d="M13 34 C16 32, 19 36, 23 34" stroke="#38bdf8" stroke-width="1.8" stroke-linecap="round"/>
-            <g class="writer-pen-group">
-                <path d="M38 8L41 11L28 27L23 28L24 23L38 8Z" fill="#0284c7" stroke="#0369a1" stroke-width="1.2"/>
-                <path d="M23 28L26 25L24 23L23 28Z" fill="#f8fafc"/>
-                <circle cx="34" cy="14" r="1" fill="#ffffff"/>
-            </g>
-        </svg>`;
-    } else {
-        return `<svg class="peek-svg peek-svg-all" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="24" cy="24" r="18" fill="rgba(245, 158, 11, 0.12)" stroke="rgba(245, 158, 11, 0.3)" stroke-width="1"/>
-            <g class="star-sparkle-group">
-                <path d="M24 6 C24 16, 24 16, 34 24 C24 24, 24 24, 24 34 C24 24, 24 24, 14 24 C24 16, 24 16, 24 6 Z" fill="#f59e0b" stroke="#b45309" stroke-width="1"/>
-                <circle cx="24" cy="24" r="3" fill="#ffffff"/>
-                <circle cx="13" cy="13" r="1.5" fill="#fde68a"/>
-                <circle cx="35" cy="14" r="1.8" fill="#fde68a"/>
-                <circle cx="33" cy="33" r="1.2" fill="#fde68a"/>
-            </g>
-        </svg>`;
-    }
-}
+// (getCategoryPeekIconSvg is globally defined with size and animation support)
 
 function renderLeftEdgePeekDock(activeNiche = '') {
     return `<div class="left-edge-peek-dock" id="left-edge-peek-dock" aria-label="Category Quick Peek Switcher">
@@ -5677,21 +5703,39 @@ function ProvidersList() {
                     <!-- Category Switcher Ribbon -->
                     <div class="fiverr-category-ribbon">
                         <button class="fiverr-ribbon-btn" onclick="setProviderNiche('')" title="Back to All Categories">
-                            <-- All Talent
+                            <svg class="ribbon-icon ribbon-sparkle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="14" height="14">
+                                <path d="M12 2l2.5 7.5L22 12l-7.5 2.5L12 22l-2.5-7.5L2 12l7.5-2.5L12 2z" fill="currentColor" fill-opacity="0.3" stroke="currentColor"/>
+                            </svg>
+                            All Talent
                         </button>
                         ${providerSearchState.niche === '' || providerSearchState.niche === 'editors_animators' ? `
                             <button class="fiverr-ribbon-btn ${providerSearchState.niche === 'editors_animators' ? 'active' : ''}" onclick="setProviderNiche('editors_animators')">
-                                🎬 Video Editing
+                                <svg class="ribbon-icon ribbon-clapper" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="16" height="16">
+                                    <rect x="2" y="7" width="20" height="12" rx="2" fill="currentColor" fill-opacity="0.15" stroke="currentColor"/>
+                                    <line x1="12" y1="7" x2="12" y2="19" stroke="currentColor" stroke-opacity="0.4"/>
+                                    <line x1="2" y1="13" x2="22" y2="13" stroke="currentColor" stroke-opacity="0.4"/>
+                                    <line x1="6" y1="7" x2="6" y2="19" stroke="currentColor" stroke-opacity="0.3"/>
+                                    <line x1="18" y1="7" x2="18" y2="19" stroke="currentColor" stroke-opacity="0.3"/>
+                                </svg>
+                                Video Editing
                             </button>
                         ` : ''}
                         ${providerSearchState.niche === '' || providerSearchState.niche === 'tutors' ? `
                             <button class="fiverr-ribbon-btn ${providerSearchState.niche === 'tutors' ? 'active' : ''}" onclick="setProviderNiche('tutors')">
-                                🗣️ English Tutors
+                                <svg class="ribbon-icon ribbon-person" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="16" height="16">
+                                    <circle cx="12" cy="8" r="4" fill="currentColor" fill-opacity="0.15" stroke="currentColor"/>
+                                    <path d="M4 20c0-4.4 3.6-8 8-8s8 3.6 8 8" fill="currentColor" fill-opacity="0.15" stroke="currentColor"/>
+                                </svg>
+                                English Tutors
                             </button>
                         ` : ''}
                         ${providerSearchState.niche === '' || providerSearchState.niche === 'writers' ? `
                             <button class="fiverr-ribbon-btn ${providerSearchState.niche === 'writers' ? 'active' : ''}" onclick="setProviderNiche('writers')">
-                                ✍️ Content &amp; Copywriting
+                                <svg class="ribbon-icon ribbon-pen" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="16" height="16">
+                                    <path d="M12 19l-8-8c-1.5-1.5-1.5-4 0-5.5c1.5-1.5 4-1.5 5.5 0l7.5 7.5c1.5 1.5 1.5 4 0 5.5l-2.5 2.5" fill="none" stroke="currentColor"/>
+                                    <path d="M12 19l-4-4" fill="none" stroke="currentColor" stroke-opacity="0.4"/>
+                                </svg>
+                                Content &amp; Copywriting
                             </button>
                         ` : ''}
                     </div>

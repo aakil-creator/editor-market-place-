@@ -3152,6 +3152,78 @@ button:active, .btn:active, .nav-btn:active, .payment-tab-btn:active, .tab:activ
     box-shadow: 0 4px 12px rgba(99, 102, 241, 0.28);
 }
 
+/* Ribbon SVG icon animations */
+.ribbon-icon {
+    transition: transform 0.2s var(--ease-spring), filter 0.3s ease;
+    flex-shrink: 0;
+}
+
+.ribbon-clapper {
+    color: #a78bfa;
+}
+
+.fiverr-ribbon-btn:hover .ribbon-clapper {
+    animation: clapperShake 0.4s var(--ease-bounce);
+}
+
+@keyframes clapperShake {
+    0%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(-8deg); }
+    75% { transform: rotate(5deg); }
+}
+
+.ribbon-person {
+    color: #818cf8;
+}
+
+.fiverr-ribbon-btn:hover .ribbon-person {
+    animation: personPop 0.35s var(--ease-bounce);
+}
+
+@keyframes personPop {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.25); }
+    100% { transform: scale(1); }
+}
+
+.ribbon-pen {
+    color: #fbbf24;
+}
+
+.fiverr-ribbon-btn:hover .ribbon-pen {
+    animation: penWrite 0.4s var(--ease-bounce);
+}
+
+@keyframes penWrite {
+    0% { transform: translateX(0) rotate(0deg); }
+    40% { transform: translateX(2px) rotate(-5deg); }
+    100% { transform: translateX(0) rotate(0deg); }
+}
+
+.ribbon-sparkle {
+    color: #fbbf24;
+    animation: sparklePulse 2s ease-in-out infinite;
+}
+
+.fiverr-ribbon-btn:hover .ribbon-sparkle {
+    animation: sparklePulse 0.8s ease-in-out infinite;
+}
+
+@keyframes sparklePulse {
+    0%, 100% { transform: scale(1); opacity: 0.8; }
+    50% { transform: scale(1.3); opacity: 1; }
+}
+
+/* Active state icon glow */
+.fiverr-ribbon-btn.active .ribbon-icon {
+    filter: drop-shadow(0 0 6px currentColor);
+}
+
+.fiverr-ribbon-btn.active.ribbon-clapper { color: #c4b5fd; }
+.fiverr-ribbon-btn.active.ribbon-person { color: #a5b4fc; }
+.fiverr-ribbon-btn.active.ribbon-pen { color: #fcd34d; }
+.fiverr-ribbon-btn.active.ribbon-sparkle { color: #fde68a; }
+
 /* Breadcrumb Navigation */
 .fiverr-breadcrumb {
     display: flex;
@@ -4227,7 +4299,9 @@ button:active, .btn:active, .nav-btn:active, .payment-tab-btn:active, .tab:activ
 /* On hover or active, the clapper stick swings open and snaps shut */
 .peek-item-video:hover .clapper-stick-group,
 .provider-category-card:hover .clapper-stick-group,
-.fiverr-ribbon-btn:hover .clapper-stick-group {
+.fiverr-ribbon-btn:hover .clapper-stick-group,
+.filter-chip:hover .clapper-stick-group,
+.filter-chip.active .clapper-stick-group {
     animation: clapperSnapAction 0.65s cubic-bezier(0.2, 0.8, 0.2, 1) infinite alternate;
 }
 
@@ -4259,7 +4333,9 @@ button:active, .btn:active, .nav-btn:active, .payment-tab-btn:active, .tab:activ
 
 .peek-item-tutor:hover .tutor-wave-group,
 .provider-category-card:hover .tutor-wave-group,
-.fiverr-ribbon-btn:hover .tutor-wave-group {
+.fiverr-ribbon-btn:hover .tutor-wave-group,
+.filter-chip:hover .tutor-wave-group,
+.filter-chip.active .tutor-wave-group {
     animation: tutorWaveRipple 1s ease-in-out infinite;
 }
 
@@ -4289,7 +4365,9 @@ button:active, .btn:active, .nav-btn:active, .payment-tab-btn:active, .tab:activ
 
 .peek-item-writer:hover .writer-pen-group,
 .provider-category-card:hover .writer-pen-group,
-.fiverr-ribbon-btn:hover .writer-pen-group {
+.fiverr-ribbon-btn:hover .writer-pen-group,
+.filter-chip:hover .writer-pen-group,
+.filter-chip.active .writer-pen-group {
     animation: writerPenScribble 0.75s ease-in-out infinite;
 }
 
@@ -4312,7 +4390,9 @@ button:active, .btn:active, .nav-btn:active, .payment-tab-btn:active, .tab:activ
 }
 
 .peek-item-writer:hover .writer-ink-trail,
-.provider-category-card:hover .writer-ink-trail {
+.provider-category-card:hover .writer-ink-trail,
+.filter-chip:hover .writer-ink-trail,
+.filter-chip.active .writer-ink-trail {
     animation: inkTrailGlow 0.75s ease-in-out infinite alternate;
 }
 
@@ -4331,7 +4411,9 @@ button:active, .btn:active, .nav-btn:active, .payment-tab-btn:active, .tab:activ
 
 .peek-item-all:hover .star-sparkle-group,
 .provider-category-card:hover .star-sparkle-group,
-.fiverr-ribbon-btn:hover .star-sparkle-group {
+.fiverr-ribbon-btn:hover .star-sparkle-group,
+.filter-chip:hover .star-sparkle-group,
+.filter-chip.active .star-sparkle-group {
     animation: starTwinkleGlow 1.2s ease-in-out infinite;
 }
 
@@ -4346,6 +4428,34 @@ button:active, .btn:active, .nav-btn:active, .payment-tab-btn:active, .tab:activ
     }
     100% {
         transform: rotate(0deg) scale(1);
+        filter: drop-shadow(0 0 2px rgba(245, 158, 11, 0.4));
+    }
+}
+
+/* -------------------------------------------------------------
+   ANIMATION 5: 24H EXPRESS (Lightning Flash & Pulse)
+   ------------------------------------------------------------- */
+.express-pulse-group {
+    transform-origin: 24px 24px;
+    transition: transform 0.25s ease;
+}
+
+.filter-chip:hover .express-pulse-group,
+.filter-chip.active .express-pulse-group {
+    animation: expressPulseFlash 0.75s ease-in-out infinite alternate;
+}
+
+@keyframes expressPulseFlash {
+    0% {
+        transform: scale(0.92);
+        filter: drop-shadow(0 0 2px rgba(245, 158, 11, 0.4));
+    }
+    50% {
+        transform: scale(1.18);
+        filter: drop-shadow(0 0 8px #f59e0b) drop-shadow(0 0 12px #ef4444);
+    }
+    100% {
+        transform: scale(0.92);
         filter: drop-shadow(0 0 2px rgba(245, 158, 11, 0.4));
     }
 }
@@ -4936,11 +5046,11 @@ textarea::placeholder,
     color: var(--text-muted);
 }
 
-/* Category Filter Chips */
+/* Category Filter Chips with Animated Icon Bubbles */
 .filter-chip {
-    padding: 8px 16px;
+    padding: 6px 18px 6px 10px;
     border-radius: 999px;
-    font-size: 0.8125rem;
+    font-size: 0.84rem;
     font-weight: 600;
     background: var(--bg-card);
     color: var(--text-secondary);
@@ -4950,22 +5060,43 @@ textarea::placeholder,
     white-space: nowrap;
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    gap: 8px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
     outline: none;
     user-select: none;
+}
+
+.filter-chip .chip-icon-box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--bg-hover);
+    flex-shrink: 0;
+    transition: transform 0.25s var(--ease-spring), background-color 0.2s ease;
+}
+
+.filter-chip:hover .chip-icon-box {
+    transform: scale(1.15);
 }
 
 .filter-chip:hover {
     background: var(--bg-hover);
     color: var(--text-primary);
     border-color: var(--accent);
-    transform: translateY(-1px);
+    transform: translateY(-1.5px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .filter-chip.active {
     background: var(--accent);
     color: #ffffff;
     border-color: var(--accent);
-    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.28);
+    box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+}
+
+.filter-chip.active .chip-icon-box {
+    background: rgba(255, 255, 255, 0.22);
 }
