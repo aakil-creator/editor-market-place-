@@ -1185,8 +1185,11 @@ function WelcomePage() {
 
                 <!-- Right Column: Illustration with Floating Badges -->
                 <div class="hero-right">
-                    <div class="hero-illustration-wrapper" style="position: relative; background: transparent; box-shadow: none;">
-                        <img src="/static/images/welcome_freelancer.jpg" alt="Freelancer working happily on laptop" class="hero-illustration-img" style="box-shadow: 0 20px 45px -10px rgba(0,0,0,0.18); border: 1px solid var(--border);">
+                    <div class="hero-illustration-wrapper">
+                        <picture>
+                            <source srcset="/static/images/welcome_freelancer.webp" type="image/webp">
+                            <img src="/static/images/welcome_freelancer.png" alt="Freelancer working happily on laptop" class="hero-illustration-img">
+                        </picture>
 
                         <!-- Dotted curved arc with floating badges matching Moxie screenshot -->
                         <div class="welcome-floating-badge badge-top-left">
@@ -1317,8 +1320,11 @@ function Landing() {
                     </div>
                 </div>
                 <div class="hero-right">
-                    <div class="hero-illustration-wrapper" style="position: relative; background: transparent; box-shadow: none;">
-                        <img src="/static/images/welcome_freelancer.jpg" alt="Freelancer working happily on laptop" class="hero-illustration-img" style="box-shadow: 0 20px 45px -10px rgba(0,0,0,0.18); border: 1px solid var(--border);">
+                    <div class="hero-illustration-wrapper">
+                        <picture>
+                            <source srcset="/static/images/welcome_freelancer.webp" type="image/webp">
+                            <img src="/static/images/welcome_freelancer.png" alt="Freelancer working happily on laptop" class="hero-illustration-img">
+                        </picture>
 
                         <!-- Dotted curved arc with floating badges -->
                         <div class="welcome-floating-badge badge-top-left">
