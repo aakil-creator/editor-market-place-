@@ -1082,18 +1082,18 @@ function WelcomePage() {
 
     const view = el`<div>
         <!-- Modern Welcome Header -->
-        <header class="header" style="border-bottom: 1px solid var(--border); padding: 14px 24px; display: flex; justify-content: space-between; align-items: center; background: var(--bg-card);">
+        <header class="header" style="border-bottom: 1px solid var(--border); padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; background: var(--bg-card);">
             <div style="display: flex; align-items: center; gap: 10px;">
-                ${renderLogo(34, true)}
+                ${renderLogo(30, true)}
             </div>
-            <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
-                <div style="display: flex; align-items: center; gap: 8px; font-size: 0.875rem; color: var(--text-secondary);">
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                <div style="display: flex; align-items: center; gap: 6px; font-size: 0.825rem; color: var(--text-secondary);">
                     <span>Welcome back, <strong style="color: var(--text-primary);">${user.name || 'Friend'}</strong></span>
-                    <span style="background: rgba(91, 52, 234, 0.12); color: #5b34ea; padding: 3px 9px; border-radius: 6px; font-size: 0.75rem; font-weight: 700;">
+                    <span style="background: rgba(91, 52, 234, 0.12); color: #5b34ea; padding: 2px 8px; border-radius: 6px; font-size: 0.72rem; font-weight: 700;">
                         ${roleEmoji} ${roleLabel}
                     </span>
                 </div>
-                <button class="btn btn-secondary btn-sm" id="welcome-skip-btn" style="padding: 7px 16px; font-size: 0.8125rem; font-weight: 600; cursor: pointer;">
+                <button class="btn btn-secondary btn-sm" id="welcome-skip-btn" style="padding: 6px 14px; font-size: 0.8125rem; font-weight: 600; cursor: pointer;">
                     Skip to App -->
                 </button>
             </div>
