@@ -36,7 +36,7 @@ from .schemas import (
     AdminStats, NicheCreate, NicheUpdate, NicheResponse,
     MessageCreate, MessageResponse, DirectMessageCreate, ConversationSummary, PortfolioItemCreate, PortfolioItemResponse,
     BankDetailsUpdate, PlatformSettingsUpdate, PlatformSettingsResponse,
-    SocialLoginRequest,
+    SocialLoginRequest, RoleSwitchRequest,
     ForgotPasswordRequest, ForgotPasswordResponse, ResetPasswordWithTokenRequest, VerifyEmailRequest,
     get_current_user
 )
@@ -510,6 +510,44 @@ def update_me(
     db.refresh(current_user)
     return current_user
 
+@api_app.post("/user/switch-role")
+def switch_user_role(
+    req: RoleSwitchRequest,
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    if current_user.user_type == UserType.ADMIN:
+        raise HTTPException(status_code=400, detail="Admin accounts cannot switch modes")
+    
+    target_role = req.role.strip().upper()
+    if target_role not in ["BUYER", "PROVIDER"]:
+        raise HTTPException(status_code=400, detail="Invalid role. Must be BUYER or PROVIDER")
+    
+    current_user.user_type = UserType[target_role]
+    
+    if target_role == "PROVIDER":
+        profile = db.query(Profile).filter(Profile.user_id == current_user.id).first()
+        if not profile:
+            profile = Profile(user_id=current_user.id)
+            db.add(profile)
+            
+    db.commit()
+    db.refresh(current_user)
+    
+    new_token = create_access_token(data={"sub": str(current_user.id), "type": current_user.user_type.value})
+    return {
+        "success": True,
+        "role": current_user.user_type.value,
+        "token": new_token,
+        "user": {
+            "id": current_user.id,
+            "name": current_user.name,
+            "email": current_user.email,
+            "user_type": current_user.user_type.value,
+            "phone": current_user.phone
+        }
+    }
+
 @api_app.get("/auth/{user_id}", response_model=UserResponse)
 def get_user_by_id(user_id: int, db = Depends(get_db)):
     user = db.query(User).filter(User.id == user_id).first()
@@ -871,7 +909,7 @@ def get_booking(booking_id: int, current_user = Depends(get_current_user), db = 
 @api_app.post("/bookings", response_model=BookingResponse)
 def create_booking(booking_data: BookingCreate, current_user = Depends(get_current_user), db = Depends(get_db)):
     if current_user.user_type != UserType.BUYER:
-        raise HTTPException(status_code=403, detail="Only buyers can create bookings")
+        raise HTTPException(status_code=403, detail="Please switch to Buyer Mode to purchase packages.")
 
     package = db.query(Package).filter(
         Package.id == booking_data.package_id,
@@ -881,6 +919,8 @@ def create_booking(booking_data: BookingCreate, current_user = Depends(get_curre
         raise HTTPException(status_code=400, detail="Package not found or not approved")
 
     provider_id = package.provider_id
+    if provider_id == current_user.id:
+        raise HTTPException(status_code=400, detail="You cannot purchase your own package.")
 
     provider = db.query(User).filter(
         User.id == provider_id,

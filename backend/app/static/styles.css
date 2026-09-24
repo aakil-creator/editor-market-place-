@@ -4771,4 +4771,131 @@ button:active, .btn:active, .nav-btn:active, .payment-tab-btn:active, .tab:activ
     }
 }
 
+/* ==========================================================================
+   ROLE / MODE SEPARATION: BUYER vs PROVIDER vs ADMIN CONSOLE
+   ========================================================================== */
+.mode-badge-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    white-space: nowrap;
+    user-select: none;
+}
+
+.mode-badge-buyer {
+    background: rgba(16, 185, 129, 0.12);
+    color: #10b981;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.mode-badge-provider {
+    background: rgba(99, 102, 241, 0.12);
+    color: #6366f1;
+    border: 1px solid rgba(99, 102, 241, 0.3);
+}
+
+.mode-badge-admin {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.35);
+    font-weight: 800;
+}
+
+.btn-switch-mode {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    background: var(--bg-surface, #ffffff);
+    border: 1.5px solid var(--accent, #6366f1);
+    color: var(--accent, #6366f1);
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    white-space: nowrap;
+}
+
+.btn-switch-mode:hover {
+    background: var(--accent, #6366f1);
+    color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(99, 102, 241, 0.3);
+}
+
+.btn-switch-mode:active {
+    transform: scale(0.96);
+}
+
+/* Sub-header Mode Notification Bar */
+.mode-bar-substrip {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    background: var(--bg-hover);
+    border-bottom: 1px solid var(--border);
+    font-size: 0.85rem;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+/* Clarification Guide Card */
+.clarification-guide-card {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(16, 185, 129, 0.06) 100%);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    border-radius: var(--radius-md);
+    padding: 22px;
+    margin-bottom: 24px;
+}
+
+.clarification-steps-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin-top: 16px;
+}
+
+.clarification-step-item {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.clarification-step-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: white;
+    font-size: 0.8125rem;
+    font-weight: 800;
+    margin-bottom: 4px;
+}
+
+@media (max-width: 768px) {
+    .mode-bar-substrip {
+        padding: 8px 14px;
+    }
+    .btn-switch-mode {
+        padding: 5px 10px;
+        font-size: 0.75rem;
+    }
+}
+
+
 

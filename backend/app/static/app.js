@@ -209,40 +209,180 @@ function renderLogo(size = 28, showText = true) {
 }
 window.renderLogo = renderLogo;
 
-// Universal App Header
-function renderAppHeader(activeRoute = '') {
-    const isProvider = currentUser?.user_type === 'PROVIDER';
-    const isAdmin = currentUser?.user_type === 'ADMIN';
+// Mode Switcher Function for Users
+async function toggleUserMode() {
+    if (!currentUser) return;
+    if (currentUser.user_type === 'ADMIN') {
+        showToast('Admin accounts operate in the Admin Console.', 'info');
+        return;
+    }
 
+    const currentRole = currentUser.user_type || 'BUYER';
+    const targetRole = currentRole === 'PROVIDER' ? 'BUYER' : 'PROVIDER';
+    const targetTitle = targetRole === 'PROVIDER' ? 'Provider Mode 💼' : 'Buyer Mode 🛍️';
+
+    showLoading();
+    try {
+        const res = await apiFetch('/user/switch-role', {
+            method: 'POST',
+            body: JSON.stringify({ role: targetRole })
+        });
+        if (res.token) {
+            currentToken = res.token;
+            localStorage.setItem('token', res.token);
+        }
+        if (res.user) {
+            currentUser = res.user;
+            localStorage.setItem('user', JSON.stringify(currentUser));
+        } else {
+            currentUser.user_type = targetRole;
+            localStorage.setItem('user', JSON.stringify(currentUser));
+        }
+        localStorage.setItem('grove_hub_active_mode', targetRole);
+        showToast(`Switched to ${targetTitle}!`, 'success');
+        router('/');
+    } catch (e) {
+        showToast(e.message || 'Failed to switch mode', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+window.toggleUserMode = toggleUserMode;
+
+// Universal App Header with 100% strict Separation of Modes (Buyer Mode, Provider Mode, and Admin Console)
+function renderAppHeader(activeRoute = '') {
+    const isAdmin = currentUser?.user_type === 'ADMIN';
+    const isProvider = currentUser?.user_type === 'PROVIDER';
+
+    // 1. ADMIN EXCLUSIVE HEADER (No buyer or provider interference)
+    if (isAdmin) {
+        return el`<div>
+            <div class="header" style="border-bottom: 2px solid rgba(239, 68, 68, 0.35);">
+                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                    ${renderLogo(32, true)}
+                    <span class="mode-badge-pill mode-badge-admin">🛡️ Admin Console</span>
+                </div>
+                <div class="header-nav" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                    <button class="nav-btn ${activeRoute === '/admin' || activeRoute === '/' ? 'active' : ''}" onclick="router('/admin')">📊 Dashboard</button>
+                    <button class="nav-btn ${activeRoute === '/admin/chats' ? 'active' : ''}" onclick="router('/admin/chats')">💬 Chats Guard</button>
+                    <button class="nav-btn ${activeRoute === '/admin/providers' ? 'active' : ''}" onclick="router('/admin/providers')">👥 Providers</button>
+                    <button class="nav-btn ${activeRoute === '/admin/bookings' ? 'active' : ''}" onclick="router('/admin/bookings')">📋 Bookings & Escrow</button>
+                    <button class="nav-btn ${activeRoute === '/admin/disputes' ? 'active' : ''}" onclick="router('/admin/disputes')">⚖️ Disputes</button>
+                    <button class="nav-btn ${activeRoute === '/payments' ? 'active' : ''}" onclick="router('/payments')">💳 Financials</button>
+                    <button class="nav-btn ${activeRoute === '/admin/niches' ? 'active' : ''}" onclick="router('/admin/niches')">🗂️ Niches</button>
+                    <button class="nav-btn ${activeRoute === '/settings' ? 'active' : ''}" onclick="router('/settings')">⚙️ Settings</button>
+                    <button class="nav-btn" onclick="toggleTheme()" title="Toggle Theme" style="padding: 8px 12px;">
+                        ${currentTheme === 'dark' ? '☀️' : '🌙'}
+                    </button>
+                    <button class="nav-btn" onclick="logout()" style="color: var(--danger); font-weight: 700;">Logout</button>
+                </div>
+            </div>
+            <!-- Admin Mobile Bottom Nav -->
+            <div class="mobile-bottom-nav">
+                <button class="bottom-nav-item ${activeRoute === '/admin' || activeRoute === '/' ? 'active' : ''}" onclick="router('/admin')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                    <span>Overview</span>
+                </button>
+                <button class="bottom-nav-item ${activeRoute === '/admin/chats' ? 'active' : ''}" onclick="router('/admin/chats')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                    <span>Chats</span>
+                </button>
+                <button class="bottom-nav-item ${activeRoute === '/admin/bookings' ? 'active' : ''}" onclick="router('/admin/bookings')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+                    <span>Orders</span>
+                </button>
+                <button class="bottom-nav-item ${activeRoute === '/payments' ? 'active' : ''}" onclick="router('/payments')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                    <span>Financials</span>
+                </button>
+                <button class="bottom-nav-item ${activeRoute === '/settings' ? 'active' : ''}" onclick="router('/settings')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                    <span>Settings</span>
+                </button>
+            </div>
+        </div>`;
+    }
+
+    // 2. PROVIDER EXCLUSIVE HEADER (Creator Studio)
+    if (isProvider) {
+        return el`<div>
+            <div class="header">
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    ${renderLogo(32, true)}
+                    <span class="mode-badge-pill mode-badge-provider">💼 Provider Mode</span>
+                    <button type="button" class="btn-switch-mode" onclick="toggleUserMode()" title="Switch to Buyer Mode to hire talent">
+                        🛍️ Switch to Buyer Mode
+                    </button>
+                </div>
+                <div class="header-nav" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                    <button class="nav-btn ${activeRoute === '/' ? 'active' : ''}" onclick="router('/')">📊 Studio</button>
+                    <button class="nav-btn ${activeRoute === '/packages' || activeRoute === '/create-package' ? 'active' : ''}" onclick="router('/packages')">📦 My Packages</button>
+                    <button class="nav-btn ${activeRoute === '/bookings' ? 'active' : ''}" onclick="router('/bookings')">📋 Client Orders</button>
+                    <button class="nav-btn ${activeRoute === '/messages' ? 'active' : ''}" onclick="router('/messages')" id="nav-btn-messages">
+                        💬 Messages <span class="nav-unread-badge" id="header-unread-count" style="display:none; background:#ff4757; color:#fff; font-size:0.7rem; font-weight:700; padding:1px 6px; border-radius:10px; margin-left:4px;"></span>
+                    </button>
+                    <button class="nav-btn ${activeRoute === '/payments' ? 'active' : ''}" onclick="router('/payments')">💳 Earnings & Payouts</button>
+                    <button class="nav-btn ${activeRoute === '/profile' || activeRoute === '/settings' ? 'active' : ''}" onclick="router('/profile')">🎨 My Profile</button>
+                    <button class="nav-btn" onclick="toggleTheme()" title="Toggle Theme" style="padding: 8px 12px;">
+                        ${currentTheme === 'dark' ? '☀️' : '🌙'}
+                    </button>
+                    <button class="nav-btn" onclick="logout()" style="color: var(--danger);">Logout</button>
+                </div>
+            </div>
+            <!-- Provider Mobile Bottom Nav -->
+            <div class="mobile-bottom-nav">
+                <button class="bottom-nav-item ${activeRoute === '/' ? 'active' : ''}" onclick="router('/')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                    <span>Studio</span>
+                </button>
+                <button class="bottom-nav-item ${activeRoute === '/packages' ? 'active' : ''}" onclick="router('/packages')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    <span>Packages</span>
+                </button>
+                <button class="bottom-nav-item ${activeRoute === '/bookings' ? 'active' : ''}" onclick="router('/bookings')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+                    <span>Orders</span>
+                </button>
+                <button class="bottom-nav-item ${activeRoute === '/messages' ? 'active' : ''}" onclick="router('/messages')" style="position: relative;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                    <span class="nav-unread-dot" id="bottom-unread-dot" style="display:none; position:absolute; top:4px; right:18px; width:8px; height:8px; border-radius:50%; background:#ff4757;"></span>
+                    <span>Messages</span>
+                </button>
+                <button class="bottom-nav-item ${activeRoute === '/payments' ? 'active' : ''}" onclick="router('/payments')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                    <span>Earnings</span>
+                </button>
+            </div>
+        </div>`;
+    }
+
+    // 3. BUYER EXCLUSIVE HEADER (Client / Marketplace)
     return el`<div>
         <div class="header">
-            <div style="display: flex; align-items: center; gap: 8px;">
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                 ${renderLogo(32, true)}
-                ${isAdmin ? '<span class="badge badge-danger" style="margin-left: 6px;">Admin</span>' : ''}
+                <span class="mode-badge-pill mode-badge-buyer">🛍️ Buyer Mode</span>
+                <button type="button" class="btn-switch-mode" onclick="toggleUserMode()" title="Switch to Provider Mode to offer your services">
+                    💼 Switch to Provider Mode
+                </button>
             </div>
             <div class="header-nav" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-                <button class="nav-btn ${activeRoute === '/' ? 'active' : ''}" onclick="router('/')">Dashboard</button>
-                <button class="nav-btn ${activeRoute === '/providers' ? 'active' : ''}" onclick="router('/providers')">Browse Talent</button>
+                <button class="nav-btn ${activeRoute === '/' || activeRoute === '/providers' ? 'active' : ''}" onclick="router('/')">🔍 Browse Talent</button>
                 <button class="nav-btn ${activeRoute === '/messages' ? 'active' : ''}" onclick="router('/messages')" id="nav-btn-messages">
                     💬 Messages <span class="nav-unread-badge" id="header-unread-count" style="display:none; background:#ff4757; color:#fff; font-size:0.7rem; font-weight:700; padding:1px 6px; border-radius:10px; margin-left:4px;"></span>
                 </button>
-                <button class="nav-btn ${activeRoute === '/bookings' ? 'active' : ''}" onclick="router('/bookings')">My Bookings</button>
-                <button class="nav-btn ${activeRoute === '/payments' ? 'active' : ''}" onclick="router('/payments')">💳 Payments</button>
-                ${isProvider ? `<button class="nav-btn ${activeRoute === '/packages' ? 'active' : ''}" onclick="router('/packages')">My Packages</button>` : ''}
-                ${isAdmin ? `<button class="nav-btn ${activeRoute.startsWith('/admin') ? 'active' : ''}" onclick="router('/admin')">Admin</button>` : ''}
-                <button class="nav-btn ${activeRoute === '/settings' || activeRoute === '/profile' ? 'active' : ''}" onclick="router('/settings')">Settings</button>
+                <button class="nav-btn ${activeRoute === '/bookings' ? 'active' : ''}" onclick="router('/bookings')">📦 My Orders</button>
+                <button class="nav-btn ${activeRoute === '/payments' ? 'active' : ''}" onclick="router('/payments')">💳 Wallet / Escrow</button>
+                <button class="nav-btn ${activeRoute === '/settings' ? 'active' : ''}" onclick="router('/settings')">⚙️ Settings</button>
                 <button class="nav-btn" onclick="toggleTheme()" title="Toggle Theme" style="padding: 8px 12px;">
                     ${currentTheme === 'dark' ? '☀️' : '🌙'}
                 </button>
                 <button class="nav-btn" onclick="logout()" style="color: var(--danger);">Logout</button>
             </div>
         </div>
+        <!-- Buyer Mobile Bottom Nav -->
         <div class="mobile-bottom-nav">
-            <button class="bottom-nav-item ${activeRoute === '/' ? 'active' : ''}" onclick="router('/')">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
-                <span>Home</span>
-            </button>
-            <button class="bottom-nav-item ${activeRoute === '/providers' ? 'active' : ''}" onclick="router('/providers')">
+            <button class="bottom-nav-item ${activeRoute === '/' || activeRoute === '/providers' ? 'active' : ''}" onclick="router('/')">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                 <span>Talent</span>
             </button>
@@ -253,24 +393,20 @@ function renderAppHeader(activeRoute = '') {
             </button>
             <button class="bottom-nav-item ${activeRoute === '/bookings' ? 'active' : ''}" onclick="router('/bookings')">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
-                <span>Bookings</span>
+                <span>Orders</span>
             </button>
             <button class="bottom-nav-item ${activeRoute === '/payments' ? 'active' : ''}" onclick="router('/payments')">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-                <span>Payments</span>
+                <span>Wallet</span>
             </button>
-            ${isProvider ? `
-            <button class="bottom-nav-item ${activeRoute === '/packages' ? 'active' : ''}" onclick="router('/packages')">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                <span>Packages</span>
-            </button>` : ''}
-            <button class="bottom-nav-item ${activeRoute === '/settings' || activeRoute === '/profile' ? 'active' : ''}" onclick="router('/settings')">
+            <button class="bottom-nav-item ${activeRoute === '/settings' ? 'active' : ''}" onclick="router('/settings')">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-                <span>Settings</span>
+                <span>Account</span>
             </button>
         </div>
     </div>`;
 }
+window.renderAppHeader = renderAppHeader;
 window.renderAppHeader = renderAppHeader;
 
 async function updateUnreadCountBadge() {
@@ -299,9 +435,21 @@ setTimeout(updateUnreadCountBadge, 2000);
 
 // Router
 function router(path) {
+    // 1. If admin is logged in, enforce exclusive Admin Console experience (no buyer/provider interference)
+    if (currentToken && currentUser?.user_type === 'ADMIN') {
+        const buyerProviderOnlyRoutes = ['/', '/welcome', '/providers', '/create-package', '/create-booking', '/packages'];
+        if (buyerProviderOnlyRoutes.includes(path)) {
+            path = '/admin';
+        } else if (path === '/messages') {
+            path = '/admin/chats';
+        } else if (path === '/bookings') {
+            path = '/admin/bookings';
+        }
+    }
+
     const routes = {
         '/': (currentToken ? Dashboard : Landing),
-        '/welcome': (currentToken ? WelcomePage : Login),
+        '/welcome': (currentToken ? (currentUser?.user_type === 'ADMIN' ? AdminDashboard : WelcomePage) : Login),
         '/login': Login,
         '/register': Register,
         '/profile': (currentToken ? Settings : Login),
@@ -402,7 +550,11 @@ async function handleGoogleSignIn(initialRole = null, credential = null) {
             currentUser = await apiFetch('/auth/me');
             localStorage.setItem('current_user', JSON.stringify(currentUser));
             showToast(`Signed in with Google as ${currentUser.name}!`, 'success');
-            router('/welcome');
+            if (currentUser?.user_type === 'ADMIN') {
+                router('/admin');
+            } else {
+                router('/');
+            }
             return;
         } catch (err) {
             if (btn) { btn.disabled = false; btn.innerHTML = origBtnHtml; }
@@ -570,7 +722,11 @@ async function handleSocialLoginFallback(provider, initialRole = null) {
             localStorage.setItem('current_user', JSON.stringify(currentUser));
             close();
             showToast(`Signed in with ${providerName} as ${currentUser.name}!`, 'success');
-            router('/welcome');
+            if (currentUser?.user_type === 'ADMIN') {
+                router('/admin');
+            } else {
+                router('/');
+            }
         } catch (err) {
             sBtn.disabled = false;
             sBtn.innerHTML = origText;
@@ -933,7 +1089,11 @@ function AuthPortal(initialTab = 'login') {
             localStorage.setItem('current_user', JSON.stringify(currentUser));
 
             showToast(`Welcome back, ${currentUser.name || 'User'}!`, 'success');
-            router('/welcome');
+            if (currentUser?.user_type === 'ADMIN') {
+                router('/admin');
+            } else {
+                router('/');
+            }
         } catch (err) {
             if (btn) {
                 btn.disabled = false;
@@ -1023,7 +1183,11 @@ function AuthPortal(initialTab = 'login') {
             localStorage.setItem('current_user', JSON.stringify(currentUser));
 
             showToast(`Account created successfully! Welcome, ${currentUser.name}!`, 'success');
-            router('/welcome');
+            if (currentUser?.user_type === 'ADMIN') {
+                router('/admin');
+            } else {
+                router('/');
+            }
         } catch (err) {
             if (btn) {
                 btn.disabled = false;
@@ -1546,136 +1710,407 @@ function getBookingDeadlineInfo(booking) {
 }
 window.getBookingDeadlineInfo = getBookingDeadlineInfo;
 
-// =============== DASHBOARD ===============
+// Global Provider / Package Selection for Booking Checkout
+function selectProvider(providerId, packageId = null) {
+    sessionStorage.setItem('selected_provider_id', providerId);
+    if (packageId) {
+        sessionStorage.setItem('selected_package_id', packageId);
+    } else {
+        sessionStorage.removeItem('selected_package_id');
+    }
+    router('/create-booking');
+}
+window.selectProvider = selectProvider;
 
+// =============== DASHBOARD DISPATCHER ===============
 function Dashboard() {
-    const isProvider = currentUser?.user_type === 'PROVIDER';
-    const isAdmin = currentUser?.user_type === 'ADMIN';
-    const isBuyer = currentUser?.user_type === 'BUYER' || !currentUser?.user_type;
+    if (currentUser?.user_type === 'ADMIN') {
+        return AdminDashboard();
+    }
+    if (currentUser?.user_type === 'PROVIDER') {
+        return ProviderDashboard();
+    }
+    return BuyerDashboard();
+}
 
-    async function loadDashboard() {
+// =============== PROVIDER DASHBOARD (CREATOR STUDIO) ===============
+function ProviderDashboard() {
+    let profile = null;
+    let recentPackages = [];
+    let bookings = [];
+    let loading = true;
+
+    async function loadData() {
         showLoading();
         try {
-            let stats = {};
-            if (isAdmin) {
-                stats = await apiFetch('/admin/stats');
-            }
-
-            const profile = await apiFetch('/profile');
-
-            let recentBookings = [];
-            try {
-                recentBookings = await apiFetch('/bookings');
-            } catch (e) { }
-
-            let recentPackages = [];
-            if (isProvider) {
-                recentPackages = await apiFetch('/packages');
-            }
-
-            mount(renderDashboard(profile, isProvider, isAdmin, isBuyer, stats, recentBookings, recentPackages));
+            try { profile = await apiFetch('/profile'); } catch (_) { profile = {}; }
+            try { recentPackages = await apiFetch('/packages'); } catch (_) { recentPackages = []; }
+            try { bookings = await apiFetch('/bookings'); } catch (_) { bookings = []; }
         } catch (e) {
-            showToast('Failed to load dashboard: ' + e.message, 'error');
-            // Don't redirect to login — let user retry or use the app anyway
-            mount(el`<div class="main">
-                <div class="card" style="max-width: 400px; margin: 40px auto; text-align: center;">
-                    <h3 style="margin-bottom: 16px;">Dashboard Load Error</h3>
-                    <p style="color: var(--text-secondary); margin-bottom: 24px;">${e.message}</p>
-                    <button class="btn btn-primary" onclick="router('/login')">Go to Login</button>
-                    <button class="btn btn-secondary" onclick="loadDashboard()" style="margin-left: 8px;">Retry</button>
-                </div>
-            </div>`);
+            showToast(e.message || 'Error loading studio', 'error');
+        } finally {
+            loading = false;
+            mount(renderStudio());
         }
     }
 
-    // Initial render with loading state
-    mount(el`<div class="main"><div class="loading"><div class="spinner"></div></div></div>`);
+    loadData();
 
-    loadDashboard();
+    function renderStudio() {
+        if (loading) {
+            return el`<div>
+                ${renderAppHeader('/')}
+                <div class="main"><div class="loading"><div class="spinner"></div></div></div>
+            </div>`;
+        }
 
-    function loadMyBuyBookings() {
-        apiFetch('/bookings?limit=10').then(bookings => {
-            const items = bookings && bookings.length > 0
-                ? bookings.map(b => {
-                    const amt = (b.total_amount || 0).toLocaleString();
-                    const prov = (b.provider_name || 'Unknown Provider');
-                    return '<div style="display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--border);">' +
-                        '<div><strong>Booking #' + b.id + '</strong> — ' + prov + '</div>' +
-                        '<div class="price">INR ' + amt + '</div>' +
-                        '</div>';
-                }).join('')
-                : '<p>No purchases yet.</p>';
-            mount(el`<div class="main">
-                <div class="card" style="max-width: 640px; margin: 20px auto;">
-                    <div class="card-header">
-                        <div class="card-title">My Purchases (as Buyer)</div>
-                    </div>
-                    <div class="card-body">
-                        ${items}
-                    </div>
-                    <div class="card-footer">
-                        <button class="btn btn-primary" onclick="router('/providers')">Browse More</button>
-                        <button class="btn btn-secondary" onclick="router('/bookings')">All Bookings</button>
-                    </div>
-                </div>
-            </div>`);
-        });
-    }
-
-    function renderDashboard(profile, isProvider, isAdmin, isBuyer, stats, recentBookings, recentPackages) {
-        // Determine if user can see buyer features (buyers AND providers who can also buy)
-        const canBuy = isBuyer || isProvider;
-        const showBuyerSection = canBuy;
-        const showProviderSection = isProvider;
-        const showAdminSection = isAdmin;
+        const clientOrders = Array.isArray(bookings) ? bookings : [];
+        const pendingOrders = clientOrders.filter(b => b.status === 'in_progress' || b.status === 'confirmed');
+        const deliveredOrders = clientOrders.filter(b => b.status === 'delivered' || b.status === 'pending_approval');
 
         return el`<div>
-                ${renderAppHeader('/')}
-                ${renderLeftEdgePeekDock('')}
-                <div class="main">
-                    ${isAdmin ? adminStatsCard(stats) : isProvider ? providerWelcomeCard(profile) : buyerWelcomeCard(recentBookings)}
-                    <div class="section">
-                        ${showAdminSection ? adminSection() : ''}
-                        ${showProviderSection ? providerSection(profile, recentPackages) : ''}
-                        ${showBuyerSection ? buyerSection(recentBookings) : ''}
-                        ${showProviderSection ? providerBuySection() : ''}
+            ${renderAppHeader('/')}
+            
+            <!-- Clarification & Mode Substrip -->
+            <div class="mode-bar-substrip">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span class="mode-badge-pill mode-badge-provider">💼 Provider Studio</span>
+                    <span>You are logged in as a <strong>Seller / Creator</strong>. Need to hire talent?</span>
+                </div>
+                <button type="button" class="btn-switch-mode" onclick="toggleUserMode()">
+                    🛍️ Switch to Buyer Mode
+                </button>
+            </div>
+
+            <div class="main">
+                <!-- Creator Guidance Card -->
+                <div class="clarification-guide-card">
+                    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+                        <div>
+                            <div style="font-size: 1.15rem; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+                                <span>🚀</span> Provider & Creator Studio Guide
+                            </div>
+                            <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 2px;">
+                                Fulfill client projects safely, get 5-star ratings, and receive direct 80% bank payouts.
+                            </div>
+                        </div>
+                        <button class="btn btn-primary btn-sm" onclick="router('/create-package')">+ New Package</button>
+                    </div>
+
+                    <div class="clarification-steps-grid">
+                        <div class="clarification-step-item">
+                            <span class="clarification-step-num">1</span>
+                            <strong style="color: var(--text-primary); font-size: 0.9rem;">Set Up Packages</strong>
+                            <span style="font-size: 0.8rem; color: var(--text-secondary);">List editing tiers or coaching sessions with clear turnaround and revisions.</span>
+                        </div>
+                        <div class="clarification-step-item">
+                            <span class="clarification-step-num">2</span>
+                            <strong style="color: var(--text-primary); font-size: 0.9rem;">Chat with Inquiring Clients</strong>
+                            <span style="font-size: 0.8rem; color: var(--text-secondary);">Reply fast to incoming pre-booking chats. Keep chat on Grove Hub to maintain escrow protection.</span>
+                        </div>
+                        <div class="clarification-step-item">
+                            <span class="clarification-step-num">3</span>
+                            <strong style="color: var(--text-primary); font-size: 0.9rem;">Deliver & Get 80% Payout</strong>
+                            <span style="font-size: 0.8rem; color: var(--text-secondary);">Submit final links/files on platform. Client approves, triggering guaranteed bank release.</span>
+                        </div>
                     </div>
                 </div>
-            </div>`;
+
+                <!-- Provider Metrics Card -->
+                ${providerWelcomeCard(profile)}
+
+                <!-- Quick Business Actions -->
+                ${providerSection(profile, recentPackages)}
+
+                <!-- Client Work Queue -->
+                <div class="section-title mt-4" style="margin-top: 24px; display: flex; justify-content: space-between; align-items: center;">
+                    <span>Active Client Orders (${pendingOrders.length + deliveredOrders.length})</span>
+                    <button class="btn btn-secondary btn-sm" onclick="router('/bookings')">View All Orders</button>
+                </div>
+
+                ${(pendingOrders.length === 0 && deliveredOrders.length === 0) ? `
+                    <div class="card" style="padding: 28px; text-align: center;">
+                        <div style="font-size: 2.2rem; margin-bottom: 8px;">📬</div>
+                        <h4 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 6px;">No Active Client Orders Right Now</h4>
+                        <p style="color: var(--text-secondary); font-size: 0.85rem; max-width: 440px; margin: 0 auto 16px;">
+                            Make sure your service packages are published and check incoming inquiries in your Messages inbox.
+                        </p>
+                        <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                            <button class="btn btn-primary btn-sm" onclick="router('/create-package')">Create Package</button>
+                            <button class="btn btn-secondary btn-sm" onclick="router('/messages')">💬 Open Messages</button>
+                        </div>
+                    </div>
+                ` : `
+                    <div class="grid grid-2">
+                        ${[...pendingOrders, ...deliveredOrders].map(b => {
+                            const deadline = getBookingDeadlineInfo(b);
+                            return `
+                            <div class="card" style="border-left: 4px solid var(--accent); padding: 18px;">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                                    <div>
+                                        <div style="font-weight: 800; font-size: 1rem; color: var(--text-primary);">Order #${b.id}: ${b.package_title || 'Custom Service'}</div>
+                                        <div style="font-size: 0.8125rem; color: var(--text-secondary);">Client: <strong>${b.buyer_name || 'Client'}</strong></div>
+                                    </div>
+                                    <span class="badge ${b.status === 'delivered' ? 'badge-warning' : 'badge-primary'}">${b.status}</span>
+                                </div>
+                                <div style="margin: 10px 0; font-size: 0.8125rem; color: var(--text-secondary);">
+                                    <div style="font-weight: 700; color: ${deadline.isPast ? 'var(--danger)' : 'var(--text-primary)'};">${deadline.text}</div>
+                                    <div>${deadline.subtext}</div>
+                                </div>
+                                <div style="display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap;">
+                                    <button class="btn btn-secondary btn-sm" onclick="openPreBookingChat(${b.buyer_id}, '${(b.buyer_name || '').replace(/'/g, "\\'")}')" style="flex: 1;">💬 Chat</button>
+                                    <button class="btn btn-primary btn-sm" onclick="router('/bookings')" style="flex: 1;">Submit Work</button>
+                                </div>
+                            </div>
+                            `;
+                        }).join('')}
+                    </div>
+                `}
+            </div>
+        </div>`;
     }
 
-    return renderDashboard(null, isProvider, isAdmin, isBuyer, {}, [], []);
+    return renderStudio();
 }
 
-function adminStatsCard(stats) {
-    return el`<div class="card">
-        <div class="card-header">
-            <div class="card-title">Platform Stats</div>
-            <span class="badge badge-info">Admin</span>
-        </div>
-        <div class="grid grid-2" style="margin-top: 12px;">
-            <div class="card-body">
-                <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px;">Total Users</div>
-                <div style="font-size: 1.5rem; font-weight: 700;">${stats?.total_users || 0}</div>
+// =============== BUYER DASHBOARD (FIVERR-STYLE TALENT MARKETPLACE) ===============
+function BuyerDashboard() {
+    let packages = [];
+    let bookings = [];
+    let loading = true;
+    let activeFilter = 'all';
+    let searchQuery = '';
+
+    async function loadData() {
+        showLoading();
+        try {
+            try { packages = await apiFetch('/packages?limit=50'); } catch (_) { packages = []; }
+            try { bookings = await apiFetch('/bookings'); } catch (_) { bookings = []; }
+        } catch (e) {
+            showToast(e.message || 'Error loading marketplace', 'error');
+        } finally {
+            loading = false;
+            mount(renderMarketplace());
+        }
+    }
+
+    loadData();
+
+    function renderMarketplace() {
+        if (loading) {
+            return el`<div>
+                ${renderAppHeader('/')}
+                <div class="main"><div class="loading"><div class="spinner"></div></div></div>
+            </div>`;
+        }
+
+        const approvedPackages = Array.isArray(packages) ? packages.filter(p => p.status === 'approved' || !p.status) : [];
+        const clientPurchases = Array.isArray(bookings) ? bookings : [];
+        const activePurchases = clientPurchases.filter(b => b.status === 'in_progress' || b.status === 'confirmed' || b.status === 'delivered');
+
+        // Filter packages based on activeFilter and searchQuery
+        const filteredPackages = approvedPackages.filter(p => {
+            const matchesQuery = !searchQuery || 
+                (p.title && p.title.toLowerCase().includes(searchQuery.toLowerCase())) ||
+                (p.description && p.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
+                (p.provider_name && p.provider_name.toLowerCase().includes(searchQuery.toLowerCase())) ||
+                (p.niche && p.niche.toLowerCase().includes(searchQuery.toLowerCase()));
+
+            if (!matchesQuery) return false;
+            if (activeFilter === 'editors') return (p.niche && (p.niche.includes('editor') || p.niche.includes('video'))) || (p.title && (p.title.toLowerCase().includes('video') || p.title.toLowerCase().includes('edit') || p.title.toLowerCase().includes('reel')));
+            if (activeFilter === 'tutors') return (p.niche && p.niche.includes('tutor')) || (p.title && (p.title.toLowerCase().includes('english') || p.title.toLowerCase().includes('tutor') || p.title.toLowerCase().includes('ielts') || p.title.toLowerCase().includes('speaking')));
+            if (activeFilter === 'express') return (p.turnaround && (p.turnaround.toLowerCase().includes('24') || p.turnaround.toLowerCase().includes('1 day') || p.turnaround.toLowerCase().includes('immediate')));
+            return true;
+        });
+
+        return el`<div>
+            ${renderAppHeader('/')}
+
+            <!-- Clarification & Mode Substrip -->
+            <div class="mode-bar-substrip">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span class="mode-badge-pill mode-badge-buyer">🛍️ Buyer Marketplace</span>
+                    <span>You are browsing Grove Hub as a <strong>Client</strong>. Want to offer your services?</span>
+                </div>
+                <button type="button" class="btn-switch-mode" onclick="toggleUserMode()">
+                    💼 Switch to Provider Mode
+                </button>
             </div>
-            <div class="card-body">
-                <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px;">Providers</div>
-                <div style="font-size: 1.5rem; font-weight: 700;">${stats?.total_providers || 0}</div>
+
+            <div class="main">
+                <!-- Buyer Clarification Guide Card -->
+                <div class="clarification-guide-card">
+                    <div style="font-size: 1.15rem; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+                        <span>🛡️</span> Hire Video Editors & English Tutors Safely
+                    </div>
+                    <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 2px;">
+                        Grove Hub guarantees 100% Escrow Protection. Your money is never sent directly to creators until you approve the work.
+                    </div>
+
+                    <div class="clarification-steps-grid">
+                        <div class="clarification-step-item">
+                            <span class="clarification-step-num">1</span>
+                            <strong style="color: var(--text-primary); font-size: 0.9rem;">Browse & Compare Talent</strong>
+                            <span style="font-size: 0.8rem; color: var(--text-secondary);">Select from top Video Editors (YouTube, Reels) and certified English Tutors.</span>
+                        </div>
+                        <div class="clarification-step-item">
+                            <span class="clarification-step-num">2</span>
+                            <strong style="color: var(--text-primary); font-size: 0.9rem;">Chat Before Buying</strong>
+                            <span style="font-size: 0.8rem; color: var(--text-secondary);">Click "💬 Chat" on any gig to discuss your vision, raw footage, or speaking goals.</span>
+                        </div>
+                        <div class="clarification-step-item">
+                            <span class="clarification-step-num">3</span>
+                            <strong style="color: var(--text-primary); font-size: 0.9rem;">Safe Escrow Checkout</strong>
+                            <span style="font-size: 0.8rem; color: var(--text-secondary);">Pay securely. Funds stay in escrow vault until you inspect and accept the delivery.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Active Purchases Bar (if buyer has orders) -->
+                ${activePurchases.length > 0 ? `
+                    <div class="card" style="margin-bottom: 24px; border-left: 4px solid var(--accent); padding: 18px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 12px;">
+                            <div>
+                                <strong style="font-size: 1rem; color: var(--text-primary);">⚡ You have ${activePurchases.length} active order${activePurchases.length > 1 ? 's' : ''} in progress</strong>
+                                <div style="font-size: 0.8125rem; color: var(--text-secondary);">Creators are currently preparing your deliverables.</div>
+                            </div>
+                            <button class="btn btn-secondary btn-sm" onclick="router('/bookings')">View All Orders</button>
+                        </div>
+                        <div class="grid grid-2">
+                            ${activePurchases.slice(0, 2).map(b => {
+                                const dl = getBookingDeadlineInfo(b);
+                                return `
+                                <div style="background: var(--bg-hover); padding: 12px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+                                    <div>
+                                        <div style="font-weight: 700; font-size: 0.9rem;">Order #${b.id} • ${b.provider_name || 'Creator'}</div>
+                                        <div style="font-size: 0.78rem; color: var(--text-secondary);">${dl.text}</div>
+                                    </div>
+                                    <div style="display: flex; gap: 6px;">
+                                        <button class="btn btn-secondary btn-sm" style="padding: 4px 10px; font-size: 0.75rem;" onclick="openPreBookingChat(${b.provider_id}, '${(b.provider_name || '').replace(/'/g, "\\'")}')">💬 Chat</button>
+                                        <button class="btn btn-primary btn-sm" style="padding: 4px 10px; font-size: 0.75rem;" onclick="router('/bookings')">Details</button>
+                                    </div>
+                                </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+
+                <!-- Search & Category Filters -->
+                <div style="margin-bottom: 20px;">
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px;">
+                        <div style="position: relative; flex: 1; min-width: 240px;">
+                            <input 
+                                type="text" 
+                                id="buyer-search-input" 
+                                class="input" 
+                                placeholder="Search editors, IELTS tutors, Premiere Pro, DaVinci..." 
+                                value="${searchQuery}" 
+                                oninput="window.__handleBuyerSearch(this.value)"
+                                style="width: 100%; padding-left: 36px;"
+                            />
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-muted);">
+                                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                            </svg>
+                        </div>
+                    </div>
+
+                    <!-- Category Pills -->
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        <button class="filter-chip ${activeFilter === 'all' ? 'active' : ''}" onclick="window.__setBuyerFilter('all')">✨ All Services</button>
+                        <button class="filter-chip ${activeFilter === 'editors' ? 'active' : ''}" onclick="window.__setBuyerFilter('editors')">🎬 Video Editors</button>
+                        <button class="filter-chip ${activeFilter === 'tutors' ? 'active' : ''}" onclick="window.__setBuyerFilter('tutors')">🗣️ English Tutors</button>
+                        <button class="filter-chip ${activeFilter === 'express' ? 'active' : ''}" onclick="window.__setBuyerFilter('express')">⚡ 24h Express</button>
+                    </div>
+                </div>
+
+                <!-- Talent Showcase Grid -->
+                <div class="section-title">
+                    Available Services (${filteredPackages.length})
+                </div>
+
+                ${filteredPackages.length === 0 ? `
+                    <div class="card" style="padding: 32px; text-align: center;">
+                        <div style="font-size: 2.4rem; margin-bottom: 8px;">🔍</div>
+                        <h4 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 6px;">No services matching your search</h4>
+                        <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 16px;">Try adjusting your keywords or switching filters.</p>
+                        <button class="btn btn-secondary btn-sm" onclick="window.__setBuyerFilter('all')">Reset Filters</button>
+                    </div>
+                ` : `
+                    <div class="grid grid-3">
+                        ${filteredPackages.map(pkg => {
+                            const isTutor = (pkg.niche && pkg.niche.includes('tutor')) || (pkg.title && pkg.title.toLowerCase().includes('english'));
+                            const nicheBadge = isTutor ? '🗣️ English Tutor' : '🎬 Video Editing';
+                            const providerName = pkg.provider_name || 'Verified Creator';
+                            const initial = providerName.charAt(0).toUpperCase();
+
+                            return `
+                            <div class="card fiverr-gig-card" style="display: flex; flex-direction: column; justify-content: space-between; overflow: hidden;">
+                                <div style="padding: 16px;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                                        <div style="display: flex; align-items: center; gap: 8px;">
+                                            <div style="width: 34px; height: 34px; border-radius: 50%; background: var(--accent); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem;">
+                                                ${initial}
+                                            </div>
+                                            <div>
+                                                <div style="font-weight: 700; font-size: 0.9rem; color: var(--text-primary);">${providerName}</div>
+                                                <div style="font-size: 0.72rem; color: var(--success); font-weight: 600;">🟢 Online now</div>
+                                            </div>
+                                        </div>
+                                        <span class="badge badge-info" style="font-size: 0.7rem;">${nicheBadge}</span>
+                                    </div>
+
+                                    <h4 style="font-size: 1rem; font-weight: 700; margin-bottom: 8px; color: var(--text-primary); line-height: 1.4;">${pkg.title}</h4>
+                                    <p style="font-size: 0.8125rem; color: var(--text-secondary); line-height: 1.45; margin-bottom: 14px; min-height: 40px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                                        ${pkg.description || 'Custom tailored high quality service with 100% escrow protection and unlimited revisions.'}
+                                    </p>
+
+                                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 10px;">
+                                        <span>⏱️ ${pkg.turnaround || '24 hours'}</span>
+                                        <span>🔄 ${pkg.revision_limit || 2} revisions</span>
+                                    </div>
+                                </div>
+
+                                <div class="card-footer" style="background: var(--bg-hover); padding: 12px 16px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+                                    <div>
+                                        <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase;">Price</div>
+                                        <div style="font-size: 1.25rem; font-weight: 800; color: var(--accent);">₹${(pkg.price || 0).toLocaleString()}</div>
+                                    </div>
+                                    <div style="display: flex; gap: 6px;">
+                                        <button class="btn btn-secondary btn-sm" onclick="openPreBookingChat(${pkg.provider_id}, '${providerName.replace(/'/g, "\\'")}')" title="Message creator before ordering">
+                                            💬 Chat
+                                        </button>
+                                        <button class="btn btn-primary btn-sm" onclick="selectProvider(${pkg.provider_id}, ${pkg.id})">
+                                            Order Now
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            `;
+                        }).join('')}
+                    </div>
+                `}
             </div>
-            <div class="card-body">
-                <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px;">Total Bookings</div>
-                <div style="font-size: 1.5rem; font-weight: 700;">${stats?.total_bookings || 0}</div>
-            </div>
-            <div class="card-body">
-                <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px;">Revenue (Commissions)</div>
-                <div style="font-size: 1.5rem; font-weight: 700; color: var(--success);">₹${(stats?.total_commissions || 0).toLocaleString()}</div>
-            </div>
-        </div>
-        <div class="card-footer" style="display: flex; gap: 8px; flex-wrap: wrap;">
-            <button class="btn btn-primary btn-sm" onclick="router('/payments')">💳 Escrow & Revenue</button>
-            <button class="btn btn-secondary btn-sm" onclick="router('/admin')">View Admin Panel</button>
-        </div>
-    </div>`;
+        </div>`;
+    }
+
+    // Attach search and filter handlers to window
+    window.__handleBuyerSearch = (val) => {
+        searchQuery = val;
+        mount(renderMarketplace());
+        const input = document.getElementById('buyer-search-input');
+        if (input) {
+            input.focus();
+            input.setSelectionRange(val.length, val.length);
+        }
+    };
+
+    window.__setBuyerFilter = (filter) => {
+        activeFilter = filter;
+        mount(renderMarketplace());
+    };
+
+    return renderMarketplace();
 }
 
 function providerWelcomeCard(profile) {
@@ -1780,27 +2215,7 @@ function buyerWelcomeCard(recentBookings = []) {
     </div>`;
 }
 
-function providerBuySection() {
-    // Providers can also buy from other providers
-    let myBookings = [];
-    return el`<div class="section mt-4">
-        <div class="section-title">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
-                <circle cx="12" cy="12" r="10"/>
-                <path d="M12 6v6l4 2"/>
-            </svg>
-            Also Buy From Others
-        </div>
-        <div class="card" style="padding: 16px;">
-            <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 12px;">As a provider, you can also hire other providers for your projects. Browse the marketplace and make bookings just like any buyer.</p>
-            <div class="flex gap-4" style="flex-wrap: wrap;">
-                <button class="btn btn-primary" onclick="router('/providers')">Browse Providers</button>
-                <button class="btn btn-secondary" onclick="loadMyBuyBookings()">My Purchases</button>
-                <button class="btn btn-secondary" onclick="router('/payments')">💳 Payments</button>
-            </div>
-        </div>
-    </div>`;
-}
+
 
 function providerSection(profile, recentPackages) {
     return el`<div class="section">
@@ -5113,15 +5528,21 @@ function ProvidersList() {
                         <button class="fiverr-ribbon-btn" onclick="setProviderNiche('')" title="Back to All Categories">
                             <-- All Talent
                         </button>
-                        <button class="fiverr-ribbon-btn ${providerSearchState.niche === 'editors_animators' ? 'active' : ''}" onclick="setProviderNiche('editors_animators')">
-                            🎬 Video Editing
-                        </button>
-                        <button class="fiverr-ribbon-btn ${providerSearchState.niche === 'tutors' ? 'active' : ''}" onclick="setProviderNiche('tutors')">
-                            🗣️ English Tutors
-                        </button>
-                        <button class="fiverr-ribbon-btn ${providerSearchState.niche === 'writers' ? 'active' : ''}" onclick="setProviderNiche('writers')">
-                            ✍️ Content &amp; Copywriting
-                        </button>
+                        ${providerSearchState.niche === '' || providerSearchState.niche === 'editors_animators' ? `
+                            <button class="fiverr-ribbon-btn ${providerSearchState.niche === 'editors_animators' ? 'active' : ''}" onclick="setProviderNiche('editors_animators')">
+                                🎬 Video Editing
+                            </button>
+                        ` : ''}
+                        ${providerSearchState.niche === '' || providerSearchState.niche === 'tutors' ? `
+                            <button class="fiverr-ribbon-btn ${providerSearchState.niche === 'tutors' ? 'active' : ''}" onclick="setProviderNiche('tutors')">
+                                🗣️ English Tutors
+                            </button>
+                        ` : ''}
+                        ${providerSearchState.niche === '' || providerSearchState.niche === 'writers' ? `
+                            <button class="fiverr-ribbon-btn ${providerSearchState.niche === 'writers' ? 'active' : ''}" onclick="setProviderNiche('writers')">
+                                ✍️ Content &amp; Copywriting
+                            </button>
+                        ` : ''}
                     </div>
 
                     <!-- Category Header -->
@@ -5451,71 +5872,109 @@ function AdminDashboard() {
         return el`<div>
             ${renderAppHeader('/admin')}
             <div class="main">
-                <div class="section-title">Platform Overview</div>
-                ${loading ? '<div class="loading"><div class="spinner"></div></div>' : ''}
-                ${!loading ? `
-                    <div class="grid grid-2">
-                        <div class="card">
-                            <div class="card-body" style="text-align: center; padding: 24px;">
-                                <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 8px;">Total Users</div>
-                                <div style="font-size: 2rem; font-weight: 700;">${stats.total_users || 0}</div>
-                            </div>
+                <!-- Admin Command Center Banner -->
+                <div style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(99, 102, 241, 0.08) 100%); border: 1.5px solid rgba(239, 68, 68, 0.35); border-radius: var(--radius-md); padding: 22px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+                    <div style="display: flex; align-items: center; gap: 14px;">
+                        <div style="width: 48px; height: 48px; border-radius: 14px; background: #ef4444; color: white; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; flex-shrink: 0; box-shadow: 0 4px 14px rgba(239, 68, 68, 0.35);">
+                            🛡️
                         </div>
-                        <div class="card">
-                            <div class="card-body" style="text-align: center; padding: 24px;">
-                                <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 8px;">Active Providers</div>
-                                <div style="font-size: 2rem; font-weight: 700;">${stats.total_providers || 0}</div>
+                        <div>
+                            <div style="font-size: 1.25rem; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                <span>Grove Hub Admin Command Console</span>
+                                <span class="mode-badge-pill mode-badge-admin">Exclusive Admin Access</span>
                             </div>
-                        </div>
-                        <div class="card">
-                            <div class="card-body" style="text-align: center; padding: 24px;">
-                                <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 8px;">Total Bookings</div>
-                                <div style="font-size: 2rem; font-weight: 700;">${stats.total_bookings || 0}</div>
-                            </div>
-                        </div>
-                        <div class="card">
-                            <div class="card-body" style="text-align: center; padding: 24px;">
-                                <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 8px;">Total Earnings</div>
-                                <div style="font-size: 2rem; font-weight: 700; color: var(--success);">₹${(stats.total_commissions || 0).toLocaleString()}</div>
+                            <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 3px;">
+                                Signed in as <strong>${currentUser?.email || 'rahura2026@gmail.com'}</strong> • Complete oversight of chats, escrow, orders & talent.
                             </div>
                         </div>
                     </div>
-                    <div class="section-title mt-4">Management Modules</div>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        <button class="btn btn-secondary btn-sm" onclick="router('/admin/chats')">💬 Inspect Chats</button>
+                        <button class="btn btn-primary btn-sm" onclick="router('/payments')">💳 Escrow & Revenue</button>
+                    </div>
+                </div>
+
+                <div class="section-title">Platform Overview</div>
+                ${loading ? '<div class="loading"><div class="spinner"></div></div>' : ''}
+                ${!loading ? `
+                    <div class="grid grid-4" style="margin-bottom: 24px;">
+                        <div class="card" style="border-left: 4px solid var(--accent); padding: 20px;">
+                            <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Total Users</div>
+                            <div style="font-size: 2rem; font-weight: 800; color: var(--text-primary); margin-top: 4px;">${stats.total_users || 0}</div>
+                            <div style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 2px;">Registered accounts</div>
+                        </div>
+                        <div class="card" style="border-left: 4px solid #3b82f6; padding: 20px;">
+                            <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Active Providers</div>
+                            <div style="font-size: 2rem; font-weight: 800; color: #3b82f6; margin-top: 4px;">${stats.total_providers || 0}</div>
+                            <div style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 2px;">Verified talent</div>
+                        </div>
+                        <div class="card" style="border-left: 4px solid #f59e0b; padding: 20px;">
+                            <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Total Bookings</div>
+                            <div style="font-size: 2rem; font-weight: 800; color: #f59e0b; margin-top: 4px;">${stats.total_bookings || 0}</div>
+                            <div style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 2px;">Marketplace orders</div>
+                        </div>
+                        <div class="card" style="border-left: 4px solid #10b981; padding: 20px;">
+                            <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Platform Revenue</div>
+                            <div style="font-size: 2rem; font-weight: 800; color: #10b981; margin-top: 4px;">₹${(stats.total_commissions || 0).toLocaleString()}</div>
+                            <div style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 2px;">20% commissions</div>
+                        </div>
+                    </div>
+
+                    <div class="section-title">Management Modules</div>
                     <div class="grid grid-2">
-                        <button class="card" onclick="router('/admin/niches')" style="cursor: pointer; text-align: left;">
-                            <div class="card-header">
-                                <div class="card-title">Manage Niches</div>
-                                <span class="badge badge-info">${stats.active_niches || 0} Active</span>
-                            </div>
-                            <div class="card-body">Configure creator categories, English coaching, and supply caps</div>
-                        </button>
-                        <button class="card" onclick="router('/admin/providers')" style="cursor: pointer; text-align: left;">
-                            <div class="card-header">
-                                <div class="card-title">Provider Management</div>
-                                <span class="badge badge-info">${stats.total_providers || 0} Providers</span>
-                            </div>
-                            <div class="card-body">Verify credentials, review profiles, and manage provider status</div>
-                        </button>
-                        <button class="card" onclick="router('/admin/bookings')" style="cursor: pointer; text-align: left;">
-                            <div class="card-header">
-                                <div class="card-title">All Bookings & Escrow</div>
-                                <span class="badge badge-info">${stats.total_bookings || 0} Orders</span>
-                            </div>
-                            <div class="card-body">Monitor escrow payments, deliveries, and force-approve releases</div>
-                        </button>
-                        <button class="card" onclick="router('/admin/disputes')" style="cursor: pointer; text-align: left;">
-                            <div class="card-header">
-                                <div class="card-title">Dispute Center</div>
-                                <span class="badge badge-danger">Resolutions</span>
-                            </div>
-                            <div class="card-body">Review dispute claims, issue full buyer refunds or provider payouts</div>
-                        </button>
                         <button class="card" onclick="router('/admin/chats')" style="cursor: pointer; text-align: left; border-color: rgba(99, 102, 241, 0.4);">
-                            <div class="card-header">
-                                <div class="card-title">💬 Chats & Safety Guard</div>
+                            <div class="card-header" style="margin-bottom: 6px;">
+                                <div class="card-title" style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary);">💬 Chats & Safety Guard</div>
                                 <span class="badge badge-primary">Moderation</span>
                             </div>
-                            <div class="card-body">Inspect buyer-provider messages, review phone-sharing blocks, and unblock accounts</div>
+                            <div class="card-body" style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;">
+                                Inspect buyer-provider messages, review phone-sharing auto-blocks, and unblock accounts with 1 click.
+                            </div>
+                        </button>
+                        <button class="card" onclick="router('/admin/providers')" style="cursor: pointer; text-align: left;">
+                            <div class="card-header" style="margin-bottom: 6px;">
+                                <div class="card-title" style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary);">👥 Provider Management</div>
+                                <span class="badge badge-info">${stats.total_providers || 0} Providers</span>
+                            </div>
+                            <div class="card-body" style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;">
+                                Verify credentials, review applicant portfolios, and manage active creator status.
+                            </div>
+                        </button>
+                        <button class="card" onclick="router('/admin/bookings')" style="cursor: pointer; text-align: left;">
+                            <div class="card-header" style="margin-bottom: 6px;">
+                                <div class="card-title" style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary);">📋 All Bookings & Escrow Monitor</div>
+                                <span class="badge badge-info">${stats.total_bookings || 0} Orders</span>
+                            </div>
+                            <div class="card-body" style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;">
+                                Monitor all transactions across the platform, verify file deliveries, and force-release escrow.
+                            </div>
+                        </button>
+                        <button class="card" onclick="router('/admin/disputes')" style="cursor: pointer; text-align: left;">
+                            <div class="card-header" style="margin-bottom: 6px;">
+                                <div class="card-title" style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary);">⚖️ Dispute Resolution Center</div>
+                                <span class="badge badge-danger">Arbitration</span>
+                            </div>
+                            <div class="card-body" style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;">
+                                Review client dispute claims, inspect deliverables, and issue full refunds or provider releases.
+                            </div>
+                        </button>
+                        <button class="card" onclick="router('/payments')" style="cursor: pointer; text-align: left;">
+                            <div class="card-header" style="margin-bottom: 6px;">
+                                <div class="card-title" style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary);">💳 Escrow Vault & Financials</div>
+                                <span class="badge badge-success">Audit</span>
+                            </div>
+                            <div class="card-body" style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;">
+                                View gross volume, platform commissions, 80% provider disbursements, and funds currently locked.
+                            </div>
+                        </button>
+                        <button class="card" onclick="router('/admin/niches')" style="cursor: pointer; text-align: left;">
+                            <div class="card-header" style="margin-bottom: 6px;">
+                                <div class="card-title" style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary);">🗂️ Niches & Service Categories</div>
+                                <span class="badge badge-info">${stats.active_niches || 0} Active</span>
+                            </div>
+                            <div class="card-body" style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;">
+                                Configure video editing and English tutoring categories, pricing floors, and provider supply caps.
+                            </div>
                         </button>
                     </div>
                 ` : ''}

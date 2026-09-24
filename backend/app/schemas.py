@@ -56,6 +56,9 @@ class SocialLoginRequest(BaseModel):
     token: Optional[str] = None
     user_type: Optional[UserType] = UserType.BUYER
 
+class RoleSwitchRequest(BaseModel):
+    role: str
+
 class UserResponse(BaseModel):
     id: int
     user_type: UserType
