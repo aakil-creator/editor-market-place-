@@ -5202,3 +5202,154 @@ textarea::placeholder,
     background: rgba(255, 255, 255, 0.25);
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
 }
+
+/* ==========================================================================
+   Category Showcase Grid & Large Block Cards (Photo Inspired Layout)
+   ========================================================================== */
+.category-grid-showcase {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 14px;
+    margin-bottom: 24px;
+}
+
+.category-block-card {
+    background: var(--bg-card);
+    border: 2px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease, border-color 0.2s ease;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+    user-select: none;
+    position: relative;
+}
+
+.category-block-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.14);
+    border-color: var(--accent);
+}
+
+.category-block-card.active {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2.5px var(--accent), 0 10px 30px rgba(99, 102, 241, 0.28);
+    transform: translateY(-3px);
+}
+
+.category-card-header {
+    padding: 10px 8px;
+    font-size: 0.9rem;
+    font-weight: 800;
+    color: #ffffff;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    letter-spacing: 0.2px;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+
+/* Color themed headers */
+.cat-all .category-card-header { background: linear-gradient(135deg, #4f46e5, #6366f1); }
+.cat-editors .category-card-header { background: linear-gradient(135deg, #6c5ce7, #8b5cf6); }
+.cat-tutors .category-card-header { background: linear-gradient(135deg, #059669, #10b981); }
+.cat-writers .category-card-header { background: linear-gradient(135deg, #0284c7, #38bdf8); }
+.cat-express .category-card-header { background: linear-gradient(135deg, #d97706, #f59e0b); }
+
+.cat-active-dot {
+    font-size: 0.75rem;
+    color: #ffffff;
+    animation: pulse 1.5s infinite;
+}
+
+.category-card-body {
+    padding: 18px 10px 16px 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-card);
+    flex: 1;
+}
+
+.category-large-circle {
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    border: 3.5px solid transparent;
+    flex-shrink: 0;
+}
+
+.category-block-card:hover .category-large-circle {
+    transform: scale(1.1) rotate(2deg);
+}
+
+/* Big circular illustrations matching role badges */
+.circle-all {
+    background: radial-gradient(circle, #3730a3 0%, #1e1b4b 100%);
+    border-color: #6366f1;
+}
+
+.circle-editors {
+    background: radial-gradient(circle, #4c1d95 0%, #2e1065 100%);
+    border-color: #a855f7;
+}
+
+.circle-tutors {
+    background: radial-gradient(circle, #064e3b 0%, #022c22 100%);
+    border-color: #10b981;
+}
+
+.circle-writers {
+    background: radial-gradient(circle, #075985 0%, #082f49 100%);
+    border-color: #38bdf8;
+}
+
+.circle-express {
+    background: radial-gradient(circle, #78350f 0%, #451a03 100%);
+    border-color: #f59e0b;
+}
+
+.category-card-tag {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    text-align: center;
+    line-height: 1.25;
+}
+
+.category-block-card.active .category-card-tag {
+    color: var(--text-primary);
+    font-weight: 800;
+}
+
+@media (max-width: 1024px) {
+    .category-grid-showcase {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 640px) {
+    .category-grid-showcase {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+    .category-large-circle {
+        width: 78px;
+        height: 78px;
+    }
+    .category-card-header {
+        font-size: 0.8125rem;
+        padding: 8px 6px;
+    }
+}

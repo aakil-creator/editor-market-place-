@@ -2137,28 +2137,72 @@ function BuyerDashboard() {
                         </button>
                     </div>
 
-                    <!-- Category Pills with Animated Icons -->
-                    <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
-                        <button type="button" class="filter-chip ${activeFilter === 'all' ? 'active' : ''}" onclick="window.__setBuyerFilter('all')">
-                            <span class="chip-icon-box">${getCategoryPeekIconSvg('all', 36)}</span>
-                            <span>All Services</span>
-                        </button>
-                        <button type="button" class="filter-chip ${activeFilter === 'editors' ? 'active' : ''}" onclick="window.__setBuyerFilter('editors')">
-                            <span class="chip-icon-box">${getCategoryPeekIconSvg('editors_animators', 36)}</span>
-                            <span>Video Editors</span>
-                        </button>
-                        <button type="button" class="filter-chip ${activeFilter === 'tutors' ? 'active' : ''}" onclick="window.__setBuyerFilter('tutors')">
-                            <span class="chip-icon-box">${getCategoryPeekIconSvg('tutors', 36)}</span>
-                            <span>English Tutors</span>
-                        </button>
-                        <button type="button" class="filter-chip ${activeFilter === 'writers' ? 'active' : ''}" onclick="window.__setBuyerFilter('writers')">
-                            <span class="chip-icon-box">${getCategoryPeekIconSvg('writers', 36)}</span>
-                            <span>Writers &amp; Copy</span>
-                        </button>
-                        <button type="button" class="filter-chip ${activeFilter === 'express' ? 'active' : ''}" onclick="window.__setBuyerFilter('express')">
-                            <span class="chip-icon-box">${getCategoryPeekIconSvg('express', 36)}</span>
-                            <span>24h Express</span>
-                        </button>
+                    <!-- Category Showcase Grid with Large Circular Icons (Photo Layout) -->
+                    <div class="category-grid-showcase">
+                        <div class="category-block-card cat-all ${activeFilter === 'all' ? 'active' : ''}" onclick="window.__setBuyerFilter('all')">
+                            <div class="category-card-header">
+                                <span>All Services</span>
+                                ${activeFilter === 'all' ? '<span class="cat-active-dot">●</span>' : ''}
+                            </div>
+                            <div class="category-card-body">
+                                <div class="category-large-circle circle-all">
+                                    ${getCategoryPeekIconSvg('all', 62)}
+                                </div>
+                                <div class="category-card-tag">All Verified Talent</div>
+                            </div>
+                        </div>
+
+                        <div class="category-block-card cat-editors ${activeFilter === 'editors' ? 'active' : ''}" onclick="window.__setBuyerFilter('editors')">
+                            <div class="category-card-header">
+                                <span>Video Editors</span>
+                                ${activeFilter === 'editors' ? '<span class="cat-active-dot">●</span>' : ''}
+                            </div>
+                            <div class="category-card-body">
+                                <div class="category-large-circle circle-editors">
+                                    ${getCategoryPeekIconSvg('editors_animators', 62)}
+                                </div>
+                                <div class="category-card-tag">Reels, YouTube &amp; Ads</div>
+                            </div>
+                        </div>
+
+                        <div class="category-block-card cat-tutors ${activeFilter === 'tutors' ? 'active' : ''}" onclick="window.__setBuyerFilter('tutors')">
+                            <div class="category-card-header">
+                                <span>English Tutors</span>
+                                ${activeFilter === 'tutors' ? '<span class="cat-active-dot">●</span>' : ''}
+                            </div>
+                            <div class="category-card-body">
+                                <div class="category-large-circle circle-tutors">
+                                    ${getCategoryPeekIconSvg('tutors', 62)}
+                                </div>
+                                <div class="category-card-tag">Fluency, IELTS &amp; Accent</div>
+                            </div>
+                        </div>
+
+                        <div class="category-block-card cat-writers ${activeFilter === 'writers' ? 'active' : ''}" onclick="window.__setBuyerFilter('writers')">
+                            <div class="category-card-header">
+                                <span>Writers &amp; Copy</span>
+                                ${activeFilter === 'writers' ? '<span class="cat-active-dot">●</span>' : ''}
+                            </div>
+                            <div class="category-card-body">
+                                <div class="category-large-circle circle-writers">
+                                    ${getCategoryPeekIconSvg('writers', 62)}
+                                </div>
+                                <div class="category-card-tag">SEO, Scripts &amp; Blogs</div>
+                            </div>
+                        </div>
+
+                        <div class="category-block-card cat-express ${activeFilter === 'express' ? 'active' : ''}" onclick="window.__setBuyerFilter('express')">
+                            <div class="category-card-header">
+                                <span style="display: inline-flex; align-items: center; gap: 4px;">⚡ 24h Express</span>
+                                ${activeFilter === 'express' ? '<span class="cat-active-dot">●</span>' : ''}
+                            </div>
+                            <div class="category-card-body">
+                                <div class="category-large-circle circle-express">
+                                    ${getCategoryPeekIconSvg('express', 62)}
+                                </div>
+                                <div class="category-card-tag">Super Fast Turnaround</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
