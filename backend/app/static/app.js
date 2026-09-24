@@ -428,7 +428,7 @@ function openPreBookingChat(providerId, providerName) {
 window.openPreBookingChat = openPreBookingChat;
 window.openProviderChatModal = openPreBookingChat;
 
-function getCategoryPeekIconSvg(niche, size = 22) {
+function getCategoryPeekIconSvg(niche, size = 38) {
     if (niche === 'editors_animators' || niche === 'editors') {
         return `<svg class="peek-svg peek-svg-clapper" style="width: ${size}px; height: ${size}px;" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
             <rect x="8" y="20" width="32" height="21" rx="4" fill="#6c5ce7" stroke="#4c3fb5" stroke-width="1.5"/>
@@ -2140,23 +2140,23 @@ function BuyerDashboard() {
                     <!-- Category Pills with Animated Icons -->
                     <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
                         <button type="button" class="filter-chip ${activeFilter === 'all' ? 'active' : ''}" onclick="window.__setBuyerFilter('all')">
-                            <span class="chip-icon-box">${getCategoryPeekIconSvg('all', 26)}</span>
+                            <span class="chip-icon-box">${getCategoryPeekIconSvg('all', 36)}</span>
                             <span>All Services</span>
                         </button>
                         <button type="button" class="filter-chip ${activeFilter === 'editors' ? 'active' : ''}" onclick="window.__setBuyerFilter('editors')">
-                            <span class="chip-icon-box">${getCategoryPeekIconSvg('editors_animators', 26)}</span>
+                            <span class="chip-icon-box">${getCategoryPeekIconSvg('editors_animators', 36)}</span>
                             <span>Video Editors</span>
                         </button>
                         <button type="button" class="filter-chip ${activeFilter === 'tutors' ? 'active' : ''}" onclick="window.__setBuyerFilter('tutors')">
-                            <span class="chip-icon-box">${getCategoryPeekIconSvg('tutors', 26)}</span>
+                            <span class="chip-icon-box">${getCategoryPeekIconSvg('tutors', 36)}</span>
                             <span>English Tutors</span>
                         </button>
                         <button type="button" class="filter-chip ${activeFilter === 'writers' ? 'active' : ''}" onclick="window.__setBuyerFilter('writers')">
-                            <span class="chip-icon-box">${getCategoryPeekIconSvg('writers', 26)}</span>
+                            <span class="chip-icon-box">${getCategoryPeekIconSvg('writers', 36)}</span>
                             <span>Writers &amp; Copy</span>
                         </button>
                         <button type="button" class="filter-chip ${activeFilter === 'express' ? 'active' : ''}" onclick="window.__setBuyerFilter('express')">
-                            <span class="chip-icon-box">${getCategoryPeekIconSvg('express', 26)}</span>
+                            <span class="chip-icon-box">${getCategoryPeekIconSvg('express', 36)}</span>
                             <span>24h Express</span>
                         </button>
                     </div>
