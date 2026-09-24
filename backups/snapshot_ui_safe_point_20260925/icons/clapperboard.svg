@@ -1,0 +1,25 @@
+<svg class="peek-svg peek-svg-clapper" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="clapperBodyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#9d8df1"/>
+      <stop offset="100%" stop-color="#6c5ce7"/>
+    </linearGradient>
+    <linearGradient id="clapperDarkGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#373059"/>
+      <stop offset="100%" stop-color="#221d3b"/>
+    </linearGradient>
+  </defs>
+  <!-- Lower clapperboard body -->
+  <rect x="8" y="20" width="32" height="21" rx="4" fill="url(#clapperBodyGrad)" stroke="#4c3fb5" stroke-width="1.5"/>
+  <rect x="8" y="20" width="32" height="7" fill="url(#clapperDarkGrad)"/>
+  <path d="M14 20 L18 27 M22 20 L26 27 M30 20 L34 27 M38 20 L40 23.5" stroke="#e0e7ff" stroke-width="2.2" stroke-linecap="round"/>
+  <!-- Production info lines -->
+  <line x1="13" y1="32" x2="23" y2="32" stroke="#ffffff" stroke-opacity="0.5" stroke-width="2" stroke-linecap="round"/>
+  <line x1="13" y1="36" x2="35" y2="36" stroke="#ffffff" stroke-opacity="0.35" stroke-width="1.5" stroke-linecap="round"/>
+  <!-- Top Clapper Arm (Rotates and snaps on peek/hover) -->
+  <g class="clapper-stick-group">
+    <rect x="6" y="11" width="34" height="7.5" rx="2.5" fill="url(#clapperDarkGrad)" stroke="#4c3fb5" stroke-width="1.5"/>
+    <path d="M11 11.5 L15 18 M19 11.5 L23 18 M27 11.5 L31 18 M35 11.5 L39 18" stroke="#e0e7ff" stroke-width="2.2" stroke-linecap="round"/>
+    <circle cx="9" cy="14.5" r="2.2" fill="#c7d2fe" stroke="#4c3fb5" stroke-width="1"/>
+  </g>
+</svg>

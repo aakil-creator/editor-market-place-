@@ -1,0 +1,22 @@
+<svg class="peek-svg peek-svg-tutor" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="tutorGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34d399"/>
+      <stop offset="100%" stop-color="#059669"/>
+    </linearGradient>
+    <linearGradient id="bubbleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10b981"/>
+      <stop offset="100%" stop-color="#047857"/>
+    </linearGradient>
+  </defs>
+  <!-- Main Speech Bubble -->
+  <path d="M8 22C8 14.268 15.163 8 24 8C32.837 8 40 14.268 40 22C40 29.732 32.837 36 24 36C21.6 36 19.33 35.53 17.3 34.7L10 38L11.8 32.1C9.46 29.35 8 25.86 8 22Z" fill="url(#bubbleGrad)" stroke="#065f46" stroke-width="1.5"/>
+  <!-- Sound waves / speech lines (Pulsates on peek/hover) -->
+  <g class="tutor-wave-group">
+    <path class="wave-1" d="M16 22C16 18.5 19 16 24 16" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
+    <path class="wave-2" d="M19 22C19 19.8 21 18.2 24 18.2" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
+    <!-- Headphone / Mic accent -->
+    <path d="M18 25C18 27.5 20.5 29.5 24 29.5C26.5 29.5 28.5 28.3 29.3 26.5" stroke="#a7f3d0" stroke-width="2" stroke-linecap="round"/>
+    <circle cx="30" cy="26.5" r="2" fill="#ecfdf5"/>
+  </g>
+</svg>

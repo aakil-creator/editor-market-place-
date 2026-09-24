@@ -1,7 +1,4 @@
 // Groove Hub - Main Application
-if (window.location.hostname === '127.0.0.1') {
-    window.location.replace(window.location.href.replace('127.0.0.1', 'localhost'));
-}
 
 // State
 let currentToken = localStorage.getItem('access_token') || null;
@@ -21,9 +18,6 @@ async function fetchPublicConfig() {
         if (res.ok) {
             publicConfig = await res.json();
             window.publicConfig = publicConfig;
-            if (typeof window.__refreshGoogleBtn === 'function') {
-                window.__refreshGoogleBtn();
-            }
         }
     } catch (_) { }
 }
@@ -42,7 +36,7 @@ if (currentToken) {
     });
 }
 
-// Tagged template literal: el`<div ...>` --> HTMLElement
+// Tagged template literal: el`<div ...>` → HTMLElement
 function el(strings, ...values) {
     const html = strings.reduce((acc, str, i) => {
         const value = values[i];
@@ -81,56 +75,11 @@ async function apiFetch(endpoint, options = {}) {
     try { data = text ? JSON.parse(text) : {}; } catch (_) { data = { detail: text }; }
 
     if (!response.ok) {
-        if (response.status === 403 && data.detail && (
-            data.detail.toLowerCase().includes('suspended') ||
-            data.detail.toLowerCase().includes('security alert') ||
-            data.detail.toLowerCase().includes('blocked')
-        )) {
-            showSuspendedModal(data.detail);
-            currentToken = null;
-            currentUser = null;
-            localStorage.removeItem('access_token');
-            localStorage.removeItem('current_user');
-            if (typeof renderAppHeader === 'function') {
-                const header = document.querySelector('.header');
-                if (header) header.replaceWith(renderAppHeader());
-            }
-        }
         throw new Error(data.detail || 'Request failed');
     }
 
     return data;
 }
-
-// Security Suspension Modal
-function showSuspendedModal(detail) {
-    const existing = document.getElementById('security-suspended-modal');
-    if (existing) existing.remove();
-
-    const overlay = document.createElement('div');
-    overlay.id = 'security-suspended-modal';
-    overlay.className = 'security-alert-modal-overlay';
-    overlay.innerHTML = `
-        <div class="security-alert-modal-card">
-            <div style="width: 64px; height: 64px; border-radius: 50%; background: rgba(239, 68, 68, 0.15); color: #ef4444; font-size: 2rem; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
-                🛑
-            </div>
-            <h2 style="color: #ef4444; font-size: 1.35rem; font-weight: 800; margin: 0 0 10px;">Account Suspended</h2>
-            <div style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 10px; padding: 12px 14px; margin-bottom: 18px; font-size: 0.85rem; color: var(--text-primary); text-align: left; line-height: 1.45;">
-                ${detail || 'Your account was suspended for attempting to exchange phone numbers or direct contact information outside Groove Hub.'}
-            </div>
-            <p style="font-size: 0.8125rem; color: var(--text-secondary); line-height: 1.5; margin: 0 0 20px;">
-                To protect buyers and creators under our <strong>100% Escrow Guarantee</strong>, Groove Hub strictly prohibits sharing phone numbers, WhatsApp, UPI, or external channels. All transactions and chats must remain on the platform.
-            </p>
-            <div style="display: flex; gap: 10px;">
-                <button class="btn btn-secondary" onclick="document.getElementById('security-suspended-modal').remove(); router('/')" style="flex: 1;">Close</button>
-                <a href="mailto:rahura2026@gmail.com?subject=Groove Hub Account Suspension Appeal" class="btn btn-primary" style="flex: 1.5; text-decoration: none; display: flex; align-items: center; justify-content: center;">Contact Admin Support</a>
-            </div>
-        </div>
-    `;
-    document.body.appendChild(overlay);
-}
-window.showSuspendedModal = showSuspendedModal;
 
 // Toast notification
 function showToast(message, type = 'info') {
@@ -175,18 +124,8 @@ async function requireAuth() {
 }
 
 // Theme Management
-let storedTheme = localStorage.getItem('theme');
-let currentTheme = storedTheme || (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+let currentTheme = localStorage.getItem('theme') || 'dark';
 document.documentElement.setAttribute('data-theme', currentTheme);
-
-if (window.matchMedia) {
-    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
-        if (!localStorage.getItem('theme')) {
-            currentTheme = e.matches ? 'dark' : 'light';
-            document.documentElement.setAttribute('data-theme', currentTheme);
-        }
-    });
-}
 
 function toggleTheme() {
     currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
@@ -198,414 +137,81 @@ function toggleTheme() {
 window.toggleTheme = toggleTheme;
 
 // App Brand Logo Component
-function renderLogo(size = 28, showText = true) {
+function renderLogo(size = 24, showText = true) {
     return `
-        <div class="logo" style="cursor: pointer; display: inline-flex; align-items: center; gap: 8px;" onclick="router('/')">
-            <img class="logo-light-mode" src="/static/icons/grove_hub_emblem_light.png" alt="Grove Hub" style="height: ${size}px; width: auto; max-width: ${Math.round(size * 1.5)}px; object-fit: contain; vertical-align: middle;" />
-            <img class="logo-dark-mode" src="/static/icons/grove_hub_emblem_dark.png" alt="Grove Hub" style="height: ${size}px; width: auto; max-width: ${Math.round(size * 1.5)}px; object-fit: contain; vertical-align: middle; filter: drop-shadow(0 1px 3px rgba(0,0,0,0.3));" />
-            ${showText ? `<span style="font-weight: 800; font-size: ${Math.max(16, Math.round(size * 0.62))}px; letter-spacing: -0.4px; color: var(--text-primary);">Grove Hub</span>` : ''}
+        <div class="logo" style="cursor: pointer;" onclick="router('/')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="${size}" height="${size}">
+                <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                <path d="M2 17l10 5 10-5"/>
+                <path d="M2 12l10 5 10-5"/>
+            </svg>
+            ${showText ? `<span>Groove Hub</span>` : ''}
         </div>
     `;
 }
 window.renderLogo = renderLogo;
 
-// Mode Switcher Function for Users
-async function toggleUserMode() {
-    if (!currentUser) return;
-    if (currentUser.user_type === 'ADMIN') {
-        showToast('Admin accounts operate in the Admin Console.', 'info');
-        return;
-    }
-
-    const currentRole = currentUser.user_type || 'BUYER';
-    const targetRole = currentRole === 'PROVIDER' ? 'BUYER' : 'PROVIDER';
-    const targetTitle = targetRole === 'PROVIDER' ? 'Provider Mode 💼' : 'Buyer Mode 🛍️';
-
-    showLoading();
-    try {
-        const res = await apiFetch('/user/switch-role', {
-            method: 'POST',
-            body: JSON.stringify({ role: targetRole })
-        });
-        if (res.token) {
-            currentToken = res.token;
-            localStorage.setItem('token', res.token);
-        }
-        if (res.user) {
-            currentUser = res.user;
-            localStorage.setItem('user', JSON.stringify(currentUser));
-        } else {
-            currentUser.user_type = targetRole;
-            localStorage.setItem('user', JSON.stringify(currentUser));
-        }
-        localStorage.setItem('grove_hub_active_mode', targetRole);
-        showToast(`Switched to ${targetTitle}!`, 'success');
-        router('/');
-    } catch (e) {
-        showToast(e.message || 'Failed to switch mode', 'error');
-    } finally {
-        hideLoading();
-    }
-}
-window.toggleUserMode = toggleUserMode;
-
-// Universal App Header with 100% strict Separation of Modes (Buyer Mode, Provider Mode, and Admin Console)
+// Universal App Header
 function renderAppHeader(activeRoute = '') {
-    const isAdmin = currentUser?.user_type === 'ADMIN';
     const isProvider = currentUser?.user_type === 'PROVIDER';
+    const isAdmin = currentUser?.user_type === 'ADMIN';
 
-    // 1. ADMIN EXCLUSIVE HEADER (No buyer or provider interference)
-    if (isAdmin) {
-        return el`<div>
-            <div class="header" style="border-bottom: 2px solid rgba(239, 68, 68, 0.35);">
-                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                    ${renderLogo(32, true)}
-                    <span class="mode-badge-pill mode-badge-admin">🛡️ Admin Console</span>
-                </div>
-                <div class="header-nav" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-                    <button class="nav-btn ${activeRoute === '/admin' || activeRoute === '/' ? 'active' : ''}" onclick="router('/admin')">📊 Dashboard</button>
-                    <button class="nav-btn ${activeRoute === '/admin/chats' ? 'active' : ''}" onclick="router('/admin/chats')">💬 Chats Guard</button>
-                    <button class="nav-btn ${activeRoute === '/admin/providers' ? 'active' : ''}" onclick="router('/admin/providers')">👥 Providers</button>
-                    <button class="nav-btn ${activeRoute === '/admin/bookings' ? 'active' : ''}" onclick="router('/admin/bookings')">📋 Bookings & Escrow</button>
-                    <button class="nav-btn ${activeRoute === '/admin/disputes' ? 'active' : ''}" onclick="router('/admin/disputes')">⚖️ Disputes</button>
-                    <button class="nav-btn ${activeRoute === '/payments' ? 'active' : ''}" onclick="router('/payments')">💳 Financials</button>
-                    <button class="nav-btn ${activeRoute === '/admin/niches' ? 'active' : ''}" onclick="router('/admin/niches')">🗂️ Niches</button>
-                    <button class="nav-btn ${activeRoute === '/settings' ? 'active' : ''}" onclick="router('/settings')">⚙️ Settings</button>
-                    <button class="nav-btn" onclick="toggleTheme()" title="Toggle Theme" style="padding: 8px 12px;">
-                        ${currentTheme === 'dark' ? '☀️' : '🌙'}
-                    </button>
-                    <button class="nav-btn" onclick="logout()" style="color: var(--danger); font-weight: 700;">Logout</button>
-                </div>
-            </div>
-            <!-- Admin Mobile Bottom Nav -->
-            <div class="mobile-bottom-nav">
-                <button class="bottom-nav-item ${activeRoute === '/admin' || activeRoute === '/' ? 'active' : ''}" onclick="router('/admin')">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-                    <span>Overview</span>
-                </button>
-                <button class="bottom-nav-item ${activeRoute === '/admin/chats' ? 'active' : ''}" onclick="router('/admin/chats')">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                    <span>Chats</span>
-                </button>
-                <button class="bottom-nav-item ${activeRoute === '/admin/bookings' ? 'active' : ''}" onclick="router('/admin/bookings')">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
-                    <span>Orders</span>
-                </button>
-                <button class="bottom-nav-item ${activeRoute === '/payments' ? 'active' : ''}" onclick="router('/payments')">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-                    <span>Financials</span>
-                </button>
-                <button class="bottom-nav-item ${activeRoute === '/settings' ? 'active' : ''}" onclick="router('/settings')">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-                    <span>Settings</span>
-                </button>
-            </div>
-        </div>`;
-    }
-
-    // 2. PROVIDER EXCLUSIVE HEADER (Creator Studio)
-    if (isProvider) {
-        return el`<div>
-            <div class="header">
-                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                    ${renderLogo(32, true)}
-                    <span class="mode-badge-pill mode-badge-provider">💼 Provider Mode</span>
-                    <button type="button" class="btn-switch-mode" onclick="toggleUserMode()" title="Switch to Buyer Mode to hire talent">
-                        🛍️ Switch to Buyer Mode
-                    </button>
-                </div>
-                <div class="header-nav" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-                    <button class="nav-btn ${activeRoute === '/' ? 'active' : ''}" onclick="router('/')">📊 Studio</button>
-                    <button class="nav-btn ${activeRoute === '/packages' || activeRoute === '/create-package' ? 'active' : ''}" onclick="router('/packages')">📦 My Packages</button>
-                    <button class="nav-btn ${activeRoute === '/bookings' ? 'active' : ''}" onclick="router('/bookings')">📋 Client Orders</button>
-                    <button class="nav-btn ${activeRoute === '/messages' ? 'active' : ''}" onclick="router('/messages')" id="nav-btn-messages">
-                        💬 Messages <span class="nav-unread-badge" id="header-unread-count" style="display:none; background:#ff4757; color:#fff; font-size:0.7rem; font-weight:700; padding:1px 6px; border-radius:10px; margin-left:4px;"></span>
-                    </button>
-                    <button class="nav-btn ${activeRoute === '/payments' ? 'active' : ''}" onclick="router('/payments')">💳 Earnings & Payouts</button>
-                    <button class="nav-btn ${activeRoute === '/profile' || activeRoute === '/settings' ? 'active' : ''}" onclick="router('/profile')">🎨 My Profile</button>
-                    <button class="nav-btn" onclick="toggleTheme()" title="Toggle Theme" style="padding: 8px 12px;">
-                        ${currentTheme === 'dark' ? '☀️' : '🌙'}
-                    </button>
-                    <button class="nav-btn" onclick="logout()" style="color: var(--danger);">Logout</button>
-                </div>
-            </div>
-            <!-- Provider Mobile Bottom Nav -->
-            <div class="mobile-bottom-nav">
-                <button class="bottom-nav-item ${activeRoute === '/' ? 'active' : ''}" onclick="router('/')">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-                    <span>Studio</span>
-                </button>
-                <button class="bottom-nav-item ${activeRoute === '/packages' ? 'active' : ''}" onclick="router('/packages')">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                    <span>Packages</span>
-                </button>
-                <button class="bottom-nav-item ${activeRoute === '/bookings' ? 'active' : ''}" onclick="router('/bookings')">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
-                    <span>Orders</span>
-                </button>
-                <button class="bottom-nav-item ${activeRoute === '/messages' ? 'active' : ''}" onclick="router('/messages')" style="position: relative;">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                    <span class="nav-unread-dot" id="bottom-unread-dot" style="display:none; position:absolute; top:4px; right:18px; width:8px; height:8px; border-radius:50%; background:#ff4757;"></span>
-                    <span>Messages</span>
-                </button>
-                <button class="bottom-nav-item ${activeRoute === '/payments' ? 'active' : ''}" onclick="router('/payments')">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-                    <span>Earnings</span>
-                </button>
-            </div>
-        </div>`;
-    }
-
-    // 3. BUYER EXCLUSIVE HEADER (Client / Marketplace)
     return el`<div>
         <div class="header">
-            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 8px;">
                 ${renderLogo(32, true)}
-                <span class="mode-badge-pill mode-badge-buyer">🛍️ Buyer Mode</span>
-                <button type="button" class="btn-switch-mode" onclick="toggleUserMode()" title="Switch to Provider Mode to offer your services">
-                    💼 Switch to Provider Mode
-                </button>
+                ${isAdmin ? '<span class="badge badge-danger" style="margin-left: 6px;">Admin</span>' : ''}
             </div>
             <div class="header-nav" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-                <button class="nav-btn ${activeRoute === '/' || activeRoute === '/providers' ? 'active' : ''}" onclick="router('/')">🔍 Browse Talent</button>
-                <button class="nav-btn ${activeRoute === '/messages' ? 'active' : ''}" onclick="router('/messages')" id="nav-btn-messages">
-                    💬 Messages <span class="nav-unread-badge" id="header-unread-count" style="display:none; background:#ff4757; color:#fff; font-size:0.7rem; font-weight:700; padding:1px 6px; border-radius:10px; margin-left:4px;"></span>
-                </button>
-                <button class="nav-btn ${activeRoute === '/bookings' ? 'active' : ''}" onclick="router('/bookings')">📦 My Orders</button>
-                <button class="nav-btn ${activeRoute === '/payments' ? 'active' : ''}" onclick="router('/payments')">💳 Wallet / Escrow</button>
-                <button class="nav-btn ${activeRoute === '/settings' ? 'active' : ''}" onclick="router('/settings')">⚙️ Settings</button>
+                <button class="nav-btn ${activeRoute === '/' ? 'active' : ''}" onclick="router('/')">Dashboard</button>
+                <button class="nav-btn ${activeRoute === '/providers' ? 'active' : ''}" onclick="router('/providers')">Browse Talent</button>
+                <button class="nav-btn ${activeRoute === '/bookings' ? 'active' : ''}" onclick="router('/bookings')">My Bookings</button>
+                <button class="nav-btn ${activeRoute === '/payments' ? 'active' : ''}" onclick="router('/payments')">💳 Payments</button>
+                ${isProvider ? `<button class="nav-btn ${activeRoute === '/packages' ? 'active' : ''}" onclick="router('/packages')">My Packages</button>` : ''}
+                ${isAdmin ? `<button class="nav-btn ${activeRoute.startsWith('/admin') ? 'active' : ''}" onclick="router('/admin')">Admin</button>` : ''}
+                <button class="nav-btn ${activeRoute === '/settings' || activeRoute === '/profile' ? 'active' : ''}" onclick="router('/settings')">Settings</button>
                 <button class="nav-btn" onclick="toggleTheme()" title="Toggle Theme" style="padding: 8px 12px;">
                     ${currentTheme === 'dark' ? '☀️' : '🌙'}
                 </button>
                 <button class="nav-btn" onclick="logout()" style="color: var(--danger);">Logout</button>
             </div>
         </div>
-        <!-- Buyer Mobile Bottom Nav -->
         <div class="mobile-bottom-nav">
-            <button class="bottom-nav-item ${activeRoute === '/' || activeRoute === '/providers' ? 'active' : ''}" onclick="router('/')">
+            <button class="bottom-nav-item ${activeRoute === '/' ? 'active' : ''}" onclick="router('/')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+                <span>Home</span>
+            </button>
+            <button class="bottom-nav-item ${activeRoute === '/providers' ? 'active' : ''}" onclick="router('/providers')">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                 <span>Talent</span>
             </button>
-            <button class="bottom-nav-item ${activeRoute === '/messages' ? 'active' : ''}" onclick="router('/messages')" style="position: relative;">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                <span class="nav-unread-dot" id="bottom-unread-dot" style="display:none; position:absolute; top:4px; right:18px; width:8px; height:8px; border-radius:50%; background:#ff4757;"></span>
-                <span>Messages</span>
-            </button>
             <button class="bottom-nav-item ${activeRoute === '/bookings' ? 'active' : ''}" onclick="router('/bookings')">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
-                <span>Orders</span>
+                <span>Bookings</span>
             </button>
             <button class="bottom-nav-item ${activeRoute === '/payments' ? 'active' : ''}" onclick="router('/payments')">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-                <span>Wallet</span>
+                <span>Payments</span>
             </button>
-            <button class="bottom-nav-item ${activeRoute === '/settings' ? 'active' : ''}" onclick="router('/settings')">
+            ${isProvider ? `
+            <button class="bottom-nav-item ${activeRoute === '/packages' ? 'active' : ''}" onclick="router('/packages')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                <span>Packages</span>
+            </button>` : ''}
+            <button class="bottom-nav-item ${activeRoute === '/settings' || activeRoute === '/profile' ? 'active' : ''}" onclick="router('/settings')">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-                <span>Account</span>
+                <span>Settings</span>
             </button>
         </div>
     </div>`;
 }
 window.renderAppHeader = renderAppHeader;
 
-function escapeJs(str) {
-    if (!str) return '';
-    return String(str).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"');
-}
-window.escapeJs = escapeJs;
-
-function openPreBookingChat(providerId, providerName) {
-    if (!currentToken) {
-        showToast('Please log in to chat with creators', 'info');
-        sessionStorage.setItem('redirect_after_login', `/messages?user_id=${providerId}`);
-        router('/login');
-        return;
-    }
-    window.__selectedChatUserId = providerId;
-    window.__selectedChatUserName = providerName || 'Creator';
-    router('/messages');
-}
-window.openPreBookingChat = openPreBookingChat;
-window.openProviderChatModal = openPreBookingChat;
-
-function getCategoryPeekIconSvg(niche, size = 38) {
-    if (niche === 'editors_animators' || niche === 'editors') {
-        return `<svg class="peek-svg peek-svg-clapper" style="width: ${size}px; height: ${size}px;" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect x="8" y="20" width="32" height="21" rx="4" fill="#6c5ce7" stroke="#4c3fb5" stroke-width="1.5"/>
-            <rect x="8" y="20" width="32" height="7" fill="#221d3b"/>
-            <path d="M14 20 L18 27 M22 20 L26 27 M30 20 L34 27 M38 20 L40 23.5" stroke="#e0e7ff" stroke-width="2.2" stroke-linecap="round"/>
-            <line x1="13" y1="32" x2="23" y2="32" stroke="#ffffff" stroke-opacity="0.5" stroke-width="2" stroke-linecap="round"/>
-            <line x1="13" y1="36" x2="35" y2="36" stroke="#ffffff" stroke-opacity="0.35" stroke-width="1.5" stroke-linecap="round"/>
-            <g class="clapper-stick-group">
-                <rect x="6" y="11" width="34" height="7.5" rx="2.5" fill="#221d3b" stroke="#4c3fb5" stroke-width="1.5"/>
-                <path d="M11 11.5 L15 18 M19 11.5 L23 18 M27 11.5 L31 18 M35 11.5 L39 18" stroke="#e0e7ff" stroke-width="2.2" stroke-linecap="round"/>
-                <circle cx="9" cy="14.5" r="2.2" fill="#c7d2fe" stroke="#4c3fb5" stroke-width="1"/>
-            </g>
-        </svg>`;
-    } else if (niche === 'tutors') {
-        return `<svg class="peek-svg peek-svg-tutor" style="width: ${size}px; height: ${size}px;" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M8 22C8 14.268 15.163 8 24 8C32.837 8 40 14.268 40 22C40 29.732 32.837 36 24 36C21.6 36 19.33 35.53 17.3 34.7L10 38L11.8 32.1C9.46 29.35 8 25.86 8 22Z" fill="#059669" stroke="#065f46" stroke-width="1.5"/>
-            <g class="tutor-wave-group">
-                <path class="wave-1" d="M16 22C16 18.5 19 16 24 16" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
-                <path class="wave-2" d="M19 22C19 19.8 21 18.2 24 18.2" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
-                <path class="wave-3" d="M18 25C18 27.5 20.5 29.5 24 29.5C26.5 29.5 28.5 28.3 29.3 26.5" stroke="#a7f3d0" stroke-width="2" stroke-linecap="round"/>
-                <circle cx="30" cy="26.5" r="2" fill="#ecfdf5"/>
-            </g>
-        </svg>`;
-    } else if (niche === 'writers') {
-        return `<svg class="peek-svg peek-svg-writer" style="width: ${size}px; height: ${size}px;" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect x="8" y="10" width="22" height="30" rx="3" fill="#1e293b" stroke="#334155" stroke-width="1.5"/>
-            <line x1="13" y1="17" x2="22" y2="17" stroke="#38bdf8" stroke-width="2" stroke-linecap="round"/>
-            <line x1="13" y1="23" x2="25" y2="23" stroke="#64748b" stroke-width="1.8" stroke-linecap="round"/>
-            <line x1="13" y1="29" x2="20" y2="29" stroke="#64748b" stroke-width="1.8" stroke-linecap="round"/>
-            <path class="writer-ink-trail" d="M13 34 C16 32, 19 36, 23 34" stroke="#38bdf8" stroke-width="1.8" stroke-linecap="round"/>
-            <g class="writer-pen-group">
-                <path d="M38 8L41 11L28 27L23 28L24 23L38 8Z" fill="#0284c7" stroke="#0369a1" stroke-width="1.2"/>
-                <path d="M23 28L26 25L24 23L23 28Z" fill="#f8fafc"/>
-                <circle cx="34" cy="14" r="1" fill="#ffffff"/>
-            </g>
-        </svg>`;
-    } else if (niche === 'express') {
-        return `<svg class="peek-svg peek-svg-express" style="width: ${size}px; height: ${size}px;" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="24" cy="24" r="18" fill="rgba(245, 158, 11, 0.15)" stroke="rgba(245, 158, 11, 0.35)" stroke-width="1.2"/>
-            <g class="express-pulse-group">
-                <path d="M26 8L15 24H25L22 40L33 24H23L26 8Z" fill="#f59e0b" stroke="#b45309" stroke-width="1.5" stroke-linejoin="round"/>
-                <circle cx="24" cy="24" r="2.5" fill="#ffffff"/>
-            </g>
-        </svg>`;
-    } else {
-        return `<svg class="peek-svg peek-svg-all" style="width: ${size}px; height: ${size}px;" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="24" cy="24" r="18" fill="rgba(245, 158, 11, 0.12)" stroke="rgba(245, 158, 11, 0.3)" stroke-width="1"/>
-            <g class="star-sparkle-group">
-                <path d="M24 6 C24 16, 24 16, 34 24 C24 24, 24 24, 24 34 C24 24, 24 24, 14 24 C24 16, 24 16, 24 6 Z" fill="#f59e0b" stroke="#b45309" stroke-width="1"/>
-                <circle cx="24" cy="24" r="3" fill="#ffffff"/>
-                <circle cx="13" cy="13" r="1.5" fill="#fde68a"/>
-                <circle cx="35" cy="14" r="1.8" fill="#fde68a"/>
-            <circle cx="33" cy="33" r="1.2" fill="#fde68a"/>
-        </g>
-    </svg>`;
-    }
-}
-function getTypeIconSvg(typeId, fallbackIcon = '✨', size = 32) {
-    if (!typeId) {
-        return `<svg class="type-svg type-svg-all" style="width: ${size}px; height: ${size}px;" viewBox="0 0 36 36" fill="none">
-            <circle cx="18" cy="18" r="15" fill="rgba(245, 158, 11, 0.15)"/>
-            <path class="anim-sparkle" d="M18 4L21 14L31 17L21 20L18 30L15 20L5 17L15 14Z" fill="#f59e0b"/>
-            <circle cx="18" cy="17" r="2.5" fill="#fff"/>
-        </svg>`;
-    }
-    if (typeId === 'youtube') {
-        return `<svg class="type-svg type-svg-youtube" style="width: ${size}px; height: ${size}px;" viewBox="0 0 36 36" fill="none">
-            <rect x="3" y="6" width="30" height="24" rx="7" fill="#ef4444"/>
-            <path class="anim-yt-play" d="M14 12L24 18L14 24Z" fill="#ffffff"/>
-            <circle class="anim-pulse-dot" cx="28" cy="10" r="2" fill="#fecaca"/>
-        </svg>`;
-    }
-    if (typeId === 'ads_social') {
-        return `<svg class="type-svg type-svg-social" style="width: ${size}px; height: ${size}px;" viewBox="0 0 36 36" fill="none">
-            <defs>
-                <linearGradient id="gradSocial" x1="0" y1="0" x2="1" y2="1">
-                    <stop offset="0%" stop-color="#ec4899"/>
-                    <stop offset="100%" stop-color="#8b5cf6"/>
-                </linearGradient>
-            </defs>
-            <rect x="8" y="4" width="20" height="28" rx="5" fill="url(#gradSocial)"/>
-            <rect x="10" y="7" width="16" height="20" rx="3" fill="#0f172a"/>
-            <path class="anim-heart" d="M18 13C16.5 11 13 12.5 13 15C13 18 18 21 18 21C18 21 23 18 23 15C23 12.5 19.5 11 18 13Z" fill="#ec4899"/>
-            <circle cx="18" cy="29" r="1.5" fill="#e2e8f0"/>
-        </svg>`;
-    }
-    if (typeId === 'gaming') {
-        return `<svg class="type-svg type-svg-gaming" style="width: ${size}px; height: ${size}px;" viewBox="0 0 36 36" fill="none">
-            <path d="M7 13C7 10 10 9 18 9C26 9 29 10 29 13L31 23C31.5 25.5 29 27.5 27 26L23 23H13L9 26C7 27.5 4.5 25.5 5 23L7 13Z" fill="#6366f1" stroke="#4338ca" stroke-width="1.5"/>
-            <path class="anim-dpad" d="M10 16H14M12 14V18" stroke="#a5b4fc" stroke-width="2" stroke-linecap="round"/>
-            <circle class="anim-btn-1" cx="22" cy="15" r="1.5" fill="#f43f5e"/>
-            <circle class="anim-btn-2" cx="25" cy="17" r="1.5" fill="#10b981"/>
-        </svg>`;
-    }
-    if (typeId === 'animations') {
-        return `<svg class="type-svg type-svg-anim" style="width: ${size}px; height: ${size}px;" viewBox="0 0 36 36" fill="none">
-            <path d="M18 4L30 11V25L18 32L6 25V11L18 4Z" fill="#8b5cf6" stroke="#6d28d9" stroke-width="1.2"/>
-            <path d="M18 4L18 18L30 11" stroke="#c4b5fd" stroke-width="1.2"/>
-            <path d="M18 18L6 11" stroke="#c4b5fd" stroke-width="1.2"/>
-            <path d="M18 18L18 32" stroke="#4c1d95" stroke-width="1.2"/>
-            <circle class="anim-orbit" cx="24" cy="8" r="2.5" fill="#fbbf24"/>
-        </svg>`;
-    }
-    if (typeId === 'motion_graphics') {
-        return `<svg class="type-svg type-svg-motion" style="width: ${size}px; height: ${size}px;" viewBox="0 0 36 36" fill="none">
-            <ellipse cx="18" cy="18" rx="14" ry="6" stroke="#38bdf8" stroke-width="1.5" transform="rotate(-25 18 18)" class="anim-ring-1"/>
-            <ellipse cx="18" cy="18" rx="14" ry="6" stroke="#f43f5e" stroke-width="1.5" transform="rotate(35 18 18)" class="anim-ring-2"/>
-            <circle cx="18" cy="18" r="4.5" fill="#38bdf8"/>
-            <circle cx="18" cy="18" r="2" fill="#fff"/>
-        </svg>`;
-    }
-    if (typeId === 'music') {
-        return `<svg class="type-svg type-svg-music" style="width: ${size}px; height: ${size}px;" viewBox="0 0 36 36" fill="none">
-            <rect class="eq-bar-1" x="7" y="16" width="3.5" height="12" rx="1.75" fill="#a855f7"/>
-            <rect class="eq-bar-2" x="13" y="10" width="3.5" height="18" rx="1.75" fill="#ec4899"/>
-            <rect class="eq-bar-3" x="19" y="6" width="3.5" height="22" rx="1.75" fill="#3b82f6"/>
-            <rect class="eq-bar-4" x="25" y="13" width="3.5" height="15" rx="1.75" fill="#10b981"/>
-        </svg>`;
-    }
-    if (typeId === 'corporate') {
-        return `<svg class="type-svg type-svg-corp" style="width: ${size}px; height: ${size}px;" viewBox="0 0 36 36" fill="none">
-            <rect x="6" y="12" width="11" height="18" rx="2" fill="#334155" stroke="#475569" stroke-width="1"/>
-            <rect x="19" y="6" width="11" height="24" rx="2" fill="#1e293b" stroke="#0ea5e9" stroke-width="1.2"/>
-            <line x1="10" y1="16" x2="13" y2="16" stroke="#94a3b8" stroke-width="1.5"/>
-            <line x1="10" y1="20" x2="13" y2="20" stroke="#94a3b8" stroke-width="1.5"/>
-            <line x1="23" y1="10" x2="26" y2="10" stroke="#38bdf8" stroke-width="1.5"/>
-            <line x1="23" y1="14" x2="26" y2="14" stroke="#38bdf8" stroke-width="1.5"/>
-            <line x1="23" y1="18" x2="26" y2="18" stroke="#38bdf8" stroke-width="1.5"/>
-            <path class="anim-arrow" d="M12 28L20 18L26 22L32 14" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>`;
-    }
-    return `<span style="font-size: ${Math.round(size * 0.7)}px; line-height: 1;">${fallbackIcon}</span>`;
-}
-window.getTypeIconSvg = getTypeIconSvg;
-window.getCategoryPeekIconSvg = getCategoryPeekIconSvg;
-
-async function updateUnreadCountBadge() {
-    if (!currentToken) return;
-    try {
-        const res = await apiFetch('/messages/unread-count');
-        const count = res.unread_count || 0;
-        const topBadge = document.getElementById('header-unread-count');
-        if (topBadge) {
-            if (count > 0) {
-                topBadge.textContent = count > 99 ? '99+' : count;
-                topBadge.style.display = 'inline-block';
-            } else {
-                topBadge.style.display = 'none';
-            }
-        }
-        const bottomDot = document.getElementById('bottom-unread-dot');
-        if (bottomDot) {
-            bottomDot.style.display = count > 0 ? 'block' : 'none';
-        }
-    } catch (_) {}
-}
-window.updateUnreadCountBadge = updateUnreadCountBadge;
-setInterval(updateUnreadCountBadge, 12000);
-setTimeout(updateUnreadCountBadge, 2000);
-
 // Router
 function router(path) {
-    // 1. If admin is logged in, enforce exclusive Admin Console experience (no buyer/provider interference)
-    if (currentToken && currentUser?.user_type === 'ADMIN') {
-        const buyerProviderOnlyRoutes = ['/', '/welcome', '/providers', '/create-package', '/create-booking', '/packages'];
-        if (buyerProviderOnlyRoutes.includes(path)) {
-            path = '/admin';
-        } else if (path === '/messages') {
-            path = '/admin/chats';
-        } else if (path === '/bookings') {
-            path = '/admin/bookings';
-        }
-    }
-
     const routes = {
         '/': (currentToken ? Dashboard : Landing),
-        '/welcome': (currentToken ? (currentUser?.user_type === 'ADMIN' ? AdminDashboard : WelcomePage) : Login),
+        '/welcome': (currentToken ? WelcomePage : Login),
         '/login': Login,
         '/register': Register,
         '/profile': (currentToken ? Settings : Login),
@@ -616,13 +222,11 @@ function router(path) {
         '/bookings': (currentToken ? BookingsList : Login),
         '/create-booking': (currentToken ? CreateBooking : Login),
         '/providers': (currentToken ? ProvidersList : Login),
-        '/messages': (currentToken ? MessagesInbox : Login),
         '/admin': (currentToken ? AdminDashboard : Login),
         '/admin/niches': (currentToken ? AdminNiches : Login),
         '/admin/providers': (currentToken ? AdminProviders : Login),
         '/admin/bookings': (currentToken ? AdminBookings : Login),
         '/admin/disputes': (currentToken ? AdminDisputes : Login),
-        '/admin/chats': (currentToken ? AdminChatsView : Login),
         '/groove-chat': (currentToken ? GrooveChat : Login),
         '/privacy': PrivacyPolicy,
         '/terms': TermsOfService,
@@ -683,89 +287,107 @@ function mount(content) {
 async function handleGoogleSignIn(initialRole = null, credential = null) {
     const role = initialRole || window.selectedType || 'BUYER';
 
-    // 1. If credential is provided (e.g. from Google GIS callback):
-    if (credential) {
-        const btn = document.querySelector('#btn-auth-google');
-        const origBtnHtml = btn ? btn.innerHTML : '';
-        if (btn) {
-            btn.disabled = true;
-            btn.innerHTML = '<span style="display:inline-block;width:14px;height:14px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:8px;vertical-align:middle;"></span> Verifying with Google…';
-        }
+    // If no Google client ID is configured, use the modal fallback
+    if (!window.publicConfig?.google_client_id) {
+        return handleSocialLoginFallback('google', initialRole);
+    }
 
-        try {
-            const res = await apiFetch('/auth/google', {
-                method: 'POST',
-                body: JSON.stringify({
-                    provider: 'google',
-                    token: credential,
-                    user_type: role,
-                }),
-            });
-            currentToken = res.access_token;
-            localStorage.setItem('access_token', currentToken);
-            currentUser = await apiFetch('/auth/me');
-            localStorage.setItem('current_user', JSON.stringify(currentUser));
-            showToast(`Signed in with Google as ${currentUser.name}!`, 'success');
-            if (currentUser?.user_type === 'ADMIN') {
-                router('/admin');
-            } else {
-                router('/');
+    // Wait for the GIS library to be ready
+    if (typeof window.google === 'undefined' || !window.google.accounts) {
+        // GIS library not loaded yet — use modal fallback
+        return handleSocialLoginFallback('google', initialRole);
+    }
+    if (!window.publicConfig?.google_client_id) {
+        // No client ID configured — use modal fallback
+        return handleSocialLoginFallback('google', initialRole);
+    }
+
+    // Remove any stale overlay
+    const existingOverlay = document.getElementById('social-login-modal');
+    if (existingOverlay) existingOverlay.remove();
+    if (window.__googleSignInResolver) {
+        window.__googleSignInResolver = null;
+    }
+
+    // Show a loading state on the button itself — but only when we're
+    // calling signIn() directly. When a credential is already provided
+    // (from renderButton's callback), the Google popup already finished;
+    // don't touch the button.
+    const btn = document.querySelector('#btn-auth-google');
+    const origBtnHtml = btn ? btn.innerHTML : '';
+    if (btn && !credential) {
+        btn.disabled = true;
+        btn.innerHTML = '<span style="display:inline-block;width:14px;height:14px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:8px;vertical-align:middle;"></span> Connecting to Google…';
+    }
+
+    // Build the GIS credential response handler
+    return new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => {
+            if (window.__googleSignInResolver === resolver) {
+                window.__googleSignInResolver = null;
+                if (btn && !credential) { btn.disabled = false; btn.innerHTML = origBtnHtml; }
+                reject(new Error('Google Sign-In timed out. Please try again.'));
             }
-            return;
-        } catch (err) {
-            if (btn) { btn.disabled = false; btn.innerHTML = origBtnHtml; }
-            console.error('Google token verification failed:', err);
-            showToast(err.message || 'Google Sign-In failed. Please try again.', 'error');
-            handleSocialLoginFallback('google', role);
-            return;
-        }
-    }
+        }, 15_000);
 
-    // 2. If no credential yet and GIS is available with client_id:
-    const clientId = window.publicConfig?.google_client_id;
-    if (typeof window.google !== 'undefined' && window.google?.accounts?.id && clientId) {
-        try {
-            window.google.accounts.id.initialize({
-                client_id: clientId,
-                callback: (gisResponse) => {
-                    const cred = gisResponse?.credential || gisResponse;
-                    if (cred && typeof cred === 'string') {
-                        handleGoogleSignIn(role, cred);
-                    } else {
-                        handleSocialLoginFallback('google', role);
-                    }
-                },
+        const resolver = (response) => {
+            clearTimeout(timeout);
+            window.__googleSignInResolver = null;
+            if (btn && !credential) { btn.disabled = false; btn.innerHTML = origBtnHtml; }
+            resolve(response);
+        };
+
+        window.__googleSignInResolver = resolver;
+
+        if (credential) {
+            // Credential already provided (from renderButton callback) —
+            // skip signIn() to avoid a blocked popup.
+            resolver({ credential });
+        } else {
+            // No credential yet — open the popup ourselves.
+            // Note: this popup may be blocked by browser popup blockers if not
+            // triggered by a direct user click on a Google-rendered element.
+            window.google.accounts.id.signIn({
+                client_id: window.publicConfig.google_client_id,
+                callback: resolver,
                 auto_select: false,
-                cancel_on_tap_outside: true,
+                cancel_on_tap_outside: false,
             });
-
-            // Note: google.accounts.id.signIn does not exist in standard GIS SDK; 15_000 ms timeout safeguard
-            window.google.accounts.id.prompt((notification) => {
-                if (notification.isNotDisplayed() || notification.isSkippedMoment() || notification.isDismissedMoment()) {
-                    handleSocialLoginFallback('google', role);
-                }
-            });
-
-            setTimeout(() => {
-                if (!document.getElementById('social-login-modal') && !currentToken) {
-                    handleSocialLoginFallback('google', role);
-                }
-            }, 800);
-            return;
-        } catch (e) {
-            console.warn('GIS One Tap prompt note:', e);
         }
-    }
+    }).then((gisResponse) => {
+        const credential = gisResponse?.credential || gisResponse;
+        if (!credential) throw new Error('Google did not return a sign-in token.');
 
-    // 3. Fallback: Open sleek Google sign-in dialog immediately
-    return handleSocialLoginFallback('google', role);
+        return apiFetch('/auth/google', {
+            method: 'POST',
+            body: JSON.stringify({
+                provider: 'google',
+                token: credential,
+                user_type: role,
+            }),
+        });
+    }).then((res) => {
+        currentToken = res.access_token;
+        localStorage.setItem('access_token', currentToken);
+        return apiFetch('/auth/me');
+    }).then((me) => {
+        currentUser = me;
+        localStorage.setItem('current_user', JSON.stringify(me));
+        showToast(`Signed in with Google as ${me.name}!`, 'success');
+        router(me.user_type === 'ADMIN' ? '/admin' : me.user_type === 'PROVIDER' ? '/packages' : '/providers');
+    }).catch((err) => {
+        // Don't show Google's own errors as raw — keep it user-friendly
+        if (err?.message?.includes?.('cancel') || err?.message?.includes?.('dismiss')) {
+            return; // user cancelled — nothing to report
+        }
+        showToast(err.message || 'Google Sign-In failed. Please try again.', 'error');
+    });
 }
 
 // Modal fallback for Google/Apple sign-in when GIS is unavailable or no client ID
 async function handleSocialLoginFallback(provider, initialRole = null) {
     const providerName = provider === 'google' ? 'Google' : 'Apple';
     const role = initialRole || window.selectedType || 'BUYER';
-    let chosenRole = role;
 
     // Remove any existing modal
     const existing = document.getElementById('social-login-modal');
@@ -791,23 +413,23 @@ async function handleSocialLoginFallback(provider, initialRole = null) {
                         <svg width="20" height="20" viewBox="0 0 170 170" fill="currentColor">
                             <path d="M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.19-2.12-9.97-3.17-14.34-3.17-4.58 0-9.49 1.05-14.74 3.17-5.26 2.13-9.5 3.24-12.74 3.35-4.35.13-9.16-1.9-14.42-6.08-3.7-3.05-7.6-7.79-11.7-14.24-6.3-9.91-11.25-20.98-14.85-33.2-3.6-12.22-5.4-23.77-5.4-34.65 0-14.73 3.65-26.96 10.96-36.68 7.3-9.73 16.48-14.71 27.53-14.96 4.9.12 10.37 1.33 16.4 3.63 6.03 2.3 9.94 3.52 11.73 3.66 2.01-.27 6.02-1.57 12.03-3.9 6.01-2.33 11.37-3.4 16.07-3.21 11.19.74 20.37 4.96 27.55 12.65-9.87 5.99-14.67 14.36-14.41 25.1.26 8.35 3.38 15.35 9.36 21 5.98 5.66 13.06 8.89 21.23 9.69-2.26 6.8-4.99 13.79-8.19 20.97zM119.22 31.84c0-7.23 2.61-13.9 7.82-20.02 5.22-6.12 11.59-9.86 19.11-11.22.13 1.06.2 2.06.2 3 0 7.34-2.73 14.19-8.18 20.55-5.46 6.36-11.96 10.09-19.51 11.19-.27-1.19-.44-2.36-.44-3.5z"/>
                         </svg>`}
-                    <div>
-                        <h3 style="font-size: 1.15rem; font-weight: 700; margin: 0;">Sign in with ${providerName}</h3>
-                        <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;">Choose an account to continue to Groove Hub</div>
-                    </div>
+                    <h3 style="font-size: 1.15rem; font-weight: 700; margin: 0;">Continue with ${providerName}</h3>
                 </div>
                 <button type="button" id="close-social-modal" style="background:transparent; border:none; color:var(--text-muted); font-size:1.25rem; cursor:pointer; padding: 4px 8px;">✕</button>
             </div>
             <div class="card-body" style="padding: 20px;">
                 <div id="social-modal-error"></div>
+                <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 16px;">
+                    Sign in or create an account instantly with your ${providerName} credentials:
+                </p>
                 <form id="social-auth-form" onsubmit="return false;">
                     <div class="form-group">
                         <label class="form-label">${providerName} Email Address</label>
-                        <input type="email" class="form-input" id="social-email" placeholder="name@${provider === 'google' ? 'gmail.com' : 'icloud.com'}" value="" required autofocus>
+                        <input type="email" class="form-input" id="social-email" placeholder="name@${provider === 'google' ? 'gmail.com' : 'icloud.com'}" required autofocus>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Full Name</label>
-                        <input type="text" class="form-input" id="social-name" placeholder="Your full name" value="" required>
+                        <input type="text" class="form-input" id="social-name" placeholder="Your full name" required>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Account Role</label>
@@ -831,6 +453,7 @@ async function handleSocialLoginFallback(provider, initialRole = null) {
 
     document.body.appendChild(overlay);
 
+    let chosenRole = role;
     const buyerBtn = overlay.querySelector('#social-role-buyer');
     const provBtn = overlay.querySelector('#social-role-provider');
     if (buyerBtn && provBtn) {
@@ -878,11 +501,7 @@ async function handleSocialLoginFallback(provider, initialRole = null) {
             localStorage.setItem('current_user', JSON.stringify(currentUser));
             close();
             showToast(`Signed in with ${providerName} as ${currentUser.name}!`, 'success');
-            if (currentUser?.user_type === 'ADMIN') {
-                router('/admin');
-            } else {
-                router('/');
-            }
+            router('/welcome');
         } catch (err) {
             sBtn.disabled = false;
             sBtn.innerHTML = origText;
@@ -896,13 +515,6 @@ async function handleSocialLoginFallback(provider, initialRole = null) {
         }
     });
 }
-
-function handleSocialLogin(provider, initialRole = null) {
-    if (provider === 'google') {
-        return handleGoogleSignIn(initialRole);
-    }
-    return handleSocialLoginFallback(provider, initialRole);
-}
 window.handleSocialLogin = handleSocialLogin;
 
 // =============== AUTH PORTAL (SIGN IN & REGISTER) ===============
@@ -915,8 +527,7 @@ function AuthPortal(initialTab = 'login') {
     const view = el`<div class="main" style="padding: 24px 16px;">
         <div class="card" style="max-width: 440px; margin: 20px auto 40px; box-shadow: var(--shadow-lg); border: 1px solid var(--border);">
             <div class="card-header" style="display: flex; flex-direction: column; align-items: center; padding: 24px 20px 16px; border-bottom: 1px solid var(--border);">
-                <img class="logo-light-mode" src="/static/icons/grove_hub_logo_light.png" alt="Grove Hub" style="height: 68px; width: auto; max-width: 230px; object-fit: contain; margin-bottom: 6px; cursor: pointer;" onclick="router('/')" />
-                <img class="logo-dark-mode" src="/static/icons/grove_hub_logo_dark.png" alt="Grove Hub" style="height: 68px; width: auto; max-width: 230px; object-fit: contain; margin-bottom: 6px; cursor: pointer; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.3));" onclick="router('/')" />
+                ${renderLogo(36, true)}
                 <!-- Auth Tabs -->
                 <div class="tabs" style="width: 100%; margin-top: 18px; display: flex;">
                     <button type="button" class="tab ${authPortalActiveTab === 'login' ? 'active' : ''}" id="auth-tab-login" style="flex: 1; text-align: center; font-weight: 700;">
@@ -932,7 +543,6 @@ function AuthPortal(initialTab = 'login') {
                 <!-- Social Sign In Options -->
                 <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 18px;">
                     <button type="button" class="btn-social btn-google" id="btn-auth-google" style="margin: 0;">
-
                         <svg width="18" height="18" viewBox="0 0 18 18">
                             <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.616z"/>
                             <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"/>
@@ -1043,114 +653,78 @@ function AuthPortal(initialTab = 'login') {
             tabRegister.classList.remove('active');
             panelLogin.style.display = 'block';
             panelRegister.style.display = 'none';
-            if (labelGoogle) labelGoogle.textContent = 'Continue with Google';
-            if (labelApple) labelApple.textContent = 'Continue with Apple';
+            labelGoogle.textContent = 'Continue with Google';
+            labelApple.textContent = 'Continue with Apple';
             if (window.location.pathname !== '/login') history.pushState({}, '', '/login');
         } else {
             tabRegister.classList.add('active');
             tabLogin.classList.remove('active');
             panelRegister.style.display = 'block';
             panelLogin.style.display = 'none';
-            if (labelGoogle) labelGoogle.textContent = 'Sign up with Google';
-            if (labelApple) labelApple.textContent = 'Sign up with Apple';
+            labelGoogle.textContent = 'Sign up with Google';
+            labelApple.textContent = 'Sign up with Apple';
             if (window.location.pathname !== '/register') history.pushState({}, '', '/register');
         }
-        renderGoogleBtnIfReady();
     };
 
     tabLogin.onclick = () => switchTab('login');
     tabRegister.onclick = () => switchTab('register');
 
-    // Social buttons — Google uses renderButton() when GIS is available and configured
-    const renderGoogleBtnIfReady = () => {
-        let googleBtn = view.querySelector('#btn-auth-google');
-        if (!googleBtn) return;
-        const clientId = window.publicConfig?.google_client_id;
-
-        if (window.google?.accounts?.id && clientId) {
+    // Social buttons — Google uses renderButton() (browsers don't block
+    // Google's own button, and the credential callback fires reliably).
+    // Apple keeps its custom onclick flow.
+    if (window.google?.accounts?.id && window.publicConfig?.google_client_id) {
+        // renderButton works best on div elements — convert if needed
+        let googleBtn = btnGoogle;
+        if (googleBtn.tagName === 'BUTTON') {
             const parent = googleBtn.parentNode;
-            const containerWidth = parent ? Math.max(220, Math.min(400, Math.floor(parent.clientWidth || parent.offsetWidth || 340))) : 340;
-
-            // renderButton works best on clean div containers without button styling
-            if (googleBtn.tagName === 'BUTTON') {
-                const div = document.createElement('div');
-                div.id = googleBtn.id;
-                div.className = 'gis-btn-container';
-                div.style.cssText = 'width: 100%; display: flex; justify-content: center; align-items: center; min-height: 44px; margin: 0; padding: 0; background: transparent; border: none; box-shadow: none;';
-                parent.replaceChild(div, googleBtn);
-                googleBtn = div;
-            } else {
-                googleBtn.className = 'gis-btn-container';
-                googleBtn.style.cssText = 'width: 100%; display: flex; justify-content: center; align-items: center; min-height: 44px; margin: 0; padding: 0; background: transparent; border: none; box-shadow: none;';
-            }
-
-            try {
-                window.google.accounts.id.initialize({
-                    client_id: clientId,
-                    callback: (response) => {
-                        if (response && response.credential) {
-                            handleGoogleSignIn(window.selectedType || 'BUYER', response.credential);
-                        } else {
-                            handleSocialLoginFallback('google', window.selectedType || 'BUYER');
-                        }
-                    },
-                    auto_select: false,
-                    cancel_on_tap_outside: true,
-                });
-
-                googleBtn.innerHTML = '';
-                window.google.accounts.id.renderButton(googleBtn, {
-                    type: 'standard',
-                    theme: 'outline',
-                    size: 'large',
-                    text: authPortalActiveTab === 'register' ? 'signup_with' : 'continue_with',
-                    shape: 'rectangular',
-                    logo_alignment: 'left',
-                    width: containerWidth,
-                });
-            } catch (e) {
-                console.warn('Google renderButton failed, falling back to manual sign-in:', e);
-                // Note: google.accounts.id.signIn 15_000 timeout safeguard
-                googleBtn.onclick = () => handleSocialLoginFallback('google', window.selectedType || 'BUYER');
-            }
-        } else {
-            // Note: google.accounts.id.signIn 15_000 timeout safeguard
-            googleBtn.onclick = () => handleSocialLoginFallback('google', window.selectedType || 'BUYER');
+            const div = document.createElement('div');
+            div.id = googleBtn.id;
+            div.className = googleBtn.className;
+            div.style.cssText = 'display:inline-flex;align-items:center;justify-content:center;padding:12px 20px;background:var(--accent);border:1px solid var(--border);border-radius:8px;cursor:pointer;color:#fff;width:100%;';
+            div.innerHTML = googleBtn.innerHTML;
+            parent.replaceChild(div, googleBtn);
+            googleBtn = div;
         }
-    };
 
-    renderGoogleBtnIfReady();
-    window.__refreshGoogleBtn = renderGoogleBtnIfReady;
-
-    if (!window.__gisPollInterval) {
-        let attempts = 0;
-        window.__gisPollInterval = setInterval(() => {
-            attempts++;
-            if (window.google?.accounts?.id && window.publicConfig?.google_client_id) {
-                renderGoogleBtnIfReady();
-                clearInterval(window.__gisPollInterval);
-                window.__gisPollInterval = null;
-            } else if (attempts >= 20) {
-                clearInterval(window.__gisPollInterval);
-                window.__gisPollInterval = null;
-            }
-        }, 500);
+        try {
+            google.accounts.id.renderButton(googleBtn, {
+                client_id: window.publicConfig.google_client_id,
+                callback: (response) => {
+                    if (!response.credential) {
+                        showToast('Google did not return a sign-in token.', 'error');
+                        return;
+                    }
+                    handleGoogleSignIn(window.selectedType || 'BUYER', response.credential);
+                },
+                auto_select: true,
+                itp_support: true,
+            });
+        } catch (e) {
+            console.warn('Google renderButton failed, falling back to manual sign-in:', e);
+            // Fall back to manual sign-in with timeout — can't hang forever
+            googleBtn.onclick = () => {
+                const origText = googleBtn.textContent;
+                googleBtn.textContent = 'Connecting to Google…';
+                handleGoogleSignIn(window.selectedType || 'BUYER')
+                    .catch(err => {
+                        if (err.message.includes('timed out')) {
+                            showToast('Google sign-in timed out. Please allow popups for this site, or use email sign-in below.', 'error');
+                            // Fall back to email sign-in modal
+                            const saved = window.google?.accounts;
+                            window.google.accounts = undefined;
+                            handleSocialLogin('google', window.selectedType || 'BUYER');
+                            window.google.accounts = saved;
+                        } else {
+                            showToast('Google sign-in failed: ' + err.message, 'error');
+                        }
+                    });
+            };
+        }
+    } else {
+        btnGoogle.onclick = () => handleSocialLogin('google', window.selectedType || 'BUYER');
     }
-
-    if (!window.__gisResizeAttached) {
-        window.__gisResizeAttached = true;
-        window.addEventListener('resize', () => {
-            if (window.__gisResizeTimer) clearTimeout(window.__gisResizeTimer);
-            window.__gisResizeTimer = setTimeout(() => {
-                if (typeof window.__refreshGoogleBtn === 'function') {
-                    window.__refreshGoogleBtn();
-                }
-            }, 250);
-        }, { passive: true });
-    }
-
-
-    btnApple.onclick = () => handleSocialLoginFallback('apple', window.selectedType || 'BUYER');
+    btnApple.onclick = () => handleSocialLogin('apple', window.selectedType || 'BUYER');
 
     // Password toggles
     const toggleLoginPw = view.querySelector('#toggle-login-password');
@@ -1245,11 +819,7 @@ function AuthPortal(initialTab = 'login') {
             localStorage.setItem('current_user', JSON.stringify(currentUser));
 
             showToast(`Welcome back, ${currentUser.name || 'User'}!`, 'success');
-            if (currentUser?.user_type === 'ADMIN') {
-                router('/admin');
-            } else {
-                router('/');
-            }
+            router('/welcome');
         } catch (err) {
             if (btn) {
                 btn.disabled = false;
@@ -1339,11 +909,7 @@ function AuthPortal(initialTab = 'login') {
             localStorage.setItem('current_user', JSON.stringify(currentUser));
 
             showToast(`Account created successfully! Welcome, ${currentUser.name}!`, 'success');
-            if (currentUser?.user_type === 'ADMIN') {
-                router('/admin');
-            } else {
-                router('/');
-            }
+            router('/welcome');
         } catch (err) {
             if (btn) {
                 btn.disabled = false;
@@ -1432,7 +998,7 @@ function startJourney(preselectedRole = 'BUYER') {
 
                 <div style="display: flex; flex-direction: column; gap: 10px;">
                     <button type="button" class="btn btn-primary" id="journey-proceed-btn" style="padding: 14px; font-weight: 700; font-size: 1rem; justify-content: center; background: #5b34ea;">
-                        Continue as ${chosenRole === 'BUYER' ? 'Buyer (Hire Talent)' : 'Creator (Offer Services)'} -->
+                        Continue as ${chosenRole === 'BUYER' ? 'Buyer (Hire Talent)' : 'Creator (Offer Services)'} →
                     </button>
                     <div style="text-align: center; margin: 4px 0; font-size: 0.8rem; color: var(--text-muted);">or continue instantly</div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
@@ -1472,11 +1038,11 @@ function startJourney(preselectedRole = 'BUYER') {
         if (role === 'BUYER') {
             buyerCard.classList.add('active');
             provCard.classList.remove('active');
-            proceedBtn.textContent = 'Continue as Buyer (Hire Talent) -->';
+            proceedBtn.textContent = 'Continue as Buyer (Hire Talent) →';
         } else {
             provCard.classList.add('active');
             buyerCard.classList.remove('active');
-            proceedBtn.textContent = 'Continue as Creator (Offer Services) -->';
+            proceedBtn.textContent = 'Continue as Creator (Offer Services) →';
         }
     };
 
@@ -1522,19 +1088,19 @@ function WelcomePage() {
 
     const view = el`<div>
         <!-- Modern Welcome Header -->
-        <header class="header" style="border-bottom: 1px solid var(--border); padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; background: var(--bg-card);">
+        <header class="header" style="border-bottom: 1px solid var(--border); padding: 14px 24px; display: flex; justify-content: space-between; align-items: center; background: var(--bg-card);">
             <div style="display: flex; align-items: center; gap: 10px;">
-                ${renderLogo(30, true)}
+                ${renderLogo(34, true)}
             </div>
-            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                <div style="display: flex; align-items: center; gap: 6px; font-size: 0.825rem; color: var(--text-secondary);">
+            <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+                <div style="display: flex; align-items: center; gap: 8px; font-size: 0.875rem; color: var(--text-secondary);">
                     <span>Welcome back, <strong style="color: var(--text-primary);">${user.name || 'Friend'}</strong></span>
-                    <span style="background: rgba(91, 52, 234, 0.12); color: #5b34ea; padding: 2px 8px; border-radius: 6px; font-size: 0.72rem; font-weight: 700;">
+                    <span style="background: rgba(91, 52, 234, 0.12); color: #5b34ea; padding: 3px 9px; border-radius: 6px; font-size: 0.75rem; font-weight: 700;">
                         ${roleEmoji} ${roleLabel}
                     </span>
                 </div>
-                <button class="btn btn-secondary btn-sm" id="welcome-skip-btn" style="padding: 6px 14px; font-size: 0.8125rem; font-weight: 600; cursor: pointer;">
-                    Skip to App -->
+                <button class="btn btn-secondary btn-sm" id="welcome-skip-btn" style="padding: 7px 16px; font-size: 0.8125rem; font-weight: 600; cursor: pointer;">
+                    Skip to App →
                 </button>
             </div>
         </header>
@@ -1560,7 +1126,7 @@ function WelcomePage() {
                     <!-- CTAs -->
                     <div class="hero-cta-group">
                         <button class="btn-start-journey" id="btn-welcome-start" style="padding: 16px 38px; font-size: 1.1rem; cursor: pointer;">
-                            Start your journey -->
+                            Start your journey →
                         </button>
                         <div class="hero-cta-secondary">
                             or <span class="hero-link-action" id="btn-welcome-explore">See marketplace in action</span>
@@ -1866,767 +1432,162 @@ function getBookingDeadlineInfo(booking) {
 }
 window.getBookingDeadlineInfo = getBookingDeadlineInfo;
 
-// Global Provider / Package Selection for Booking Checkout
-function selectProvider(providerId, packageId = null) {
-    sessionStorage.setItem('selected_provider_id', providerId);
-    if (packageId) {
-        sessionStorage.setItem('selected_package_id', packageId);
-    } else {
-        sessionStorage.removeItem('selected_package_id');
-    }
-    router('/create-booking');
-}
-window.selectProvider = selectProvider;
+// =============== DASHBOARD ===============
 
-// =============== DASHBOARD DISPATCHER ===============
 function Dashboard() {
-    if (currentUser?.user_type === 'ADMIN') {
-        return AdminDashboard();
-    }
-    if (currentUser?.user_type === 'PROVIDER') {
-        return ProviderDashboard();
-    }
-    return BuyerDashboard();
-}
+    const isProvider = currentUser?.user_type === 'PROVIDER';
+    const isAdmin = currentUser?.user_type === 'ADMIN';
+    const isBuyer = currentUser?.user_type === 'BUYER' || !currentUser?.user_type;
 
-// =============== PROVIDER DASHBOARD (CREATOR STUDIO) ===============
-function ProviderDashboard() {
-    let profile = null;
-    let recentPackages = [];
-    let bookings = [];
-    let loading = true;
-
-    async function loadData() {
+    async function loadDashboard() {
         showLoading();
         try {
-            try { profile = await apiFetch('/profile'); } catch (_) { profile = {}; }
-            try { recentPackages = await apiFetch('/packages'); } catch (_) { recentPackages = []; }
-            try { bookings = await apiFetch('/bookings'); } catch (_) { bookings = []; }
-        } catch (e) {
-            showToast(e.message || 'Error loading studio', 'error');
-        } finally {
-            loading = false;
-            mount(renderStudio());
-        }
-    }
-
-    loadData();
-
-    function renderStudio() {
-        if (loading) {
-            return el`<div>
-                ${renderAppHeader('/')}
-                <div class="main"><div class="loading"><div class="spinner"></div></div></div>
-            </div>`;
-        }
-
-        const clientOrders = Array.isArray(bookings) ? bookings : [];
-        const pendingOrders = clientOrders.filter(b => b.status === 'in_progress' || b.status === 'confirmed');
-        const deliveredOrders = clientOrders.filter(b => b.status === 'delivered' || b.status === 'pending_approval');
-
-        return el`<div>
-            ${renderAppHeader('/')}
-            
-            <!-- Clarification & Mode Substrip -->
-            <div class="mode-bar-substrip">
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <span class="mode-badge-pill mode-badge-provider">💼 Provider Studio</span>
-                    <span>You are logged in as a <strong>Seller / Creator</strong>. Need to hire talent?</span>
-                </div>
-                <button type="button" class="btn-switch-mode" onclick="toggleUserMode()">
-                    🛍️ Switch to Buyer Mode
-                </button>
-            </div>
-
-            <div class="main">
-                <!-- Creator Guidance Card -->
-                <div class="clarification-guide-card">
-                    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
-                        <div>
-                            <div style="font-size: 1.15rem; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
-                                <span>🚀</span> Provider & Creator Studio Guide
-                            </div>
-                            <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 2px;">
-                                Fulfill client projects safely, get 5-star ratings, and receive direct 80% bank payouts.
-                            </div>
-                        </div>
-                        <button class="btn btn-primary btn-sm" onclick="router('/create-package')">+ New Package</button>
-                    </div>
-
-                    <div class="clarification-steps-grid">
-                        <div class="clarification-step-item">
-                            <span class="clarification-step-num">1</span>
-                            <strong style="color: var(--text-primary); font-size: 0.9rem;">Set Up Packages</strong>
-                            <span style="font-size: 0.8rem; color: var(--text-secondary);">List editing tiers or coaching sessions with clear turnaround and revisions.</span>
-                        </div>
-                        <div class="clarification-step-item">
-                            <span class="clarification-step-num">2</span>
-                            <strong style="color: var(--text-primary); font-size: 0.9rem;">Chat with Inquiring Clients</strong>
-                            <span style="font-size: 0.8rem; color: var(--text-secondary);">Reply fast to incoming pre-booking chats. Keep chat on Grove Hub to maintain escrow protection.</span>
-                        </div>
-                        <div class="clarification-step-item">
-                            <span class="clarification-step-num">3</span>
-                            <strong style="color: var(--text-primary); font-size: 0.9rem;">Deliver & Get 80% Payout</strong>
-                            <span style="font-size: 0.8rem; color: var(--text-secondary);">Submit final links/files on platform. Client approves, triggering guaranteed bank release.</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Provider Metrics Card -->
-                ${providerWelcomeCard(profile)}
-
-                <!-- Quick Business Actions -->
-                ${providerSection(profile, recentPackages)}
-
-                <!-- Client Work Queue -->
-                <div class="section-title mt-4" style="margin-top: 24px; display: flex; justify-content: space-between; align-items: center;">
-                    <span>Active Client Orders (${pendingOrders.length + deliveredOrders.length})</span>
-                    <button class="btn btn-secondary btn-sm" onclick="router('/bookings')">View All Orders</button>
-                </div>
-
-                ${(pendingOrders.length === 0 && deliveredOrders.length === 0) ? `
-                    <div class="card" style="padding: 28px; text-align: center;">
-                        <div style="font-size: 2.2rem; margin-bottom: 8px;">📬</div>
-                        <h4 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 6px;">No Active Client Orders Right Now</h4>
-                        <p style="color: var(--text-secondary); font-size: 0.85rem; max-width: 440px; margin: 0 auto 16px;">
-                            Make sure your service packages are published and check incoming inquiries in your Messages inbox.
-                        </p>
-                        <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
-                            <button class="btn btn-primary btn-sm" onclick="router('/create-package')">Create Package</button>
-                            <button class="btn btn-secondary btn-sm" onclick="router('/messages')">💬 Open Messages</button>
-                        </div>
-                    </div>
-                ` : `
-                    <div class="grid grid-2">
-                        ${[...pendingOrders, ...deliveredOrders].map(b => {
-                            const deadline = getBookingDeadlineInfo(b);
-                            return `
-                            <div class="card" style="border-left: 4px solid var(--accent); padding: 18px;">
-                                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
-                                    <div>
-                                        <div style="font-weight: 800; font-size: 1rem; color: var(--text-primary);">Order #${b.id}: ${b.package_title || 'Custom Service'}</div>
-                                        <div style="font-size: 0.8125rem; color: var(--text-secondary);">Client: <strong>${b.buyer_name || 'Client'}</strong></div>
-                                    </div>
-                                    <span class="badge ${b.status === 'delivered' ? 'badge-warning' : 'badge-primary'}">${b.status}</span>
-                                </div>
-                                <div style="margin: 10px 0; font-size: 0.8125rem; color: var(--text-secondary);">
-                                    <div style="font-weight: 700; color: ${deadline.isPast ? 'var(--danger)' : 'var(--text-primary)'};">${deadline.text}</div>
-                                    <div>${deadline.subtext}</div>
-                                </div>
-                                <div style="display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap;">
-                                    <button class="btn btn-secondary btn-sm" onclick="openPreBookingChat(${b.buyer_id}, '${(b.buyer_name || '').replace(/'/g, "\\'")}')" style="flex: 1;">💬 Chat</button>
-                                    <button class="btn btn-primary btn-sm" onclick="router('/bookings')" style="flex: 1;">Submit Work</button>
-                                </div>
-                            </div>
-                            `;
-                        }).join('')}
-                    </div>
-                `}
-            </div>
-        </div>`;
-    }
-
-    return renderStudio();
-}
-
-// =============== BUYER DASHBOARD (FIVERR-STYLE TALENT MARKETPLACE) ===============
-function BuyerDashboard() {
-    let packages = [];
-    let bookings = [];
-    let providers = [];
-    let loading = true;
-    let activeFilter = 'all';
-    let searchQuery = '';
-    let searchDebounceTimer = null;
-
-    async function loadData() {
-        showLoading();
-        try {
-            const [pkgsRes, bksRes, edusRes] = await Promise.all([
-                apiFetch('/packages?limit=50').catch(() => []),
-                apiFetch('/bookings').catch(() => []),
-                apiFetch('/educators/summary').catch(() => [])
-            ]);
-            packages = Array.isArray(pkgsRes) ? pkgsRes : [];
-            bookings = Array.isArray(bksRes) ? bksRes : [];
-            providers = Array.isArray(edusRes) ? edusRes : [];
-            window.__cachedProviders = providers;
-        } catch (e) {
-            showToast(e.message || 'Error loading marketplace', 'error');
-        } finally {
-            loading = false;
-            mount(renderMarketplace());
-        }
-    }
-
-    loadData();
-
-    function renderMarketplace() {
-        if (loading) {
-            return el`<div>
-                ${renderAppHeader('/')}
-                <div class="main"><div class="loading"><div class="spinner"></div></div></div>
-            </div>`;
-        }
-
-        const approvedPackages = Array.isArray(packages) ? packages.filter(p => p.status === 'approved' || !p.status) : [];
-        const clientPurchases = Array.isArray(bookings) ? bookings : [];
-        const activePurchases = clientPurchases.filter(b => b.status === 'in_progress' || b.status === 'confirmed' || b.status === 'delivered');
-        const allProviders = Array.isArray(providers) ? providers : [];
-
-        const q = (searchQuery || '').trim().toLowerCase();
-
-        // Filter packages based on activeFilter and searchQuery
-        const filteredPackages = approvedPackages.filter(p => {
-            const matchesQuery = !q || 
-                (p.title && p.title.toLowerCase().includes(q)) ||
-                (p.description && p.description.toLowerCase().includes(q)) ||
-                (p.provider_name && p.provider_name.toLowerCase().includes(q)) ||
-                (p.niche && p.niche.toLowerCase().includes(q));
-
-            if (!matchesQuery) return false;
-            if (activeFilter === 'editors') return (p.niche && (p.niche.includes('editor') || p.niche.includes('video'))) || (p.title && (p.title.toLowerCase().includes('video') || p.title.toLowerCase().includes('edit') || p.title.toLowerCase().includes('reel')));
-            if (activeFilter === 'tutors') return (p.niche && p.niche.includes('tutor')) || (p.title && (p.title.toLowerCase().includes('english') || p.title.toLowerCase().includes('tutor') || p.title.toLowerCase().includes('ielts') || p.title.toLowerCase().includes('speaking')));
-            if (activeFilter === 'writers') return (p.niche && p.niche.includes('writer')) || (p.title && (p.title.toLowerCase().includes('writer') || p.title.toLowerCase().includes('copy') || p.title.toLowerCase().includes('script')));
-            if (activeFilter === 'express') return (p.turnaround && (p.turnaround.toLowerCase().includes('24') || p.turnaround.toLowerCase().includes('1 day') || p.turnaround.toLowerCase().includes('immediate')));
-            return true;
-        });
-
-        // Filter providers based on activeFilter and searchQuery
-        const filteredProviders = allProviders.filter(pr => {
-            const skillsStr = (pr.skills || []).join(' ').toLowerCase();
-            const matchesQuery = !q ||
-                (pr.name && pr.name.toLowerCase().includes(q)) ||
-                (pr.niche && pr.niche.toLowerCase().includes(q)) ||
-                skillsStr.includes(q);
-
-            if (!matchesQuery) return false;
-            if (activeFilter === 'editors') return pr.niche === 'editors_animators' || skillsStr.includes('video') || skillsStr.includes('edit');
-            if (activeFilter === 'tutors') return pr.niche === 'tutors' || skillsStr.includes('english') || skillsStr.includes('tutor');
-            if (activeFilter === 'writers') return pr.niche === 'writers' || skillsStr.includes('write') || skillsStr.includes('copy');
-            if (activeFilter === 'express') return (pr.response_time && pr.response_time.includes('24')) || pr.availability === 'immediate';
-            return true;
-        });
-
-        const totalItems = filteredPackages.length + filteredProviders.length;
-
-        const placeholders = {
-            all: 'Search video editors, IELTS coaches, YouTube, Premiere Pro...',
-            editors: 'Search Video Ads, Reels & TikTok, YouTube, Gaming, After Effects...',
-            tutors: 'Search IELTS speaking, accent reduction, fluency, business English...',
-            writers: 'Search social captions, video scripts, ad copy, SEO blog posts...',
-            express: 'Search 24-hour rush delivery packages and creators...'
-        };
-        const currentPlaceholder = placeholders[activeFilter] || placeholders.all;
-
-        const categoryOptionsMap = {
-            all: [
-                { label: 'Video Ads', query: 'video ads', filter: 'editors', icon: '🎬' },
-                { label: 'Reels & TikTok', query: 'reel', filter: 'editors', icon: '📱' },
-                { label: 'English Fluency', query: 'speaking', filter: 'tutors', icon: '🗣️' },
-                { label: 'YouTube Videos', query: 'youtube', filter: 'editors', icon: '🎥' },
-                { label: 'Video Scripts', query: 'script', filter: 'writers', icon: '✍️' },
-                { label: '24h Express', query: '24', filter: 'express', icon: '⚡' }
-            ],
-            editors: [
-                { label: 'Video Ads', query: 'video ads', filter: 'editors', icon: '🎬' },
-                { label: 'Reels & TikTok', query: 'reel', filter: 'editors', icon: '📱' },
-                { label: 'YouTube Longform', query: 'youtube', filter: 'editors', icon: '🎥' },
-                { label: 'Gaming Montages', query: 'gaming', filter: 'editors', icon: '🎮' },
-                { label: 'Color Grading', query: 'color', filter: 'editors', icon: '🎨' },
-                { label: '24h Rush Delivery', query: '24', filter: 'editors', icon: '⚡' }
-            ],
-            tutors: [
-                { label: 'IELTS Speaking', query: 'ielts', filter: 'tutors', icon: '🗣️' },
-                { label: 'Accent Reduction', query: 'accent', filter: 'tutors', icon: '🎯' },
-                { label: 'Business English', query: 'business', filter: 'tutors', icon: '💼' },
-                { label: 'Daily Fluency', query: 'speaking', filter: 'tutors', icon: '💬' },
-                { label: 'Trial Session', query: 'trial', filter: 'tutors', icon: '⚡' }
-            ],
-            writers: [
-                { label: 'Video Scripts', query: 'script', filter: 'writers', icon: '✍️' },
-                { label: 'Ad Copywriting', query: 'copy', filter: 'writers', icon: '📈' },
-                { label: 'SEO Blog Posts', query: 'seo', filter: 'writers', icon: '📝' },
-                { label: 'Social Captions', query: 'caption', filter: 'writers', icon: '📱' }
-            ],
-            express: [
-                { label: '24h Video Edit', query: 'video', filter: 'express', icon: '🎬' },
-                { label: 'Instant English Lesson', query: 'english', filter: 'express', icon: '🗣️' },
-                { label: 'Express Script', query: 'script', filter: 'express', icon: '✍️' }
-            ]
-        };
-
-        const currentOptions = categoryOptionsMap[activeFilter] || categoryOptionsMap.all;
-        window.__currentBuyerFilter = activeFilter;
-        window.__buyerCategoryOptionsMap = categoryOptionsMap;
-
-        if (!window.__placeholderBlinkLoopStarted) {
-            window.__placeholderBlinkLoopStarted = true;
-            let optIdx = 0;
-            setInterval(() => {
-                const input = document.getElementById('buyer-search-input');
-                const textEl = document.getElementById('placeholder-dynamic-text');
-                const holder = document.getElementById('search-animated-placeholder');
-
-                if (input && (input.value.trim().length > 0 || document.activeElement === input)) {
-                    if (holder && !holder.classList.contains('hidden')) {
-                        holder.classList.add('hidden');
-                    }
-                    return;
-                }
-
-                if (holder && holder.classList.contains('hidden')) {
-                    holder.classList.remove('hidden');
-                }
-
-                if (!textEl) return;
-
-                const map = window.__buyerCategoryOptionsMap || {};
-                const opts = map[window.__currentBuyerFilter || 'all'] || map.all || [];
-                if (!opts.length) return;
-
-                optIdx = (optIdx + 1) % opts.length;
-                const nextOpt = opts[optIdx];
-
-                // 1. Blink out smoothly
-                textEl.classList.add('blink-out');
-                textEl.classList.remove('blink-in');
-
-                setTimeout(() => {
-                    // 2. Change text while faded
-                    textEl.textContent = `"${nextOpt.label}"`;
-                    textEl.classList.remove('blink-out');
-                    textEl.classList.add('blink-in');
-
-                    setTimeout(() => {
-                        textEl.classList.remove('blink-in');
-                    }, 400);
-                }, 280);
-            }, 2600);
-        }
-
-        return el`<div>
-            ${renderAppHeader('/')}
-
-            <!-- Clarification & Mode Substrip -->
-            <div class="mode-bar-substrip">
-                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                    <span class="mode-badge-pill mode-badge-buyer">🛍️ Buyer Mode</span>
-                    <span style="font-size: 0.84rem; color: var(--text-secondary);">
-                        Browse verified creators, chat before booking, and hire with 100% Escrow Protection.
-                    </span>
-                </div>
-                <button type="button" class="btn-switch-mode" onclick="toggleUserMode()">
-                    💼 Switch to Provider Mode
-                </button>
-            </div>
-
-            <div class="main">
-
-                <!-- Active Purchases Bar (if buyer has orders) -->
-                ${activePurchases.length > 0 ? `
-                    <div class="card" style="margin-bottom: 24px; border-left: 4px solid var(--accent); padding: 18px;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 12px;">
-                            <div>
-                                <strong style="font-size: 1rem; color: var(--text-primary);">⚡ You have ${activePurchases.length} active order${activePurchases.length > 1 ? 's' : ''} in progress</strong>
-                                <div style="font-size: 0.8125rem; color: var(--text-secondary);">Creators are currently preparing your deliverables.</div>
-                            </div>
-                            <button class="btn btn-secondary btn-sm" onclick="router('/bookings')">View All Orders</button>
-                        </div>
-                        <div class="grid grid-2">
-                            ${activePurchases.slice(0, 2).map(b => {
-                                const dl = getBookingDeadlineInfo(b);
-                                return `
-                                <div style="background: var(--bg-hover); padding: 12px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; gap: 8px;">
-                                    <div>
-                                        <div style="font-weight: 700; font-size: 0.9rem;">Order #${b.id} • ${escapeHTML(b.provider_name || 'Creator')}</div>
-                                        <div style="font-size: 0.78rem; color: var(--text-secondary);">${dl.text}</div>
-                                    </div>
-                                    <div style="display: flex; gap: 6px;">
-                                        <button class="btn btn-secondary btn-sm" style="padding: 4px 10px; font-size: 0.75rem;" onclick="openPreBookingChat(${b.provider_id}, '${escapeJs(b.provider_name || '')}')">💬 Chat</button>
-                                        <button class="btn btn-primary btn-sm" style="padding: 4px 10px; font-size: 0.75rem;" onclick="router('/bookings')">Details</button>
-                                    </div>
-                                </div>
-                                `;
-                            }).join('')}
-                        </div>
-                    </div>
-                ` : ''}
-
-                <!-- Search & Category Filters -->
-                <div style="margin-bottom: 24px;">
-                    <div class="buyer-search-bar-row">
-                        <form onsubmit="event.preventDefault(); window.__handleBuyerSearchSubmit(document.getElementById('buyer-search-input').value)" class="buyer-search-form">
-                            <div class="buyer-search-input-wrap">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18" class="buyer-search-icon">
-                                    <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                                </svg>
-                                <div class="search-animated-placeholder ${searchQuery ? 'hidden' : ''}" id="search-animated-placeholder" onclick="const i=document.getElementById('buyer-search-input'); if(i){ i.focus(); }">
-                                    <span class="placeholder-prefix">Search</span>
-                                    <span class="placeholder-dynamic-text" id="placeholder-dynamic-text">"${currentOptions[0]?.label || 'Video Ads'}"</span>
-                                    <span class="placeholder-cursor">|</span>
-                                </div>
-                                <input 
-                                    type="text" 
-                                    id="buyer-search-input" 
-                                    class="form-input buyer-search-input" 
-                                    value="${escapeHTML(searchQuery)}" 
-                                    oninput="window.__handleBuyerSearchInput(this.value); window.__updatePlaceholderVisibility();"
-                                    onfocus="window.__updatePlaceholderVisibility(true);"
-                                    onblur="window.__updatePlaceholderVisibility();"
-                                    autocomplete="off"
-                                />
-                                ${searchQuery ? `
-                                    <button type="button" class="buyer-search-clear-btn" onclick="window.__clearBuyerSearch()" title="Clear search">✕</button>
-                                ` : ''}
-                            </div>
-                            <button type="submit" class="btn btn-primary buyer-search-btn buyer-search-btn-blinking" title="Click to search or explore options">
-                                <span class="search-btn-beacon"></span>
-                                <span class="search-btn-icon-sparkle">✨</span>
-                                <span>Search</span>
-                            </button>
-                        </form>
-                        <button type="button" class="btn btn-secondary buyer-directory-btn" onclick="router('/providers')">
-                            🧭 Full Directory
-                        </button>
-                    </div>
-
-                    <!-- Category Boxes with Animated Icons (Box Shape) -->
-                    <div class="category-boxes-grid">
-                        <button type="button" class="category-box-btn ${activeFilter === 'all' && !searchQuery ? 'active' : ''}" onclick="window.__setBuyerFilter('all')">
-                            <span class="chip-icon-box">${getCategoryPeekIconSvg('all', 32)}</span>
-                            <span class="category-box-label">All Services</span>
-                        </button>
-                        <button type="button" class="category-box-btn ${activeFilter === 'editors' ? 'active' : ''}" onclick="window.__setBuyerFilter('editors')">
-                            <span class="chip-icon-box">${getCategoryPeekIconSvg('editors_animators', 32)}</span>
-                            <span class="category-box-label">Video Editors</span>
-                        </button>
-                        <button type="button" class="category-box-btn ${activeFilter === 'tutors' ? 'active' : ''}" onclick="window.__setBuyerFilter('tutors')">
-                            <span class="chip-icon-box">${getCategoryPeekIconSvg('tutors', 32)}</span>
-                            <span class="category-box-label">English Tutors</span>
-                        </button>
-                        <button type="button" class="category-box-btn ${activeFilter === 'writers' ? 'active' : ''}" onclick="window.__setBuyerFilter('writers')">
-                            <span class="chip-icon-box">${getCategoryPeekIconSvg('writers', 32)}</span>
-                            <span class="category-box-label">Writers &amp; Copy</span>
-                        </button>
-                        <button type="button" class="category-box-btn ${activeFilter === 'express' ? 'active' : ''}" onclick="window.__setBuyerFilter('express')">
-                            <span class="chip-icon-box">${getCategoryPeekIconSvg('express', 32)}</span>
-                            <span class="category-box-label">24h Express</span>
-                        </button>
-                    </div>
-
-                    <!-- Popular Options Slider (Down of Icons & Only Shown when Video Editors is Open) -->
-                    ${activeFilter === 'editors' ? `
-                    <div class="editor-slider-container">
-                        <div class="editor-slider-header">
-                            <div style="display: flex; align-items: center; gap: 8px;">
-                                <span class="editor-slider-badge">🎬 Popular Editing Options</span>
-                                <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 500;">Slide to explore video specialties</span>
-                            </div>
-                            <div class="editor-slider-arrows">
-                                <button type="button" class="slider-arrow-btn" onclick="const el=document.getElementById('editor-popular-slider'); if(el) el.scrollBy({ left: -220, behavior: 'smooth' });" title="Slide Left">‹</button>
-                                <button type="button" class="slider-arrow-btn" onclick="const el=document.getElementById('editor-popular-slider'); if(el) el.scrollBy({ left: 220, behavior: 'smooth' });" title="Slide Right">›</button>
-                            </div>
-                        </div>
-
-                        <div class="editor-popular-slider-track" id="editor-popular-slider">
-                            ${[
-                                { id: 'youtube', label: 'YouTube Longform', sub: 'Retention edits & viral pacing', query: 'youtube', icon: '📺' },
-                                { id: 'ads_social', label: 'Social Ads & Reels', sub: 'TikTok, Reels & UGC hooks', query: 'ads_social', icon: '📱' },
-                                { id: 'gaming', label: 'Gaming Edits', sub: 'Montages & stream highlights', query: 'gaming', icon: '🎮' },
-                                { id: 'animations', label: '2D/3D Animations', sub: 'Character & 3D Blender models', query: 'animations', icon: '🎨' },
-                                { id: 'motion_graphics', label: 'Motion Graphics', sub: 'After Effects VFX & dynamic intros', query: 'motion_graphics', icon: '✨' },
-                                { id: 'music', label: 'Music & Cinematic', sub: 'Beat-sync VFX & color grading', query: 'music', icon: '🎬' },
-                                { id: 'express', label: '24h Rush Delivery', sub: 'Same-day express turnaround', query: '24', icon: '⚡' }
-                            ].map((opt, idx) => {
-                                const isSelected = searchQuery.toLowerCase() === opt.query.toLowerCase();
-                                return `
-                                <div 
-                                    class="editor-slide-card ${isSelected ? 'active' : ''}" 
-                                    onclick="${isSelected ? `window.__clearBuyerSearch()` : `window.__applyPopularTag('${escapeJs(opt.query)}', 'editors')`}"
-                                    style="animation-delay: ${(idx * 0.05).toFixed(2)}s;"
-                                    title="Filter by ${opt.label}"
-                                >
-                                    <div class="slide-card-top">
-                                        <span class="slide-card-icon">${getTypeIconSvg(opt.id, opt.icon, 28)}</span>
-                                        <span class="slide-card-arrow">→</span>
-                                    </div>
-                                    <div class="slide-card-title">${opt.label}</div>
-                                    <div class="slide-card-sub">${opt.sub}</div>
-                                </div>
-                                `;
-                            }).join('')}
-                        </div>
-                    </div>
-                    ` : ''}
-                </div>
-
-                <!-- Talent Showcase Header -->
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 8px;">
-                    <div class="section-title" style="margin: 0; font-size: 1.15rem; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
-                        <span>✨</span> Available Talent &amp; Services (${totalItems})
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 12px;">
-                        <span style="font-size: 0.8125rem; color: var(--text-muted); font-weight: 600;">🛡️ 100% Escrow Protected</span>
-                        <button class="btn btn-secondary btn-sm" onclick="router('/providers')" style="padding: 5px 12px; font-size: 0.78rem;">
-                            Browse Full Directory →
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Talent Showcase Grid or Empty State -->
-                ${totalItems === 0 ? `
-                    <div class="card" style="padding: 40px 24px; text-align: center; border: 1.5px dashed var(--border); border-radius: var(--radius);">
-                        <div style="font-size: 2.8rem; margin-bottom: 12px;">🔍</div>
-                        <h4 style="font-size: 1.15rem; font-weight: 800; margin-bottom: 6px; color: var(--text-primary);">No services matching your search</h4>
-                        <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 20px; max-width: 440px; margin-left: auto; margin-right: auto;">
-                            We couldn't find any creators matching "${escapeHTML(searchQuery)}". Try clearing your keywords or exploring our full talent directory.
-                        </p>
-                        <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
-                            <button class="btn btn-secondary btn-sm" onclick="window.__setBuyerFilter('all'); window.__clearBuyerSearch();">Reset Filters</button>
-                            <button class="btn btn-primary btn-sm" onclick="router('/providers')">Open Full Talent Directory</button>
-                        </div>
-                    </div>
-                ` : `
-                    <div class="grid grid-3" style="gap: 20px;">
-                        <!-- 1. Render Specific Service Packages (if any) -->
-                        ${filteredPackages.map(pkg => {
-                            const isTutor = (pkg.niche && pkg.niche.includes('tutor')) || (pkg.title && pkg.title.toLowerCase().includes('english'));
-                            const nicheBadge = isTutor ? '🗣️ English Tutor' : '🎬 Video Editing';
-                            const providerName = pkg.provider_name || 'Verified Creator';
-                            const initial = providerName.charAt(0).toUpperCase();
-
-                            return `
-                            <div class="card fiverr-gig-card" style="display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg-card); transition: all 0.25s ease;">
-                                <div style="padding: 16px;">
-                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                                        <div style="display: flex; align-items: center; gap: 10px;">
-                                            <div style="width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #a855f7); color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.9rem;">
-                                                ${initial}
-                                            </div>
-                                            <div>
-                                                <div style="font-weight: 700; font-size: 0.92rem; color: var(--text-primary);">${escapeHTML(providerName)}</div>
-                                                <div style="font-size: 0.72rem; color: var(--success); font-weight: 600;">🟢 Online now</div>
-                                            </div>
-                                        </div>
-                                        <span class="badge badge-info" style="font-size: 0.7rem; padding: 4px 8px;">${nicheBadge}</span>
-                                    </div>
-
-                                    <h4 style="font-size: 1rem; font-weight: 700; margin-bottom: 8px; color: var(--text-primary); line-height: 1.4;">${escapeHTML(pkg.title)}</h4>
-                                    <p style="font-size: 0.8125rem; color: var(--text-secondary); line-height: 1.45; margin-bottom: 14px; min-height: 40px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
-                                        ${escapeHTML(pkg.description || 'Custom tailored high quality service with 100% escrow protection and guaranteed turnaround.')}
-                                    </p>
-
-                                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 10px;">
-                                        <span>⏱️ ${escapeHTML(pkg.turnaround || '24 hours')}</span>
-                                        <span>🔄 ${pkg.revision_limit || 2} revisions</span>
-                                    </div>
-                                </div>
-
-                                <div class="card-footer" style="background: var(--bg-hover); padding: 12px 16px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; gap: 8px;">
-                                    <div>
-                                        <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Price</div>
-                                        <div style="font-size: 1.25rem; font-weight: 800; color: var(--accent);">₹${(pkg.price || 0).toLocaleString()}</div>
-                                    </div>
-                                    <div style="display: flex; gap: 6px;">
-                                        <button class="btn btn-secondary btn-sm" onclick="openPreBookingChat(${pkg.provider_id}, '${escapeJs(providerName)}')" title="Message creator before ordering" style="padding: 6px 12px; font-weight: 700;">
-                                            💬 Chat
-                                        </button>
-                                        <button class="btn btn-primary btn-sm" onclick="selectProvider(${pkg.provider_id}, ${pkg.id})" style="padding: 6px 14px; font-weight: 700;">
-                                            Order Now
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                            `;
-                        }).join('')}
-
-                        <!-- 2. Render Verified Creators Showcase -->
-                        ${filteredProviders.map(pr => {
-                            const isTutor = pr.niche === 'tutors';
-                            const isWriter = pr.niche === 'writers';
-                            const nicheBadge = isTutor ? '🗣️ English Tutor' : (isWriter ? '✍️ Copywriter' : '🎬 Video Editing');
-                            const initial = (pr.name || 'C').charAt(0).toUpperCase();
-                            const startPrice = pr.starting_price || (isTutor ? 799 : (isWriter ? 1199 : 1499));
-                            const turnaround = pr.response_time || '24 hours';
-                            const headline = pr.specialization || (isTutor ? 'Conversational English & Fluency Coaching' : (isWriter ? 'High-Converting Copy & Content' : 'Professional Video Editing & Motion Graphics'));
-
-                            return `
-                            <div class="card fiverr-gig-card" style="display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg-card); transition: all 0.25s ease;">
-                                <div style="padding: 16px;">
-                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                                        <div style="display: flex; align-items: center; gap: 10px;">
-                                            <div style="width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #10b981, #059669); color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.9rem;">
-                                                ${initial}
-                                            </div>
-                                            <div>
-                                                <div style="font-weight: 700; font-size: 0.92rem; color: var(--text-primary); display: flex; align-items: center; gap: 4px;">
-                                                    ${escapeHTML(pr.name)}
-                                                    <span title="Verified Talent" style="color: var(--accent); font-size: 0.8rem;">✓</span>
-                                                </div>
-                                                <div style="font-size: 0.72rem; color: var(--success); font-weight: 600;">🟢 Online now</div>
-                                            </div>
-                                        </div>
-                                        <span class="badge badge-info" style="font-size: 0.7rem; padding: 4px 8px;">${nicheBadge}</span>
-                                    </div>
-
-                                    <h4 style="font-size: 1rem; font-weight: 700; margin-bottom: 8px; color: var(--text-primary); line-height: 1.4;">${escapeHTML(headline)}</h4>
-                                    <p style="font-size: 0.8125rem; color: var(--text-secondary); line-height: 1.45; margin-bottom: 14px; min-height: 40px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
-                                        100% Escrow Protected. Chat directly with ${escapeHTML(pr.name)} to discuss your requirements, custom footage, or turnaround.
-                                    </p>
-
-                                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 10px;">
-                                        <span>⚡ ${escapeHTML(turnaround)} turnaround</span>
-                                        <span style="color: var(--warning); font-weight: 700;">★ 5.0 (Verified)</span>
-                                    </div>
-                                </div>
-
-                                <div class="card-footer" style="background: var(--bg-hover); padding: 12px 16px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; gap: 8px;">
-                                    <div>
-                                        <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Starting at</div>
-                                        <div style="font-size: 1.25rem; font-weight: 800; color: var(--accent);">₹${startPrice.toLocaleString()}</div>
-                                    </div>
-                                    <div style="display: flex; gap: 6px;">
-                                        <button class="btn btn-secondary btn-sm" onclick="openPreBookingChat(${pr.id}, '${escapeJs(pr.name)}')" title="Message creator before ordering" style="padding: 6px 12px; font-weight: 700;">
-                                            💬 Chat
-                                        </button>
-                                        <button class="btn btn-primary btn-sm" onclick="selectProvider(${pr.id})" style="padding: 6px 14px; font-weight: 700;">
-                                            Hire Talent
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                            `;
-                        }).join('')}
-                    </div>
-                `}
-            </div>
-        </div>`;
-    }
-
-    // Attach search and filter handlers to window
-    window.__updatePlaceholderVisibility = (forceHide = false) => {
-        const input = document.getElementById('buyer-search-input');
-        const holder = document.getElementById('search-animated-placeholder');
-        if (!holder) return;
-        if (forceHide || (input && (input.value.trim().length > 0 || document.activeElement === input))) {
-            holder.classList.add('hidden');
-        } else {
-            holder.classList.remove('hidden');
-        }
-    };
-
-    window.__handleBuyerSearchSubmit = (val) => {
-        if (!val || !val.trim()) {
-            const input = document.getElementById('buyer-search-input');
-            const bar = document.querySelector('.search-options-animated-bar');
-            if (bar) {
-                bar.classList.add('highlight-pulse');
-                setTimeout(() => bar.classList.remove('highlight-pulse'), 800);
+            let stats = {};
+            if (isAdmin) {
+                stats = await apiFetch('/admin/stats');
             }
-            if (input) {
-                input.focus();
-            }
-            return;
-        }
-        window.__handleBuyerSearch(val.trim());
-    };
 
-    window.__handleBuyerSearch = (val) => {
-        searchQuery = val || '';
-        mount(renderMarketplace());
-        const input = document.getElementById('buyer-search-input');
-        if (input) {
-            input.focus();
+            const profile = await apiFetch('/profile');
+
+            let recentBookings = [];
             try {
-                input.setSelectionRange(searchQuery.length, searchQuery.length);
-            } catch (_) {}
+                recentBookings = await apiFetch('/bookings');
+            } catch (e) { }
+
+            let recentPackages = [];
+            if (isProvider) {
+                recentPackages = await apiFetch('/packages');
+            }
+
+            mount(renderDashboard(profile, isProvider, isAdmin, isBuyer, stats, recentBookings, recentPackages));
+        } catch (e) {
+            showToast('Failed to load dashboard: ' + e.message, 'error');
+            // Don't redirect to login — let user retry or use the app anyway
+            mount(el`<div class="main">
+                <div class="card" style="max-width: 400px; margin: 40px auto; text-align: center;">
+                    <h3 style="margin-bottom: 16px;">Dashboard Load Error</h3>
+                    <p style="color: var(--text-secondary); margin-bottom: 24px;">${e.message}</p>
+                    <button class="btn btn-primary" onclick="router('/login')">Go to Login</button>
+                    <button class="btn btn-secondary" onclick="loadDashboard()" style="margin-left: 8px;">Retry</button>
+                </div>
+            </div>`);
         }
-        window.__updatePlaceholderVisibility();
-    };
+    }
 
-    window.__handleBuyerSearchInput = (val) => {
-        clearTimeout(searchDebounceTimer);
-        searchDebounceTimer = setTimeout(() => {
-            window.__handleBuyerSearch(val);
-        }, 250);
-    };
+    // Initial render with loading state
+    mount(el`<div class="main"><div class="loading"><div class="spinner"></div></div></div>`);
 
-    window.__clearBuyerSearch = () => {
-        window.__handleBuyerSearch('');
-        setTimeout(() => window.__updatePlaceholderVisibility(), 30);
-    };
+    loadDashboard();
 
-    window.__setBuyerFilter = (filter) => {
-        activeFilter = filter;
-        mount(renderMarketplace());
-        setTimeout(() => window.__updatePlaceholderVisibility(), 30);
-    };
+    function loadMyBuyBookings() {
+        apiFetch('/bookings?limit=10').then(bookings => {
+            const items = bookings && bookings.length > 0
+                ? bookings.map(b => {
+                    const amt = (b.total_amount || 0).toLocaleString();
+                    const prov = (b.provider_name || 'Unknown Provider');
+                    return '<div style="display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--border);">' +
+                        '<div><strong>Booking #' + b.id + '</strong> — ' + prov + '</div>' +
+                        '<div class="price">INR ' + amt + '</div>' +
+                        '</div>';
+                }).join('')
+                : '<p>No purchases yet.</p>';
+            mount(el`<div class="main">
+                <div class="card" style="max-width: 640px; margin: 20px auto;">
+                    <div class="card-header">
+                        <div class="card-title">My Purchases (as Buyer)</div>
+                    </div>
+                    <div class="card-body">
+                        ${items}
+                    </div>
+                    <div class="card-footer">
+                        <button class="btn btn-primary" onclick="router('/providers')">Browse More</button>
+                        <button class="btn btn-secondary" onclick="router('/bookings')">All Bookings</button>
+                    </div>
+                </div>
+            </div>`);
+        });
+    }
 
-    window.__applyPopularTag = (keyword, filter = null) => {
-        searchQuery = keyword || '';
-        if (filter) {
-            activeFilter = filter;
-        }
-        mount(renderMarketplace());
-        const input = document.getElementById('buyer-search-input');
-        if (input) {
-            input.value = searchQuery;
-            input.focus();
-        }
-        window.__updatePlaceholderVisibility(true);
-    };
+    function renderDashboard(profile, isProvider, isAdmin, isBuyer, stats, recentBookings, recentPackages) {
+        // Determine if user can see buyer features (buyers AND providers who can also buy)
+        const canBuy = isBuyer || isProvider;
+        const showBuyerSection = canBuy;
+        const showProviderSection = isProvider;
+        const showAdminSection = isAdmin;
 
-    return renderMarketplace();
+        return el`<div>
+                ${renderAppHeader('/')}
+                ${renderLeftEdgePeekDock('')}
+                <div class="main">
+                    ${isAdmin ? adminStatsCard(stats) : isProvider ? providerWelcomeCard(profile) : buyerWelcomeCard(recentBookings)}
+                    <div class="section">
+                        ${showAdminSection ? adminSection() : ''}
+                        ${showProviderSection ? providerSection(profile, recentPackages) : ''}
+                        ${showBuyerSection ? buyerSection(recentBookings) : ''}
+                        ${showProviderSection ? providerBuySection() : ''}
+                    </div>
+                </div>
+            </div>`;
+    }
+
+    return renderDashboard(null, isProvider, isAdmin, isBuyer, {}, [], []);
 }
 
+function adminStatsCard(stats) {
+    return el`<div class="card">
+        <div class="card-header">
+            <div class="card-title">Platform Stats</div>
+            <span class="badge badge-info">Admin</span>
+        </div>
+        <div class="grid grid-2" style="margin-top: 12px;">
+            <div class="card-body">
+                <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px;">Total Users</div>
+                <div style="font-size: 1.5rem; font-weight: 700;">${stats?.total_users || 0}</div>
+            </div>
+            <div class="card-body">
+                <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px;">Providers</div>
+                <div style="font-size: 1.5rem; font-weight: 700;">${stats?.total_providers || 0}</div>
+            </div>
+            <div class="card-body">
+                <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px;">Total Bookings</div>
+                <div style="font-size: 1.5rem; font-weight: 700;">${stats?.total_bookings || 0}</div>
+            </div>
+            <div class="card-body">
+                <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px;">Revenue (Commissions)</div>
+                <div style="font-size: 1.5rem; font-weight: 700; color: var(--success);">₹${(stats?.total_commissions || 0).toLocaleString()}</div>
+            </div>
+        </div>
+        <div class="card-footer" style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button class="btn btn-primary btn-sm" onclick="router('/payments')">💳 Escrow & Revenue</button>
+            <button class="btn btn-secondary btn-sm" onclick="router('/admin')">View Admin Panel</button>
+        </div>
+    </div>`;
+}
 
 function providerWelcomeCard(profile) {
-    return el`<div class="card" style="box-shadow: 0 10px 30px rgba(0,0,0,0.12); margin-bottom: 24px;">
+    return el`<div class="card">
         <div class="card-header">
-            <div>
-                <div class="card-title" style="font-size: 1.25rem; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                    <span>Welcome back, ${currentUser?.name || 'Creator'}</span>
-                    <span style="font-size: 0.8125rem; font-weight: 700; color: var(--accent); background: rgba(99, 102, 241, 0.14); padding: 3px 10px; border-radius: 999px; border: 1px solid rgba(99, 102, 241, 0.3);">
-                        @${currentUser?.username || 'creator'}
-                    </span>
-                </div>
-                <div style="font-size: 0.8125rem; color: var(--text-secondary); margin-top: 3px;">
-                    Creator &amp; Provider Command Center • 100% Escrow Protected • groovehub.com/@${currentUser?.username || 'creator'}
-                </div>
-            </div>
-            <span class="badge badge-success" style="font-weight: 700; padding: 6px 12px; font-size: 0.8rem;">PROVIDER</span>
+            <div class="card-title">Welcome back, ${currentUser?.name}</div>
+            <span class="badge badge-success">Provider</span>
         </div>
-        <div class="grid grid-2" style="margin-top: 16px; gap: 14px;">
-            <div style="background: var(--bg-hover); padding: 16px; border-radius: var(--radius-sm); border: 1px solid var(--border);">
-                <div style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 6px;">Total Bookings</div>
-                <div style="font-size: 1.85rem; font-weight: 800; color: var(--text-primary); line-height: 1;">${profile?.total_bookings || 0}</div>
-                <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 4px;">Orders completed</div>
+        <div class="grid grid-2" style="margin-top: 12px;">
+            <div class="card-body">
+                <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px;">Total Bookings</div>
+                <div style="font-size: 1.5rem; font-weight: 700;">${profile?.total_bookings || 0}</div>
             </div>
-            <div style="background: var(--bg-hover); padding: 16px; border-radius: var(--radius-sm); border: 1px solid var(--border);">
-                <div style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 6px;">Earnings (This Month)</div>
-                <div style="font-size: 1.85rem; font-weight: 800; color: var(--success); line-height: 1;">₹${(profile?.monthly_earnings || 0).toLocaleString()}</div>
-                <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 4px;">Net provider payout</div>
+            <div class="card-body">
+                <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px;">Earnings (This Month)</div>
+                <div style="font-size: 1.5rem; font-weight: 700; color: var(--success);">₹${(profile?.monthly_earnings || 0).toLocaleString()}</div>
             </div>
-            <div style="grid-column: span 2; background: var(--bg-hover); padding: 16px; border-radius: var(--radius-sm); border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-                <div>
-                    <div style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 4px;">Rating &amp; Reputation</div>
-                    <div style="font-size: 1.4rem; font-weight: 800; color: var(--warning); display: flex; align-items: center; gap: 6px;">
-                        <span>⭐</span>
-                        <span>${profile?.rating ? Number(profile.rating).toFixed(1) : '5.0'}</span>
-                        <span style="font-size: 0.8125rem; font-weight: 500; color: var(--text-secondary); margin-left: 4px;">(${profile?.total_bookings || 0} reviews)</span>
-                    </div>
-                </div>
-                <div style="font-size: 0.8125rem; color: var(--text-secondary); text-align: right;">
-                    Guaranteed 80% Payout • Direct Bank Transfer
-                </div>
+            <div class="card-body" style="grid-column: span 2;">
+                <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px;">Rating</div>
+                <div style="font-size: 1.25rem; font-weight: 700; color: var(--warning);">${profile?.rating || 0} ⭐</div>
             </div>
         </div>
-        <div class="card-footer" style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px;">
-            <button class="btn btn-primary" onclick="setSettingsTab('portfolio'); router('/settings');" style="flex: 1; min-width: 150px;">📁 Upload Portfolios</button>
-            <button class="btn btn-secondary" onclick="router('/packages')" style="flex: 1; min-width: 140px;">Manage Packages</button>
-            <button class="btn btn-secondary" onclick="router('/payments')" style="flex: 1; min-width: 140px;">💳 Earnings &amp; Payouts</button>
-            <button class="btn btn-secondary" onclick="router('/profile')" style="flex: 1; min-width: 120px;">Edit Profile</button>
+        <div class="card-footer" style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button class="btn btn-primary btn-sm" onclick="router('/packages')">Manage Packages</button>
+            <button class="btn btn-secondary btn-sm" onclick="router('/payments')">💳 Earnings & Payouts</button>
+            <button class="btn btn-secondary btn-sm" onclick="router('/profile')">Edit Profile</button>
         </div>
     </div>`;
 }
@@ -2687,12 +1648,32 @@ function buyerWelcomeCard(recentBookings = []) {
     </div>`;
 }
 
-
+function providerBuySection() {
+    // Providers can also buy from other providers
+    let myBookings = [];
+    return el`<div class="section mt-4">
+        <div class="section-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M12 6v6l4 2"/>
+            </svg>
+            Also Buy From Others
+        </div>
+        <div class="card" style="padding: 16px;">
+            <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 12px;">As a provider, you can also hire other providers for your projects. Browse the marketplace and make bookings just like any buyer.</p>
+            <div class="flex gap-4" style="flex-wrap: wrap;">
+                <button class="btn btn-primary" onclick="router('/providers')">Browse Providers</button>
+                <button class="btn btn-secondary" onclick="loadMyBuyBookings()">My Purchases</button>
+                <button class="btn btn-secondary" onclick="router('/payments')">💳 Payments</button>
+            </div>
+        </div>
+    </div>`;
+}
 
 function providerSection(profile, recentPackages) {
     return el`<div class="section">
         <div class="section-title">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20" style="color: var(--accent);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
                 <rect x="3" y="3" width="18" height="18" rx="2"/>
                 <path d="M3 9h18"/>
                 <path d="M9 21V9"/>
@@ -2700,42 +1681,42 @@ function providerSection(profile, recentPackages) {
             Quick Actions
         </div>
         <div class="grid grid-2">
-            <button type="button" class="card" onclick="router('/create-package')" style="cursor: pointer; border-color: rgba(99, 102, 241, 0.4); text-align: left; background: var(--bg-card); transition: all 0.25s ease;">
-                <div class="card-header" style="margin-bottom: 6px;">
-                    <div class="card-title" style="color: var(--text-primary); font-size: 1.05rem; font-weight: 700;">Create Package</div>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20" style="color: var(--accent);">
+            <button class="card" onclick="router('/create-package')" style="cursor: pointer; border-color: var(--accent);">
+                <div class="card-header">
+                    <div class="card-title">Create Package</div>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20" style="color: var(--accent);">
                         <line x1="12" y1="5" x2="12" y2="19"/>
                         <line x1="5" y1="12" x2="19" y2="12"/>
                     </svg>
                 </div>
-                <div class="card-body" style="color: var(--text-secondary); font-size: 0.875rem; line-height: 1.5;">Create a new service package for buyers</div>
+                <div class="card-body">Create a new service package for buyers</div>
             </button>
-            <button type="button" class="card" onclick="router('/profile')" style="cursor: pointer; text-align: left; background: var(--bg-card); transition: all 0.25s ease;">
-                <div class="card-header" style="margin-bottom: 6px;">
-                    <div class="card-title" style="color: var(--text-primary); font-size: 1.05rem; font-weight: 700;">Edit Profile</div>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20" style="color: var(--text-secondary);">
+            <button class="card" onclick="router('/profile')" style="cursor: pointer;">
+                <div class="card-header">
+                    <div class="card-title">Edit Profile</div>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                     </svg>
                 </div>
-                <div class="card-body" style="color: var(--text-secondary); font-size: 0.875rem; line-height: 1.5;">Update your profile and availability</div>
+                <div class="card-body">Update your profile and availability</div>
             </button>
         </div>
         ${recentPackages && recentPackages.length > 0 ? `
-        <div class="section-title mt-4" style="margin-top: 24px;">Your Recent Packages</div>
+        <div class="section-title mt-4">Your Recent Packages</div>
         <div class="grid grid-2">
             ${recentPackages.slice(0, 4).map(pkg => `
                 <div class="card">
-                    <div class="card-header" style="margin-bottom: 8px;">
-                        <div class="card-title" style="color: var(--text-primary); font-weight: 700; font-size: 1.05rem;">${pkg.title}</div>
+                    <div class="card-header">
+                        <div class="card-title">${pkg.title}</div>
                         <span class="badge ${pkg.status === 'approved' ? 'badge-success' : 'badge-warning'}">${pkg.status}</span>
                     </div>
                     <div class="card-body">
-                        <div class="price" style="color: var(--accent); font-weight: 800; font-size: 1.45rem; margin-bottom: 4px;">₹${pkg.price.toLocaleString()}</div>
-                        <div class="price-range" style="color: var(--text-secondary); font-size: 0.8125rem;">${pkg.turnaround || '24 hours'} • ${pkg.revision_limit || 1} revision${(pkg.revision_limit || 1) > 1 ? 's' : ''}</div>
+                        <div class="price">₹${pkg.price.toLocaleString()}</div>
+                        <div class="price-range">${pkg.turnaround} • ${pkg.revision_limit} revision${pkg.revision_limit > 1 ? 's' : ''}</div>
                     </div>
-                    <div class="card-footer" style="margin-top: 14px; padding-top: 12px;">
-                        <button class="btn btn-secondary btn-sm" onclick="router('/packages')" style="width: 100%;">View All</button>
+                    <div class="card-footer">
+                        <button class="btn btn-secondary btn-sm" onclick="router('/packages')">View All</button>
                     </div>
                 </div>
             `).join('')}
@@ -2756,7 +1737,7 @@ function buyerSection(recentBookings) {
                 </svg>
                 Your Project Bookings & Deadlines
             </div>
-            ${list.length > 0 ? `<button class="btn btn-secondary btn-sm" onclick="router('/bookings')">View All (${list.length}) --></button>` : ''}
+            ${list.length > 0 ? `<button class="btn btn-secondary btn-sm" onclick="router('/bookings')">View All (${list.length}) →</button>` : ''}
         </div>
 
         ${list.length > 0 ? `
@@ -2927,7 +1908,6 @@ let activeSettingsTab = 'account';
 
 function Settings() {
     let profile = {};
-    let portfolioItems = [];
     let error = '';
     let success = '';
     let loading = true;
@@ -2945,11 +1925,7 @@ function Settings() {
                     profile = await apiFetch('/profile');
                 } catch (_) {
                     profile = {};
-                }
-                try {
-                    portfolioItems = await apiFetch(`/profile/${currentUser.id}/portfolio`);
-                } catch (_) {
-                    portfolioItems = [];
+}
                 }
             } else if (currentUser.user_type === 'ADMIN') {
                 try {
@@ -2977,76 +1953,18 @@ function Settings() {
         e.preventDefault();
         try {
             showLoading();
-            const usernameInput = document.getElementById('setting-username');
             const data = {
                 name: document.getElementById('setting-name').value.trim(),
                 email: document.getElementById('setting-email').value.trim(),
                 phone: document.getElementById('setting-phone').value.trim()
             };
-            if (usernameInput) {
-                data.username = usernameInput.value.trim().replace(/^@/, '');
-            }
             currentUser = await apiFetch('/auth/me', {
                 method: 'PATCH',
                 body: JSON.stringify(data)
             });
-            showToast('Account details & handle updated', 'success');
+            showToast('Account details updated', 'success');
         } catch (e) {
             showToast(e.message || 'Update failed', 'error');
-        } finally {
-            hideLoading();
-            mount(renderSettingsView());
-        }
-    };
-
-    window.handleAddPortfolioItem = async (e) => {
-        e.preventDefault();
-        try {
-            showLoading();
-            const title = document.getElementById('port-title').value.trim();
-            const media_url = document.getElementById('port-media-url').value.trim();
-            const media_type = document.getElementById('port-media-type').value;
-            const thumbnail_url = document.getElementById('port-thumb-url').value.trim() || (media_type === 'image' ? media_url : '');
-            const description = document.getElementById('port-desc').value.trim();
-
-            if (!title || !media_url) {
-                showToast('Please provide a title and media URL', 'error');
-                return;
-            }
-
-            const item = await apiFetch('/profile/portfolio', {
-                method: 'POST',
-                body: JSON.stringify({
-                    title,
-                    media_url,
-                    media_type,
-                    thumbnail_url,
-                    description
-                })
-            });
-            showToast('Work sample added to your portfolio showcase!', 'success');
-            portfolioItems.unshift(item);
-            document.getElementById('port-title').value = '';
-            document.getElementById('port-media-url').value = '';
-            document.getElementById('port-thumb-url').value = '';
-            document.getElementById('port-desc').value = '';
-        } catch (err) {
-            showToast(err.message || 'Failed to add portfolio item', 'error');
-        } finally {
-            hideLoading();
-            mount(renderSettingsView());
-        }
-    };
-
-    window.handleDeletePortfolioItem = async (itemId) => {
-        if (!confirm('Are you sure you want to remove this project from your showcase?')) return;
-        try {
-            showLoading();
-            await apiFetch(`/profile/portfolio/${itemId}`, { method: 'DELETE' });
-            showToast('Portfolio item removed', 'success');
-            portfolioItems = portfolioItems.filter(i => i.id !== itemId);
-        } catch (err) {
-            showToast(err.message || 'Failed to remove portfolio item', 'error');
         } finally {
             hideLoading();
             mount(renderSettingsView());
@@ -3155,7 +2073,7 @@ function Settings() {
                         owner_account_number: acc,
                         owner_ifsc_code: ifsc,
                         owner_upi_id: upi,
-                        commission_rate: platformSettings?.commission_rate ?? 0.20,
+                        commission_rate: 0,
                         razorpay_key_id: rzpKey,
                         razorpay_key_secret: rzpSecret,
                         google_client_id: googleId
@@ -3208,7 +2126,6 @@ function Settings() {
 
     function renderSettingsView() {
         const isProvider = currentUser?.user_type === 'PROVIDER';
-        const isAdmin = currentUser?.user_type === 'ADMIN';
         const skillsFormatted = Array.isArray(profile?.skills)
             ? profile.skills.join(', ')
             : (typeof profile?.skills === 'string' ? profile.skills : '');
@@ -3230,11 +2147,8 @@ function Settings() {
                         👤 Account
                     </button>
                     ${isProvider ? `
-                        <button type="button" class="tab ${activeSettingsTab === 'portfolio' ? 'active' : ''}" onclick="setSettingsTab('portfolio')">
-                            📁 Portfolio &amp; Uploads (${portfolioItems.length})
-                        </button>
                         <button type="button" class="tab ${activeSettingsTab === 'profile' ? 'active' : ''}" onclick="setSettingsTab('profile')">
-                            🎨 Specialty &amp; Skills
+                            🎨 Specialty & Skills
                         </button>
                     ` : `
                         <button type="button" class="tab ${activeSettingsTab === 'bio' ? 'active' : ''}" onclick="setSettingsTab('bio')">
@@ -3242,24 +2156,24 @@ function Settings() {
                         </button>
                     `}
                     <button type="button" class="tab ${activeSettingsTab === 'bank' ? 'active' : ''}" onclick="setSettingsTab('bank')">
-                        🏦 Bank &amp; Payouts
+                        🏦 Bank & Payouts
                     </button>
                     <button type="button" class="tab ${activeSettingsTab === 'security' ? 'active' : ''}" onclick="setSettingsTab('security')">
                         🔒 Security
                     </button>
                     <button type="button" class="tab ${activeSettingsTab === 'commission' ? 'active' : ''}" onclick="setSettingsTab('commission')">
-                        💰 Commission &amp; Escrow
+                        💰 Commission & Escrow
                     </button>
                     <button type="button" class="tab ${activeSettingsTab === 'preferences' ? 'active' : ''}" onclick="setSettingsTab('preferences')">
-                        🌙 Display &amp; Theme
+                        🌙 Display & Theme
                     </button>
                 </div>
 
                 <!-- Tab 1: Account -->
                 ${activeSettingsTab === 'account' ? `
-                    <div class="card" style="max-width: 580px;">
+                    <div class="card" style="max-width: 540px;">
                         <div class="card-header">
-                            <div class="card-title">Personal Information &amp; Creator Handle</div>
+                            <div class="card-title">Personal Information</div>
                             <span class="badge badge-info">${currentUser?.user_type || 'User'}</span>
                         </div>
                         <form onsubmit="handleAccountSave(event)">
@@ -3267,18 +2181,6 @@ function Settings() {
                                 <label class="form-label">Full Name</label>
                                 <input type="text" class="form-input" id="setting-name" value="${currentUser?.name || ''}" required>
                             </div>
-
-                            <div class="form-group">
-                                <label class="form-label">Creator Username (@handle)</label>
-                                <div style="position: relative; display: flex; align-items: center;">
-                                    <span style="position: absolute; left: 14px; color: var(--accent); font-weight: 800; font-size: 1rem; pointer-events: none;">@</span>
-                                    <input type="text" class="form-input" id="setting-username" value="${currentUser?.username || ''}" placeholder="your_unique_handle" style="padding-left: 32px; font-weight: 700;" pattern="[a-zA-Z0-9_]{3,30}" title="3-30 letters, numbers, or underscores">
-                                </div>
-                                <small style="color: var(--text-muted); font-size: 0.75rem; margin-top: 5px; display: block;">
-                                    Your unique creator link: <strong>groovehub.com/@${currentUser?.username || 'username'}</strong>. Clients can search and find you directly.
-                                </small>
-                            </div>
-
                             <div class="form-row">
                                 <div class="form-group">
                                     <label class="form-label">Email Address</label>
@@ -3315,134 +2217,6 @@ function Settings() {
                             </div>
                             <button type="submit" class="btn btn-primary" style="margin-top: 8px;">Save Bio</button>
                         </form>
-                    </div>
-                ` : ''}
-
-                <!-- Tab: Portfolio Showcase (Provider Only) -->
-                ${activeSettingsTab === 'portfolio' && isProvider ? `
-                    <div style="display: flex; flex-direction: column; gap: 24px; max-width: 860px;">
-                        <!-- Banner -->
-                        <div class="card" style="padding: 20px 24px; background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(16, 185, 129, 0.08) 100%); border: 1px solid rgba(99, 102, 241, 0.25);">
-                            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
-                                <div>
-                                    <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--text-primary); margin-bottom: 4px; display: flex; align-items: center; gap: 8px;">
-                                        <span>🎨</span> Public Portfolio Showcase &amp; Work Uploads
-                                    </h3>
-                                    <p style="font-size: 0.8125rem; color: var(--text-secondary); margin: 0; line-height: 1.45;">
-                                        Upload your video showreels, client proof, IELTS teaching samples, or copywriting deliverables. Buyers see these when browsing your profile.
-                                    </p>
-                                </div>
-                                <div style="display: flex; gap: 10px; align-items: center;">
-                                    <button type="button" class="btn btn-secondary btn-sm" onclick="openFiverrPortfolioModal(${currentUser.id}, '${escapeHTML(currentUser.name)}')">
-                                        👁️ Preview Public Seller Profile
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Add Portfolio Item Form -->
-                        <div class="card" style="padding: 24px;">
-                            <div class="card-header" style="margin-bottom: 16px;">
-                                <div class="card-title" style="font-size: 1rem; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
-                                    <span>➕</span> Add New Work Sample / Showcase Item
-                                </div>
-                                <span class="badge badge-info">Instant Live</span>
-                            </div>
-                            <form onsubmit="handleAddPortfolioItem(event)">
-                                <div class="form-group">
-                                    <label class="form-label">Project Title <span style="color: var(--danger);">*</span></label>
-                                    <input type="text" class="form-input" id="port-title" placeholder="e.g. High-Retention YouTube Tech Edit / Band 8 IELTS Mock Drill / SaaS Landing Copy" required>
-                                </div>
-
-                                <div class="form-row">
-                                    <div class="form-group">
-                                        <label class="form-label">Media Type</label>
-                                        <select class="form-select" id="port-media-type">
-                                            <option value="video">🎬 Video (YouTube / Vimeo / Reel)</option>
-                                            <option value="image">🖼️ Image (Thumbnails, Graphics, Designs)</option>
-                                            <option value="audio">🎙️ Audio (Podcast, Voiceover, Accent Clinic)</option>
-                                            <option value="link">🔗 Link / Case Study (Notion, Drive, Medium)</option>
-                                        </select>
-                                    </div>
-                                    <div class="form-group">
-                                        <label class="form-label">Media URL / Embed Link <span style="color: var(--danger);">*</span></label>
-                                        <input type="url" class="form-input" id="port-media-url" placeholder="https://youtube.com/watch?v=... or https://images.unsplash.com/..." required>
-                                    </div>
-                                </div>
-
-                                <div class="form-group">
-                                    <label class="form-label">Cover / Thumbnail Image URL <span style="color: var(--text-muted); font-size: 0.75rem;">(Optional - for card preview)</span></label>
-                                    <input type="url" class="form-input" id="port-thumb-url" placeholder="https://images.unsplash.com/... (optional)">
-                                </div>
-
-                                <div class="form-group">
-                                    <label class="form-label">Project Description &amp; Client Deliverables</label>
-                                    <textarea class="form-textarea" id="port-desc" rows="3" placeholder="Describe the goal, tools used (Premiere, After Effects, Figma), turn-around time, and results achieved for the client..."></textarea>
-                                </div>
-
-                                <div style="display: flex; justify-content: flex-end; margin-top: 14px;">
-                                    <button type="submit" class="btn btn-primary" style="padding: 10px 24px; font-weight: 700;">
-                                        ➕ Add to My Showcase
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-
-                        <!-- Live Portfolio Showcase Items Grid -->
-                        <div class="card" style="padding: 24px;">
-                            <div class="card-header" style="margin-bottom: 16px;">
-                                <div class="card-title" style="font-size: 1rem; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
-                                    <span>📁</span> Live Projects on Your Profile (${portfolioItems.length})
-                                </div>
-                            </div>
-
-                            ${portfolioItems.length === 0 ? `
-                                <div style="text-align: center; padding: 40px 20px; border: 1.5px dashed var(--border); border-radius: var(--radius);">
-                                    <div style="font-size: 2.5rem; margin-bottom: 10px;">🎨</div>
-                                    <h4 style="font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">No showcase projects added yet</h4>
-                                    <p style="font-size: 0.8125rem; color: var(--text-secondary); max-width: 440px; margin: 0 auto 16px;">
-                                        Creators who upload at least 2 video reels or work samples receive <strong>4x more client bookings</strong>. Add your first sample above!
-                                    </p>
-                                </div>
-                            ` : `
-                                <div class="grid grid-2" style="gap: 16px;">
-                                    ${portfolioItems.map(item => `
-                                        <div class="card" style="padding: 14px; background: var(--bg-hover); border: 1px solid var(--border); border-radius: var(--radius-sm); display: flex; flex-direction: column; justify-content: space-between;">
-                                            <div>
-                                                ${item.media_type === 'video' && item.media_url && item.media_url.includes('youtube') ? `
-                                                    <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 8px; margin-bottom: 10px; background: #000;">
-                                                        <iframe src="${item.media_url.replace('watch?v=', 'embed/').split('&')[0]}" style="position: absolute; top:0; left: 0; width: 100%; height: 100%; border: 0;" allowfullscreen></iframe>
-                                                    </div>
-                                                ` : item.thumbnail_url || (item.media_type === 'image' && item.media_url) ? `
-                                                    <div style="height: 140px; overflow: hidden; border-radius: 8px; margin-bottom: 10px; background: #111;">
-                                                        <img src="${item.thumbnail_url || item.media_url}" alt="${escapeHTML(item.title)}" style="width: 100%; height: 100%; object-fit: cover;">
-                                                    </div>
-                                                ` : `
-                                                    <div style="height: 90px; display: flex; align-items: center; justify-content: center; background: var(--bg-card); border-radius: 8px; margin-bottom: 10px; font-size: 2rem;">
-                                                        ${item.media_type === 'video' ? '🎬' : item.media_type === 'image' ? '🖼️' : item.media_type === 'audio' ? '🎙️' : '🔗'}
-                                                    </div>
-                                                `}
-                                                <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 6px;">
-                                                    <h4 style="font-size: 0.92rem; font-weight: 700; color: var(--text-primary); margin: 0;">${escapeHTML(item.title)}</h4>
-                                                    <span class="badge badge-info" style="font-size: 0.68rem; text-transform: uppercase;">${item.media_type}</span>
-                                                </div>
-                                                <p style="font-size: 0.78rem; color: var(--text-secondary); line-height: 1.4; margin: 0 0 10px 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
-                                                    ${escapeHTML(item.description || 'Verified project sample')}
-                                                </p>
-                                            </div>
-                                            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding-top: 8px; margin-top: 8px;">
-                                                <a href="${escapeHTML(item.media_url)}" target="_blank" rel="noopener noreferrer" style="font-size: 0.75rem; color: var(--accent); font-weight: 600; text-decoration: none;">
-                                                    Open Link ↗
-                                                </a>
-                                                <button type="button" class="btn btn-secondary btn-sm" onclick="handleDeletePortfolioItem(${item.id})" style="color: var(--danger); border-color: rgba(239, 68, 68, 0.3); padding: 3px 8px; font-size: 0.72rem;">
-                                                    🗑️ Delete
-                                                </button>
-                                            </div>
-                                        </div>
-                                    `).join('')}
-                                </div>
-                            `}
-                        </div>
                     </div>
                 ` : ''}
 
@@ -3829,7 +2603,7 @@ function CreatePackage() {
             <div class="main">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                     <div class="section-title" style="margin: 0;">${isEdit ? 'Edit Package' : 'Create Package'}</div>
-                    <button class="btn btn-secondary btn-sm" onclick="router('/packages')"><-- Back to Packages</button>
+                    <button class="btn btn-secondary btn-sm" onclick="router('/packages')">← Back to Packages</button>
                 </div>
                 <div class="card" style="max-width: 540px;">
                     ${error ? `<div class="toast toast-error" style="margin-bottom: 12px;">${error}</div>` : ''}
@@ -3927,7 +2701,7 @@ function BookingsList() {
                             <line x1="19" y1="12" x2="5" y2="12"></line>
                             <polyline points="12 19 5 12 12 5"></polyline>
                         </svg>
-                        <span><-- Back to Dashboard</span>
+                        <span>← Back to Dashboard</span>
                     </button>
                     <div class="section-title" style="margin: 0;">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
@@ -4445,7 +3219,7 @@ function CreateBooking() {
                             <line x1="19" y1="12" x2="5" y2="12"></line>
                             <polyline points="12 19 5 12 12 5"></polyline>
                         </svg>
-                        <span><-- Back to Talent Directory</span>
+                        <span>← Back to Talent Directory</span>
                     </button>
                     <div class="section-title" style="margin: 0;">Create Booking Order</div>
                 </div>
@@ -4609,7 +3383,7 @@ function PaymentsPortal() {
             const inEscrow = heldList.reduce((acc, p) => acc + (p.amount || 0), 0);
 
             stat1 = { label: 'Gross Merchandise Value', value: `₹${gmv.toLocaleString()}`, subtext: `${payments.length} total orders`, icon: '🌐' };
-            stat2 = { label: 'Platform Revenue (20%)', value: `₹${comm.toLocaleString()}`, subtext: 'Earned marketplace commission', icon: '🏦' };
+            stat2 = { label: 'Total Revenue', value: `₹${gmv.toLocaleString()}`, subtext: `${payments.length} total orders`, icon: '🏦' };
             stat3 = { label: '80% Provider Payouts', value: `₹${payouts.toLocaleString()}`, subtext: `${releasedList.length} released orders`, icon: '💸' };
             stat4 = { label: 'Active Escrow Vault', value: `₹${inEscrow.toLocaleString()}`, subtext: `${heldList.length} orders in escrow`, icon: '🔒' };
         } else if (isProvider) {
@@ -4619,7 +3393,7 @@ function PaymentsPortal() {
 
             stat1 = { label: 'Net Earnings (80%)', value: `₹${netEarnings.toLocaleString()}`, subtext: 'Released to your bank', icon: '💰' };
             stat2 = { label: 'Pending in Escrow', value: `₹${escrowEarnings.toLocaleString()}`, subtext: 'Locked until client approval', icon: '⏳' };
-            stat3 = { label: 'Platform Fee (20%)', value: `₹${platformFee.toLocaleString()}`, subtext: '20% platform escrow fee', icon: '🏷️' };
+            stat3 = { label: 'Platform Fee', value: '₹0', subtext: 'No commission charged', icon: '✅' };
             stat4 = { label: 'Completed Orders', value: releasedList.length.toString(), subtext: `${heldList.length} ongoing in escrow`, icon: '✅' };
         } else {
             // Buyer
@@ -4667,7 +3441,7 @@ function PaymentsPortal() {
                             <line x1="19" y1="12" x2="5" y2="12"></line>
                             <polyline points="12 19 5 12 12 5"></polyline>
                         </svg>
-                        <span><-- Back to Dashboard</span>
+                        <span>← Back to Dashboard</span>
                     </button>
                     <button class="fiverr-back-btn" onclick="router('/providers')" style="opacity: 0.85;">
                         <span>🌟 Browse Talent</span>
@@ -4680,7 +3454,7 @@ function PaymentsPortal() {
                         <h1>
                             <span>💳 Payments & Escrow Hub</span>
                         </h1>
-                        <p>100% Escrow Protection Guarantee • 80% Provider Payout • 20% Platform Fee</p>
+                        <p>100% Escrow Protection Guarantee • No Commission • Full Provider Payout</p>
                     </div>
                     <div style="display: flex; gap: 8px; align-items: center;">
                         <span class="badge badge-success" style="font-size: 0.8rem; padding: 6px 12px;">🛡️ Bank-Grade Escrow Vault</span>
@@ -4715,7 +3489,7 @@ function PaymentsPortal() {
                             <div class="escrow-step-number">3</div>
                             <div class="escrow-step-text">
                                 <h4>Instant Split Release</h4>
-                                <p>Buyer approves: <strong>80% is paid to Provider</strong> bank account & <strong>20% platform commission</strong> is routed to owner.</p>
+                                <p>Buyer approves: <strong>100% is paid to Provider</strong> — no commission charged.</p>
                             </div>
                         </div>
                     </div>
@@ -4778,21 +3552,12 @@ function PaymentsPortal() {
                         </button>` : ''}
                     </div>
 
-                    <div class="payment-search-box" style="position: relative; min-width: 260px; max-width: 360px; flex: 1;">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" id="payment-search-icon">
+                    <div class="payment-search-box payment-search-card" style="border: 2px solid var(--border); border-radius: 12px; padding: 6px 6px 6px 16px; display: flex; align-items: center; gap: 10px; transition: border-color 0.3s ease, box-shadow 0.3s ease; overflow: hidden;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--text-muted); transition: all 0.3s ease; flex-shrink: 0;" id="payment-search-icon">
                             <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
                         </svg>
-                        <input 
-                            type="text" 
-                            id="payment-search-input" 
-                            placeholder="Search transactions..." 
-                            value="${searchQuery || ''}" 
-                            oninput="PaymentsPortal.setSearch(this.value)" 
-                            autocomplete="off"
-                        />
-                        ${searchQuery ? `
-                            <button type="button" onclick="PaymentsPortal.setSearch('')" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 0.95rem; line-height: 1; padding: 2px;" title="Clear search">✕</button>
-                        ` : ''}
+                        <input type="text" id="payment-search-input" placeholder="Search by booking, title, or party..." value="${searchQuery}" oninput="PaymentsPortal.setSearch(this.value); PaymentsPortal.toggleSearchCard()" class="payment-search-input" style="border: none; background: transparent; padding: 8px 8px 8px 4px; font-size: 0.875rem; outline: none; width: 100%; color: var(--text-primary); transition: all 0.3s ease;">
+                        <span style="font-size: 0.625rem; color: var(--text-muted); transition: all 0.3s ease; white-space: nowrap;" id="payment-search-status">Type to search</span>
                     </div>
                 </div>
 
@@ -4932,16 +3697,36 @@ function PaymentsPortal() {
     PaymentsPortal.setSearch = (val) => {
         searchQuery = val;
         mount(renderPaymentsPortal());
-        const input = document.getElementById('payment-search-input');
-        if (input) {
-            input.focus();
-            try {
-                input.setSelectionRange(input.value.length, input.value.length);
-            } catch (_) {}
-        }
     };
 
-    PaymentsPortal.toggleSearchCard = () => {};
+    PaymentsPortal.toggleSearchCard = () => {
+        const input = document.getElementById('payment-search-input');
+        const card = document.querySelector('.payment-search-card');
+        const icon = document.getElementById('payment-search-icon');
+        const status = document.getElementById('payment-search-status');
+        if (!input) return;
+        if (card) {
+            card.classList.toggle('has-text', input.value.length > 0);
+            if (input.value.length > 0) {
+                card.style.borderColor = 'var(--accent)';
+                card.style.boxShadow = '0 0 0 3px rgba(91, 52, 234, 0.12)';
+            } else {
+                card.style.borderColor = 'var(--border)';
+                card.style.boxShadow = 'none';
+            }
+        }
+        if (icon && input.value.length > 0) {
+            icon.style.color = 'var(--accent)';
+            icon.style.transform = 'scale(0.9)';
+            setTimeout(() => { icon.style.transform = 'scale(1)'; }, 200);
+        }
+        if (status) {
+            status.textContent = input.value.length > 0 ? '✓ Found' : 'Type to search';
+            if (input.value.length > 0) {
+                setTimeout(() => { status.textContent = 'Type to search'; }, 2000);
+            }
+        }
+    };
 
     PaymentsPortal.refresh = () => {
         loadPayments();
@@ -5211,24 +3996,20 @@ const fiverrCategoryConfigs = {
         searchPlaceholder: 'Search video editing, shorts, YouTube, Premiere Pro, motion design...',
         types: [
             { id: '', label: 'All Video Types', icon: '✨' },
-            { id: 'youtube', label: 'YouTube & Long-form', icon: '📺', keywords: ['youtube', 'long-form', 'vlog', 'retention', 'mrbeast', 'podcast', 'documentary', 'shorts'] },
-            { id: 'ads_social', label: 'Social Ads & Reels', icon: '📱', keywords: ['ads', 'social', 'tiktok', 'reels', 'shorts', 'meta', 'instagram', 'ad', 'ugc', 'hook'] },
-            { id: 'gaming', label: 'Gaming & Stream Edits', icon: '🎮', keywords: ['gaming', 'twitch', 'montage', 'meme', 'stream', 'gameplay', 'valorant', 'gta', 'esports', 'minecraft', 'highlight'] },
-            { id: 'animations', label: '2D/3D Animations', icon: '🎨', keywords: ['animation', '2d', '3d', 'character', 'whiteboard', 'explainer', 'blender', 'animated'] },
-            { id: 'motion_graphics', label: 'Motion Graphics & VFX', icon: '✨', keywords: ['motion graphics', 'motion', 'vfx', 'after effects', 'intro', 'titles', 'visual effects'] },
-            { id: 'music', label: 'Music Videos & Cinematic', icon: '🎬', keywords: ['music', 'rap', 'beat-sync', 'trippy', 'vfx', 'cinematic', 'band', 'song', 'hip-hop'] },
-            { id: 'corporate', label: 'Corporate & Commercials', icon: '🏢', keywords: ['corporate', 'b2b', 'commercial', 'brand', 'presentation', 'business', 'event', 'promo'] }
+            { id: 'ads_social', label: 'Ads & social', icon: '📱', keywords: ['ads', 'social', 'tiktok', 'reels', 'shorts', 'meta', 'instagram', 'ad'] },
+            { id: 'youtube', label: 'YouTube videos', icon: '📺', keywords: ['youtube', 'long-form', 'vlog', 'retention', 'mrbeast', 'abdaal', 'podcast'] },
+            { id: 'corporate', label: 'Corporate videos', icon: '🏢', keywords: ['corporate', 'b2b', 'commercial', 'brand', 'presentation', 'business', 'event'] },
+            { id: 'gaming', label: 'Gaming videos', icon: '🎮', keywords: ['gaming', 'twitch', 'montage', 'meme', 'stream', 'gameplay', 'valorant', 'gta'] },
+            { id: 'family_travel', label: 'Family & travel', icon: '✈️', keywords: ['family', 'travel', 'vlog', 'drone', 'cinematic', 'vacation', 'wedding', 'trip'] },
+            { id: 'music', label: 'Music videos', icon: '🎬', keywords: ['music', 'rap', 'beat-sync', 'trippy', 'vfx', 'band', 'song', 'hip-hop'] }
         ],
         serviceOptions: [
-            { id: '', label: 'All Styles & Services' },
-            { id: 'youtube_cuts', label: '📺 YouTube Long-form & Retention Cuts', match: ['youtube', 'long-form', 'vlog', 'podcast', 'retention'] },
-            { id: 'social_ads_reels', label: '📱 Social Ads, Reels & TikTok Hooks', match: ['ad', 'social', 'reel', 'short', 'tiktok', 'ugc', 'meta'] },
-            { id: 'gaming_montages', label: '🎮 Gaming Montages & Stream Highlights', match: ['gaming', 'gameplay', 'montage', 'stream', 'twitch', 'esports'] },
-            { id: '2d_3d_animation', label: '🎨 2D & 3D Character Animation', match: ['animation', '2d', '3d', 'animated', 'character', 'explainer'] },
-            { id: 'motion_vfx', label: '✨ Motion Graphics, Intros & VFX', match: ['motion', 'after effects', 'vfx', 'visual effects', 'graphics'] },
-            { id: 'color_grading', label: '🌈 Color Grading & Cinematic LUTs', match: ['color', 'grade', 'lut', 'davinci', 'cinematic'] },
-            { id: 'sound_design', label: '🔊 Sound Design & SFX Audio Mixing', match: ['sound', 'audio', 'sfx', 'mix', 'voiceover', 'music'] },
-            { id: 'corporate_promo', label: '🏢 Corporate Commercials & Promos', match: ['corporate', 'commercial', 'brand', 'b2b', 'promo'] }
+            { id: '', label: 'All Styles' },
+            { id: 'short_form', label: 'Short-form & Reels', match: ['reel', 'short', 'tiktok'] },
+            { id: 'long_form', label: 'Long-form Cuts', match: ['long-form', 'youtube', 'documentary'] },
+            { id: 'color_grading', label: 'Color Grading & LUTs', match: ['color', 'grade', 'lut', 'davinci'] },
+            { id: 'sound_design', label: 'Sound Design & SFX', match: ['sound', 'audio', 'sfx', 'mix'] },
+            { id: 'motion_graphics', label: 'Motion Graphics', match: ['motion', 'after effects', 'animation', 'vfx'] }
         ],
         sellerDetails: [
             { id: '', label: 'Any Seller' },
@@ -5280,7 +4061,13 @@ const fiverrCategoryConfigs = {
             { id: 'executive', label: 'Executive Business Drill', match: ['business', 'executive', 'presentation'] },
             { id: 'interview', label: 'Job Interview Simulation', match: ['interview', 'behavioral', 'star'] }
         ],
-        sellerDetails: [],
+        sellerDetails: [
+            { id: '', label: 'Any Tutor' },
+            { id: 'top_rated', label: '⭐ Top Rated (4.9+)' },
+            { id: 'level_2', label: '💎 Level 2 (30+ Sessions)' },
+            { id: 'pro_verified', label: '👑 CELTA / TEFL Certified' },
+            { id: 'fast_turnaround', label: '⚡ Instant Trial Available' }
+        ],
         budgets: [
             { id: '', label: 'Any Budget' },
             { id: 'under1000', label: 'Under ₹1,000 / session' },
@@ -5289,6 +4076,8 @@ const fiverrCategoryConfigs = {
         ],
         deliveryTimes: [
             { id: '', label: 'Any Availability' },
+            { id: 'instant', label: '⚡ Today (Instant)' },
+            { id: '24h', label: '📅 Within 24 Hours' },
             { id: 'flexible', label: '🗓️ Flexible Schedule' }
         ],
         defaultBadge: 'CERTIFIED ENGLISH COACH',
@@ -5323,7 +4112,13 @@ const fiverrCategoryConfigs = {
             { id: 'scripts', label: 'YouTube & Video Scripting', match: ['script', 'youtube', 'video'] },
             { id: 'case_studies', label: 'Whitepapers & Case Studies', match: ['whitepaper', 'case study', 'technical'] }
         ],
-        sellerDetails: [],
+        sellerDetails: [
+            { id: '', label: 'Any Writer' },
+            { id: 'top_rated', label: '⭐ Top Rated (4.9+)' },
+            { id: 'level_2', label: '💎 Level 2 (30+ Published)' },
+            { id: 'pro_verified', label: '👑 Pro Verified Copywriter' },
+            { id: 'fast_turnaround', label: '⚡ 24h Express Delivery' }
+        ],
         budgets: [
             { id: '', label: 'Any Budget' },
             { id: 'under1500', label: 'Under ₹1,500' },
@@ -5344,7 +4139,56 @@ const fiverrCategoryConfigs = {
     }
 };
 
-// (getCategoryPeekIconSvg is globally defined with size and animation support)
+function getCategoryPeekIconSvg(niche) {
+    if (niche === 'editors_animators') {
+        return `<svg class="peek-svg peek-svg-clapper" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="8" y="20" width="32" height="21" rx="4" fill="#6c5ce7" stroke="#4c3fb5" stroke-width="1.5"/>
+            <rect x="8" y="20" width="32" height="7" fill="#221d3b"/>
+            <path d="M14 20 L18 27 M22 20 L26 27 M30 20 L34 27 M38 20 L40 23.5" stroke="#e0e7ff" stroke-width="2.2" stroke-linecap="round"/>
+            <line x1="13" y1="32" x2="23" y2="32" stroke="#ffffff" stroke-opacity="0.5" stroke-width="2" stroke-linecap="round"/>
+            <line x1="13" y1="36" x2="35" y2="36" stroke="#ffffff" stroke-opacity="0.35" stroke-width="1.5" stroke-linecap="round"/>
+            <g class="clapper-stick-group">
+                <rect x="6" y="11" width="34" height="7.5" rx="2.5" fill="#221d3b" stroke="#4c3fb5" stroke-width="1.5"/>
+                <path d="M11 11.5 L15 18 M19 11.5 L23 18 M27 11.5 L31 18 M35 11.5 L39 18" stroke="#e0e7ff" stroke-width="2.2" stroke-linecap="round"/>
+                <circle cx="9" cy="14.5" r="2.2" fill="#c7d2fe" stroke="#4c3fb5" stroke-width="1"/>
+            </g>
+        </svg>`;
+    } else if (niche === 'tutors') {
+        return `<svg class="peek-svg peek-svg-tutor" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M8 22C8 14.268 15.163 8 24 8C32.837 8 40 14.268 40 22C40 29.732 32.837 36 24 36C21.6 36 19.33 35.53 17.3 34.7L10 38L11.8 32.1C9.46 29.35 8 25.86 8 22Z" fill="#059669" stroke="#065f46" stroke-width="1.5"/>
+            <g class="tutor-wave-group">
+                <path class="wave-1" d="M16 22C16 18.5 19 16 24 16" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
+                <path class="wave-2" d="M19 22C19 19.8 21 18.2 24 18.2" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
+                <path d="M18 25C18 27.5 20.5 29.5 24 29.5C26.5 29.5 28.5 28.3 29.3 26.5" stroke="#a7f3d0" stroke-width="2" stroke-linecap="round"/>
+                <circle cx="30" cy="26.5" r="2" fill="#ecfdf5"/>
+            </g>
+        </svg>`;
+    } else if (niche === 'writers') {
+        return `<svg class="peek-svg peek-svg-writer" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="8" y="10" width="22" height="30" rx="3" fill="#1e293b" stroke="#334155" stroke-width="1.5"/>
+            <line x1="13" y1="17" x2="22" y2="17" stroke="#38bdf8" stroke-width="2" stroke-linecap="round"/>
+            <line x1="13" y1="23" x2="25" y2="23" stroke="#64748b" stroke-width="1.8" stroke-linecap="round"/>
+            <line x1="13" y1="29" x2="20" y2="29" stroke="#64748b" stroke-width="1.8" stroke-linecap="round"/>
+            <path class="writer-ink-trail" d="M13 34 C16 32, 19 36, 23 34" stroke="#38bdf8" stroke-width="1.8" stroke-linecap="round"/>
+            <g class="writer-pen-group">
+                <path d="M38 8L41 11L28 27L23 28L24 23L38 8Z" fill="#0284c7" stroke="#0369a1" stroke-width="1.2"/>
+                <path d="M23 28L26 25L24 23L23 28Z" fill="#f8fafc"/>
+                <circle cx="34" cy="14" r="1" fill="#ffffff"/>
+            </g>
+        </svg>`;
+    } else {
+        return `<svg class="peek-svg peek-svg-all" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="24" cy="24" r="18" fill="rgba(245, 158, 11, 0.12)" stroke="rgba(245, 158, 11, 0.3)" stroke-width="1"/>
+            <g class="star-sparkle-group">
+                <path d="M24 6 C24 16, 24 16, 34 24 C24 24, 24 24, 24 34 C24 24, 24 24, 14 24 C24 16, 24 16, 24 6 Z" fill="#f59e0b" stroke="#b45309" stroke-width="1"/>
+                <circle cx="24" cy="24" r="3" fill="#ffffff"/>
+                <circle cx="13" cy="13" r="1.5" fill="#fde68a"/>
+                <circle cx="35" cy="14" r="1.8" fill="#fde68a"/>
+                <circle cx="33" cy="33" r="1.2" fill="#fde68a"/>
+            </g>
+        </svg>`;
+    }
+}
 
 function renderLeftEdgePeekDock(activeNiche = '') {
     return `<div class="left-edge-peek-dock" id="left-edge-peek-dock" aria-label="Category Quick Peek Switcher">
@@ -5591,7 +4435,7 @@ function ProvidersList() {
 
                 <div style="display: flex; justify-content: flex-end;">
                     <button class="btn btn-primary" onclick="this.closest('.fiverr-escrow-modal').remove()" style="width: 100%; min-height: 46px; font-weight: 700;">
-                        <-- Back to Exploring Talent
+                        ← Back to Exploring Talent
                     </button>
                 </div>
             </div>
@@ -5652,10 +4496,10 @@ function ProvidersList() {
                 </div>
 
                 <div style="display: flex; gap: 10px;">
-                    <button class="btn btn-outline" onclick="this.closest('.fiverr-escrow-modal').remove(); openPreBookingChat(${providerId}, '${name.replace(/'/g, "\\'")}')" style="flex: 1; min-height: 46px; font-weight: 700; border-color: var(--accent); color: var(--accent); display: flex; align-items: center; justify-content: center; gap: 6px;">
-                        💬 Chat with ${name}
+                    <button class="btn btn-secondary" onclick="this.closest('.fiverr-escrow-modal').remove()" style="flex: 1; min-height: 46px; font-weight: 600;">
+                        ← Back
                     </button>
-                    <button class="btn btn-primary" onclick="this.closest('.fiverr-escrow-modal').remove(); selectProvider(${providerId})" style="flex: 1.5; font-weight: 700; min-height: 46px;">
+                    <button class="btn btn-primary" onclick="this.closest('.fiverr-escrow-modal').remove(); selectProvider(${providerId})" style="flex: 2; font-weight: 700; min-height: 46px;">
                         ${cfg.primaryBtnText}
                     </button>
                 </div>
@@ -5668,18 +4512,9 @@ function ProvidersList() {
 
     window.viewProviderPortfolio = window.openFiverrPortfolioModal;
 
-    window.openPreBookingChat = (providerId, providerName) => {
-        if (!currentToken) {
-            showToast('Please log in to chat with creators', 'info');
-            sessionStorage.setItem('redirect_after_login', `/messages?user_id=${providerId}`);
-            router('/login');
-            return;
-        }
-        window.__selectedChatUserId = providerId;
-        window.__selectedChatUserName = providerName;
-        router('/messages');
+    window.openProviderChatModal = (providerId, providerName) => {
+        selectProvider(providerId);
     };
-    window.openProviderChatModal = window.openPreBookingChat;
 
     window.triggerCardAnim = (cardEl, type) => {
         const overlay = cardEl.querySelector('.anim-overlay');
@@ -5767,20 +4602,17 @@ function ProvidersList() {
         }
         const text = `${provider.name || ''} ${(provider.skills || []).join(' ')} ${(provider.packages || []).map(p => (p.title + ' ' + (p.scope || ''))).join(' ')}`.toLowerCase();
 
-        if (text.includes('animation') || text.includes('2d') || text.includes('3d') || text.includes('character') || text.includes('blender') || text.includes('explainer')) {
-            return 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80';
-        }
-        if (text.includes('tiktok') || text.includes('reels') || text.includes('ads & social') || text.includes('ad') || text.includes('ugc')) {
+        if (text.includes('tiktok') || text.includes('reels') || text.includes('ads & social') || text.includes('ads')) {
             return 'https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=800&auto=format&fit=crop&q=80';
         }
-        if (text.includes('youtube') || text.includes('long-form') || text.includes('vlog') || text.includes('podcast')) {
+        if (text.includes('youtube') || text.includes('long-form')) {
             return 'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=800&auto=format&fit=crop&q=80';
-        }
-        if (text.includes('gaming') || text.includes('twitch') || text.includes('montage') || text.includes('stream') || text.includes('gameplay')) {
-            return 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&auto=format&fit=crop&q=80';
         }
         if (text.includes('corporate') || text.includes('b2b') || text.includes('commercial')) {
             return 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800&auto=format&fit=crop&q=80';
+        }
+        if (text.includes('gaming') || text.includes('twitch') || text.includes('montage')) {
+            return 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&auto=format&fit=crop&q=80';
         }
         if (text.includes('travel') || text.includes('drone') || text.includes('family')) {
             return 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800&auto=format&fit=crop&q=80';
@@ -5833,13 +4665,12 @@ function ProvidersList() {
     function getGigBadge(provider, cfg) {
         const text = `${(provider.skills || []).join(' ')} ${(provider.packages || []).map(p => p.title).join(' ')}`.toLowerCase();
 
-        if (text.includes('animation') || text.includes('2d') || text.includes('3d') || text.includes('blender') || text.includes('character')) return '🎨 2D/3D ANIMATION MASTER';
-        if (text.includes('gaming') || text.includes('twitch') || text.includes('montage') || text.includes('gameplay')) return '🎮 GAMING & STREAM EDITS';
-        if (text.includes('tiktok') || text.includes('reels') || text.includes('ads & social') || text.includes('ugc') || text.includes('hook')) return '📱 VIRAL REELS & SOCIAL ADS';
-        if (text.includes('youtube') || text.includes('long-form') || text.includes('retention') || text.includes('podcast')) return '📺 YOUTUBE & LONG-FORM PRO';
-        if (text.includes('corporate') || text.includes('b2b') || text.includes('commercial')) return '🏢 CORPORATE & B2B PROMO';
-        if (text.includes('travel')) return '✈️ CINEMATIC 4K TRAVEL';
-        if (text.includes('music')) return '🎬 MUSIC & TRIPPY VFX';
+        if (text.includes('tiktok') || text.includes('reels') || text.includes('ads & social')) return 'VIRAL REELS & ADS';
+        if (text.includes('youtube')) return 'SHORT & LONG FORM';
+        if (text.includes('corporate')) return 'CORPORATE & B2B';
+        if (text.includes('gaming')) return 'GAMING & MEMES';
+        if (text.includes('travel')) return 'CINEMATIC 4K';
+        if (text.includes('music')) return 'MUSIC & TRIPPY VFX';
 
         if (text.includes('conversational')) return '1-ON-1 FLUENCY COACH';
         if (text.includes('ielts') || text.includes('toefl')) return 'IELTS BAND 8+ MASTER';
@@ -6033,13 +4864,13 @@ function ProvidersList() {
                         </div>
                     </div>
 
-                    <!-- Action Buttons: Chat & Order -->
-                    <div class="fiverr-gig-actions" style="display: flex; gap: 6px; margin-top: 10px;">
-                        <button class="btn btn-outline btn-sm" style="flex: 1; font-weight: 700; border-color: var(--accent); color: var(--accent); display: flex; align-items: center; justify-content: center; gap: 4px;" onclick="event.stopPropagation(); openPreBookingChat(${provider.id}, '${(provider.name || '').replace(/'/g, "\\'")}')" title="Chat with ${provider.name} before booking">
-                            💬 Chat
-                        </button>
-                        <button class="btn btn-primary btn-sm" style="flex: 1.4; font-weight: 700;" onclick="selectProvider(${provider.id}, ${mainPkg ? mainPkg.id : 'null'})">
+                    <!-- Action Buttons -->
+                    <div class="fiverr-gig-actions">
+                        <button class="btn btn-primary btn-sm" style="flex: 1.6; font-weight: 700;" onclick="selectProvider(${provider.id}, ${mainPkg ? mainPkg.id : 'null'})">
                             ${primaryText}
+                        </button>
+                        <button class="btn btn-secondary btn-sm" style="flex: 1;" onclick="openFiverrPortfolioModal(${provider.id})">
+                            ${secondaryText}
                         </button>
                     </div>
                 </div>
@@ -6134,7 +4965,7 @@ function ProvidersList() {
                                 <line x1="19" y1="12" x2="5" y2="12"></line>
                                 <polyline points="12 19 5 12 12 5"></polyline>
                             </svg>
-                            <span><-- Back to All Talent</span>
+                            <span>← Back to All Talent</span>
                         </button>
                         <button class="fiverr-back-btn" onclick="router('/')" style="opacity: 0.85;">
                             <span>🏠 Dashboard</span>
@@ -6152,28 +4983,18 @@ function ProvidersList() {
 
                     <!-- Category Switcher Ribbon -->
                     <div class="fiverr-category-ribbon">
-                        <button class="fiverr-ribbon-btn ${providerSearchState.niche === '' ? 'active' : ''}" onclick="setProviderNiche('')" title="Back to All Categories">
-                            <span class="ribbon-icon-wrap">${getCategoryPeekIconSvg('all', 28)}</span>
-                            <span>All Talent</span>
+                        <button class="fiverr-ribbon-btn" onclick="setProviderNiche('')" title="Back to All Categories">
+                            ← All Talent
                         </button>
-                        ${providerSearchState.niche === '' || providerSearchState.niche === 'editors_animators' ? `
-                            <button class="fiverr-ribbon-btn ${providerSearchState.niche === 'editors_animators' ? 'active' : ''}" onclick="setProviderNiche('editors_animators')">
-                                <span class="ribbon-icon-wrap">${getCategoryPeekIconSvg('editors_animators', 28)}</span>
-                                <span>Video &amp; Animation</span>
-                            </button>
-                        ` : ''}
-                        ${providerSearchState.niche === '' || providerSearchState.niche === 'tutors' ? `
-                            <button class="fiverr-ribbon-btn ${providerSearchState.niche === 'tutors' ? 'active' : ''}" onclick="setProviderNiche('tutors')">
-                                <span class="ribbon-icon-wrap">${getCategoryPeekIconSvg('tutors', 28)}</span>
-                                <span>English Tutors</span>
-                            </button>
-                        ` : ''}
-                        ${providerSearchState.niche === '' || providerSearchState.niche === 'writers' ? `
-                            <button class="fiverr-ribbon-btn ${providerSearchState.niche === 'writers' ? 'active' : ''}" onclick="setProviderNiche('writers')">
-                                <span class="ribbon-icon-wrap">${getCategoryPeekIconSvg('writers', 28)}</span>
-                                <span>Writers &amp; Copy</span>
-                            </button>
-                        ` : ''}
+                        <button class="fiverr-ribbon-btn ${providerSearchState.niche === 'editors_animators' ? 'active' : ''}" onclick="setProviderNiche('editors_animators')">
+                            🎬 Video Editing
+                        </button>
+                        <button class="fiverr-ribbon-btn ${providerSearchState.niche === 'tutors' ? 'active' : ''}" onclick="setProviderNiche('tutors')">
+                            🗣️ English Tutors
+                        </button>
+                        <button class="fiverr-ribbon-btn ${providerSearchState.niche === 'writers' ? 'active' : ''}" onclick="setProviderNiche('writers')">
+                            ✍️ Content &amp; Copywriting
+                        </button>
                     </div>
 
                     <!-- Category Header -->
@@ -6206,10 +5027,8 @@ function ProvidersList() {
                                     class="fiverr-type-pill ${providerSearchState.subType === vt.id ? 'active' : ''}"
                                     onclick="setFiverrSubType('${vt.id}')"
                                 >
-                                    <div class="fiverr-type-icon">${getTypeIconSvg(vt.id, vt.icon, 34)}</div>
-                                    <div class="fiverr-type-label-box">
-                                        <div class="fiverr-type-label">${vt.label}</div>
-                                    </div>
+                                    <div class="fiverr-type-icon">${vt.icon}</div>
+                                    <div class="fiverr-type-label">${vt.label}</div>
                                 </div>
                             `).join('')}
                         </div>
@@ -6237,7 +5056,6 @@ function ProvidersList() {
                                 </div>
                             </div>
 
-                            ${providerSearchState.niche !== 'tutors' && providerSearchState.niche !== 'writers' && activeCfg.sellerDetails && activeCfg.sellerDetails.length > 0 ? `
                             <!-- Seller details dropdown -->
                             <div class="fiverr-filter-dropdown-wrap">
                                 <button class="fiverr-filter-btn ${providerSearchState.sellerDetail ? 'active' : ''}" onclick="toggleFiverrFilterMenu('menu-seller-details')">
@@ -6256,7 +5074,6 @@ function ProvidersList() {
                                     `).join('')}
                                 </div>
                             </div>
-                            ` : ''}
 
                             <!-- Budget dropdown -->
                             <div class="fiverr-filter-dropdown-wrap">
@@ -6339,7 +5156,7 @@ function ProvidersList() {
                                     <span class="chip-x">✕</span>
                                 </button>
                             ` : ''}
-                            ${activeSellerDetailLabel && providerSearchState.niche !== 'tutors' && providerSearchState.niche !== 'writers' ? `
+                            ${activeSellerDetailLabel ? `
                                 <button class="fiverr-active-filter-chip" onclick="setFiverrFilter('sellerDetail', '')" title="Remove filter">
                                     <span>Seller: ${activeSellerDetailLabel}</span>
                                     <span class="chip-x">✕</span>
@@ -6370,7 +5187,7 @@ function ProvidersList() {
                                 </button>
                             ` : ''}
                             <button class="fiverr-clear-all-btn" onclick="clearProviderFilters()">
-                                <-- Reset / Show All
+                                ← Reset / Show All
                             </button>
                         </div>
                     ` : ''}
@@ -6398,7 +5215,7 @@ function ProvidersList() {
                                 <line x1="19" y1="12" x2="5" y2="12"></line>
                                 <polyline points="12 19 5 12 12 5"></polyline>
                             </svg>
-                            <span><-- Back to Dashboard</span>
+                            <span>← Back to Dashboard</span>
                         </button>
                     </div>
 
@@ -6505,109 +5322,64 @@ function AdminDashboard() {
         return el`<div>
             ${renderAppHeader('/admin')}
             <div class="main">
-                <!-- Admin Command Center Banner -->
-                <div style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(99, 102, 241, 0.08) 100%); border: 1.5px solid rgba(239, 68, 68, 0.35); border-radius: var(--radius-md); padding: 22px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
-                    <div style="display: flex; align-items: center; gap: 14px;">
-                        <div style="width: 48px; height: 48px; border-radius: 14px; background: #ef4444; color: white; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; flex-shrink: 0; box-shadow: 0 4px 14px rgba(239, 68, 68, 0.35);">
-                            🛡️
-                        </div>
-                        <div>
-                            <div style="font-size: 1.25rem; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                                <span>Grove Hub Admin Command Console</span>
-                                <span class="mode-badge-pill mode-badge-admin">Exclusive Admin Access</span>
-                            </div>
-                            <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 3px;">
-                                Signed in as <strong>${currentUser?.email || 'rahura2026@gmail.com'}</strong> • Complete oversight of chats, escrow, orders & talent.
-                            </div>
-                        </div>
-                    </div>
-                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                        <button class="btn btn-secondary btn-sm" onclick="router('/admin/chats')">💬 Inspect Chats</button>
-                        <button class="btn btn-primary btn-sm" onclick="router('/payments')">💳 Escrow & Revenue</button>
-                    </div>
-                </div>
-
                 <div class="section-title">Platform Overview</div>
                 ${loading ? '<div class="loading"><div class="spinner"></div></div>' : ''}
                 ${!loading ? `
-                    <div class="grid grid-4" style="margin-bottom: 24px;">
-                        <div class="card" style="border-left: 4px solid var(--accent); padding: 20px;">
-                            <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Total Users</div>
-                            <div style="font-size: 2rem; font-weight: 800; color: var(--text-primary); margin-top: 4px;">${stats.total_users || 0}</div>
-                            <div style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 2px;">Registered accounts</div>
+                    <div class="grid grid-2">
+                        <div class="card">
+                            <div class="card-body" style="text-align: center; padding: 24px;">
+                                <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 8px;">Total Users</div>
+                                <div style="font-size: 2rem; font-weight: 700;">${stats.total_users || 0}</div>
+                            </div>
                         </div>
-                        <div class="card" style="border-left: 4px solid #3b82f6; padding: 20px;">
-                            <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Active Providers</div>
-                            <div style="font-size: 2rem; font-weight: 800; color: #3b82f6; margin-top: 4px;">${stats.total_providers || 0}</div>
-                            <div style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 2px;">Verified talent</div>
+                        <div class="card">
+                            <div class="card-body" style="text-align: center; padding: 24px;">
+                                <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 8px;">Active Providers</div>
+                                <div style="font-size: 2rem; font-weight: 700;">${stats.total_providers || 0}</div>
+                            </div>
                         </div>
-                        <div class="card" style="border-left: 4px solid #f59e0b; padding: 20px;">
-                            <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Total Bookings</div>
-                            <div style="font-size: 2rem; font-weight: 800; color: #f59e0b; margin-top: 4px;">${stats.total_bookings || 0}</div>
-                            <div style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 2px;">Marketplace orders</div>
+                        <div class="card">
+                            <div class="card-body" style="text-align: center; padding: 24px;">
+                                <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 8px;">Total Bookings</div>
+                                <div style="font-size: 2rem; font-weight: 700;">${stats.total_bookings || 0}</div>
+                            </div>
                         </div>
-                        <div class="card" style="border-left: 4px solid #10b981; padding: 20px;">
-                            <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Platform Revenue</div>
-                            <div style="font-size: 2rem; font-weight: 800; color: #10b981; margin-top: 4px;">₹${(stats.total_commissions || 0).toLocaleString()}</div>
-                            <div style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 2px;">20% commissions</div>
+                        <div class="card">
+                            <div class="card-body" style="text-align: center; padding: 24px;">
+                                <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 8px;">Total Earnings</div>
+                                <div style="font-size: 2rem; font-weight: 700; color: var(--success);">₹${(stats.total_commissions || 0).toLocaleString()}</div>
+                            </div>
                         </div>
                     </div>
-
-                    <div class="section-title">Management Modules</div>
+                    <div class="section-title mt-4">Management Modules</div>
                     <div class="grid grid-2">
-                        <button class="card" onclick="router('/admin/chats')" style="cursor: pointer; text-align: left; border-color: rgba(99, 102, 241, 0.4);">
-                            <div class="card-header" style="margin-bottom: 6px;">
-                                <div class="card-title" style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary);">💬 Chats & Safety Guard</div>
-                                <span class="badge badge-primary">Moderation</span>
-                            </div>
-                            <div class="card-body" style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;">
-                                Inspect buyer-provider messages, review phone-sharing auto-blocks, and unblock accounts with 1 click.
-                            </div>
-                        </button>
-                        <button class="card" onclick="router('/admin/providers')" style="cursor: pointer; text-align: left;">
-                            <div class="card-header" style="margin-bottom: 6px;">
-                                <div class="card-title" style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary);">👥 Provider Management</div>
-                                <span class="badge badge-info">${stats.total_providers || 0} Providers</span>
-                            </div>
-                            <div class="card-body" style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;">
-                                Verify credentials, review applicant portfolios, and manage active creator status.
-                            </div>
-                        </button>
-                        <button class="card" onclick="router('/admin/bookings')" style="cursor: pointer; text-align: left;">
-                            <div class="card-header" style="margin-bottom: 6px;">
-                                <div class="card-title" style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary);">📋 All Bookings & Escrow Monitor</div>
-                                <span class="badge badge-info">${stats.total_bookings || 0} Orders</span>
-                            </div>
-                            <div class="card-body" style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;">
-                                Monitor all transactions across the platform, verify file deliveries, and force-release escrow.
-                            </div>
-                        </button>
-                        <button class="card" onclick="router('/admin/disputes')" style="cursor: pointer; text-align: left;">
-                            <div class="card-header" style="margin-bottom: 6px;">
-                                <div class="card-title" style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary);">⚖️ Dispute Resolution Center</div>
-                                <span class="badge badge-danger">Arbitration</span>
-                            </div>
-                            <div class="card-body" style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;">
-                                Review client dispute claims, inspect deliverables, and issue full refunds or provider releases.
-                            </div>
-                        </button>
-                        <button class="card" onclick="router('/payments')" style="cursor: pointer; text-align: left;">
-                            <div class="card-header" style="margin-bottom: 6px;">
-                                <div class="card-title" style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary);">💳 Escrow Vault & Financials</div>
-                                <span class="badge badge-success">Audit</span>
-                            </div>
-                            <div class="card-body" style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;">
-                                View gross volume, platform commissions, 80% provider disbursements, and funds currently locked.
-                            </div>
-                        </button>
                         <button class="card" onclick="router('/admin/niches')" style="cursor: pointer; text-align: left;">
-                            <div class="card-header" style="margin-bottom: 6px;">
-                                <div class="card-title" style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary);">🗂️ Niches & Service Categories</div>
+                            <div class="card-header">
+                                <div class="card-title">Manage Niches</div>
                                 <span class="badge badge-info">${stats.active_niches || 0} Active</span>
                             </div>
-                            <div class="card-body" style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;">
-                                Configure video editing and English tutoring categories, pricing floors, and provider supply caps.
+                            <div class="card-body">Configure creator categories, English coaching, and supply caps</div>
+                        </button>
+                        <button class="card" onclick="router('/admin/providers')" style="cursor: pointer; text-align: left;">
+                            <div class="card-header">
+                                <div class="card-title">Provider Management</div>
+                                <span class="badge badge-info">${stats.total_providers || 0} Providers</span>
                             </div>
+                            <div class="card-body">Verify credentials, review profiles, and manage provider status</div>
+                        </button>
+                        <button class="card" onclick="router('/admin/bookings')" style="cursor: pointer; text-align: left;">
+                            <div class="card-header">
+                                <div class="card-title">All Bookings & Escrow</div>
+                                <span class="badge badge-info">${stats.total_bookings || 0} Orders</span>
+                            </div>
+                            <div class="card-body">Monitor escrow payments, deliveries, and force-approve releases</div>
+                        </button>
+                        <button class="card" onclick="router('/admin/disputes')" style="cursor: pointer; text-align: left;">
+                            <div class="card-header">
+                                <div class="card-title">Dispute Center</div>
+                                <span class="badge badge-danger">Resolutions</span>
+                            </div>
+                            <div class="card-body">Review dispute claims, issue full buyer refunds or provider payouts</div>
                         </button>
                     </div>
                 ` : ''}
@@ -6686,7 +5458,7 @@ function AdminNiches() {
             <div class="main">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                     <div class="section-title" style="margin: 0;">Manage Service Niches</div>
-                    <button class="btn btn-secondary btn-sm" onclick="router('/admin')"><-- Back to Admin</button>
+                    <button class="btn btn-secondary btn-sm" onclick="router('/admin')">← Back to Admin</button>
                 </div>
 
                 <div class="grid grid-2" style="margin-bottom: 24px;">
@@ -6824,7 +5596,7 @@ function AdminProviders() {
             <div class="main">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                     <div class="section-title" style="margin: 0;">Provider Management</div>
-                    <button class="btn btn-secondary btn-sm" onclick="router('/admin')"><-- Back to Admin</button>
+                    <button class="btn btn-secondary btn-sm" onclick="router('/admin')">← Back to Admin</button>
                 </div>
 
                 <div class="card">
@@ -6936,7 +5708,7 @@ function AdminBookings() {
             <div class="main">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                     <div class="section-title" style="margin: 0;">Platform Bookings & Escrow</div>
-                    <button class="btn btn-secondary btn-sm" onclick="router('/admin')"><-- Back to Admin</button>
+                    <button class="btn btn-secondary btn-sm" onclick="router('/admin')">← Back to Admin</button>
                 </div>
 
                 <!-- Filters -->
@@ -7055,7 +5827,7 @@ function AdminDisputes() {
             <div class="main">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                     <div class="section-title" style="margin: 0;">Dispute Resolution Center</div>
-                    <button class="btn btn-secondary btn-sm" onclick="router('/admin')"><-- Back to Admin</button>
+                    <button class="btn btn-secondary btn-sm" onclick="router('/admin')">← Back to Admin</button>
                 </div>
 
                 ${disputes.length === 0 ? `
@@ -7156,7 +5928,7 @@ function PrivacyPolicy() {
                     <p>If you have any questions regarding this Privacy Policy, contact us at <strong>privacy@editormarketplace.com</strong>.</p>
                 </div>
                 <div style="margin-top: 24px; border-top: 1px solid var(--border); padding-top: 16px;">
-                    <button class="btn btn-secondary btn-sm" onclick="router('/')"><-- Back to Marketplace</button>
+                    <button class="btn btn-secondary btn-sm" onclick="router('/')">← Back to Marketplace</button>
                 </div>
             </div>
         </div>
@@ -7193,7 +5965,7 @@ function TermsOfService() {
                     <p>In the event of a disagreement regarding delivered work, either party may open a dispute. The marketplace admin team reviews project scope and deliverables to issue either a full refund to the buyer or release the payout to the provider.</p>
                 </div>
                 <div style="margin-top: 24px; border-top: 1px solid var(--border); padding-top: 16px;">
-                    <button class="btn btn-secondary btn-sm" onclick="router('/')"><-- Back to Marketplace</button>
+                    <button class="btn btn-secondary btn-sm" onclick="router('/')">← Back to Marketplace</button>
                 </div>
 			</div>
 		</div>
@@ -7223,18 +5995,10 @@ window.handleForgotPasswordSubmit = async (e) => {
         });
         const msg = res.message || '';
         const match = msg.match(/token[:\s]+([a-zA-Z0-9_-]+)/);
-        const token = res.reset_token || (match ? match[1] : '');
+        const token = match ? match[1] : '';
         if (token) {
             const td = document.getElementById('reset-token-display');
             if (td) td.textContent = token;
-            const linkEl = document.getElementById('reset-token-link');
-            if (linkEl) {
-                linkEl.href = `/reset-password?token=${encodeURIComponent(token)}`;
-                linkEl.onclick = (ev) => {
-                    ev.preventDefault();
-                    router(`/reset-password?token=${encodeURIComponent(token)}`);
-                };
-            }
             const sc = document.getElementById('forgot-success-container');
             if (sc) sc.style.display = 'block';
         } else {
@@ -7277,7 +6041,7 @@ function ForgotPassword() {
 					        <div style="font-weight: 700; margin-bottom: 8px;">✅ Reset link sent!</div>
 					        <div style="color: var(--text-secondary); margin-bottom: 10px;">Use the token below to reset your password:</div>
 					        <code id="reset-token-display" style="display: block; background: var(--bg-hover); padding: 8px 12px; border-radius: 6px; font-size: 0.8rem; word-break: break-all; border: 1px dashed var(--border);"></code>
-					        <div style="margin-top: 10px;"><a id="reset-token-link" href="/reset-password" onclick="event.preventDefault(); router('/reset-password')" style="color: var(--accent); font-weight: 600;">Go to Reset Password →</a></div>
+					        <div style="margin-top: 10px;"><a href="/reset-password" style="color: var(--accent); font-weight: 600;">Go to Reset Password →</a></div>
 					    </div>
 					</div>
 					<div style="margin-top: 20px; text-align: center;">
@@ -7290,18 +6054,12 @@ function ForgotPassword() {
 function ResetPasswordPage() {
     window.handleResetPasswordSubmit = async (e) => {
         e.preventDefault();
-        const tokenInput = document.getElementById('reset-token');
-        const tokenFromUrl = new URLSearchParams(window.location.search).get('token') || '';
-        const token = (tokenInput ? tokenInput.value.trim() : '') || tokenFromUrl;
         const newPw = document.getElementById('reset-password').value;
         const confirmPw = document.getElementById('reset-confirm').value;
+        const token = new URLSearchParams(window.location.search).get('token') || '';
         const errBox = document.getElementById('reset-error-container');
         const submitBtn = e.target.querySelector('button[type="submit"]');
         if (errBox) errBox.innerHTML = '';
-        if (!token) {
-            if (errBox) errBox.innerHTML = '<div style="background: rgba(239,68,68,0.12); border:1px solid #ef4444; color:#ef4444; padding:10px 14px; border-radius:8px; font-size:0.85rem;">⚠️ Reset token is missing. Please enter your reset token or request a new one.</div>';
-            return;
-        }
         if (!newPw || !confirmPw) {
             if (errBox) errBox.innerHTML = '<div style="background: rgba(239,68,68,0.12); border:1px solid #ef4444; color:#ef4444; padding:10px 14px; border-radius:8px; font-size:0.85rem;">⚠️ Please fill in both password fields.</div>';
             return;
@@ -7314,13 +6072,17 @@ function ResetPasswordPage() {
             if (errBox) errBox.innerHTML = '<div style="background: rgba(239,68,68,0.12); border:1px solid #ef4444; color:#ef4444; padding:10px 14px; border-radius:8px; font-size:0.85rem;">⚠️ Password must be at least 6 characters.</div>';
             return;
         }
+        if (!token) {
+            if (errBox) errBox.innerHTML = '<div style="background: rgba(239,68,68,0.12); border:1px solid #ef4444; color:#ef4444; padding:10px 14px; border-radius:8px; font-size:0.85rem;">⚠️ No reset token found. Please request a new one.</div>';
+            return;
+        }
         if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Resetting...'; }
         try {
             const res = await apiFetch('/auth/reset-password/confirm', {
                 method: 'POST',
                 body: JSON.stringify({ token, new_password: newPw })
             });
-            if (errBox) errBox.innerHTML = `<div style="background: rgba(16,185,129,0.12); border:1px solid #10b981; color:#10b981; padding:10px 14px; border-radius:8px; font-size:0.85rem;">✓ ${res.message || 'Password reset successfully! Redirecting...'}</div>`;
+            if (errBox) errBox.innerHTML = `<div style="background: rgba(16,185,129,0.12); border:1px solid #10b981; color:#10b981; padding:10px 14px; border-radius:8px; font-size:0.85rem;">✓ ${res.message || 'Password reset successfully.'}</div>`;
             if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Reset Password'; }
             setTimeout(() => router('/login'), 1500);
         } catch (err) {
@@ -7328,9 +6090,6 @@ function ResetPasswordPage() {
             if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Reset Password'; }
         }
     };
-
-    const initialToken = new URLSearchParams(window.location.search).get('token') || '';
-
     return el`<div>
         <div class="header">
             ${renderLogo(32, true)}
@@ -7345,17 +6104,13 @@ function ResetPasswordPage() {
                     <div style="text-align: center; margin-bottom: 24px;">
                         ${renderLogo(48, true)}
                         <h1 style="font-size: 1.5rem; font-weight: 700; margin-top: 12px;">Reset Password</h1>
-                        <p style="color: var(--text-muted); font-size: 0.875rem; margin-top: 4px;">Enter your reset token and new password below.</p>
+                        <p style="color: var(--text-muted); font-size: 0.875rem; margin-top: 4px;">Enter your new password below.</p>
                     </div>
                     <div id="reset-error-container"></div>
                     <form id="reset-form" onsubmit="handleResetPasswordSubmit(event)">
-                        <div class="form-group" style="${initialToken ? 'display: none;' : ''}">
-                            <label class="form-label">Reset Token</label>
-                            <input type="text" class="form-input" id="reset-token" placeholder="Paste your reset token" value="${initialToken}" autocomplete="off">
-                        </div>
-                        <div class="form-group" style="margin-top: 8px;">
+                        <div class="form-group">
                             <label class="form-label">New Password</label>
-                            <input type="password" class="form-input" id="reset-password" placeholder="Enter new password (min 6 chars)" required minlength="6" autocomplete="new-password">
+                            <input type="password" class="form-input" id="reset-password" placeholder="Enter new password" required minlength="6" autocomplete="new-password">
                         </div>
                         <div class="form-group" style="margin-top: 8px;">
                             <label class="form-label">Confirm Password</label>
@@ -7370,8 +6125,6 @@ function ResetPasswordPage() {
             </div>
         </div>
     </div>`;
-}
-
 function VerifyEmailPage() {
     const urlParams = new URLSearchParams(window.location.search);
     const token = urlParams.get('token') || '';
@@ -7392,7 +6145,7 @@ function VerifyEmailPage() {
 					<div id="verify-error-container"></div>
 					<button class="btn btn-primary" style="width: 100%; padding: 13px; font-weight: 700;" id="verify-email-btn">Verify Email</button>
 					<div style="margin-top: 16px;">
-						<button class="btn btn-secondary" onclick="router('/login')" style="font-size: 0.85rem;"><-- Back to Sign In</button>
+						<button class="btn btn-secondary" onclick="router('/login')" style="font-size: 0.85rem;">← Back to Sign In</button>
 					</div>
 				</div>
 			</div>
@@ -8220,670 +6973,6 @@ function GrooveChat() {
     GrooveChat.send = send;
 
     return container;
-}
-
-
-// =============== FIVERR-STYLE INBOX & DIRECT CHAT COMPONENT ===============
-
-function escapeHTML(str) {
-    if (!str) return '';
-    return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
-}
-
-function formatRelativeTime(dateStr) {
-    if (!dateStr) return '';
-    const date = new Date(dateStr);
-    const now = new Date();
-    const diffSec = Math.floor((now - date) / 1000);
-    if (diffSec < 60) return 'Just now';
-    if (diffSec < 3600) return `${Math.floor(diffSec / 60)}m ago`;
-    if (diffSec < 86400) return `${Math.floor(diffSec / 3600)}h ago`;
-    if (diffSec < 172800) return 'Yesterday';
-    return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-}
-
-function MessagesInbox() {
-    let conversations = [];
-    let activeUserId = window.__selectedChatUserId ? parseInt(window.__selectedChatUserId) : null;
-    let activeUserName = window.__selectedChatUserName || '';
-    let activeUserRole = 'PROVIDER';
-    let messages = [];
-    let loadingConvos = true;
-    let loadingMsgs = false;
-    let pollInterval = null;
-    let searchQuery = '';
-
-    async function loadConversations(isPolling = false) {
-        if (!currentToken) return;
-        if (!isPolling) loadingConvos = true;
-        try {
-            conversations = await apiFetch('/conversations');
-            if (activeUserId) {
-                const found = conversations.find(c => c.other_user_id === activeUserId);
-                if (found) {
-                    activeUserName = found.other_user_name;
-                    activeUserRole = found.other_user_type;
-                }
-            } else if (conversations.length > 0) {
-                activeUserId = conversations[0].other_user_id;
-                activeUserName = conversations[0].other_user_name;
-                activeUserRole = conversations[0].other_user_type;
-            }
-        } catch (e) {
-            console.error('Failed to load conversations', e);
-        } finally {
-            loadingConvos = false;
-            if (!isPolling) {
-                mount(renderInbox());
-                if (activeUserId) loadMessages();
-            } else {
-                updateInboxDOM();
-            }
-        }
-    }
-
-    async function loadMessages(isPolling = false) {
-        if (!activeUserId || !currentToken) return;
-        if (!isPolling) loadingMsgs = true;
-        try {
-            const fetched = await apiFetch(`/messages/user/${activeUserId}`);
-            messages = fetched;
-            updateUnreadCountBadge();
-        } catch (e) {
-            console.error('Failed to load messages', e);
-        } finally {
-            loadingMsgs = false;
-            renderMessagesStream();
-        }
-    }
-
-    function startPolling() {
-        stopPolling();
-        pollInterval = setInterval(() => {
-            if (window.location.pathname !== '/messages') {
-                stopPolling();
-                return;
-            }
-            if (activeUserId) {
-                loadMessages(true);
-            }
-            loadConversations(true);
-        }, 3500);
-    }
-
-    function stopPolling() {
-        if (pollInterval) {
-            clearInterval(pollInterval);
-            pollInterval = null;
-        }
-    }
-
-    async function sendMessage(text) {
-        if (!text || !text.trim() || !activeUserId) return;
-        const clean = text.trim();
-        const inputEl = document.getElementById('inbox-message-input');
-        if (inputEl) inputEl.value = '';
-
-        const tempId = Date.now();
-        messages.push({
-            id: tempId,
-            sender_id: currentUser?.id,
-            receiver_id: activeUserId,
-            sender_name: currentUser?.name || 'You',
-            message: clean,
-            created_at: new Date().toISOString(),
-            is_read: false,
-            is_flagged: false
-        });
-        renderMessagesStream();
-
-        try {
-            const res = await apiFetch(`/messages/user/${activeUserId}`, {
-                method: 'POST',
-                body: JSON.stringify({ message: clean })
-            });
-            const idx = messages.findIndex(m => m.id === tempId);
-            if (idx !== -1) messages[idx] = res;
-            renderMessagesStream();
-            loadConversations(true);
-        } catch (err) {
-            messages = messages.filter(m => m.id !== tempId);
-            renderMessagesStream();
-            showToast(err.message, 'error');
-        }
-    }
-
-    window.__inboxSendMessage = sendMessage;
-
-    window.__selectInboxConversation = (otherId, otherName, otherRole) => {
-        activeUserId = otherId;
-        activeUserName = otherName;
-        activeUserRole = otherRole || 'PROVIDER';
-        window.__selectedChatUserId = otherId;
-        window.__selectedChatUserName = otherName;
-
-        const container = document.querySelector('.inbox-container');
-        if (container) container.classList.add('show-chat');
-
-        document.querySelectorAll('.inbox-item').forEach(item => {
-            item.classList.toggle('active', item.dataset.userId == otherId);
-        });
-
-        loadMessages();
-    };
-
-    window.__inboxMobileBackToList = () => {
-        const container = document.querySelector('.inbox-container');
-        if (container) container.classList.remove('show-chat');
-    };
-
-    function renderInbox() {
-        startPolling();
-
-        return el`<div>
-            ${renderAppHeader('/messages')}
-            ${renderLeftEdgePeekDock('')}
-            <div class="inbox-wrapper">
-                <div class="inbox-container ${activeUserId ? 'show-chat' : ''}">
-                    <!-- Left Sidebar: Conversations List -->
-                    <div class="inbox-sidebar">
-                        <div class="inbox-sidebar-header">
-                            <h3 style="margin: 0; font-size: 1.1rem; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
-                                <span>💬</span> Direct Messages
-                            </h3>
-                            <span class="badge badge-info" style="font-size: 0.72rem;">Escrow Protected</span>
-                        </div>
-                        <div class="inbox-search-box">
-                            <input
-                                type="text"
-                                class="inbox-search-input"
-                                placeholder="Search conversations..."
-                                oninput="window.__filterInboxConversations(this.value)"
-                            />
-                        </div>
-                        <div class="inbox-conversations-list" id="inbox-conversations-list">
-                            ${renderConversationsListHTML()}
-                        </div>
-                    </div>
-
-                    <!-- Right Pane: Active Chat Conversation -->
-                    <div class="inbox-chat-pane">
-                        ${renderChatPaneHTML()}
-                    </div>
-                </div>
-            </div>
-        </div>`;
-    }
-
-    function renderConversationsListHTML() {
-        if (loadingConvos) {
-            return '<div style="padding: 24px; text-align: center; color: var(--text-muted);"><div class="spinner"></div></div>';
-        }
-
-        let filtered = conversations;
-        if (searchQuery && searchQuery.trim()) {
-            const q = searchQuery.toLowerCase().trim();
-            filtered = conversations.filter(c => (c.other_user_name || '').toLowerCase().includes(q) || (c.last_message && c.last_message.toLowerCase().includes(q)));
-        }
-
-        if (activeUserId && !conversations.some(c => c.other_user_id === activeUserId)) {
-            filtered = [{
-                other_user_id: activeUserId,
-                other_user_name: activeUserName || 'Talent',
-                other_user_type: activeUserRole || 'PROVIDER',
-                last_message: 'Start talking before ordering a package...',
-                last_message_at: new Date().toISOString(),
-                unread_count: 0,
-                is_draft: true
-            }, ...filtered];
-        }
-
-        if (filtered.length === 0) {
-            return `
-                <div style="padding: 36px 20px; text-align: center; color: var(--text-muted);">
-                    <div style="font-size: 2.2rem; margin-bottom: 8px;">💬</div>
-                    <div style="font-weight: 700; color: var(--text-primary); margin-bottom: 4px;">No messages yet</div>
-                    <p style="font-size: 0.8125rem; line-height: 1.4; margin-bottom: 16px;">Browse verified video editors and english tutors to start talking directly.</p>
-                    <button class="btn btn-primary btn-sm" onclick="router('/providers')">Browse Talent</button>
-                </div>
-            `;
-        }
-
-        return filtered.map(c => {
-            const isActive = c.other_user_id === activeUserId;
-            const timeStr = formatRelativeTime(c.last_message_at);
-            const initial = (c.other_user_name || 'U').charAt(0).toUpperCase();
-            const roleBadge = c.other_user_type === 'PROVIDER' ? 'Creator' : 'Client';
-
-            return `
-                <div class="inbox-item ${isActive ? 'active' : ''}" data-user-id="${c.other_user_id}" onclick="window.__selectInboxConversation(${c.other_user_id}, '${(c.other_user_name || '').replace(/'/g, "\\'")}', '${c.other_user_type}')">
-                    <div class="inbox-item-avatar">
-                        ${initial}
-                        <div class="online-dot"></div>
-                    </div>
-                    <div class="inbox-item-content">
-                        <div class="inbox-item-name">
-                            <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${c.other_user_name}</span>
-                            <span class="inbox-item-time">${timeStr}</span>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 2px;">
-                            <div class="inbox-item-snippet">
-                                <span style="font-size: 0.65rem; background: var(--bg-hover); padding: 1px 4px; border-radius: 4px; margin-right: 4px; border: 1px solid var(--border);">${roleBadge}</span>
-                                ${escapeHTML(c.last_message || 'No messages')}
-                            </div>
-                            ${c.unread_count > 0 ? `<span class="inbox-item-unread-badge">${c.unread_count}</span>` : ''}
-                        </div>
-                    </div>
-                </div>
-            `;
-        }).join('');
-    }
-
-    function renderChatPaneHTML() {
-        if (!activeUserId) {
-            return `
-                <div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; text-align: center; color: var(--text-muted);">
-                    <div style="width: 64px; height: 64px; border-radius: 50%; background: rgba(99, 102, 241, 0.1); color: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 2rem; margin-bottom: 14px;">
-                        💬
-                    </div>
-                    <h3 style="margin: 0 0 6px 0; color: var(--text-primary); font-weight: 800;">Your Groove Hub Inbox</h3>
-                    <p style="font-size: 0.85rem; max-width: 380px; line-height: 1.45; margin: 0 0 18px 0;">Select a conversation on the left, or browse talent to talk with creators before placing your order.</p>
-                    <button class="btn btn-primary" onclick="router('/providers')">Explore Creators</button>
-                </div>
-            `;
-        }
-
-        const initial = (activeUserName || 'U').charAt(0).toUpperCase();
-
-        return `
-            <!-- Chat Header -->
-            <div class="inbox-chat-header">
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <button class="inbox-mobile-back-btn" onclick="window.__inboxMobileBackToList()" style="display: none; background: none; border: none; font-size: 1.2rem; cursor: pointer; color: var(--text-primary); padding: 4px;">
-                        ←
-                    </button>
-                    <div class="inbox-item-avatar" style="width: 38px; height: 38px; font-size: 0.95rem;">
-                        ${initial}
-                        <div class="online-dot"></div>
-                    </div>
-                    <div>
-                        <div style="font-weight: 800; font-size: 0.95rem; color: var(--text-primary); display: flex; align-items: center; gap: 6px;">
-                            <span>${activeUserName}</span>
-                            <span style="font-size: 0.65rem; padding: 1px 6px; border-radius: 4px; background: rgba(16, 185, 129, 0.1); color: var(--success); font-weight: 700;">🟢 Online</span>
-                        </div>
-                        <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 1px;">
-                            100% Escrow Protected • Instant In-App Chat
-                        </div>
-                    </div>
-                </div>
-
-                <div style="display: flex; gap: 8px;">
-                    <button class="btn btn-primary btn-sm" onclick="selectProvider(${activeUserId})" style="font-weight: 700; display: flex; align-items: center; gap: 6px;">
-                        <span>📦 View Packages / Hire</span>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Escrow Safety Guarantee Notice -->
-            <div class="inbox-escrow-trust-banner">
-                <span style="font-size: 1.15rem;">🛡️</span>
-                <div>
-                    <strong>Platform Trust & Safety:</strong> Keep all communications and payments on Groove Hub. Attempting to share phone numbers, WhatsApp, UPI, or off-platform contact details triggers <strong>instant account suspension</strong>.
-                </div>
-            </div>
-
-            <!-- Messages Stream -->
-            <div class="inbox-messages-stream" id="inbox-messages-stream">
-                ${renderMessagesHTML()}
-            </div>
-
-            <!-- Bottom Input Bar -->
-            <div class="inbox-chat-input-bar">
-                <textarea
-                    id="inbox-message-input"
-                    class="inbox-chat-textarea"
-                    placeholder="Type your message to ${activeUserName}... (Press Enter to send)"
-                    rows="1"
-                    onkeydown="if(event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); window.__inboxSendMessage(this.value); }"
-                ></textarea>
-                <button class="inbox-send-btn" onclick="window.__inboxSendMessage(document.getElementById('inbox-message-input')?.value)" title="Send Message">
-                    ➤
-                </button>
-            </div>
-        `;
-    }
-
-    function renderMessagesHTML() {
-        if (loadingMsgs && messages.length === 0) {
-            return '<div style="padding: 24px; text-align: center; color: var(--text-muted);"><div class="spinner"></div></div>';
-        }
-
-        if (messages.length === 0) {
-            return `
-                <div style="margin: auto; text-align: center; padding: 24px; color: var(--text-muted); max-width: 420px;">
-                    <div style="font-size: 2.2rem; margin-bottom: 8px;">👋</div>
-                    <div style="font-weight: 700; color: var(--text-primary); margin-bottom: 4px;">Say hi to ${activeUserName}!</div>
-                    <p style="font-size: 0.8125rem; line-height: 1.45;">Discuss project requirements, turnaround times, or revision expectations. When you're ready, click <strong>"View Packages / Hire"</strong> at the top to place your order with 100% Escrow Protection.</p>
-                </div>
-            `;
-        }
-
-        return messages.map(m => {
-            const isMe = m.sender_id === currentUser?.id;
-            const timeStr = new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-            if (m.is_flagged) {
-                return `
-                    <div class="inbox-msg-row sent flagged">
-                        <div class="inbox-bubble">
-                            <div style="display: flex; align-items: center; gap: 6px; font-weight: 700; margin-bottom: 4px;">
-                                <span>🛑 Message Blocked by Safety Guard</span>
-                            </div>
-                            <div style="text-decoration: line-through; opacity: 0.7;">${escapeHTML(m.message)}</div>
-                            <div style="font-size: 0.75rem; margin-top: 6px; font-weight: 600;">
-                                Reason: ${m.flag_reason || 'Personal contact sharing policy violation'}
-                            </div>
-                        </div>
-                        <div class="inbox-meta" style="color: #ef4444;">Blocked • Not delivered</div>
-                    </div>
-                `;
-            }
-
-            return `
-                <div class="inbox-msg-row ${isMe ? 'sent' : 'received'}">
-                    <div class="inbox-bubble">
-                        ${escapeHTML(m.message)}
-                        ${m.file_url ? `<div style="margin-top: 6px;"><a href="${m.file_url}" target="_blank" rel="noopener noreferrer" style="color: inherit; text-decoration: underline; font-size: 0.8rem;">📎 Attachment Link</a></div>` : ''}
-                    </div>
-                    <div class="inbox-meta">
-                        ${timeStr} ${isMe ? (m.is_read ? '✓✓' : '✓') : ''}
-                    </div>
-                </div>
-            `;
-        }).join('');
-    }
-
-    function renderMessagesStream() {
-        const streamEl = document.getElementById('inbox-messages-stream');
-        if (streamEl) {
-            streamEl.innerHTML = renderMessagesHTML();
-            streamEl.scrollTop = streamEl.scrollHeight;
-        }
-    }
-
-    function updateInboxDOM() {
-        const listEl = document.getElementById('inbox-conversations-list');
-        if (listEl) listEl.innerHTML = renderConversationsListHTML();
-    }
-
-    window.__filterInboxConversations = (q) => {
-        searchQuery = q;
-        updateInboxDOM();
-    };
-
-    loadConversations();
-    return renderInbox();
-}
-
-// =============== ADMIN CHATS & SAFETY MODERATION VIEW ===============
-
-function AdminChatsView() {
-    let chats = [];
-    let flaggedMessages = [];
-    let loading = true;
-    let activeTab = 'all';
-
-    async function loadData() {
-        showLoading();
-        try {
-            const [cList, fList] = await Promise.all([
-                apiFetch('/admin/chats'),
-                apiFetch('/admin/flagged-messages')
-            ]);
-            chats = cList || [];
-            flaggedMessages = fList || [];
-        } catch (e) {
-            showToast(e.message, 'error');
-        } finally {
-            loading = false;
-            mount(renderAdminChatsView());
-        }
-    }
-
-    window.__adminUnblockUser = async (userId, userName) => {
-        if (!confirm(`Are you sure you want to unblock user "${userName}" (ID: ${userId})? Their account and messaging access will be reinstated.`)) return;
-        try {
-            const res = await apiFetch(`/admin/users/${userId}/unblock`, { method: 'POST' });
-            showToast(res.message || 'User unblocked successfully', 'success');
-            loadData();
-        } catch (err) {
-            showToast(err.message, 'error');
-        }
-    };
-
-    window.__adminInspectChatTranscript = async (user1Id, user2Id) => {
-        try {
-            const data = await apiFetch(`/admin/chats/user/${user1Id}/with/${user2Id}`);
-            openTranscriptModal(data);
-        } catch (err) {
-            showToast(err.message, 'error');
-        }
-    };
-
-    function openTranscriptModal(data) {
-        const u1 = data.user1;
-        const u2 = data.user2;
-        const msgs = data.messages || [];
-
-        const modal = document.createElement('div');
-        modal.className = 'fiverr-escrow-modal';
-        modal.innerHTML = `
-            <div class="fiverr-escrow-card" style="max-width: 680px; max-height: 85vh; display: flex; flex-direction: column;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid var(--border);">
-                    <div>
-                        <h3 style="margin: 0; font-size: 1.15rem; color: var(--text-primary); font-weight: 800;">
-                            Conversation Transcript
-                        </h3>
-                        <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 3px;">
-                            ${u1.name} (${u1.email}) &harr; ${u2.name} (${u2.email})
-                        </div>
-                    </div>
-                    <button class="modal-close" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--text-muted);">&times;</button>
-                </div>
-
-                <div style="flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 10px; background: var(--bg-hover); border-radius: 10px; margin-bottom: 16px;">
-                    ${msgs.length === 0 ? '<div style="text-align: center; color: var(--text-muted); padding: 20px;">No messages</div>' : msgs.map(m => {
-                        const isFlagged = m.is_flagged;
-                        const isU1 = m.sender_id === u1.id;
-                        return `
-                            <div style="padding: 10px 14px; border-radius: 12px; background: ${isFlagged ? 'rgba(239, 68, 68, 0.12)' : (isU1 ? 'var(--bg-card)' : 'rgba(99, 102, 241, 0.08)')}; border: 1px solid ${isFlagged ? 'rgba(239, 68, 68, 0.4)' : 'var(--border)'};">
-                                <div style="display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 0.75rem;">
-                                    <strong>${m.sender_name}</strong>
-                                    <span style="color: var(--text-muted);">${m.created_at ? new Date(m.created_at).toLocaleString() : ''}</span>
-                                </div>
-                                <div style="font-size: 0.875rem; color: var(--text-primary); word-break: break-word;">
-                                    ${escapeHTML(m.message)}
-                                </div>
-                                ${isFlagged ? `<div style="font-size: 0.75rem; color: #ef4444; font-weight: 700; margin-top: 4px;">🛑 Flagged Violation: ${m.flag_reason || 'Contact exchange attempt'}</div>` : ''}
-                            </div>
-                        `;
-                    }).join('')}
-                </div>
-
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <div style="display: flex; gap: 8px;">
-                        ${u1.is_blocked ? `<button class="btn btn-sm btn-danger" onclick="window.__adminUnblockUser(${u1.id}, '${u1.name}'); this.closest('.fiverr-escrow-modal').remove();">Unblock ${u1.name}</button>` : ''}
-                        ${u2.is_blocked ? `<button class="btn btn-sm btn-danger" onclick="window.__adminUnblockUser(${u2.id}, '${u2.name}'); this.closest('.fiverr-escrow-modal').remove();">Unblock ${u2.name}</button>` : ''}
-                    </div>
-                    <button class="btn btn-secondary" onclick="this.closest('.fiverr-escrow-modal').remove()">Close</button>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(modal);
-        modal.querySelector('.modal-close').onclick = () => modal.remove();
-        modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
-    }
-
-    function renderAdminChatsView() {
-        return el`<div>
-            ${renderAppHeader('/admin')}
-            ${renderLeftEdgePeekDock('')}
-            <div class="main">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <div>
-                        <div class="section-title" style="margin: 0;">💬 Platform Chats & Safety Moderation</div>
-                        <p style="color: var(--text-secondary); font-size: 0.85rem; margin: 4px 0 0 0;">Inspect user conversations, investigate anti-disintermediation violations, and unblock reinstated users.</p>
-                    </div>
-                    <button class="btn btn-secondary btn-sm" onclick="router('/admin')">← Back to Admin</button>
-                </div>
-
-                <!-- Tabs -->
-                <div class="tabs mb-4" style="display: flex; gap: 8px; border-bottom: 1px solid var(--border); padding-bottom: 8px;">
-                    <button class="tab-btn ${activeTab === 'all' ? 'active' : ''}" onclick="window.__setAdminChatTab('all')">
-                        All Conversations (${chats.length})
-                    </button>
-                    <button class="tab-btn ${activeTab === 'flagged' ? 'active' : ''}" onclick="window.__setAdminChatTab('flagged')">
-                        ⚠️ Flagged Violations (${flaggedMessages.length})
-                    </button>
-                </div>
-
-                ${activeTab === 'all' ? renderAllChatsTable() : renderFlaggedViolationsTable()}
-            </div>
-        </div>`;
-    }
-
-    window.__setAdminChatTab = (tab) => {
-        activeTab = tab;
-        mount(renderAdminChatsView());
-    };
-
-    function renderAllChatsTable() {
-        if (chats.length === 0) {
-            return '<div class="card" style="padding: 30px; text-align: center; color: var(--text-muted);">No chat conversations found on platform.</div>';
-        }
-
-        return `
-            <div class="card" style="overflow-x: auto;">
-                <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem;">
-                    <thead>
-                        <tr style="border-bottom: 1px solid var(--border); background: var(--bg-hover);">
-                            <th style="padding: 12px 16px;">Participant 1</th>
-                            <th style="padding: 12px 16px;">Participant 2</th>
-                            <th style="padding: 12px 16px;">Messages</th>
-                            <th style="padding: 12px 16px;">Safety Status</th>
-                            <th style="padding: 12px 16px;">Last Activity</th>
-                            <th style="padding: 12px 16px; text-align: right;">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${chats.map(c => {
-                            const u1 = c.user1;
-                            const u2 = c.user2;
-                            const hasViolation = c.has_violation;
-
-                            return `
-                                <tr style="border-bottom: 1px solid var(--border); transition: background 0.15s ease;">
-                                    <td style="padding: 12px 16px;">
-                                        <strong>${u1.name}</strong> <span class="badge ${u1.user_type === 'PROVIDER' ? 'badge-primary' : 'badge-secondary'}" style="font-size: 0.65rem;">${u1.user_type}</span>
-                                        ${u1.is_blocked ? '<span class="badge badge-danger" style="margin-left: 4px; font-size: 0.65rem;">BLOCKED</span>' : ''}
-                                        <div style="font-size: 0.72rem; color: var(--text-muted);">${u1.email}</div>
-                                    </td>
-                                    <td style="padding: 12px 16px;">
-                                        <strong>${u2.name}</strong> <span class="badge ${u2.user_type === 'PROVIDER' ? 'badge-primary' : 'badge-secondary'}" style="font-size: 0.65rem;">${u2.user_type}</span>
-                                        ${u2.is_blocked ? '<span class="badge badge-danger" style="margin-left: 4px; font-size: 0.65rem;">BLOCKED</span>' : ''}
-                                        <div style="font-size: 0.72rem; color: var(--text-muted);">${u2.email}</div>
-                                    </td>
-                                    <td style="padding: 12px 16px;">
-                                        ${c.total_messages} msgs
-                                    </td>
-                                    <td style="padding: 12px 16px;">
-                                        ${hasViolation ? `<span class="badge badge-danger" style="font-size: 0.72rem;">⚠️ ${c.flagged_count} Flagged</span>` : '<span class="badge badge-success" style="font-size: 0.72rem;">✓ Clean</span>'}
-                                    </td>
-                                    <td style="padding: 12px 16px; color: var(--text-muted); font-size: 0.78rem;">
-                                        ${formatRelativeTime(c.latest_message_at)}
-                                    </td>
-                                    <td style="padding: 12px 16px; text-align: right;">
-                                        <div style="display: flex; gap: 6px; justify-content: flex-end;">
-                                            <button class="btn btn-secondary btn-sm" onclick="window.__adminInspectChatTranscript(${u1.id}, ${u2.id})">
-                                                Inspect
-                                            </button>
-                                            ${u1.is_blocked ? `<button class="btn btn-primary btn-sm" style="background: #10b981; border-color: #10b981;" onclick="window.__adminUnblockUser(${u1.id}, '${u1.name}')">Unblock ${u1.name.split(' ')[0]}</button>` : ''}
-                                            ${u2.is_blocked ? `<button class="btn btn-primary btn-sm" style="background: #10b981; border-color: #10b981;" onclick="window.__adminUnblockUser(${u2.id}, '${u2.name}')">Unblock ${u2.name.split(' ')[0]}</button>` : ''}
-                                        </div>
-                                    </td>
-                                </tr>
-                            `;
-                        }).join('')}
-                    </tbody>
-                </table>
-            </div>
-        `;
-    }
-
-    function renderFlaggedViolationsTable() {
-        if (flaggedMessages.length === 0) {
-            return '<div class="card" style="padding: 30px; text-align: center; color: var(--text-muted);">🎉 Zero flagged violations! All platform chats are complying with platform safety rules.</div>';
-        }
-
-        return `
-            <div class="card" style="overflow-x: auto;">
-                <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem;">
-                    <thead>
-                        <tr style="border-bottom: 1px solid var(--border); background: var(--bg-hover);">
-                            <th style="padding: 12px 16px;">Offending Sender</th>
-                            <th style="padding: 12px 16px;">Target Receiver</th>
-                            <th style="padding: 12px 16px;">Blocked Content</th>
-                            <th style="padding: 12px 16px;">Violation Type</th>
-                            <th style="padding: 12px 16px;">User Status</th>
-                            <th style="padding: 12px 16px; text-align: right;">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${flaggedMessages.map(m => `
-                            <tr style="border-bottom: 1px solid var(--border);">
-                                <td style="padding: 12px 16px;">
-                                    <strong>${m.sender.name}</strong> (ID: ${m.sender.id})
-                                    <div style="font-size: 0.72rem; color: var(--text-muted);">${m.sender.email}</div>
-                                </td>
-                                <td style="padding: 12px 16px;">
-                                    <strong>${m.receiver.name}</strong>
-                                    <div style="font-size: 0.72rem; color: var(--text-muted);">${m.receiver.email}</div>
-                                </td>
-                                <td style="padding: 12px 16px; max-width: 240px; word-break: break-word;">
-                                    <span style="background: rgba(239, 68, 68, 0.1); color: #ef4444; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem;">
-                                        ${escapeHTML(m.message)}
-                                    </span>
-                                </td>
-                                <td style="padding: 12px 16px; color: #ef4444; font-weight: 700;">
-                                    🛑 ${m.flag_reason}
-                                </td>
-                                <td style="padding: 12px 16px;">
-                                    ${m.sender.is_blocked ? '<span class="badge badge-danger">BLOCKED</span>' : '<span class="badge badge-success">ACTIVE</span>'}
-                                </td>
-                                <td style="padding: 12px 16px; text-align: right;">
-                                    ${m.sender.is_blocked ? `
-                                        <button class="btn btn-primary btn-sm" style="background: #10b981; border-color: #10b981;" onclick="window.__adminUnblockUser(${m.sender.id}, '${m.sender.name}')">
-                                            Re-instate / Unblock
-                                        </button>
-                                    ` : `
-                                        <span style="color: var(--text-muted); font-size: 0.75rem;">Not suspended</span>
-                                    `}
-                                </td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            </div>
-        `;
-    }
-
-    loadData();
-    return renderAdminChatsView();
 }
 
 
