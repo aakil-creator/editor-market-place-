@@ -54,6 +54,23 @@ Base.metadata.create_all(bind=engine)
 def ensure_schema():
     with engine.connect() as conn:
         try:
+            cursor_users = conn.execute(text("PRAGMA table_info(users)"))
+            cols_users = [row[1] for row in cursor_users.fetchall()]
+            if "username" not in cols_users:
+                conn.execute(text("ALTER TABLE users ADD COLUMN username VARCHAR"))
+                conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_users_username ON users(username)"))
+            
+            # Backfill any null usernames
+            users_cursor = conn.execute(text("SELECT id, name, email FROM users WHERE username IS NULL OR username = ''"))
+            for u_id, u_name, u_email in users_cursor.fetchall():
+                base = re.sub(r'[^a-zA-Z0-9_]', '', (u_name or '').lower())
+                if not base:
+                    base = (u_email or 'user').split('@')[0]
+                    base = re.sub(r'[^a-zA-Z0-9_]', '', base)
+                if not base:
+                    base = f"creator_{u_id}"
+                conn.execute(text("UPDATE users SET username = :un WHERE id = :uid"), {"un": f"{base}_{u_id}", "uid": u_id})
+
             cursor = conn.execute(text("PRAGMA table_info(profiles)"))
             columns = [row[1] for row in cursor.fetchall()]
             if "bank_account_holder" not in columns:
@@ -487,6 +504,14 @@ def update_me(
     import re
     if user_data.name is not None and user_data.name.strip():
         current_user.name = user_data.name.strip()
+    if user_data.username is not None and user_data.username.strip():
+        clean_un = re.sub(r'[^a-zA-Z0-9_]', '', user_data.username.strip().lower())
+        if len(clean_un) < 3 or len(clean_un) > 30:
+            raise HTTPException(status_code=400, detail="Username must be between 3 and 30 characters (letters, numbers, underscore)")
+        existing_un = db.query(User).filter(User.username == clean_un, User.id != current_user.id).first()
+        if existing_un:
+            raise HTTPException(status_code=400, detail="Username is already taken by another creator")
+        current_user.username = clean_un
     if user_data.email is not None and user_data.email.strip():
         new_email = user_data.email.strip().lower()
         existing = db.query(User).filter(User.email == new_email, User.id != current_user.id).first()
@@ -1599,10 +1624,11 @@ def get_providers(
     if niche:
         query = query.join(Profile).filter(Profile.niche == niche)
     if search:
-        search_term = f"%{search}%"
+        search_term = f"%{search.lstrip('@')}%"
         query = query.filter(
             or_(
                 User.name.ilike(search_term),
+                User.username.ilike(search_term),
                 User.email.ilike(search_term)
             )
         )
@@ -1610,9 +1636,11 @@ def get_providers(
     result = []
     for u in providers:
         profile = db.query(Profile).filter(Profile.user_id == u.id).first()
+        portfolio = db.query(PortfolioItem).filter(PortfolioItem.provider_id == u.id).all()
         result.append({
             "id": u.id,
             "name": u.name,
+            "username": u.username or f"creator_{u.id}",
             "phone": u.phone,
             "email": u.email,
             "user_type": u.user_type.value,
@@ -1625,9 +1653,66 @@ def get_providers(
                 "availability": profile.availability if profile else None,
                 "rating": profile.rating if profile else 0,
                 "total_bookings": profile.total_bookings if profile else 0,
-            } if profile else None
+            } if profile else None,
+            "portfolio_items": [
+                {
+                    "id": pi.id,
+                    "title": pi.title,
+                    "description": pi.description,
+                    "media_url": pi.media_url,
+                    "media_type": pi.media_type,
+                    "thumbnail_url": pi.thumbnail_url
+                } for pi in portfolio
+            ]
         })
     return result
+
+@api_app.get("/providers/by-username/{username}")
+def get_provider_by_username(username: str, db = Depends(get_db)):
+    clean_un = username.lstrip('@').lower()
+    user = db.query(User).filter(User.username == clean_un, User.user_type == UserType.PROVIDER).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Provider not found")
+    profile = db.query(Profile).filter(Profile.user_id == user.id).first()
+    portfolio = db.query(PortfolioItem).filter(PortfolioItem.provider_id == user.id).all()
+    packages = db.query(Package).filter(Package.provider_id == user.id, Package.status == "approved").all()
+    return {
+        "id": user.id,
+        "name": user.name,
+        "username": user.username,
+        "email": user.email,
+        "phone": user.phone,
+        "profile": {
+            "niche": profile.niche if profile else "editors_animators",
+            "bio": profile.bio if profile else "",
+            "skills": profile.skills if profile else [],
+            "rating": profile.rating if profile else 0.0,
+            "total_bookings": profile.total_bookings if profile else 0,
+            "service_area": profile.service_area if profile else "online",
+            "availability": profile.availability if profile else "flexible",
+        } if profile else None,
+        "portfolio_items": [
+            {
+                "id": pi.id,
+                "title": pi.title,
+                "description": pi.description,
+                "media_url": pi.media_url,
+                "media_type": pi.media_type,
+                "thumbnail_url": pi.thumbnail_url,
+                "created_at": pi.created_at.isoformat() if pi.created_at else None
+            } for pi in portfolio
+        ],
+        "packages": [
+            {
+                "id": pkg.id,
+                "title": pkg.title,
+                "price": pkg.price,
+                "turnaround": pkg.turnaround,
+                "scope": pkg.scope,
+                "package_type": pkg.package_type
+            } for pkg in packages
+        ]
+    }
 
 @api_app.get("/admin/niches", response_model=List[NicheResponse])
 def get_admin_niches(current_user = Depends(get_current_user), db = Depends(get_db)):

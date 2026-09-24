@@ -36,6 +36,7 @@ class PackageType(str, Enum):
 # Auth schemas
 class UserCreate(BaseModel):
     name: str
+    username: Optional[str] = None
     phone: str
     email: str
     password: str
@@ -63,6 +64,7 @@ class UserResponse(BaseModel):
     id: int
     user_type: UserType
     name: str
+    username: Optional[str] = None
     phone: str
     email: str
     is_verified: bool
@@ -74,6 +76,7 @@ class UserResponse(BaseModel):
 
 class UserUpdate(BaseModel):
     name: Optional[str] = None
+    username: Optional[str] = None
     email: Optional[str] = None
     phone: Optional[str] = None
     current_password: Optional[str] = None

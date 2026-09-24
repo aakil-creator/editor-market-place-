@@ -224,6 +224,7 @@ def list_educator_summary(
         result.append({
             "id": u.id,
             "name": u.name,
+            "username": u.username or f"creator_{u.id}",
             "email": u.email,
             "slug": u.phone,
             "niche": p.niche if p else "editors_animators",
