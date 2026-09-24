@@ -5046,12 +5046,112 @@ textarea::placeholder,
     color: var(--text-muted);
 }
 
-/* Category Filter Chips with Animated Icon Bubbles */
+/* Buyer Search Row Layout - Sleek, Balanced, & Non-Stretching */
+.buyer-search-bar-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 18px;
+    width: 100%;
+}
+
+.buyer-search-form {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    min-width: 0; /* Ensures the flex child shrinks/grows properly without squashing */
+}
+
+.buyer-search-input-wrap {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+    width: 100%;
+}
+
+.buyer-search-input {
+    width: 100% !important;
+    height: 44px !important;
+    padding-left: 42px !important;
+    padding-right: 36px !important;
+    font-size: 0.9rem !important;
+    border-radius: var(--radius-sm) !important;
+    background: var(--bg-card) !important;
+    border: 1.5px solid var(--border) !important;
+    color: var(--text-primary) !important;
+    box-sizing: border-box !important;
+}
+
+.buyer-search-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    pointer-events: none;
+    z-index: 2;
+}
+
+.buyer-search-clear-btn {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 1.05rem;
+    padding: 4px;
+    z-index: 2;
+}
+
+.buyer-search-btn {
+    height: 44px !important;
+    padding: 0 18px !important;
+    font-size: 0.8125rem !important;
+    font-weight: 700 !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+    width: auto !important;
+    border-radius: var(--radius-sm) !important;
+}
+
+.buyer-directory-btn {
+    height: 44px !important;
+    padding: 0 16px !important;
+    font-size: 0.8125rem !important;
+    font-weight: 600 !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+    width: auto !important;
+    border-radius: var(--radius-sm) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+}
+
+@media (max-width: 640px) {
+    .buyer-search-bar-row {
+        flex-wrap: wrap;
+    }
+    .buyer-search-btn {
+        padding: 0 14px !important;
+        font-size: 0.78rem !important;
+    }
+    .buyer-directory-btn {
+        padding: 0 12px !important;
+        font-size: 0.78rem !important;
+    }
+}
+
+/* Category Filter Chips with Large Animated Icon Bubbles */
 .filter-chip {
-    padding: 6px 18px 6px 10px;
+    padding: 6px 20px 6px 8px;
     border-radius: 999px;
-    font-size: 0.84rem;
-    font-weight: 600;
+    font-size: 0.9rem;
+    font-weight: 700;
     background: var(--bg-card);
     color: var(--text-secondary);
     border: 1.5px solid var(--border);
@@ -5060,8 +5160,8 @@ textarea::placeholder,
     white-space: nowrap;
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+    gap: 10px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
     outline: none;
     user-select: none;
 }
@@ -5070,31 +5170,32 @@ textarea::placeholder,
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 26px;
-    height: 26px;
+    width: 38px;
+    height: 38px;
     border-radius: 50%;
     background: var(--bg-hover);
     flex-shrink: 0;
-    transition: transform 0.25s var(--ease-spring), background-color 0.2s ease;
+    transition: transform 0.25s var(--ease-spring), background-color 0.2s ease, box-shadow 0.25s ease;
 }
 
 .filter-chip:hover .chip-icon-box {
-    transform: scale(1.15);
+    transform: scale(1.18);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
 }
 
 .filter-chip:hover {
     background: var(--bg-hover);
     color: var(--text-primary);
     border-color: var(--accent);
-    transform: translateY(-1.5px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
 }
 
 .filter-chip.active {
     background: var(--accent);
     color: #ffffff;
     border-color: var(--accent);
-    box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+    box-shadow: 0 6px 18px rgba(99, 102, 241, 0.38);
 }
 
 .filter-chip.active .chip-icon-box {

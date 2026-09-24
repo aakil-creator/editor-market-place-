@@ -2110,54 +2110,53 @@ function BuyerDashboard() {
 
                 <!-- Search & Category Filters -->
                 <div style="margin-bottom: 24px;">
-                    <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px;">
-                        <form onsubmit="event.preventDefault(); window.__handleBuyerSearch(document.getElementById('buyer-search-input').value)" style="display: flex; gap: 8px; flex: 1; min-width: 260px;">
-                            <div style="position: relative; flex: 1;">
+                    <div class="buyer-search-bar-row">
+                        <form onsubmit="event.preventDefault(); window.__handleBuyerSearch(document.getElementById('buyer-search-input').value)" class="buyer-search-form">
+                            <div class="buyer-search-input-wrap">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18" class="buyer-search-icon">
+                                    <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                                </svg>
                                 <input 
                                     type="text" 
                                     id="buyer-search-input" 
-                                    class="form-input" 
+                                    class="form-input buyer-search-input" 
                                     placeholder="Search video editors, IELTS coaches, YouTube, Premiere Pro..." 
                                     value="${escapeHTML(searchQuery)}" 
                                     oninput="window.__handleBuyerSearchInput(this.value)"
-                                    style="margin: 0; padding-left: 40px;"
                                 />
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); pointer-events: none;">
-                                    <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                                </svg>
                                 ${searchQuery ? `
-                                    <button type="button" onclick="window.__clearBuyerSearch()" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 1rem; padding: 4px;" title="Clear search">✕</button>
+                                    <button type="button" class="buyer-search-clear-btn" onclick="window.__clearBuyerSearch()" title="Clear search">✕</button>
                                 ` : ''}
                             </div>
-                            <button type="submit" class="btn btn-primary" style="padding: 0 20px; font-weight: 700; white-space: nowrap;">
+                            <button type="submit" class="btn btn-primary buyer-search-btn">
                                 Search
                             </button>
                         </form>
-                        <button class="btn btn-secondary" onclick="router('/providers')" style="white-space: nowrap; display: inline-flex; align-items: center; gap: 6px;">
-                            <span>🧭 Full Directory</span>
+                        <button type="button" class="btn btn-secondary buyer-directory-btn" onclick="router('/providers')">
+                            🧭 Full Directory
                         </button>
                     </div>
 
                     <!-- Category Pills with Animated Icons -->
                     <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
                         <button type="button" class="filter-chip ${activeFilter === 'all' ? 'active' : ''}" onclick="window.__setBuyerFilter('all')">
-                            <span class="chip-icon-box">${getCategoryPeekIconSvg('all', 18)}</span>
+                            <span class="chip-icon-box">${getCategoryPeekIconSvg('all', 26)}</span>
                             <span>All Services</span>
                         </button>
                         <button type="button" class="filter-chip ${activeFilter === 'editors' ? 'active' : ''}" onclick="window.__setBuyerFilter('editors')">
-                            <span class="chip-icon-box">${getCategoryPeekIconSvg('editors_animators', 18)}</span>
+                            <span class="chip-icon-box">${getCategoryPeekIconSvg('editors_animators', 26)}</span>
                             <span>Video Editors</span>
                         </button>
                         <button type="button" class="filter-chip ${activeFilter === 'tutors' ? 'active' : ''}" onclick="window.__setBuyerFilter('tutors')">
-                            <span class="chip-icon-box">${getCategoryPeekIconSvg('tutors', 18)}</span>
+                            <span class="chip-icon-box">${getCategoryPeekIconSvg('tutors', 26)}</span>
                             <span>English Tutors</span>
                         </button>
                         <button type="button" class="filter-chip ${activeFilter === 'writers' ? 'active' : ''}" onclick="window.__setBuyerFilter('writers')">
-                            <span class="chip-icon-box">${getCategoryPeekIconSvg('writers', 18)}</span>
+                            <span class="chip-icon-box">${getCategoryPeekIconSvg('writers', 26)}</span>
                             <span>Writers &amp; Copy</span>
                         </button>
                         <button type="button" class="filter-chip ${activeFilter === 'express' ? 'active' : ''}" onclick="window.__setBuyerFilter('express')">
-                            <span class="chip-icon-box">${getCategoryPeekIconSvg('express', 18)}</span>
+                            <span class="chip-icon-box">${getCategoryPeekIconSvg('express', 26)}</span>
                             <span>24h Express</span>
                         </button>
                     </div>
