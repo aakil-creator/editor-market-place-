@@ -78,7 +78,7 @@ def ensure_schema():
             row = cursor_row.fetchone()
             default_google_id = os.environ.get("GOOGLE_CLIENT_ID", "242721714365-b51jtgln62q8eev212c1737ol5d46mpt.apps.googleusercontent.com")
             if not row:
-                conn.execute(text(f"INSERT INTO platform_settings (id, google_client_id, razorpay_key_id, razorpay_secret, site_name, maintenance_mode) VALUES (1, '{default_google_id}', '', '', 'Editor Marketplace', 0)"))
+                conn.execute(text(f"INSERT INTO platform_settings (id, google_client_id, razorpay_key_id, razorpay_key_secret) VALUES (1, '{default_google_id}', '', '')"))
             elif not row[1]:
                 conn.execute(text(f"UPDATE platform_settings SET google_client_id = '{default_google_id}' WHERE id = 1"))
 
@@ -89,10 +89,10 @@ def ensure_schema():
 ensure_schema()
 
 # Main app - serves static files
-app = FastAPI(title="Editor Marketplace", version="1.0.0")
+app = FastAPI(title="Groove Hub", version="1.0.0")
 
 # API app
-api_app = FastAPI(title="Editor Marketplace API", version="1.0.0")
+api_app = FastAPI(title="Groove Hub API", version="1.0.0")
 
 api_app.add_middleware(
     CORSMiddleware,

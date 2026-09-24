@@ -1,5 +1,5 @@
-// Service Worker for Editor Marketplace PWA
-const CACHE_NAME = 'editor-marketplace-v12-apple-and-payments';
+// Service Worker for Groove Hub Mobile PWA
+const CACHE_NAME = 'groove-hub-v1-mobile';
 const PRECACHE_ASSETS = [
   '/static/icons/icon-192.png',
   '/static/icons/icon-512.png',

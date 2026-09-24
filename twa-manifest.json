@@ -1,8 +1,8 @@
 {
-  "packageId": "com.editormarketplace.app",
-  "host": "localhost:8000",
-  "name": "Editor Marketplace",
-  "launcherName": "EditorMarket",
+  "packageId": "com.groovehub.app",
+  "host": "editor-market-place.onrender.com",
+  "name": "Groove Hub",
+  "launcherName": "Groove Hub",
   "themeColor": "#6C5CE7",
   "navigationColor": "#0F1117",
   "backgroundColor": "#0F1117",
