@@ -2291,32 +2291,6 @@ function BuyerDashboard() {
                         </button>
                     </div>
 
-                    <!-- Animated Search Options Pills Row -->
-                    <div class="search-options-animated-bar">
-                        <div class="search-options-label">
-                            <span class="search-options-fire">🔥</span>
-                            <span>Popular Options:</span>
-                        </div>
-                        <div class="search-options-list">
-                            ${currentOptions.map((opt, idx) => {
-                                const isSelected = searchQuery.toLowerCase() === opt.query.toLowerCase();
-                                return `
-                                <button 
-                                    type="button" 
-                                    class="search-option-animated-chip ${isSelected ? 'active' : ''}" 
-                                    style="animation-delay: ${(idx * 0.05).toFixed(2)}s;"
-                                    onclick="${isSelected ? `window.__clearBuyerSearch()` : `window.__applyPopularTag('${escapeJs(opt.query)}', '${escapeJs(opt.filter)}')`}"
-                                    title="Filter by ${opt.label}"
-                                >
-                                    <span class="option-chip-icon">${opt.icon}</span>
-                                    <span class="option-chip-label">${opt.label}</span>
-                                    ${isSelected ? '<span class="option-chip-check">✓</span>' : ''}
-                                </button>
-                                `;
-                            }).join('')}
-                        </div>
-                    </div>
-
                     <!-- Category Boxes with Animated Icons (Box Shape) -->
                     <div class="category-boxes-grid">
                         <button type="button" class="category-box-btn ${activeFilter === 'all' && !searchQuery ? 'active' : ''}" onclick="window.__setBuyerFilter('all')">
@@ -2340,6 +2314,50 @@ function BuyerDashboard() {
                             <span class="category-box-label">24h Express</span>
                         </button>
                     </div>
+
+                    <!-- Popular Options Slider (Down of Icons & Only Shown when Video Editors is Open) -->
+                    ${activeFilter === 'editors' ? `
+                    <div class="editor-slider-container">
+                        <div class="editor-slider-header">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span class="editor-slider-badge">🎬 Popular Editing Options</span>
+                                <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 500;">Slide to explore video specialties</span>
+                            </div>
+                            <div class="editor-slider-arrows">
+                                <button type="button" class="slider-arrow-btn" onclick="const el=document.getElementById('editor-popular-slider'); if(el) el.scrollBy({ left: -220, behavior: 'smooth' });" title="Slide Left">‹</button>
+                                <button type="button" class="slider-arrow-btn" onclick="const el=document.getElementById('editor-popular-slider'); if(el) el.scrollBy({ left: 220, behavior: 'smooth' });" title="Slide Right">›</button>
+                            </div>
+                        </div>
+
+                        <div class="editor-popular-slider-track" id="editor-popular-slider">
+                            ${[
+                                { label: 'Video Ads', sub: 'High-converting UGC & brand ads', query: 'video ads', icon: '🎬' },
+                                { label: 'Reels & TikTok', sub: 'Viral hooks & short-form edits', query: 'reel', icon: '📱' },
+                                { label: 'YouTube Retention', sub: 'Long-form vlogs & storytelling', query: 'youtube', icon: '🎥' },
+                                { label: 'Gaming Montages', sub: 'Twitch highlights & meme edits', query: 'gaming', icon: '🎮' },
+                                { label: 'Color Grading & VFX', sub: 'Cinematic LUTs & After Effects', query: 'color', icon: '🎨' },
+                                { label: '24h Rush Delivery', sub: 'Same-day express turnaround', query: '24', icon: '⚡' }
+                            ].map((opt, idx) => {
+                                const isSelected = searchQuery.toLowerCase() === opt.query.toLowerCase();
+                                return `
+                                <div 
+                                    class="editor-slide-card ${isSelected ? 'active' : ''}" 
+                                    onclick="${isSelected ? `window.__clearBuyerSearch()` : `window.__applyPopularTag('${escapeJs(opt.query)}', 'editors')`}"
+                                    style="animation-delay: ${(idx * 0.05).toFixed(2)}s;"
+                                    title="Filter by ${opt.label}"
+                                >
+                                    <div class="slide-card-top">
+                                        <span class="slide-card-icon">${opt.icon}</span>
+                                        <span class="slide-card-arrow">→</span>
+                                    </div>
+                                    <div class="slide-card-title">${opt.label}</div>
+                                    <div class="slide-card-sub">${opt.sub}</div>
+                                </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                    ` : ''}
                 </div>
 
                 <!-- Talent Showcase Header -->
