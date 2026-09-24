@@ -6011,10 +6011,18 @@ window.handleForgotPasswordSubmit = async (e) => {
         });
         const msg = res.message || '';
         const match = msg.match(/token[:\s]+([a-zA-Z0-9_-]+)/);
-        const token = match ? match[1] : '';
+        const token = res.reset_token || (match ? match[1] : '');
         if (token) {
             const td = document.getElementById('reset-token-display');
             if (td) td.textContent = token;
+            const linkEl = document.getElementById('reset-token-link');
+            if (linkEl) {
+                linkEl.href = `/reset-password?token=${encodeURIComponent(token)}`;
+                linkEl.onclick = (ev) => {
+                    ev.preventDefault();
+                    router(`/reset-password?token=${encodeURIComponent(token)}`);
+                };
+            }
             const sc = document.getElementById('forgot-success-container');
             if (sc) sc.style.display = 'block';
         } else {
@@ -6057,11 +6065,11 @@ function ForgotPassword() {
 					        <div style="font-weight: 700; margin-bottom: 8px;">✅ Reset link sent!</div>
 					        <div style="color: var(--text-secondary); margin-bottom: 10px;">Use the token below to reset your password:</div>
 					        <code id="reset-token-display" style="display: block; background: var(--bg-hover); padding: 8px 12px; border-radius: 6px; font-size: 0.8rem; word-break: break-all; border: 1px dashed var(--border);"></code>
-					        <div style="margin-top: 10px;"><a href="/reset-password" style="color: var(--accent); font-weight: 600;">Go to Reset Password --></a></div>
+					        <div style="margin-top: 10px;"><a id="reset-token-link" href="/reset-password" onclick="event.preventDefault(); router('/reset-password')" style="color: var(--accent); font-weight: 600;">Go to Reset Password →</a></div>
 					    </div>
 					</div>
 					<div style="margin-top: 20px; text-align: center;">
-					    <button class="btn btn-secondary" onclick="router('/login')" style="font-size: 0.85rem;"><-- Back to Sign In</button>
+					    <button class="btn btn-secondary" onclick="router('/login')" style="font-size: 0.85rem;">← Back to Sign In</button>
 					</div>
 				</div>
 			</div>
@@ -6070,12 +6078,18 @@ function ForgotPassword() {
 function ResetPasswordPage() {
     window.handleResetPasswordSubmit = async (e) => {
         e.preventDefault();
+        const tokenInput = document.getElementById('reset-token');
+        const tokenFromUrl = new URLSearchParams(window.location.search).get('token') || '';
+        const token = (tokenInput ? tokenInput.value.trim() : '') || tokenFromUrl;
         const newPw = document.getElementById('reset-password').value;
         const confirmPw = document.getElementById('reset-confirm').value;
-        const token = new URLSearchParams(window.location.search).get('token') || '';
         const errBox = document.getElementById('reset-error-container');
         const submitBtn = e.target.querySelector('button[type="submit"]');
         if (errBox) errBox.innerHTML = '';
+        if (!token) {
+            if (errBox) errBox.innerHTML = '<div style="background: rgba(239,68,68,0.12); border:1px solid #ef4444; color:#ef4444; padding:10px 14px; border-radius:8px; font-size:0.85rem;">⚠️ Reset token is missing. Please enter your reset token or request a new one.</div>';
+            return;
+        }
         if (!newPw || !confirmPw) {
             if (errBox) errBox.innerHTML = '<div style="background: rgba(239,68,68,0.12); border:1px solid #ef4444; color:#ef4444; padding:10px 14px; border-radius:8px; font-size:0.85rem;">⚠️ Please fill in both password fields.</div>';
             return;
@@ -6088,17 +6102,13 @@ function ResetPasswordPage() {
             if (errBox) errBox.innerHTML = '<div style="background: rgba(239,68,68,0.12); border:1px solid #ef4444; color:#ef4444; padding:10px 14px; border-radius:8px; font-size:0.85rem;">⚠️ Password must be at least 6 characters.</div>';
             return;
         }
-        if (!token) {
-            if (errBox) errBox.innerHTML = '<div style="background: rgba(239,68,68,0.12); border:1px solid #ef4444; color:#ef4444; padding:10px 14px; border-radius:8px; font-size:0.85rem;">⚠️ No reset token found. Please request a new one.</div>';
-            return;
-        }
         if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Resetting...'; }
         try {
             const res = await apiFetch('/auth/reset-password/confirm', {
                 method: 'POST',
                 body: JSON.stringify({ token, new_password: newPw })
             });
-            if (errBox) errBox.innerHTML = `<div style="background: rgba(16,185,129,0.12); border:1px solid #10b981; color:#10b981; padding:10px 14px; border-radius:8px; font-size:0.85rem;">✓ ${res.message || 'Password reset successfully.'}</div>`;
+            if (errBox) errBox.innerHTML = `<div style="background: rgba(16,185,129,0.12); border:1px solid #10b981; color:#10b981; padding:10px 14px; border-radius:8px; font-size:0.85rem;">✓ ${res.message || 'Password reset successfully! Redirecting...'}</div>`;
             if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Reset Password'; }
             setTimeout(() => router('/login'), 1500);
         } catch (err) {
@@ -6106,6 +6116,9 @@ function ResetPasswordPage() {
             if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Reset Password'; }
         }
     };
+
+    const initialToken = new URLSearchParams(window.location.search).get('token') || '';
+
     return el`<div>
         <div class="header">
             ${renderLogo(32, true)}
@@ -6120,13 +6133,17 @@ function ResetPasswordPage() {
                     <div style="text-align: center; margin-bottom: 24px;">
                         ${renderLogo(48, true)}
                         <h1 style="font-size: 1.5rem; font-weight: 700; margin-top: 12px;">Reset Password</h1>
-                        <p style="color: var(--text-muted); font-size: 0.875rem; margin-top: 4px;">Enter your new password below.</p>
+                        <p style="color: var(--text-muted); font-size: 0.875rem; margin-top: 4px;">Enter your reset token and new password below.</p>
                     </div>
                     <div id="reset-error-container"></div>
                     <form id="reset-form" onsubmit="handleResetPasswordSubmit(event)">
-                        <div class="form-group">
+                        <div class="form-group" style="${initialToken ? 'display: none;' : ''}">
+                            <label class="form-label">Reset Token</label>
+                            <input type="text" class="form-input" id="reset-token" placeholder="Paste your reset token" value="${initialToken}" autocomplete="off">
+                        </div>
+                        <div class="form-group" style="margin-top: 8px;">
                             <label class="form-label">New Password</label>
-                            <input type="password" class="form-input" id="reset-password" placeholder="Enter new password" required minlength="6" autocomplete="new-password">
+                            <input type="password" class="form-input" id="reset-password" placeholder="Enter new password (min 6 chars)" required minlength="6" autocomplete="new-password">
                         </div>
                         <div class="form-group" style="margin-top: 8px;">
                             <label class="form-label">Confirm Password</label>
@@ -6135,7 +6152,7 @@ function ResetPasswordPage() {
                         <button type="submit" class="btn btn-primary" style="width: 100%; padding: 13px; font-weight: 700; margin-top: 12px;">Reset Password</button>
                     </form>
                     <div style="margin-top: 20px; text-align: center;">
-                        <button class="btn btn-secondary" onclick="router('/login')" style="font-size: 0.85rem;"><-- Back to Sign In</button>
+                        <button class="btn btn-secondary" onclick="router('/login')" style="font-size: 0.85rem;">← Back to Sign In</button>
                     </div>
                 </div>
             </div>

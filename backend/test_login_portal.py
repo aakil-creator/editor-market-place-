@@ -16,7 +16,7 @@ import urllib.error
 BASE = "http://localhost:8000"
 DB_PATH = "C:/Users/Aaqil/EditorMarketplace/backend/editor_marketplace.db"
 APP_JS_PATH = "C:/Users/Aaqil/EditorMarketplace/backend/app/static/app.js"
-EXPECTED_CLIENT_ID = "242721714365-b51jtgln62q8eev212c1737ol5d46mpt.apps.googleusercontent.com"
+EXPECTED_CLIENT_ID = "934016522168-68h4l11qrs3g628191ala3bgugt1cs7l.apps.googleusercontent.com"
 
 
 def fetch(path: str, method: str = "GET", body: dict | None = None) -> dict | str | None:

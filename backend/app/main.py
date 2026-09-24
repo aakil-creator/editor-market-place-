@@ -39,7 +39,7 @@ from .schemas import (
     ForgotPasswordRequest, ForgotPasswordResponse, ResetPasswordWithTokenRequest, VerifyEmailRequest,
     get_current_user
 )
-from .security import hash_password, verify_password, create_access_token
+from .security import hash_password, verify_password, create_access_token, hash_token
 
 # Import routers
 from .routers import educators
@@ -76,11 +76,37 @@ def ensure_schema():
             # Ensure row 1 exists in platform_settings
             cursor_row = conn.execute(text("SELECT id, google_client_id FROM platform_settings WHERE id = 1"))
             row = cursor_row.fetchone()
-            default_google_id = os.environ.get("GOOGLE_CLIENT_ID", "242721714365-b51jtgln62q8eev212c1737ol5d46mpt.apps.googleusercontent.com")
+            default_google_id = os.environ.get("GOOGLE_CLIENT_ID", "934016522168-68h4l11qrs3g628191ala3bgugt1cs7l.apps.googleusercontent.com")
             if not row:
                 conn.execute(text(f"INSERT INTO platform_settings (id, google_client_id, razorpay_key_id, razorpay_key_secret) VALUES (1, '{default_google_id}', '', '')"))
-            elif not row[1]:
+            else:
                 conn.execute(text(f"UPDATE platform_settings SET google_client_id = '{default_google_id}' WHERE id = 1"))
+
+            # Ensure password_reset_tokens table exists
+            conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS password_reset_tokens (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL REFERENCES users(id),
+                    token_hash VARCHAR NOT NULL,
+                    expires_at DATETIME NOT NULL,
+                    used BOOLEAN DEFAULT 0,
+                    created_at DATETIME
+                )
+            """))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS ix_password_reset_tokens_token_hash ON password_reset_tokens(token_hash)"))
+
+            # Ensure email_verification_tokens table exists
+            conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS email_verification_tokens (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL REFERENCES users(id),
+                    token_hash VARCHAR NOT NULL,
+                    expires_at DATETIME NOT NULL,
+                    used BOOLEAN DEFAULT 0,
+                    created_at DATETIME
+                )
+            """))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS ix_email_verification_tokens_token_hash ON email_verification_tokens(token_hash)"))
 
             conn.commit()
         except Exception as e:
@@ -313,13 +339,9 @@ def reset_password(req: PasswordResetRequest, db = Depends(get_db)):
 @api_app.get("/public/config")
 def get_public_config(db = Depends(get_db)):
     settings = db.query(PlatformSettings).first()
-    google_client_id = ""
-    razorpay_key_id = ""
-    if settings:
-        google_client_id = settings.google_client_id or ""
-        razorpay_key_id = settings.razorpay_key_id or ""
-    google_client_id = google_client_id or os.environ.get("GOOGLE_CLIENT_ID", "242721714365-b51jtgln62q8eev212c1737ol5d46mpt.apps.googleusercontent.com")
-    razorpay_key_id = razorpay_key_id or os.environ.get("RAZORPAY_KEY_ID", "rzp_test_placeholder")
+    default_id = "934016522168-68h4l11qrs3g628191ala3bgugt1cs7l.apps.googleusercontent.com"
+    google_client_id = os.environ.get("GOOGLE_CLIENT_ID") or (settings.google_client_id if settings and settings.google_client_id else "") or default_id
+    razorpay_key_id = (settings.razorpay_key_id if settings and settings.razorpay_key_id else "") or os.environ.get("RAZORPAY_KEY_ID", "rzp_test_placeholder")
     return {
         "google_client_id": google_client_id,
         "razorpay_key_id": razorpay_key_id
@@ -448,7 +470,6 @@ def forgot_password(req: ForgotPasswordRequest, db = Depends(get_db)):
     from sqlalchemy import or_
     from datetime import datetime, timedelta
     import secrets
-    from app.security import hash_password as hp
 
     raw_input = req.email_or_phone.strip()
     digits = re.sub(r'\D', '', raw_input)
@@ -471,11 +492,11 @@ def forgot_password(req: ForgotPasswordRequest, db = Depends(get_db)):
     db.query(PasswordResetToken).filter(
         PasswordResetToken.user_id == user.id,
         PasswordResetToken.used == False
-    ).update({"used": True})
+    ).update({"used": True}, synchronize_session=False)
 
     # Generate new token
     raw_token = secrets.token_urlsafe(32)
-    token_hash = hp(raw_token)
+    token_hash = hash_token(raw_token)
     expires_at = datetime.utcnow() + timedelta(hours=1)
 
     reset_token = PasswordResetToken(
@@ -493,12 +514,9 @@ def forgot_password(req: ForgotPasswordRequest, db = Depends(get_db)):
 @api_app.post("/auth/reset-password/verify", response_model=ForgotPasswordResponse)
 def verify_reset_token(req: ResetPasswordWithTokenRequest, db = Depends(get_db)):
     """Verify a password reset token is valid"""
-    import re
-    from app.security import hash_password as hp
     from datetime import datetime
 
-    # Hash the provided token and look it up
-    token_hash = hp(req.token)
+    token_hash = hash_token(req.token.strip())
 
     reset_token = db.query(PasswordResetToken).filter(
         PasswordResetToken.token_hash == token_hash,
@@ -514,14 +532,12 @@ def verify_reset_token(req: ResetPasswordWithTokenRequest, db = Depends(get_db))
 @api_app.post("/auth/reset-password/confirm", response_model=Token)
 def confirm_reset_password(req: ResetPasswordWithTokenRequest, db = Depends(get_db)):
     """Confirm password reset with valid token"""
-    import re
-    from app.security import hash_password as hp
     from datetime import datetime
 
     if len(req.new_password) < 6:
         raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
 
-    token_hash = hp(req.token)
+    token_hash = hash_token(req.token.strip())
 
     reset_token = db.query(PasswordResetToken).filter(
         PasswordResetToken.token_hash == token_hash,
@@ -534,7 +550,7 @@ def confirm_reset_password(req: ResetPasswordWithTokenRequest, db = Depends(get_
 
     # Update password
     user = reset_token.user
-    user.password_hash = hp(req.new_password)
+    user.password_hash = hash_password(req.new_password)
     reset_token.used = True
     db.commit()
 
@@ -546,9 +562,8 @@ def confirm_reset_password(req: ResetPasswordWithTokenRequest, db = Depends(get_
 def verify_email(req: VerifyEmailRequest, db = Depends(get_db)):
     """Verify email with verification token"""
     from datetime import datetime
-    from app.security import hash_password as hp
 
-    token_hash = hp(req.token)
+    token_hash = hash_token(req.token.strip())
 
     email_token = db.query(EmailVerificationToken).filter(
         EmailVerificationToken.token_hash == token_hash,
