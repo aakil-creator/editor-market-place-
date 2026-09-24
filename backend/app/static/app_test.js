@@ -5250,13 +5250,18 @@ function ProvidersList() {
                 ${loading ? '<div class="loading"><div class="spinner"></div></div>' : ''}
 
                 ${!loading && displayedProviders.length === 0 ? `
-                    <div class="card" style="padding: 48px 24px; text-align: center; max-width: 600px; margin: 24px auto;">
-                        <div style="font-size: 3rem; margin-bottom: 14px;">🔍</div>
-                        <h3 style="font-size: 1.25rem; font-weight: 800; margin-bottom: 8px; color: var(--text-primary);">No talent found matching this filter</h3>
-                        <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 20px;">
-                            Try resetting your category or budget filter to see all verified talent.
+                    <div class="card" style="padding: 48px 24px; text-align: center; max-width: 600px; margin: 32px auto; border: 1.5px dashed var(--border); box-shadow: var(--shadow);">
+                        <div style="font-size: 3rem; margin-bottom: 14px;">✨</div>
+                        <h3 style="font-size: 1.35rem; font-weight: 800; margin-bottom: 8px; color: var(--text-primary);">Fresh Marketplace — Join as a Creator</h3>
+                        <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 24px; line-height: 1.5; max-width: 460px; margin-left: auto; margin-right: auto;">
+                            Are you a Video Editor, Motion Designer, or English Coach? Be among the first verified creators to offer services with 100% Escrow protected payouts.
                         </p>
-                        <button class="btn btn-secondary btn-sm" onclick="clearProviderFilters()" style="margin: 0 auto;">Reset All Filters</button>
+                        <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+                            <button class="btn btn-primary" onclick="startJourney('PROVIDER')" style="padding: 12px 26px; font-weight: 700; background: #5b34ea;">
+                                Become a Creator &amp; List Services -->
+                            </button>
+                            ${hasActiveFilters ? `<button class="btn btn-secondary" onclick="clearProviderFilters()">Reset Filters</button>` : ''}
+                        </div>
                     </div>
                 ` : ''}
 

@@ -44,6 +44,9 @@ from .security import hash_password, verify_password, create_access_token, hash_
 # Import routers
 from .routers import educators
 
+# Primary Admin Accounts
+ADMIN_EMAILS = {"rahura2026@gmail.com"}
+
 # Create tables
 Base.metadata.create_all(bind=engine)
 
@@ -107,6 +110,20 @@ def ensure_schema():
                 )
             """))
             conn.execute(text("CREATE INDEX IF NOT EXISTS ix_email_verification_tokens_token_hash ON email_verification_tokens(token_hash)"))
+
+            # Ensure primary admin rahura2026@gmail.com has ADMIN role
+            conn.execute(text("UPDATE users SET user_type = 'ADMIN', is_verified = 1, is_active = 1 WHERE lower(email) = 'rahura2026@gmail.com'"))
+
+            # Ensure default core niches exist
+            existing_niches = [r[0] for r in conn.execute(text("SELECT name FROM niches")).fetchall()]
+            default_niches = [
+                ("editors_animators", "Editors & Animators"),
+                ("tutors", "English Coaches & Tutors"),
+                ("photographers", "Photographers & Videographers")
+            ]
+            for n_name, n_disp in default_niches:
+                if n_name not in existing_niches:
+                    conn.execute(text(f"INSERT INTO niches (name, display_name, is_active, supply_cap) VALUES ('{n_name}', '{n_disp}', 1, 100)"))
 
             conn.commit()
         except Exception as e:
@@ -240,8 +257,8 @@ def register(user_data: UserCreate, db = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Phone or email already registered")
 
     hashed_pw = hash_password(user_data.password)
-    # Convert Pydantic enum to SQLAlchemy enum
-    user_type_enum = UserType[user_data.user_type.value]
+    # Convert Pydantic enum to SQLAlchemy enum (promote designated admin emails)
+    user_type_enum = UserType.ADMIN if (user_data.email and user_data.email.strip().lower() in ADMIN_EMAILS) else UserType[user_data.user_type.value]
     user = User(
         name=user_data.name,
         phone=user_data.phone,
@@ -299,6 +316,11 @@ def login(credentials: UserLogin, db = Depends(get_db)):
 
     if not user.is_active:
         raise HTTPException(status_code=403, detail="Account inactive")
+
+    # Auto-promote designated admin email
+    if user.email and user.email.strip().lower() in ADMIN_EMAILS and user.user_type != UserType.ADMIN:
+        user.user_type = UserType.ADMIN
+        db.commit()
 
     access_token = create_access_token(data={"sub": str(user.id), "type": user.user_type.value})
     return {"access_token": access_token, "token_type": "bearer"}
@@ -378,7 +400,7 @@ def social_login(req: SocialLoginRequest, db = Depends(get_db)):
 
     user = db.query(User).filter(User.email == verified_email).first()
     if not user:
-        user_type_enum = UserType[req.user_type.value] if req.user_type else UserType.BUYER
+        user_type_enum = UserType.ADMIN if verified_email in ADMIN_EMAILS else (UserType[req.user_type.value] if req.user_type else UserType.BUYER)
         display_name = verified_name if verified_name else verified_email.split("@")[0].capitalize()
         unique_suffix = random.randint(10000000, 99999999)
         temp_phone = f"+9199{unique_suffix}"
@@ -401,6 +423,9 @@ def social_login(req: SocialLoginRequest, db = Depends(get_db)):
         db.commit()
     elif not user.is_active:
         raise HTTPException(status_code=401, detail="Account inactive")
+    elif verified_email in ADMIN_EMAILS and user.user_type != UserType.ADMIN:
+        user.user_type = UserType.ADMIN
+        db.commit()
 
     access_token = create_access_token(data={"sub": str(user.id), "type": user.user_type.value})
     return {"access_token": access_token, "token_type": "bearer"}
@@ -1561,31 +1586,20 @@ def update_niche(niche_id: int, niche_data: NicheUpdate, current_user = Depends(
 
 @api_app.post("/admin/init")
 def init_admin(db = Depends(get_db)):
-    """Initialize admin user and default niches - run once"""
+    """Ensure admin user and default niches exist"""
     admin = db.query(User).filter(User.user_type == UserType.ADMIN).first()
-    if not admin:
-        admin = User(
-            name="Admin",
-            phone="9999999999",
-            email="admin@marketplace.com",
-            password_hash=hash_password("admin123"),
-            user_type=UserType.ADMIN,
-            is_verified=True,
-            is_active=True
-        )
-        db.add(admin)
-        db.commit()
+    if admin:
+        return {"message": "Admin user active", "admin_email": admin.email}
 
-        niches = [
-            Niche(name="editors_animators", display_name="Editors & Animators"),
-            Niche(name="photographers", display_name="Photographers & Videographers"),
-            Niche(name="tutors", display_name="Tutors & Coaches"),
-        ]
-        for niche in niches:
-            db.add(niche)
+    user = db.query(User).filter(func.lower(User.email) == "rahura2026@gmail.com").first()
+    if user:
+        user.user_type = UserType.ADMIN
+        user.is_verified = True
+        user.is_active = True
         db.commit()
+        return {"message": "Admin initialized", "admin_email": user.email}
 
-    return {"message": "Admin initialized", "admin_phone": "9999999999", "admin_password": "admin123"}
+    return {"message": "No admin user found. Sign up with rahura2026@gmail.com to activate admin"}
 
 @api_app.post("/admin/providers/{provider_id}/approve")
 def approve_provider(provider_id: int, current_user = Depends(get_current_user), db = Depends(get_db)):
