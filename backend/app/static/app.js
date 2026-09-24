@@ -3005,8 +3005,11 @@ function Settings() {
                         👤 Account
                     </button>
                     ${isProvider ? `
+                        <button type="button" class="tab ${activeSettingsTab === 'portfolio' ? 'active' : ''}" onclick="setSettingsTab('portfolio')">
+                            📁 Portfolio &amp; Uploads (${portfolioItems.length})
+                        </button>
                         <button type="button" class="tab ${activeSettingsTab === 'profile' ? 'active' : ''}" onclick="setSettingsTab('profile')">
-                            🎨 Specialty & Skills
+                            🎨 Specialty &amp; Skills
                         </button>
                     ` : `
                         <button type="button" class="tab ${activeSettingsTab === 'bio' ? 'active' : ''}" onclick="setSettingsTab('bio')">
@@ -3014,24 +3017,24 @@ function Settings() {
                         </button>
                     `}
                     <button type="button" class="tab ${activeSettingsTab === 'bank' ? 'active' : ''}" onclick="setSettingsTab('bank')">
-                        🏦 Bank & Payouts
+                        🏦 Bank &amp; Payouts
                     </button>
                     <button type="button" class="tab ${activeSettingsTab === 'security' ? 'active' : ''}" onclick="setSettingsTab('security')">
                         🔒 Security
                     </button>
                     <button type="button" class="tab ${activeSettingsTab === 'commission' ? 'active' : ''}" onclick="setSettingsTab('commission')">
-                        💰 Commission & Escrow
+                        💰 Commission &amp; Escrow
                     </button>
                     <button type="button" class="tab ${activeSettingsTab === 'preferences' ? 'active' : ''}" onclick="setSettingsTab('preferences')">
-                        🌙 Display & Theme
+                        🌙 Display &amp; Theme
                     </button>
                 </div>
 
                 <!-- Tab 1: Account -->
                 ${activeSettingsTab === 'account' ? `
-                    <div class="card" style="max-width: 540px;">
+                    <div class="card" style="max-width: 580px;">
                         <div class="card-header">
-                            <div class="card-title">Personal Information</div>
+                            <div class="card-title">Personal Information &amp; Creator Handle</div>
                             <span class="badge badge-info">${currentUser?.user_type || 'User'}</span>
                         </div>
                         <form onsubmit="handleAccountSave(event)">
@@ -3039,6 +3042,18 @@ function Settings() {
                                 <label class="form-label">Full Name</label>
                                 <input type="text" class="form-input" id="setting-name" value="${currentUser?.name || ''}" required>
                             </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Creator Username (@handle)</label>
+                                <div style="position: relative; display: flex; align-items: center;">
+                                    <span style="position: absolute; left: 14px; color: var(--accent); font-weight: 800; font-size: 1rem; pointer-events: none;">@</span>
+                                    <input type="text" class="form-input" id="setting-username" value="${currentUser?.username || ''}" placeholder="your_unique_handle" style="padding-left: 32px; font-weight: 700;" pattern="[a-zA-Z0-9_]{3,30}" title="3-30 letters, numbers, or underscores">
+                                </div>
+                                <small style="color: var(--text-muted); font-size: 0.75rem; margin-top: 5px; display: block;">
+                                    Your unique creator link: <strong>groovehub.com/@${currentUser?.username || 'username'}</strong>. Clients can search and find you directly.
+                                </small>
+                            </div>
+
                             <div class="form-row">
                                 <div class="form-group">
                                     <label class="form-label">Email Address</label>
@@ -3075,6 +3090,134 @@ function Settings() {
                             </div>
                             <button type="submit" class="btn btn-primary" style="margin-top: 8px;">Save Bio</button>
                         </form>
+                    </div>
+                ` : ''}
+
+                <!-- Tab: Portfolio Showcase (Provider Only) -->
+                ${activeSettingsTab === 'portfolio' && isProvider ? `
+                    <div style="display: flex; flex-direction: column; gap: 24px; max-width: 860px;">
+                        <!-- Banner -->
+                        <div class="card" style="padding: 20px 24px; background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(16, 185, 129, 0.08) 100%); border: 1px solid rgba(99, 102, 241, 0.25);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+                                <div>
+                                    <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--text-primary); margin-bottom: 4px; display: flex; align-items: center; gap: 8px;">
+                                        <span>🎨</span> Public Portfolio Showcase &amp; Work Uploads
+                                    </h3>
+                                    <p style="font-size: 0.8125rem; color: var(--text-secondary); margin: 0; line-height: 1.45;">
+                                        Upload your video showreels, client proof, IELTS teaching samples, or copywriting deliverables. Buyers see these when browsing your profile.
+                                    </p>
+                                </div>
+                                <div style="display: flex; gap: 10px; align-items: center;">
+                                    <button type="button" class="btn btn-secondary btn-sm" onclick="openFiverrPortfolioModal(${currentUser.id}, '${escapeHTML(currentUser.name)}')">
+                                        👁️ Preview Public Seller Profile
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Add Portfolio Item Form -->
+                        <div class="card" style="padding: 24px;">
+                            <div class="card-header" style="margin-bottom: 16px;">
+                                <div class="card-title" style="font-size: 1rem; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+                                    <span>➕</span> Add New Work Sample / Showcase Item
+                                </div>
+                                <span class="badge badge-info">Instant Live</span>
+                            </div>
+                            <form onsubmit="handleAddPortfolioItem(event)">
+                                <div class="form-group">
+                                    <label class="form-label">Project Title <span style="color: var(--danger);">*</span></label>
+                                    <input type="text" class="form-input" id="port-title" placeholder="e.g. High-Retention YouTube Tech Edit / Band 8 IELTS Mock Drill / SaaS Landing Copy" required>
+                                </div>
+
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label class="form-label">Media Type</label>
+                                        <select class="form-select" id="port-media-type">
+                                            <option value="video">🎬 Video (YouTube / Vimeo / Reel)</option>
+                                            <option value="image">🖼️ Image (Thumbnails, Graphics, Designs)</option>
+                                            <option value="audio">🎙️ Audio (Podcast, Voiceover, Accent Clinic)</option>
+                                            <option value="link">🔗 Link / Case Study (Notion, Drive, Medium)</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Media URL / Embed Link <span style="color: var(--danger);">*</span></label>
+                                        <input type="url" class="form-input" id="port-media-url" placeholder="https://youtube.com/watch?v=... or https://images.unsplash.com/..." required>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">Cover / Thumbnail Image URL <span style="color: var(--text-muted); font-size: 0.75rem;">(Optional - for card preview)</span></label>
+                                    <input type="url" class="form-input" id="port-thumb-url" placeholder="https://images.unsplash.com/... (optional)">
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">Project Description &amp; Client Deliverables</label>
+                                    <textarea class="form-textarea" id="port-desc" rows="3" placeholder="Describe the goal, tools used (Premiere, After Effects, Figma), turn-around time, and results achieved for the client..."></textarea>
+                                </div>
+
+                                <div style="display: flex; justify-content: flex-end; margin-top: 14px;">
+                                    <button type="submit" class="btn btn-primary" style="padding: 10px 24px; font-weight: 700;">
+                                        ➕ Add to My Showcase
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Live Portfolio Showcase Items Grid -->
+                        <div class="card" style="padding: 24px;">
+                            <div class="card-header" style="margin-bottom: 16px;">
+                                <div class="card-title" style="font-size: 1rem; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+                                    <span>📁</span> Live Projects on Your Profile (${portfolioItems.length})
+                                </div>
+                            </div>
+
+                            ${portfolioItems.length === 0 ? `
+                                <div style="text-align: center; padding: 40px 20px; border: 1.5px dashed var(--border); border-radius: var(--radius);">
+                                    <div style="font-size: 2.5rem; margin-bottom: 10px;">🎨</div>
+                                    <h4 style="font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">No showcase projects added yet</h4>
+                                    <p style="font-size: 0.8125rem; color: var(--text-secondary); max-width: 440px; margin: 0 auto 16px;">
+                                        Creators who upload at least 2 video reels or work samples receive <strong>4x more client bookings</strong>. Add your first sample above!
+                                    </p>
+                                </div>
+                            ` : `
+                                <div class="grid grid-2" style="gap: 16px;">
+                                    ${portfolioItems.map(item => `
+                                        <div class="card" style="padding: 14px; background: var(--bg-hover); border: 1px solid var(--border); border-radius: var(--radius-sm); display: flex; flex-direction: column; justify-content: space-between;">
+                                            <div>
+                                                ${item.media_type === 'video' && item.media_url && item.media_url.includes('youtube') ? `
+                                                    <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 8px; margin-bottom: 10px; background: #000;">
+                                                        <iframe src="${item.media_url.replace('watch?v=', 'embed/').split('&')[0]}" style="position: absolute; top:0; left: 0; width: 100%; height: 100%; border: 0;" allowfullscreen></iframe>
+                                                    </div>
+                                                ` : item.thumbnail_url || (item.media_type === 'image' && item.media_url) ? `
+                                                    <div style="height: 140px; overflow: hidden; border-radius: 8px; margin-bottom: 10px; background: #111;">
+                                                        <img src="${item.thumbnail_url || item.media_url}" alt="${escapeHTML(item.title)}" style="width: 100%; height: 100%; object-fit: cover;">
+                                                    </div>
+                                                ` : `
+                                                    <div style="height: 90px; display: flex; align-items: center; justify-content: center; background: var(--bg-card); border-radius: 8px; margin-bottom: 10px; font-size: 2rem;">
+                                                        ${item.media_type === 'video' ? '🎬' : item.media_type === 'image' ? '🖼️' : item.media_type === 'audio' ? '🎙️' : '🔗'}
+                                                    </div>
+                                                `}
+                                                <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 6px;">
+                                                    <h4 style="font-size: 0.92rem; font-weight: 700; color: var(--text-primary); margin: 0;">${escapeHTML(item.title)}</h4>
+                                                    <span class="badge badge-info" style="font-size: 0.68rem; text-transform: uppercase;">${item.media_type}</span>
+                                                </div>
+                                                <p style="font-size: 0.78rem; color: var(--text-secondary); line-height: 1.4; margin: 0 0 10px 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                                                    ${escapeHTML(item.description || 'Verified project sample')}
+                                                </p>
+                                            </div>
+                                            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding-top: 8px; margin-top: 8px;">
+                                                <a href="${escapeHTML(item.media_url)}" target="_blank" rel="noopener noreferrer" style="font-size: 0.75rem; color: var(--accent); font-weight: 600; text-decoration: none;">
+                                                    Open Link ↗
+                                                </a>
+                                                <button type="button" class="btn btn-secondary btn-sm" onclick="handleDeletePortfolioItem(${item.id})" style="color: var(--danger); border-color: rgba(239, 68, 68, 0.3); padding: 3px 8px; font-size: 0.72rem;">
+                                                    🗑️ Delete
+                                                </button>
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            `}
+                        </div>
                     </div>
                 ` : ''}
 
