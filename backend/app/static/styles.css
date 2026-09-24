@@ -2713,22 +2713,32 @@ button:active, .btn:active, .nav-btn:active, .payment-tab-btn:active, .tab:activ
 
 .payment-search-box input {
     width: 100%;
-    padding: 8px 12px 8px 34px;
+    padding: 8px 32px 8px 36px;
     border-radius: var(--radius-sm);
-    border: 1px solid var(--border);
+    border: 1.5px solid var(--border);
     background: var(--bg-card);
     color: var(--text-primary);
     font-size: 0.85rem;
+    height: 38px;
+    box-sizing: border-box;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.payment-search-box input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(91, 52, 234, 0.12);
+    outline: none;
 }
 
 .payment-search-box svg {
     position: absolute;
-    left: 10px;
+    left: 12px;
     top: 50%;
     transform: translateY(-50%);
     width: 16px;
     height: 16px;
     color: var(--text-muted);
+    pointer-events: none;
 }
 
 .payment-transactions-list {

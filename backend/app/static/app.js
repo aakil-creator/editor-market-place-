@@ -2059,33 +2059,6 @@ function BuyerDashboard() {
             </div>
 
             <div class="main">
-                <!-- Buyer Clarification Guide Card -->
-                <div class="clarification-guide-card">
-                    <div style="font-size: 1.15rem; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
-                        <span>🛡️</span> Hire Video Editors &amp; English Tutors Safely
-                    </div>
-                    <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 3px;">
-                        Grove Hub guarantees 100% Escrow Protection. Your funds stay locked in the vault until you inspect and approve the completed work.
-                    </div>
-
-                    <div class="clarification-steps-grid">
-                        <div class="clarification-step-item">
-                            <span class="clarification-step-num">1</span>
-                            <strong style="color: var(--text-primary); font-size: 0.9rem;">Browse &amp; Compare Talent</strong>
-                            <span style="font-size: 0.8rem; color: var(--text-secondary);">Select from top Video Editors (YouTube, Reels) and certified English Tutors.</span>
-                        </div>
-                        <div class="clarification-step-item">
-                            <span class="clarification-step-num">2</span>
-                            <strong style="color: var(--text-primary); font-size: 0.9rem;">Chat Before Buying</strong>
-                            <span style="font-size: 0.8rem; color: var(--text-secondary);">Click "💬 Chat" on any creator to discuss raw footage, turnaround, or lesson goals.</span>
-                        </div>
-                        <div class="clarification-step-item">
-                            <span class="clarification-step-num">3</span>
-                            <strong style="color: var(--text-primary); font-size: 0.9rem;">Safe Escrow Checkout</strong>
-                            <span style="font-size: 0.8rem; color: var(--text-secondary);">Pay securely. Payout is only released after you inspect and accept the delivery.</span>
-                        </div>
-                    </div>
-                </div>
 
                 <!-- Active Purchases Bar (if buyer has orders) -->
                 ${activePurchases.length > 0 ? `
@@ -2154,19 +2127,19 @@ function BuyerDashboard() {
                         </button>
                         <button type="button" class="category-box-btn ${activeFilter === 'editors' ? 'active' : ''}" onclick="window.__setBuyerFilter('editors')">
                             <span class="chip-icon-box">${getCategoryPeekIconSvg('editors_animators', 32)}</span>
-                            <span class="category-box-label">Video Editors &amp; Animation</span>
+                            <span class="category-box-label">Video Editors</span>
                         </button>
                         <button type="button" class="category-box-btn ${activeFilter === 'tutors' ? 'active' : ''}" onclick="window.__setBuyerFilter('tutors')">
                             <span class="chip-icon-box">${getCategoryPeekIconSvg('tutors', 32)}</span>
-                            <span class="category-box-label">English Tutors &amp; IELTS</span>
+                            <span class="category-box-label">English Tutors</span>
                         </button>
                         <button type="button" class="category-box-btn ${activeFilter === 'writers' ? 'active' : ''}" onclick="window.__setBuyerFilter('writers')">
                             <span class="chip-icon-box">${getCategoryPeekIconSvg('writers', 32)}</span>
-                            <span class="category-box-label">Writers &amp; Social Copy</span>
+                            <span class="category-box-label">Writers &amp; Copy</span>
                         </button>
                         <button type="button" class="category-box-btn ${activeFilter === 'express' ? 'active' : ''}" onclick="window.__setBuyerFilter('express')">
                             <span class="chip-icon-box">${getCategoryPeekIconSvg('express', 32)}</span>
-                            <span class="category-box-label">24h Express Delivery</span>
+                            <span class="category-box-label">24h Express</span>
                         </button>
                     </div>
                 </div>
@@ -2364,11 +2337,14 @@ function providerWelcomeCard(profile) {
     return el`<div class="card" style="box-shadow: 0 10px 30px rgba(0,0,0,0.12); margin-bottom: 24px;">
         <div class="card-header">
             <div>
-                <div class="card-title" style="font-size: 1.25rem; font-weight: 800; color: var(--text-primary);">
-                    Welcome back, ${currentUser?.name || 'Creator'}
+                <div class="card-title" style="font-size: 1.25rem; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <span>Welcome back, ${currentUser?.name || 'Creator'}</span>
+                    <span style="font-size: 0.8125rem; font-weight: 700; color: var(--accent); background: rgba(99, 102, 241, 0.14); padding: 3px 10px; border-radius: 999px; border: 1px solid rgba(99, 102, 241, 0.3);">
+                        @${currentUser?.username || 'creator'}
+                    </span>
                 </div>
                 <div style="font-size: 0.8125rem; color: var(--text-secondary); margin-top: 3px;">
-                    Creator & Provider Command Center • 100% Escrow Protected
+                    Creator &amp; Provider Command Center • 100% Escrow Protected • groovehub.com/@${currentUser?.username || 'creator'}
                 </div>
             </div>
             <span class="badge badge-success" style="font-weight: 700; padding: 6px 12px; font-size: 0.8rem;">PROVIDER</span>
@@ -2386,7 +2362,7 @@ function providerWelcomeCard(profile) {
             </div>
             <div style="grid-column: span 2; background: var(--bg-hover); padding: 16px; border-radius: var(--radius-sm); border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                 <div>
-                    <div style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 4px;">Rating & Reputation</div>
+                    <div style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 4px;">Rating &amp; Reputation</div>
                     <div style="font-size: 1.4rem; font-weight: 800; color: var(--warning); display: flex; align-items: center; gap: 6px;">
                         <span>⭐</span>
                         <span>${profile?.rating ? Number(profile.rating).toFixed(1) : '5.0'}</span>
@@ -2399,8 +2375,9 @@ function providerWelcomeCard(profile) {
             </div>
         </div>
         <div class="card-footer" style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px;">
-            <button class="btn btn-primary" onclick="router('/packages')" style="flex: 1; min-width: 140px;">Manage Packages</button>
-            <button class="btn btn-secondary" onclick="router('/payments')" style="flex: 1; min-width: 140px;">💳 Earnings & Payouts</button>
+            <button class="btn btn-primary" onclick="setSettingsTab('portfolio'); router('/settings');" style="flex: 1; min-width: 150px;">📁 Upload Portfolios</button>
+            <button class="btn btn-secondary" onclick="router('/packages')" style="flex: 1; min-width: 140px;">Manage Packages</button>
+            <button class="btn btn-secondary" onclick="router('/payments')" style="flex: 1; min-width: 140px;">💳 Earnings &amp; Payouts</button>
             <button class="btn btn-secondary" onclick="router('/profile')" style="flex: 1; min-width: 120px;">Edit Profile</button>
         </div>
     </div>`;
@@ -4553,12 +4530,21 @@ function PaymentsPortal() {
                         </button>` : ''}
                     </div>
 
-                    <div class="payment-search-box payment-search-card" style="border: 2px solid var(--border); border-radius: 12px; padding: 6px 6px 6px 16px; display: flex; align-items: center; gap: 10px; transition: border-color 0.3s ease, box-shadow 0.3s ease; overflow: hidden;">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--text-muted); transition: all 0.3s ease; flex-shrink: 0;" id="payment-search-icon">
+                    <div class="payment-search-box" style="position: relative; min-width: 260px; max-width: 360px; flex: 1;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" id="payment-search-icon">
                             <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
                         </svg>
-                        <input type="text" id="payment-search-input" placeholder="Search by booking, title, or party..." value="${searchQuery}" oninput="PaymentsPortal.setSearch(this.value); PaymentsPortal.toggleSearchCard()" class="payment-search-input" style="border: none; background: transparent; padding: 8px 8px 8px 4px; font-size: 0.875rem; outline: none; width: 100%; color: var(--text-primary); transition: all 0.3s ease;">
-                        <span style="font-size: 0.625rem; color: var(--text-muted); transition: all 0.3s ease; white-space: nowrap;" id="payment-search-status">Type to search</span>
+                        <input 
+                            type="text" 
+                            id="payment-search-input" 
+                            placeholder="Search transactions..." 
+                            value="${searchQuery || ''}" 
+                            oninput="PaymentsPortal.setSearch(this.value)" 
+                            autocomplete="off"
+                        />
+                        ${searchQuery ? `
+                            <button type="button" onclick="PaymentsPortal.setSearch('')" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 0.95rem; line-height: 1; padding: 2px;" title="Clear search">✕</button>
+                        ` : ''}
                     </div>
                 </div>
 
@@ -4698,36 +4684,16 @@ function PaymentsPortal() {
     PaymentsPortal.setSearch = (val) => {
         searchQuery = val;
         mount(renderPaymentsPortal());
+        const input = document.getElementById('payment-search-input');
+        if (input) {
+            input.focus();
+            try {
+                input.setSelectionRange(input.value.length, input.value.length);
+            } catch (_) {}
+        }
     };
 
-    PaymentsPortal.toggleSearchCard = () => {
-        const input = document.getElementById('payment-search-input');
-        const card = document.querySelector('.payment-search-card');
-        const icon = document.getElementById('payment-search-icon');
-        const status = document.getElementById('payment-search-status');
-        if (!input) return;
-        if (card) {
-            card.classList.toggle('has-text', input.value.length > 0);
-            if (input.value.length > 0) {
-                card.style.borderColor = 'var(--accent)';
-                card.style.boxShadow = '0 0 0 3px rgba(91, 52, 234, 0.12)';
-            } else {
-                card.style.borderColor = 'var(--border)';
-                card.style.boxShadow = 'none';
-            }
-        }
-        if (icon && input.value.length > 0) {
-            icon.style.color = 'var(--accent)';
-            icon.style.transform = 'scale(0.9)';
-            setTimeout(() => { icon.style.transform = 'scale(1)'; }, 200);
-        }
-        if (status) {
-            status.textContent = input.value.length > 0 ? '✓ Found' : 'Type to search';
-            if (input.value.length > 0) {
-                setTimeout(() => { status.textContent = 'Type to search'; }, 2000);
-            }
-        }
-    };
+    PaymentsPortal.toggleSearchCard = () => {};
 
     PaymentsPortal.refresh = () => {
         loadPayments();
