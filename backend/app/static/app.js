@@ -407,7 +407,26 @@ function renderAppHeader(activeRoute = '') {
     </div>`;
 }
 window.renderAppHeader = renderAppHeader;
-window.renderAppHeader = renderAppHeader;
+
+function escapeJs(str) {
+    if (!str) return '';
+    return String(str).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"');
+}
+window.escapeJs = escapeJs;
+
+function openPreBookingChat(providerId, providerName) {
+    if (!currentToken) {
+        showToast('Please log in to chat with creators', 'info');
+        sessionStorage.setItem('redirect_after_login', `/messages?user_id=${providerId}`);
+        router('/login');
+        return;
+    }
+    window.__selectedChatUserId = providerId;
+    window.__selectedChatUserName = providerName || 'Creator';
+    router('/messages');
+}
+window.openPreBookingChat = openPreBookingChat;
+window.openProviderChatModal = openPreBookingChat;
 
 async function updateUnreadCountBadge() {
     if (!currentToken) return;
@@ -1877,15 +1896,24 @@ function ProviderDashboard() {
 function BuyerDashboard() {
     let packages = [];
     let bookings = [];
+    let providers = [];
     let loading = true;
     let activeFilter = 'all';
     let searchQuery = '';
+    let searchDebounceTimer = null;
 
     async function loadData() {
         showLoading();
         try {
-            try { packages = await apiFetch('/packages?limit=50'); } catch (_) { packages = []; }
-            try { bookings = await apiFetch('/bookings'); } catch (_) { bookings = []; }
+            const [pkgsRes, bksRes, edusRes] = await Promise.all([
+                apiFetch('/packages?limit=50').catch(() => []),
+                apiFetch('/bookings').catch(() => []),
+                apiFetch('/educators/summary').catch(() => [])
+            ]);
+            packages = Array.isArray(pkgsRes) ? pkgsRes : [];
+            bookings = Array.isArray(bksRes) ? bksRes : [];
+            providers = Array.isArray(edusRes) ? edusRes : [];
+            window.__cachedProviders = providers;
         } catch (e) {
             showToast(e.message || 'Error loading marketplace', 'error');
         } finally {
@@ -1907,30 +1935,54 @@ function BuyerDashboard() {
         const approvedPackages = Array.isArray(packages) ? packages.filter(p => p.status === 'approved' || !p.status) : [];
         const clientPurchases = Array.isArray(bookings) ? bookings : [];
         const activePurchases = clientPurchases.filter(b => b.status === 'in_progress' || b.status === 'confirmed' || b.status === 'delivered');
+        const allProviders = Array.isArray(providers) ? providers : [];
+
+        const q = (searchQuery || '').trim().toLowerCase();
 
         // Filter packages based on activeFilter and searchQuery
         const filteredPackages = approvedPackages.filter(p => {
-            const matchesQuery = !searchQuery || 
-                (p.title && p.title.toLowerCase().includes(searchQuery.toLowerCase())) ||
-                (p.description && p.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
-                (p.provider_name && p.provider_name.toLowerCase().includes(searchQuery.toLowerCase())) ||
-                (p.niche && p.niche.toLowerCase().includes(searchQuery.toLowerCase()));
+            const matchesQuery = !q || 
+                (p.title && p.title.toLowerCase().includes(q)) ||
+                (p.description && p.description.toLowerCase().includes(q)) ||
+                (p.provider_name && p.provider_name.toLowerCase().includes(q)) ||
+                (p.niche && p.niche.toLowerCase().includes(q));
 
             if (!matchesQuery) return false;
             if (activeFilter === 'editors') return (p.niche && (p.niche.includes('editor') || p.niche.includes('video'))) || (p.title && (p.title.toLowerCase().includes('video') || p.title.toLowerCase().includes('edit') || p.title.toLowerCase().includes('reel')));
             if (activeFilter === 'tutors') return (p.niche && p.niche.includes('tutor')) || (p.title && (p.title.toLowerCase().includes('english') || p.title.toLowerCase().includes('tutor') || p.title.toLowerCase().includes('ielts') || p.title.toLowerCase().includes('speaking')));
+            if (activeFilter === 'writers') return (p.niche && p.niche.includes('writer')) || (p.title && (p.title.toLowerCase().includes('writer') || p.title.toLowerCase().includes('copy') || p.title.toLowerCase().includes('script')));
             if (activeFilter === 'express') return (p.turnaround && (p.turnaround.toLowerCase().includes('24') || p.turnaround.toLowerCase().includes('1 day') || p.turnaround.toLowerCase().includes('immediate')));
             return true;
         });
+
+        // Filter providers based on activeFilter and searchQuery
+        const filteredProviders = allProviders.filter(pr => {
+            const skillsStr = (pr.skills || []).join(' ').toLowerCase();
+            const matchesQuery = !q ||
+                (pr.name && pr.name.toLowerCase().includes(q)) ||
+                (pr.niche && pr.niche.toLowerCase().includes(q)) ||
+                skillsStr.includes(q);
+
+            if (!matchesQuery) return false;
+            if (activeFilter === 'editors') return pr.niche === 'editors_animators' || skillsStr.includes('video') || skillsStr.includes('edit');
+            if (activeFilter === 'tutors') return pr.niche === 'tutors' || skillsStr.includes('english') || skillsStr.includes('tutor');
+            if (activeFilter === 'writers') return pr.niche === 'writers' || skillsStr.includes('write') || skillsStr.includes('copy');
+            if (activeFilter === 'express') return (pr.response_time && pr.response_time.includes('24')) || pr.availability === 'immediate';
+            return true;
+        });
+
+        const totalItems = filteredPackages.length + filteredProviders.length;
 
         return el`<div>
             ${renderAppHeader('/')}
 
             <!-- Clarification & Mode Substrip -->
             <div class="mode-bar-substrip">
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <span class="mode-badge-pill mode-badge-buyer">🛍️ Buyer Marketplace</span>
-                    <span>You are browsing Grove Hub as a <strong>Client</strong>. Want to offer your services?</span>
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <span class="mode-badge-pill mode-badge-buyer">🛍️ Buyer Mode</span>
+                    <span style="font-size: 0.84rem; color: var(--text-secondary);">
+                        Browse verified creators, chat before booking, and hire with 100% Escrow Protection.
+                    </span>
                 </div>
                 <button type="button" class="btn-switch-mode" onclick="toggleUserMode()">
                     💼 Switch to Provider Mode
@@ -1941,27 +1993,27 @@ function BuyerDashboard() {
                 <!-- Buyer Clarification Guide Card -->
                 <div class="clarification-guide-card">
                     <div style="font-size: 1.15rem; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
-                        <span>🛡️</span> Hire Video Editors & English Tutors Safely
+                        <span>🛡️</span> Hire Video Editors &amp; English Tutors Safely
                     </div>
-                    <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 2px;">
-                        Grove Hub guarantees 100% Escrow Protection. Your money is never sent directly to creators until you approve the work.
+                    <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 3px;">
+                        Grove Hub guarantees 100% Escrow Protection. Your funds stay locked in the vault until you inspect and approve the completed work.
                     </div>
 
                     <div class="clarification-steps-grid">
                         <div class="clarification-step-item">
                             <span class="clarification-step-num">1</span>
-                            <strong style="color: var(--text-primary); font-size: 0.9rem;">Browse & Compare Talent</strong>
+                            <strong style="color: var(--text-primary); font-size: 0.9rem;">Browse &amp; Compare Talent</strong>
                             <span style="font-size: 0.8rem; color: var(--text-secondary);">Select from top Video Editors (YouTube, Reels) and certified English Tutors.</span>
                         </div>
                         <div class="clarification-step-item">
                             <span class="clarification-step-num">2</span>
                             <strong style="color: var(--text-primary); font-size: 0.9rem;">Chat Before Buying</strong>
-                            <span style="font-size: 0.8rem; color: var(--text-secondary);">Click "💬 Chat" on any gig to discuss your vision, raw footage, or speaking goals.</span>
+                            <span style="font-size: 0.8rem; color: var(--text-secondary);">Click "💬 Chat" on any creator to discuss raw footage, turnaround, or lesson goals.</span>
                         </div>
                         <div class="clarification-step-item">
                             <span class="clarification-step-num">3</span>
                             <strong style="color: var(--text-primary); font-size: 0.9rem;">Safe Escrow Checkout</strong>
-                            <span style="font-size: 0.8rem; color: var(--text-secondary);">Pay securely. Funds stay in escrow vault until you inspect and accept the delivery.</span>
+                            <span style="font-size: 0.8rem; color: var(--text-secondary);">Pay securely. Payout is only released after you inspect and accept the delivery.</span>
                         </div>
                     </div>
                 </div>
@@ -1982,11 +2034,11 @@ function BuyerDashboard() {
                                 return `
                                 <div style="background: var(--bg-hover); padding: 12px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; gap: 8px;">
                                     <div>
-                                        <div style="font-weight: 700; font-size: 0.9rem;">Order #${b.id} • ${b.provider_name || 'Creator'}</div>
+                                        <div style="font-weight: 700; font-size: 0.9rem;">Order #${b.id} • ${escapeHTML(b.provider_name || 'Creator')}</div>
                                         <div style="font-size: 0.78rem; color: var(--text-secondary);">${dl.text}</div>
                                     </div>
                                     <div style="display: flex; gap: 6px;">
-                                        <button class="btn btn-secondary btn-sm" style="padding: 4px 10px; font-size: 0.75rem;" onclick="openPreBookingChat(${b.provider_id}, '${(b.provider_name || '').replace(/'/g, "\\'")}')">💬 Chat</button>
+                                        <button class="btn btn-secondary btn-sm" style="padding: 4px 10px; font-size: 0.75rem;" onclick="openPreBookingChat(${b.provider_id}, '${escapeJs(b.provider_name || '')}')">💬 Chat</button>
                                         <button class="btn btn-primary btn-sm" style="padding: 4px 10px; font-size: 0.75rem;" onclick="router('/bookings')">Details</button>
                                     </div>
                                 </div>
@@ -1997,47 +2049,74 @@ function BuyerDashboard() {
                 ` : ''}
 
                 <!-- Search & Category Filters -->
-                <div style="margin-bottom: 20px;">
+                <div style="margin-bottom: 24px;">
                     <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px;">
-                        <div style="position: relative; flex: 1; min-width: 240px;">
-                            <input 
-                                type="text" 
-                                id="buyer-search-input" 
-                                class="input" 
-                                placeholder="Search editors, IELTS tutors, Premiere Pro, DaVinci..." 
-                                value="${searchQuery}" 
-                                oninput="window.__handleBuyerSearch(this.value)"
-                                style="width: 100%; padding-left: 36px;"
-                            />
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-muted);">
-                                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                            </svg>
-                        </div>
+                        <form onsubmit="event.preventDefault(); window.__handleBuyerSearch(document.getElementById('buyer-search-input').value)" style="display: flex; gap: 8px; flex: 1; min-width: 260px;">
+                            <div style="position: relative; flex: 1;">
+                                <input 
+                                    type="text" 
+                                    id="buyer-search-input" 
+                                    class="form-input" 
+                                    placeholder="Search video editors, IELTS coaches, YouTube, Premiere Pro..." 
+                                    value="${escapeHTML(searchQuery)}" 
+                                    oninput="window.__handleBuyerSearchInput(this.value)"
+                                    style="margin: 0; padding-left: 40px;"
+                                />
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); pointer-events: none;">
+                                    <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                                </svg>
+                                ${searchQuery ? `
+                                    <button type="button" onclick="window.__clearBuyerSearch()" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 1rem; padding: 4px;" title="Clear search">✕</button>
+                                ` : ''}
+                            </div>
+                            <button type="submit" class="btn btn-primary" style="padding: 0 20px; font-weight: 700; white-space: nowrap;">
+                                Search
+                            </button>
+                        </form>
+                        <button class="btn btn-secondary" onclick="router('/providers')" style="white-space: nowrap; display: inline-flex; align-items: center; gap: 6px;">
+                            <span>🧭 Full Directory</span>
+                        </button>
                     </div>
 
                     <!-- Category Pills -->
-                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
                         <button class="filter-chip ${activeFilter === 'all' ? 'active' : ''}" onclick="window.__setBuyerFilter('all')">✨ All Services</button>
                         <button class="filter-chip ${activeFilter === 'editors' ? 'active' : ''}" onclick="window.__setBuyerFilter('editors')">🎬 Video Editors</button>
                         <button class="filter-chip ${activeFilter === 'tutors' ? 'active' : ''}" onclick="window.__setBuyerFilter('tutors')">🗣️ English Tutors</button>
+                        <button class="filter-chip ${activeFilter === 'writers' ? 'active' : ''}" onclick="window.__setBuyerFilter('writers')">✍️ Writers &amp; Copy</button>
                         <button class="filter-chip ${activeFilter === 'express' ? 'active' : ''}" onclick="window.__setBuyerFilter('express')">⚡ 24h Express</button>
                     </div>
                 </div>
 
-                <!-- Talent Showcase Grid -->
-                <div class="section-title">
-                    Available Services (${filteredPackages.length})
+                <!-- Talent Showcase Header -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 8px;">
+                    <div class="section-title" style="margin: 0; font-size: 1.15rem; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+                        <span>✨</span> Available Talent &amp; Services (${totalItems})
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <span style="font-size: 0.8125rem; color: var(--text-muted); font-weight: 600;">🛡️ 100% Escrow Protected</span>
+                        <button class="btn btn-secondary btn-sm" onclick="router('/providers')" style="padding: 5px 12px; font-size: 0.78rem;">
+                            Browse Full Directory →
+                        </button>
+                    </div>
                 </div>
 
-                ${filteredPackages.length === 0 ? `
-                    <div class="card" style="padding: 32px; text-align: center;">
-                        <div style="font-size: 2.4rem; margin-bottom: 8px;">🔍</div>
-                        <h4 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 6px;">No services matching your search</h4>
-                        <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 16px;">Try adjusting your keywords or switching filters.</p>
-                        <button class="btn btn-secondary btn-sm" onclick="window.__setBuyerFilter('all')">Reset Filters</button>
+                <!-- Talent Showcase Grid or Empty State -->
+                ${totalItems === 0 ? `
+                    <div class="card" style="padding: 40px 24px; text-align: center; border: 1.5px dashed var(--border); border-radius: var(--radius);">
+                        <div style="font-size: 2.8rem; margin-bottom: 12px;">🔍</div>
+                        <h4 style="font-size: 1.15rem; font-weight: 800; margin-bottom: 6px; color: var(--text-primary);">No services matching your search</h4>
+                        <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 20px; max-width: 440px; margin-left: auto; margin-right: auto;">
+                            We couldn't find any creators matching "${escapeHTML(searchQuery)}". Try clearing your keywords or exploring our full talent directory.
+                        </p>
+                        <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                            <button class="btn btn-secondary btn-sm" onclick="window.__setBuyerFilter('all'); window.__clearBuyerSearch();">Reset Filters</button>
+                            <button class="btn btn-primary btn-sm" onclick="router('/providers')">Open Full Talent Directory</button>
+                        </div>
                     </div>
                 ` : `
-                    <div class="grid grid-3">
+                    <div class="grid grid-3" style="gap: 20px;">
+                        <!-- 1. Render Specific Service Packages (if any) -->
                         ${filteredPackages.map(pkg => {
                             const isTutor = (pkg.niche && pkg.niche.includes('tutor')) || (pkg.title && pkg.title.toLowerCase().includes('english'));
                             const nicheBadge = isTutor ? '🗣️ English Tutor' : '🎬 Video Editing';
@@ -2045,43 +2124,101 @@ function BuyerDashboard() {
                             const initial = providerName.charAt(0).toUpperCase();
 
                             return `
-                            <div class="card fiverr-gig-card" style="display: flex; flex-direction: column; justify-content: space-between; overflow: hidden;">
+                            <div class="card fiverr-gig-card" style="display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg-card); transition: all 0.25s ease;">
                                 <div style="padding: 16px;">
                                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                                        <div style="display: flex; align-items: center; gap: 8px;">
-                                            <div style="width: 34px; height: 34px; border-radius: 50%; background: var(--accent); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem;">
+                                        <div style="display: flex; align-items: center; gap: 10px;">
+                                            <div style="width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #a855f7); color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.9rem;">
                                                 ${initial}
                                             </div>
                                             <div>
-                                                <div style="font-weight: 700; font-size: 0.9rem; color: var(--text-primary);">${providerName}</div>
+                                                <div style="font-weight: 700; font-size: 0.92rem; color: var(--text-primary);">${escapeHTML(providerName)}</div>
                                                 <div style="font-size: 0.72rem; color: var(--success); font-weight: 600;">🟢 Online now</div>
                                             </div>
                                         </div>
-                                        <span class="badge badge-info" style="font-size: 0.7rem;">${nicheBadge}</span>
+                                        <span class="badge badge-info" style="font-size: 0.7rem; padding: 4px 8px;">${nicheBadge}</span>
                                     </div>
 
-                                    <h4 style="font-size: 1rem; font-weight: 700; margin-bottom: 8px; color: var(--text-primary); line-height: 1.4;">${pkg.title}</h4>
+                                    <h4 style="font-size: 1rem; font-weight: 700; margin-bottom: 8px; color: var(--text-primary); line-height: 1.4;">${escapeHTML(pkg.title)}</h4>
                                     <p style="font-size: 0.8125rem; color: var(--text-secondary); line-height: 1.45; margin-bottom: 14px; min-height: 40px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
-                                        ${pkg.description || 'Custom tailored high quality service with 100% escrow protection and unlimited revisions.'}
+                                        ${escapeHTML(pkg.description || 'Custom tailored high quality service with 100% escrow protection and guaranteed turnaround.')}
                                     </p>
 
                                     <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 10px;">
-                                        <span>⏱️ ${pkg.turnaround || '24 hours'}</span>
+                                        <span>⏱️ ${escapeHTML(pkg.turnaround || '24 hours')}</span>
                                         <span>🔄 ${pkg.revision_limit || 2} revisions</span>
                                     </div>
                                 </div>
 
                                 <div class="card-footer" style="background: var(--bg-hover); padding: 12px 16px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; gap: 8px;">
                                     <div>
-                                        <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase;">Price</div>
+                                        <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Price</div>
                                         <div style="font-size: 1.25rem; font-weight: 800; color: var(--accent);">₹${(pkg.price || 0).toLocaleString()}</div>
                                     </div>
                                     <div style="display: flex; gap: 6px;">
-                                        <button class="btn btn-secondary btn-sm" onclick="openPreBookingChat(${pkg.provider_id}, '${providerName.replace(/'/g, "\\'")}')" title="Message creator before ordering">
+                                        <button class="btn btn-secondary btn-sm" onclick="openPreBookingChat(${pkg.provider_id}, '${escapeJs(providerName)}')" title="Message creator before ordering" style="padding: 6px 12px; font-weight: 700;">
                                             💬 Chat
                                         </button>
-                                        <button class="btn btn-primary btn-sm" onclick="selectProvider(${pkg.provider_id}, ${pkg.id})">
+                                        <button class="btn btn-primary btn-sm" onclick="selectProvider(${pkg.provider_id}, ${pkg.id})" style="padding: 6px 14px; font-weight: 700;">
                                             Order Now
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            `;
+                        }).join('')}
+
+                        <!-- 2. Render Verified Creators Showcase -->
+                        ${filteredProviders.map(pr => {
+                            const isTutor = pr.niche === 'tutors';
+                            const isWriter = pr.niche === 'writers';
+                            const nicheBadge = isTutor ? '🗣️ English Tutor' : (isWriter ? '✍️ Copywriter' : '🎬 Video Editing');
+                            const initial = (pr.name || 'C').charAt(0).toUpperCase();
+                            const startPrice = pr.starting_price || (isTutor ? 799 : (isWriter ? 1199 : 1499));
+                            const turnaround = pr.response_time || '24 hours';
+                            const headline = pr.specialization || (isTutor ? 'Conversational English & Fluency Coaching' : (isWriter ? 'High-Converting Copy & Content' : 'Professional Video Editing & Motion Graphics'));
+
+                            return `
+                            <div class="card fiverr-gig-card" style="display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg-card); transition: all 0.25s ease;">
+                                <div style="padding: 16px;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                                        <div style="display: flex; align-items: center; gap: 10px;">
+                                            <div style="width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #10b981, #059669); color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.9rem;">
+                                                ${initial}
+                                            </div>
+                                            <div>
+                                                <div style="font-weight: 700; font-size: 0.92rem; color: var(--text-primary); display: flex; align-items: center; gap: 4px;">
+                                                    ${escapeHTML(pr.name)}
+                                                    <span title="Verified Talent" style="color: var(--accent); font-size: 0.8rem;">✓</span>
+                                                </div>
+                                                <div style="font-size: 0.72rem; color: var(--success); font-weight: 600;">🟢 Online now</div>
+                                            </div>
+                                        </div>
+                                        <span class="badge badge-info" style="font-size: 0.7rem; padding: 4px 8px;">${nicheBadge}</span>
+                                    </div>
+
+                                    <h4 style="font-size: 1rem; font-weight: 700; margin-bottom: 8px; color: var(--text-primary); line-height: 1.4;">${escapeHTML(headline)}</h4>
+                                    <p style="font-size: 0.8125rem; color: var(--text-secondary); line-height: 1.45; margin-bottom: 14px; min-height: 40px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                                        100% Escrow Protected. Chat directly with ${escapeHTML(pr.name)} to discuss your requirements, custom footage, or turnaround.
+                                    </p>
+
+                                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 10px;">
+                                        <span>⚡ ${escapeHTML(turnaround)} turnaround</span>
+                                        <span style="color: var(--warning); font-weight: 700;">★ 5.0 (Verified)</span>
+                                    </div>
+                                </div>
+
+                                <div class="card-footer" style="background: var(--bg-hover); padding: 12px 16px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+                                    <div>
+                                        <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Starting at</div>
+                                        <div style="font-size: 1.25rem; font-weight: 800; color: var(--accent);">₹${startPrice.toLocaleString()}</div>
+                                    </div>
+                                    <div style="display: flex; gap: 6px;">
+                                        <button class="btn btn-secondary btn-sm" onclick="openPreBookingChat(${pr.id}, '${escapeJs(pr.name)}')" title="Message creator before ordering" style="padding: 6px 12px; font-weight: 700;">
+                                            💬 Chat
+                                        </button>
+                                        <button class="btn btn-primary btn-sm" onclick="selectProvider(${pr.id})" style="padding: 6px 14px; font-weight: 700;">
+                                            Hire Talent
                                         </button>
                                     </div>
                                 </div>
@@ -2096,13 +2233,26 @@ function BuyerDashboard() {
 
     // Attach search and filter handlers to window
     window.__handleBuyerSearch = (val) => {
-        searchQuery = val;
+        searchQuery = val || '';
         mount(renderMarketplace());
         const input = document.getElementById('buyer-search-input');
         if (input) {
             input.focus();
-            input.setSelectionRange(val.length, val.length);
+            try {
+                input.setSelectionRange(searchQuery.length, searchQuery.length);
+            } catch (_) {}
         }
+    };
+
+    window.__handleBuyerSearchInput = (val) => {
+        clearTimeout(searchDebounceTimer);
+        searchDebounceTimer = setTimeout(() => {
+            window.__handleBuyerSearch(val);
+        }, 250);
+    };
+
+    window.__clearBuyerSearch = () => {
+        window.__handleBuyerSearch('');
     };
 
     window.__setBuyerFilter = (filter) => {
@@ -2112,6 +2262,7 @@ function BuyerDashboard() {
 
     return renderMarketplace();
 }
+
 
 function providerWelcomeCard(profile) {
     return el`<div class="card" style="box-shadow: 0 10px 30px rgba(0,0,0,0.12); margin-bottom: 24px;">

@@ -4897,5 +4897,75 @@ button:active, .btn:active, .nav-btn:active, .payment-tab-btn:active, .tab:activ
     }
 }
 
+/* ==========================================================================
+   BUYER DASHBOARD & UNIVERSAL INPUT / FILTER CHIP STYLING
+   ========================================================================== */
 
+/* Universal Form & Search Input Theming */
+.input,
+input[type="text"],
+input[type="search"],
+input[type="email"],
+input[type="password"] {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    border-radius: var(--radius-sm);
+    font-family: inherit;
+    font-size: 0.875rem;
+    transition: border-color 0.22s var(--ease-smooth), box-shadow 0.22s var(--ease-smooth), background-color 0.22s ease;
+}
 
+.input:focus,
+input[type="text"]:focus,
+input[type="search"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+}
+
+input::placeholder,
+textarea::placeholder,
+.form-input::placeholder,
+.input::placeholder {
+    color: var(--text-muted);
+}
+
+/* Category Filter Chips */
+.filter-chip {
+    padding: 8px 16px;
+    border-radius: 999px;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    border: 1.5px solid var(--border);
+    cursor: pointer;
+    transition: all var(--trans-fast);
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    outline: none;
+    user-select: none;
+}
+
+.filter-chip:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+    border-color: var(--accent);
+    transform: translateY(-1px);
+}
+
+.filter-chip.active {
+    background: var(--accent);
+    color: #ffffff;
+    border-color: var(--accent);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.28);
+}
