@@ -367,7 +367,7 @@ function renderAppHeader(activeRoute = '') {
                 </button>
             </div>
             <div class="header-nav" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-                <button class="nav-btn ${activeRoute === '/' || activeRoute === '/providers' ? 'active' : ''}" onclick="router('/')">🔍 Browse Talent</button>
+                <button class="nav-btn ${activeRoute === '/' ? 'active' : ''}" onclick="router('/')">🏠 Home</button>
                 <button class="nav-btn ${activeRoute === '/messages' ? 'active' : ''}" onclick="router('/messages')" id="nav-btn-messages">
                     💬 Messages <span class="nav-unread-badge" id="header-unread-count" style="display:none; background:#ff4757; color:#fff; font-size:0.7rem; font-weight:700; padding:1px 6px; border-radius:10px; margin-left:4px;"></span>
                 </button>
@@ -382,9 +382,9 @@ function renderAppHeader(activeRoute = '') {
         </div>
         <!-- Buyer Mobile Bottom Nav -->
         <div class="mobile-bottom-nav">
-            <button class="bottom-nav-item ${activeRoute === '/' || activeRoute === '/providers' ? 'active' : ''}" onclick="router('/')">
+            <button class="bottom-nav-item ${activeRoute === '/' ? 'active' : ''}" onclick="router('/')">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                <span>Talent</span>
+                <span>Home</span>
             </button>
             <button class="bottom-nav-item ${activeRoute === '/messages' ? 'active' : ''}" onclick="router('/messages')" style="position: relative;">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
@@ -711,7 +711,7 @@ function router(path) {
     }
 
     const routes = {
-        '/': (currentToken ? Dashboard : Landing),
+        '/': (currentToken ? ProvidersList : Landing),
         '/welcome': (currentToken ? (currentUser?.user_type === 'ADMIN' ? AdminDashboard : WelcomePage) : Login),
         '/login': Login,
         '/register': Register,
@@ -1609,11 +1609,11 @@ window.startJourney = startJourney;
 
 // =============== QUICK NAV: VIDEO EDITORS & TUTORS ===============
 function goToVideoEditors() {
-    router('/providers');
+    router('/');
 }
 
 function goToTutors() {
-    router('/providers');
+    router('/');
 }
 
 // =============== WELCOME / START YOUR JOURNEY PAGE (POST-LOGIN) ===============
@@ -1649,7 +1649,8 @@ function WelcomePage() {
                         ${roleEmoji} ${roleLabel}
                     </span>
                 </div>
-                <button class="btn btn-secondary btn-sm" id="welcome-skip-btn" style="padding: 6px 14px; font-size: 0.8125rem; font-weight: 600; cursor: pointer;">
+                <button class="btn btn-secondary btn-sm" id="welcome-skip-btn" style="padding: 6px 14px; font-size: 0.8125rem; font-weight: 600; cursor: pointer;"
+                        onclick="router('/providers'); setTimeout(function(){ window.setProviderNiche && window.setProviderNiche(''); }, 200);">
                     Skip to App -->
                 </button>
             </div>
@@ -1796,7 +1797,7 @@ function WelcomePage() {
     if (exploreBtn) exploreBtn.onclick = () => {
         view.style.transition = 'opacity 0.2s ease';
         view.style.opacity = '0';
-        setTimeout(() => router('/providers'), 180);
+        setTimeout(() => router('/'), 180);
     };
 
     return view;
@@ -1815,7 +1816,6 @@ function Landing() {
                 ${renderLogo(34, true)}
             </div>
             <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-                <button class="nav-btn" onclick="router('/providers')" style="border: none; font-weight: 600; cursor: pointer;">Browse Talent</button>
                 <button class="nav-btn" onclick="router('/login')" style="border: none; font-weight: 600; cursor: pointer;">Sign In</button>
                 <button class="btn btn-primary" onclick="startJourney()" style="padding: 10px 22px; font-weight: 700; background: #5b34ea; border: none; cursor: pointer;">
                     Start your journey
@@ -1839,7 +1839,7 @@ function Landing() {
                             Start your journey
                         </button>
                         <div class="hero-cta-secondary">
-                            or <span class="hero-link-action" onclick="router('/providers')">See marketplace in action</span>
+                            or <span class="hero-link-action" onclick="router('/');">Explore marketplace</span>
                         </div>
                     </div>
                     <div class="hero-microcopy">
