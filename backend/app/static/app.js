@@ -2033,91 +2033,14 @@ function BuyerDashboard() {
 
         const totalItems = filteredPackages.length + filteredProviders.length;
 
-        const nicheConfigs = {
-            all: {
-                placeholder: 'Search all verified video editors, tutors, writers, packages...',
-                popularTags: [
-                    { label: '🎬 Video Editors', action: "window.__setBuyerFilter('editors')", active: false },
-                    { label: '🗣️ English Tutors', action: "window.__setBuyerFilter('tutors')", active: false },
-                    { label: '✍️ Writers & Copy', action: "window.__setBuyerFilter('writers')", active: false },
-                    { label: '⚡ 24h Express Delivery', action: "window.__setBuyerFilter('express')", active: false }
-                ],
-                subcardsTitle: null,
-                subcards: []
-            },
-            editors: {
-                placeholder: 'Search Video Ads, Reels & TikTok, YouTube, Gaming, After Effects...',
-                popularTags: [
-                    { label: '🎬 All Video Editing', action: "window.__applyPopularTag('', 'editors')", active: !searchQuery },
-                    { label: '🎬 Video Ads', action: "window.__applyPopularTag('Video Ads', 'editors')", active: q.includes('ad') },
-                    { label: '📱 Reels & TikTok', action: "window.__applyPopularTag('Reels', 'editors')", active: q.includes('reel') || q.includes('tiktok') },
-                    { label: '📺 YouTube Editing', action: "window.__applyPopularTag('YouTube', 'editors')", active: q.includes('youtube') },
-                    { label: '🎮 Gaming Edits', action: "window.__applyPopularTag('Gaming', 'editors')", active: q.includes('gaming') },
-                    { label: '🎨 Motion Graphics', action: "window.__applyPopularTag('Motion', 'editors')", active: q.includes('motion') },
-                    { label: '🎙️ Podcast Edits', action: "window.__applyPopularTag('Podcast', 'editors')", active: q.includes('podcast') }
-                ],
-                subcardsTitle: '🎬 Video Editing Specializations',
-                subcards: [
-                    { badge: '🎬 Video Ads', title: 'Video Ads & Commercials', desc: 'High-converting Meta, TikTok & YouTube promo ads', tag: 'Video Ads' },
-                    { badge: '📱 Social Media', title: 'Reels, Shorts & TikTok', desc: 'Viral hooks, dynamic captions, sound design & pacing', tag: 'Reels' },
-                    { badge: '📺 YouTube', title: 'YouTube & Gaming Edits', desc: 'Storytelling, B-roll, sound effects & thumbnail sync', tag: 'YouTube' },
-                    { badge: '🎨 Motion Design', title: 'Motion Graphics & VFX', desc: 'Custom intros, title animations, lower-thirds & 3D effects', tag: 'Motion' }
-                ]
-            },
-            tutors: {
-                placeholder: 'Search IELTS speaking, accent reduction, fluency, business English...',
-                popularTags: [
-                    { label: '🗣️ All English Tutors', action: "window.__applyPopularTag('', 'tutors')", active: !searchQuery },
-                    { label: '🗣️ Conversational Fluency', action: "window.__applyPopularTag('Fluency', 'tutors')", active: q.includes('fluency') },
-                    { label: '🎓 IELTS Speaking Prep', action: "window.__applyPopularTag('IELTS', 'tutors')", active: q.includes('ielts') },
-                    { label: '🎯 Accent Reduction', action: "window.__applyPopularTag('Accent', 'tutors')", active: q.includes('accent') },
-                    { label: '💼 Business English', action: "window.__applyPopularTag('Business', 'tutors')", active: q.includes('business') },
-                    { label: '📝 TOEFL & Exams', action: "window.__applyPopularTag('TOEFL', 'tutors')", active: q.includes('toefl') }
-                ],
-                subcardsTitle: '🗣️ English Tutoring Specializations',
-                subcards: [
-                    { badge: '🗣️ Fluency', title: '1-on-1 Conversational Practice', desc: 'Real-time speaking practice with certified coaches', tag: 'Fluency' },
-                    { badge: '🎓 IELTS Prep', title: 'IELTS Speaking & Mock Tests', desc: 'Band 7-9 strategy, live scoring feedback & mock exams', tag: 'IELTS' },
-                    { badge: '🎯 Accent', title: 'Accent Reduction & Clarity', desc: 'Master natural intonation, phonetics and clear speech', tag: 'Accent' },
-                    { badge: '💼 Business', title: 'Business English & Interviews', desc: 'Corporate communication, email etiquette & interview prep', tag: 'Business' }
-                ]
-            },
-            writers: {
-                placeholder: 'Search social captions, video scripts, ad copy, SEO blog posts...',
-                popularTags: [
-                    { label: '✍️ All Writers & Copy', action: "window.__applyPopularTag('', 'writers')", active: !searchQuery },
-                    { label: '📱 Social Media Captions', action: "window.__applyPopularTag('Captions', 'writers')", active: q.includes('caption') || q.includes('social') },
-                    { label: '🎬 Video Scripts', action: "window.__applyPopularTag('Script', 'writers')", active: q.includes('script') },
-                    { label: '📢 High-Converting Ad Copy', action: "window.__applyPopularTag('Ad Copy', 'writers')", active: q.includes('ad copy') },
-                    { label: '📰 SEO Blog Posts', action: "window.__applyPopularTag('Blog', 'writers')", active: q.includes('blog') },
-                    { label: '📧 Email Newsletters', action: "window.__applyPopularTag('Email', 'writers')", active: q.includes('email') }
-                ],
-                subcardsTitle: '✍️ Writing & Copywriting Specializations',
-                subcards: [
-                    { badge: '📱 Social Copy', title: 'Social Media Captions & Posts', desc: 'Engaging Instagram, LinkedIn & Twitter copywriting', tag: 'Captions' },
-                    { badge: '🎬 Video Scripts', title: 'YouTube & Reel Scriptwriting', desc: 'Hook-heavy, structured scripts designed for high retention', tag: 'Script' },
-                    { badge: '📢 Ad Copy', title: 'High-Converting Ad Copy', desc: 'Direct-response Facebook, Google & TikTok ad copy', tag: 'Ad Copy' },
-                    { badge: '📰 Articles', title: 'SEO Blog Posts & Web Copy', desc: 'Ranked search-optimized articles that drive traffic', tag: 'Blog' }
-                ]
-            },
-            express: {
-                placeholder: 'Search 24-hour rush delivery packages and creators...',
-                popularTags: [
-                    { label: '⚡ All 24h Express', action: "window.__applyPopularTag('', 'express')", active: !searchQuery },
-                    { label: '⚡ Rush Video Edits', action: "window.__applyPopularTag('video', 'express')", active: q.includes('video') },
-                    { label: '⚡ Same-Day Scripts', action: "window.__applyPopularTag('script', 'express')", active: q.includes('script') },
-                    { label: '⚡ Urgent IELTS Prep', action: "window.__applyPopularTag('ielts', 'express')", active: q.includes('ielts') }
-                ],
-                subcardsTitle: '⚡ 24h Express Delivery Services',
-                subcards: [
-                    { badge: '⚡ Rush Video', title: '24h Rush Video Editing', desc: 'Professional deliverables ready in under 24 hours', tag: 'video' },
-                    { badge: '⚡ Same-Day Copy', title: 'Same-Day Scripts & Copy', desc: 'Fast turnaround scripts, captions, and ad copy', tag: 'script' },
-                    { badge: '⚡ Express Tutoring', title: 'Immediate English Lessons', desc: 'Urgent mock interviews and emergency speaking prep', tag: 'ielts' }
-                ]
-            }
+        const placeholders = {
+            all: 'Search video editors, IELTS coaches, YouTube, Premiere Pro...',
+            editors: 'Search Video Ads, Reels & TikTok, YouTube, Gaming, After Effects...',
+            tutors: 'Search IELTS speaking, accent reduction, fluency, business English...',
+            writers: 'Search social captions, video scripts, ad copy, SEO blog posts...',
+            express: 'Search 24-hour rush delivery packages and creators...'
         };
-
-        const currentNiche = nicheConfigs[activeFilter] || nicheConfigs.all;
+        const currentPlaceholder = placeholders[activeFilter] || placeholders.all;
 
         return el`<div>
             ${renderAppHeader('/')}
@@ -2206,7 +2129,7 @@ function BuyerDashboard() {
                                     type="text" 
                                     id="buyer-search-input" 
                                     class="form-input buyer-search-input" 
-                                    placeholder="${currentNiche.placeholder}" 
+                                    placeholder="${currentPlaceholder}" 
                                     value="${escapeHTML(searchQuery)}" 
                                     oninput="window.__handleBuyerSearchInput(this.value)"
                                 />
@@ -2225,63 +2148,28 @@ function BuyerDashboard() {
 
                     <!-- Category Pills with Animated Icons (Snappy, Interactive) -->
                     <div class="category-chips-scroll-bar">
-                        <button type="button" class="filter-chip ${activeFilter === 'all' && !searchQuery ? 'active' : ''}" onclick="window.__applyPopularTag('', 'all')">
+                        <button type="button" class="filter-chip ${activeFilter === 'all' && !searchQuery ? 'active' : ''}" onclick="window.__setBuyerFilter('all')">
                             <span class="chip-icon-box">${getCategoryPeekIconSvg('all', 28)}</span>
                             <span>All Services</span>
                         </button>
-                        <button type="button" class="filter-chip ${activeFilter === 'editors' ? 'active' : ''}" onclick="window.__applyPopularTag('', 'editors')">
+                        <button type="button" class="filter-chip ${activeFilter === 'editors' ? 'active' : ''}" onclick="window.__setBuyerFilter('editors')">
                             <span class="chip-icon-box">${getCategoryPeekIconSvg('editors_animators', 28)}</span>
                             <span>Video Editors &amp; Animation</span>
                         </button>
-                        <button type="button" class="filter-chip ${activeFilter === 'tutors' ? 'active' : ''}" onclick="window.__applyPopularTag('', 'tutors')">
+                        <button type="button" class="filter-chip ${activeFilter === 'tutors' ? 'active' : ''}" onclick="window.__setBuyerFilter('tutors')">
                             <span class="chip-icon-box">${getCategoryPeekIconSvg('tutors', 28)}</span>
                             <span>English Tutors &amp; IELTS</span>
                         </button>
-                        <button type="button" class="filter-chip ${activeFilter === 'writers' ? 'active' : ''}" onclick="window.__applyPopularTag('', 'writers')">
+                        <button type="button" class="filter-chip ${activeFilter === 'writers' ? 'active' : ''}" onclick="window.__setBuyerFilter('writers')">
                             <span class="chip-icon-box">${getCategoryPeekIconSvg('writers', 28)}</span>
                             <span>Writers &amp; Social Copy</span>
                         </button>
-                        <button type="button" class="filter-chip ${activeFilter === 'express' ? 'active' : ''}" onclick="window.__applyPopularTag('', 'express')">
+                        <button type="button" class="filter-chip ${activeFilter === 'express' ? 'active' : ''}" onclick="window.__setBuyerFilter('express')">
                             <span class="chip-icon-box">${getCategoryPeekIconSvg('express', 28)}</span>
                             <span>24h Express Delivery</span>
                         </button>
                     </div>
-
-                    <!-- Niche-Specific Popular Search Tags (Shown Only for the Current Category) -->
-                    ${currentNiche.popularTags && currentNiche.popularTags.length > 0 ? `
-                        <div class="fiverr-popular-tags-row">
-                            <span class="popular-tags-label">${activeFilter === 'all' ? '🚀 Quick Explore:' : '🔥 Popular in ' + (activeFilter === 'editors' ? 'Video Editing' : activeFilter === 'tutors' ? 'English Tutoring' : activeFilter === 'writers' ? 'Writing' : '24h Express') + ':'}</span>
-                            ${currentNiche.popularTags.map(tag => `
-                                <button type="button" class="fiverr-popular-tag ${tag.active ? 'active' : ''}" onclick="${tag.action}">
-                                    ${tag.label}
-                                </button>
-                            `).join('')}
-                        </div>
-                    ` : ''}
                 </div>
-
-                <!-- Niche-Specific Subcategory Cards Showcase (Shown ONLY when inside a specific category) -->
-                ${currentNiche.subcards && currentNiche.subcards.length > 0 ? `
-                    <div class="fiverr-subcat-section">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
-                            <div style="font-size: 1.05rem; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
-                                <span>🚀</span> ${currentNiche.subcardsTitle || 'Specializations'}
-                            </div>
-                            <span style="font-size: 0.78rem; color: var(--text-muted);">Click any specialization to filter top creators</span>
-                        </div>
-
-                        <div class="fiverr-subcat-grid">
-                            ${currentNiche.subcards.map(sc => `
-                                <div class="fiverr-subcat-card" onclick="window.__applyPopularTag('${sc.tag}', '${activeFilter}')">
-                                    <div class="fiverr-subcat-badge" style="background: rgba(99, 102, 241, 0.15); color: var(--accent);">${sc.badge}</div>
-                                    <div class="fiverr-subcat-title">${sc.title}</div>
-                                    <div class="fiverr-subcat-desc">${sc.desc}</div>
-                                    <div class="fiverr-subcat-arrow">Browse ${sc.badge} →</div>
-                                </div>
-                            `).join('')}
-                        </div>
-                    </div>
-                ` : ''}
 
                 <!-- Talent Showcase Header -->
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 8px;">
