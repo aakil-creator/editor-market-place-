@@ -2197,6 +2197,7 @@ function Settings() {
 
     function renderSettingsView() {
         const isProvider = currentUser?.user_type === 'PROVIDER';
+        const isAdmin = currentUser?.user_type === 'ADMIN';
         const skillsFormatted = Array.isArray(profile?.skills)
             ? profile.skills.join(', ')
             : (typeof profile?.skills === 'string' ? profile.skills : '');
