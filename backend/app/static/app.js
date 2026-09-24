@@ -2042,6 +2042,57 @@ function BuyerDashboard() {
         };
         const currentPlaceholder = placeholders[activeFilter] || placeholders.all;
 
+        const categoryOptionsMap = {
+            all: [
+                { label: 'Video Ads', query: 'video ads', filter: 'editors', icon: '🎬' },
+                { label: 'Reels & TikTok', query: 'reel', filter: 'editors', icon: '📱' },
+                { label: 'English Fluency', query: 'speaking', filter: 'tutors', icon: '🗣️' },
+                { label: 'YouTube Videos', query: 'youtube', filter: 'editors', icon: '🎥' },
+                { label: 'Video Scripts', query: 'script', filter: 'writers', icon: '✍️' },
+                { label: '24h Express', query: '24', filter: 'express', icon: '⚡' }
+            ],
+            editors: [
+                { label: 'Video Ads', query: 'video ads', filter: 'editors', icon: '🎬' },
+                { label: 'Reels & TikTok', query: 'reel', filter: 'editors', icon: '📱' },
+                { label: 'YouTube Longform', query: 'youtube', filter: 'editors', icon: '🎥' },
+                { label: 'Gaming Montages', query: 'gaming', filter: 'editors', icon: '🎮' },
+                { label: 'Color Grading', query: 'color', filter: 'editors', icon: '🎨' },
+                { label: '24h Rush Delivery', query: '24', filter: 'editors', icon: '⚡' }
+            ],
+            tutors: [
+                { label: 'IELTS Speaking', query: 'ielts', filter: 'tutors', icon: '🗣️' },
+                { label: 'Accent Reduction', query: 'accent', filter: 'tutors', icon: '🎯' },
+                { label: 'Business English', query: 'business', filter: 'tutors', icon: '💼' },
+                { label: 'Daily Fluency', query: 'speaking', filter: 'tutors', icon: '💬' },
+                { label: 'Trial Session', query: 'trial', filter: 'tutors', icon: '⚡' }
+            ],
+            writers: [
+                { label: 'Video Scripts', query: 'script', filter: 'writers', icon: '✍️' },
+                { label: 'Ad Copywriting', query: 'copy', filter: 'writers', icon: '📈' },
+                { label: 'SEO Blog Posts', query: 'seo', filter: 'writers', icon: '📝' },
+                { label: 'Social Captions', query: 'caption', filter: 'writers', icon: '📱' }
+            ],
+            express: [
+                { label: '24h Video Edit', query: 'video', filter: 'express', icon: '🎬' },
+                { label: 'Instant English Lesson', query: 'english', filter: 'express', icon: '🗣️' },
+                { label: 'Express Script', query: 'script', filter: 'express', icon: '✍️' }
+            ]
+        };
+
+        const currentOptions = categoryOptionsMap[activeFilter] || categoryOptionsMap.all;
+        window.__currentBuyerFilter = activeFilter;
+        if (!window.__searchPlaceholderInterval) {
+            let placeholderIdx = 0;
+            window.__searchPlaceholderInterval = setInterval(() => {
+                const input = document.getElementById('buyer-search-input');
+                if (input && !input.value && document.activeElement !== input) {
+                    const opts = (categoryOptionsMap[window.__currentBuyerFilter || 'all'] || categoryOptionsMap.all);
+                    placeholderIdx = (placeholderIdx + 1) % opts.length;
+                    input.setAttribute('placeholder', `Search "${opts[placeholderIdx].label}"...`);
+                }
+            }, 2500);
+        }
+
         return el`<div>
             ${renderAppHeader('/')}
 
@@ -2093,7 +2144,7 @@ function BuyerDashboard() {
                 <!-- Search & Category Filters -->
                 <div style="margin-bottom: 24px;">
                     <div class="buyer-search-bar-row">
-                        <form onsubmit="event.preventDefault(); window.__handleBuyerSearch(document.getElementById('buyer-search-input').value)" class="buyer-search-form">
+                        <form onsubmit="event.preventDefault(); window.__handleBuyerSearchSubmit(document.getElementById('buyer-search-input').value)" class="buyer-search-form">
                             <div class="buyer-search-input-wrap">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18" class="buyer-search-icon">
                                     <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
@@ -2105,18 +2156,47 @@ function BuyerDashboard() {
                                     placeholder="${currentPlaceholder}" 
                                     value="${escapeHTML(searchQuery)}" 
                                     oninput="window.__handleBuyerSearchInput(this.value)"
+                                    autocomplete="off"
                                 />
                                 ${searchQuery ? `
                                     <button type="button" class="buyer-search-clear-btn" onclick="window.__clearBuyerSearch()" title="Clear search">✕</button>
                                 ` : ''}
                             </div>
-                            <button type="submit" class="btn btn-primary buyer-search-btn">
-                                Search
+                            <button type="submit" class="btn btn-primary buyer-search-btn buyer-search-btn-blinking" title="Click to search or explore options">
+                                <span class="search-btn-beacon"></span>
+                                <span class="search-btn-icon-sparkle">✨</span>
+                                <span>Search</span>
                             </button>
                         </form>
                         <button type="button" class="btn btn-secondary buyer-directory-btn" onclick="router('/providers')">
                             🧭 Full Directory
                         </button>
+                    </div>
+
+                    <!-- Animated Search Options Pills Row -->
+                    <div class="search-options-animated-bar">
+                        <div class="search-options-label">
+                            <span class="search-options-fire">🔥</span>
+                            <span>Popular Options:</span>
+                        </div>
+                        <div class="search-options-list">
+                            ${currentOptions.map((opt, idx) => {
+                                const isSelected = searchQuery.toLowerCase() === opt.query.toLowerCase();
+                                return `
+                                <button 
+                                    type="button" 
+                                    class="search-option-animated-chip ${isSelected ? 'active' : ''}" 
+                                    style="animation-delay: ${(idx * 0.05).toFixed(2)}s;"
+                                    onclick="${isSelected ? `window.__clearBuyerSearch()` : `window.__applyPopularTag('${escapeJs(opt.query)}', '${escapeJs(opt.filter)}')`}"
+                                    title="Filter by ${opt.label}"
+                                >
+                                    <span class="option-chip-icon">${opt.icon}</span>
+                                    <span class="option-chip-label">${opt.label}</span>
+                                    ${isSelected ? '<span class="option-chip-check">✓</span>' : ''}
+                                </button>
+                                `;
+                            }).join('')}
+                        </div>
                     </div>
 
                     <!-- Category Boxes with Animated Icons (Box Shape) -->
@@ -2288,6 +2368,22 @@ function BuyerDashboard() {
     }
 
     // Attach search and filter handlers to window
+    window.__handleBuyerSearchSubmit = (val) => {
+        if (!val || !val.trim()) {
+            const input = document.getElementById('buyer-search-input');
+            const bar = document.querySelector('.search-options-animated-bar');
+            if (bar) {
+                bar.classList.add('highlight-pulse');
+                setTimeout(() => bar.classList.remove('highlight-pulse'), 800);
+            }
+            if (input) {
+                input.focus();
+            }
+            return;
+        }
+        window.__handleBuyerSearch(val.trim());
+    };
+
     window.__handleBuyerSearch = (val) => {
         searchQuery = val || '';
         mount(renderMarketplace());
@@ -4963,20 +5059,24 @@ const fiverrCategoryConfigs = {
         searchPlaceholder: 'Search video editing, shorts, YouTube, Premiere Pro, motion design...',
         types: [
             { id: '', label: 'All Video Types', icon: '✨' },
-            { id: 'ads_social', label: 'Ads & social', icon: '📱', keywords: ['ads', 'social', 'tiktok', 'reels', 'shorts', 'meta', 'instagram', 'ad'] },
-            { id: 'youtube', label: 'YouTube videos', icon: '📺', keywords: ['youtube', 'long-form', 'vlog', 'retention', 'mrbeast', 'abdaal', 'podcast'] },
-            { id: 'corporate', label: 'Corporate videos', icon: '🏢', keywords: ['corporate', 'b2b', 'commercial', 'brand', 'presentation', 'business', 'event'] },
-            { id: 'gaming', label: 'Gaming videos', icon: '🎮', keywords: ['gaming', 'twitch', 'montage', 'meme', 'stream', 'gameplay', 'valorant', 'gta'] },
-            { id: 'family_travel', label: 'Family & travel', icon: '✈️', keywords: ['family', 'travel', 'vlog', 'drone', 'cinematic', 'vacation', 'wedding', 'trip'] },
-            { id: 'music', label: 'Music videos', icon: '🎬', keywords: ['music', 'rap', 'beat-sync', 'trippy', 'vfx', 'band', 'song', 'hip-hop'] }
+            { id: 'youtube', label: 'YouTube & Long-form', icon: '📺', keywords: ['youtube', 'long-form', 'vlog', 'retention', 'mrbeast', 'podcast', 'documentary', 'shorts'] },
+            { id: 'ads_social', label: 'Social Ads & Reels', icon: '📱', keywords: ['ads', 'social', 'tiktok', 'reels', 'shorts', 'meta', 'instagram', 'ad', 'ugc', 'hook'] },
+            { id: 'gaming', label: 'Gaming & Stream Edits', icon: '🎮', keywords: ['gaming', 'twitch', 'montage', 'meme', 'stream', 'gameplay', 'valorant', 'gta', 'esports', 'minecraft', 'highlight'] },
+            { id: 'animations', label: '2D/3D Animations', icon: '🎨', keywords: ['animation', '2d', '3d', 'character', 'whiteboard', 'explainer', 'blender', 'animated'] },
+            { id: 'motion_graphics', label: 'Motion Graphics & VFX', icon: '✨', keywords: ['motion graphics', 'motion', 'vfx', 'after effects', 'intro', 'titles', 'visual effects'] },
+            { id: 'music', label: 'Music Videos & Cinematic', icon: '🎬', keywords: ['music', 'rap', 'beat-sync', 'trippy', 'vfx', 'cinematic', 'band', 'song', 'hip-hop'] },
+            { id: 'corporate', label: 'Corporate & Commercials', icon: '🏢', keywords: ['corporate', 'b2b', 'commercial', 'brand', 'presentation', 'business', 'event', 'promo'] }
         ],
         serviceOptions: [
-            { id: '', label: 'All Styles' },
-            { id: 'short_form', label: 'Short-form & Reels', match: ['reel', 'short', 'tiktok'] },
-            { id: 'long_form', label: 'Long-form Cuts', match: ['long-form', 'youtube', 'documentary'] },
-            { id: 'color_grading', label: 'Color Grading & LUTs', match: ['color', 'grade', 'lut', 'davinci'] },
-            { id: 'sound_design', label: 'Sound Design & SFX', match: ['sound', 'audio', 'sfx', 'mix'] },
-            { id: 'motion_graphics', label: 'Motion Graphics', match: ['motion', 'after effects', 'animation', 'vfx'] }
+            { id: '', label: 'All Styles & Services' },
+            { id: 'youtube_cuts', label: '📺 YouTube Long-form & Retention Cuts', match: ['youtube', 'long-form', 'vlog', 'podcast', 'retention'] },
+            { id: 'social_ads_reels', label: '📱 Social Ads, Reels & TikTok Hooks', match: ['ad', 'social', 'reel', 'short', 'tiktok', 'ugc', 'meta'] },
+            { id: 'gaming_montages', label: '🎮 Gaming Montages & Stream Highlights', match: ['gaming', 'gameplay', 'montage', 'stream', 'twitch', 'esports'] },
+            { id: '2d_3d_animation', label: '🎨 2D & 3D Character Animation', match: ['animation', '2d', '3d', 'animated', 'character', 'explainer'] },
+            { id: 'motion_vfx', label: '✨ Motion Graphics, Intros & VFX', match: ['motion', 'after effects', 'vfx', 'visual effects', 'graphics'] },
+            { id: 'color_grading', label: '🌈 Color Grading & Cinematic LUTs', match: ['color', 'grade', 'lut', 'davinci', 'cinematic'] },
+            { id: 'sound_design', label: '🔊 Sound Design & SFX Audio Mixing', match: ['sound', 'audio', 'sfx', 'mix', 'voiceover', 'music'] },
+            { id: 'corporate_promo', label: '🏢 Corporate Commercials & Promos', match: ['corporate', 'commercial', 'brand', 'b2b', 'promo'] }
         ],
         sellerDetails: [
             { id: '', label: 'Any Seller' },
@@ -5515,17 +5615,20 @@ function ProvidersList() {
         }
         const text = `${provider.name || ''} ${(provider.skills || []).join(' ')} ${(provider.packages || []).map(p => (p.title + ' ' + (p.scope || ''))).join(' ')}`.toLowerCase();
 
-        if (text.includes('tiktok') || text.includes('reels') || text.includes('ads & social') || text.includes('ads')) {
+        if (text.includes('animation') || text.includes('2d') || text.includes('3d') || text.includes('character') || text.includes('blender') || text.includes('explainer')) {
+            return 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80';
+        }
+        if (text.includes('tiktok') || text.includes('reels') || text.includes('ads & social') || text.includes('ad') || text.includes('ugc')) {
             return 'https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=800&auto=format&fit=crop&q=80';
         }
-        if (text.includes('youtube') || text.includes('long-form')) {
+        if (text.includes('youtube') || text.includes('long-form') || text.includes('vlog') || text.includes('podcast')) {
             return 'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=800&auto=format&fit=crop&q=80';
+        }
+        if (text.includes('gaming') || text.includes('twitch') || text.includes('montage') || text.includes('stream') || text.includes('gameplay')) {
+            return 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&auto=format&fit=crop&q=80';
         }
         if (text.includes('corporate') || text.includes('b2b') || text.includes('commercial')) {
             return 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800&auto=format&fit=crop&q=80';
-        }
-        if (text.includes('gaming') || text.includes('twitch') || text.includes('montage')) {
-            return 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&auto=format&fit=crop&q=80';
         }
         if (text.includes('travel') || text.includes('drone') || text.includes('family')) {
             return 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800&auto=format&fit=crop&q=80';
@@ -5578,12 +5681,13 @@ function ProvidersList() {
     function getGigBadge(provider, cfg) {
         const text = `${(provider.skills || []).join(' ')} ${(provider.packages || []).map(p => p.title).join(' ')}`.toLowerCase();
 
-        if (text.includes('tiktok') || text.includes('reels') || text.includes('ads & social')) return 'VIRAL REELS & ADS';
-        if (text.includes('youtube')) return 'SHORT & LONG FORM';
-        if (text.includes('corporate')) return 'CORPORATE & B2B';
-        if (text.includes('gaming')) return 'GAMING & MEMES';
-        if (text.includes('travel')) return 'CINEMATIC 4K';
-        if (text.includes('music')) return 'MUSIC & TRIPPY VFX';
+        if (text.includes('animation') || text.includes('2d') || text.includes('3d') || text.includes('blender') || text.includes('character')) return '🎨 2D/3D ANIMATION MASTER';
+        if (text.includes('gaming') || text.includes('twitch') || text.includes('montage') || text.includes('gameplay')) return '🎮 GAMING & STREAM EDITS';
+        if (text.includes('tiktok') || text.includes('reels') || text.includes('ads & social') || text.includes('ugc') || text.includes('hook')) return '📱 VIRAL REELS & SOCIAL ADS';
+        if (text.includes('youtube') || text.includes('long-form') || text.includes('retention') || text.includes('podcast')) return '📺 YOUTUBE & LONG-FORM PRO';
+        if (text.includes('corporate') || text.includes('b2b') || text.includes('commercial')) return '🏢 CORPORATE & B2B PROMO';
+        if (text.includes('travel')) return '✈️ CINEMATIC 4K TRAVEL';
+        if (text.includes('music')) return '🎬 MUSIC & TRIPPY VFX';
 
         if (text.includes('conversational')) return '1-ON-1 FLUENCY COACH';
         if (text.includes('ielts') || text.includes('toefl')) return 'IELTS BAND 8+ MASTER';

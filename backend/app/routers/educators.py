@@ -84,14 +84,14 @@ def list_categories(
             "slug": "editors_animators",
             "description": "Video editors, motion graphic artists, 2D/3D animators, and thumbnail designers",
             "subcategories": [
-                {"id": "short_form", "name": "Short-form Editing", "description": "Reels, Shorts, TikTok editing (15-90s)"},
-                {"id": "long_form", "name": "Long-form Editing", "description": "YouTube videos, documentaries, courses (5min+)"},
-                {"id": "motion_graphics", "name": "Motion Graphics", "description": "Animated graphics, titles, lower-thirds, explainers"},
-                {"id": "2d_animation", "name": "2D Animation", "description": "Character animation, whiteboard, hand-drawn style"},
-                {"id": "3d_animation", "name": "3D Animation", "description": "3D modelling, rendering, product visualisation"},
-                {"id": "thumbnail_design", "name": "Thumbnail Design", "description": "YouTube thumbnails, click-worthy cover art"},
-                {"id": "color_grading", "name": "Color Grading", "description": "Colour correction, cinematic grading, LUTs"},
-                {"id": "sound_design", "name": "Sound Design", "description": "Audio cleanup, mixing, sound effects, music"},
+                {"id": "youtube_editing", "name": "YouTube & Retention Edits", "description": "Long-form YouTube videos, vlogs, podcasts, retention editing"},
+                {"id": "social_ads", "name": "Social Media Ads & Reels", "description": "High-converting UGC ads, TikToks, Instagram Reels, Shorts"},
+                {"id": "gaming_edits", "name": "Gaming Montages & Streams", "description": "Twitch stream highlights, gaming montages, meme edits, gameplay"},
+                {"id": "2d_3d_animation", "name": "2D & 3D Animations", "description": "Character animations, 3D modelling, whiteboard, explainer videos"},
+                {"id": "motion_graphics", "name": "Motion Graphics & VFX", "description": "Visual effects, animated intros, titles, lower thirds, After Effects"},
+                {"id": "corporate_promo", "name": "Corporate & Commercials", "description": "Brand promos, business commercials, real estate, event recaps"},
+                {"id": "music_cinematic", "name": "Music Videos & Cinematic", "description": "Beat-synced music videos, cinematic cuts, color grading"},
+                {"id": "sound_design", "name": "Sound Design & Audio SFX", "description": "Audio cleanup, mixing, sound effects, music mastering"},
             ]
         },
         {
