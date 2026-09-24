@@ -644,18 +644,19 @@ function AuthPortal(initialTab = 'login') {
             tabRegister.classList.remove('active');
             panelLogin.style.display = 'block';
             panelRegister.style.display = 'none';
-            labelGoogle.textContent = 'Continue with Google';
-            labelApple.textContent = 'Continue with Apple';
+            if (labelGoogle) labelGoogle.textContent = 'Continue with Google';
+            if (labelApple) labelApple.textContent = 'Continue with Apple';
             if (window.location.pathname !== '/login') history.pushState({}, '', '/login');
         } else {
             tabRegister.classList.add('active');
             tabLogin.classList.remove('active');
             panelRegister.style.display = 'block';
             panelLogin.style.display = 'none';
-            labelGoogle.textContent = 'Sign up with Google';
-            labelApple.textContent = 'Sign up with Apple';
+            if (labelGoogle) labelGoogle.textContent = 'Sign up with Google';
+            if (labelApple) labelApple.textContent = 'Sign up with Apple';
             if (window.location.pathname !== '/register') history.pushState({}, '', '/register');
         }
+        renderGoogleBtnIfReady();
     };
 
     tabLogin.onclick = () => switchTab('login');
@@ -668,16 +669,20 @@ function AuthPortal(initialTab = 'login') {
         const clientId = window.publicConfig?.google_client_id;
 
         if (window.google?.accounts?.id && clientId) {
-            // renderButton works best on div elements — convert if needed
+            const parent = googleBtn.parentNode;
+            const containerWidth = parent ? Math.max(220, Math.min(400, Math.floor(parent.clientWidth || parent.offsetWidth || 340))) : 340;
+
+            // renderButton works best on clean div containers without button styling
             if (googleBtn.tagName === 'BUTTON') {
-                const parent = googleBtn.parentNode;
                 const div = document.createElement('div');
                 div.id = googleBtn.id;
-                div.className = googleBtn.className;
-                div.style.cssText = 'width: 100%; display: flex; justify-content: center; min-height: 44px; margin: 0;';
-                div.innerHTML = googleBtn.innerHTML;
+                div.className = 'gis-btn-container';
+                div.style.cssText = 'width: 100%; display: flex; justify-content: center; align-items: center; min-height: 44px; margin: 0; padding: 0; background: transparent; border: none; box-shadow: none;';
                 parent.replaceChild(div, googleBtn);
                 googleBtn = div;
+            } else {
+                googleBtn.className = 'gis-btn-container';
+                googleBtn.style.cssText = 'width: 100%; display: flex; justify-content: center; align-items: center; min-height: 44px; margin: 0; padding: 0; background: transparent; border: none; box-shadow: none;';
             }
 
             try {
@@ -694,6 +699,7 @@ function AuthPortal(initialTab = 'login') {
                     cancel_on_tap_outside: true,
                 });
 
+                googleBtn.innerHTML = '';
                 window.google.accounts.id.renderButton(googleBtn, {
                     type: 'standard',
                     theme: 'outline',
@@ -701,7 +707,7 @@ function AuthPortal(initialTab = 'login') {
                     text: authPortalActiveTab === 'register' ? 'signup_with' : 'continue_with',
                     shape: 'rectangular',
                     logo_alignment: 'left',
-                    width: 380,
+                    width: containerWidth,
                 });
             } catch (e) {
                 console.warn('Google renderButton failed, falling back to manual sign-in:', e);

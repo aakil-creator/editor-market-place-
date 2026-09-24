@@ -798,6 +798,25 @@ h1, h2, h3, h4, h5, h6, .logo {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
 }
 
+.gis-btn-container {
+    width: 100% !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    min-height: 44px !important;
+    margin: 0 0 10px 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+.gis-btn-container iframe {
+    margin: 0 auto !important;
+    border-radius: var(--radius-sm) !important;
+    max-width: 100% !important;
+}
+
 .btn-apple {
     background: #000000;
     color: #ffffff;

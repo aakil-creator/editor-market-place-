@@ -488,7 +488,7 @@ def forgot_password(req: ForgotPasswordRequest, db = Depends(get_db)):
 
     # In production: send email with reset link
     # For demo, return the raw token so user can use it
-    return {"message": f"Reset token generated. Use this token to reset: {raw_token}"}
+    return {"message": f"Reset token generated. Use this token to reset: {raw_token}", "reset_token": raw_token}
 
 @api_app.post("/auth/reset-password/verify", response_model=ForgotPasswordResponse)
 def verify_reset_token(req: ResetPasswordWithTokenRequest, db = Depends(get_db)):

@@ -1,4 +1,11 @@
 # Security - password hashing and JWT
+import bcrypt
+# Passlib 1.7.4 compatibility fix for bcrypt >= 4.0.0
+if not hasattr(bcrypt, "__about__"):
+    class _BcryptAbout:
+        __version__ = getattr(bcrypt, "__version__", "4.0.1")
+    bcrypt.__about__ = _BcryptAbout()
+
 from passlib.context import CryptContext
 from datetime import datetime, timedelta
 from jose import jwt, JWTError
