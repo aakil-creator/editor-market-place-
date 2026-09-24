@@ -2146,27 +2146,27 @@ function BuyerDashboard() {
                         </button>
                     </div>
 
-                    <!-- Category Pills with Animated Icons (Snappy, Interactive) -->
-                    <div class="category-chips-scroll-bar">
-                        <button type="button" class="filter-chip ${activeFilter === 'all' && !searchQuery ? 'active' : ''}" onclick="window.__setBuyerFilter('all')">
-                            <span class="chip-icon-box">${getCategoryPeekIconSvg('all', 28)}</span>
-                            <span>All Services</span>
+                    <!-- Category Boxes with Animated Icons (Box Shape) -->
+                    <div class="category-boxes-grid">
+                        <button type="button" class="category-box-btn ${activeFilter === 'all' && !searchQuery ? 'active' : ''}" onclick="window.__setBuyerFilter('all')">
+                            <span class="chip-icon-box">${getCategoryPeekIconSvg('all', 32)}</span>
+                            <span class="category-box-label">All Services</span>
                         </button>
-                        <button type="button" class="filter-chip ${activeFilter === 'editors' ? 'active' : ''}" onclick="window.__setBuyerFilter('editors')">
-                            <span class="chip-icon-box">${getCategoryPeekIconSvg('editors_animators', 28)}</span>
-                            <span>Video Editors &amp; Animation</span>
+                        <button type="button" class="category-box-btn ${activeFilter === 'editors' ? 'active' : ''}" onclick="window.__setBuyerFilter('editors')">
+                            <span class="chip-icon-box">${getCategoryPeekIconSvg('editors_animators', 32)}</span>
+                            <span class="category-box-label">Video Editors &amp; Animation</span>
                         </button>
-                        <button type="button" class="filter-chip ${activeFilter === 'tutors' ? 'active' : ''}" onclick="window.__setBuyerFilter('tutors')">
-                            <span class="chip-icon-box">${getCategoryPeekIconSvg('tutors', 28)}</span>
-                            <span>English Tutors &amp; IELTS</span>
+                        <button type="button" class="category-box-btn ${activeFilter === 'tutors' ? 'active' : ''}" onclick="window.__setBuyerFilter('tutors')">
+                            <span class="chip-icon-box">${getCategoryPeekIconSvg('tutors', 32)}</span>
+                            <span class="category-box-label">English Tutors &amp; IELTS</span>
                         </button>
-                        <button type="button" class="filter-chip ${activeFilter === 'writers' ? 'active' : ''}" onclick="window.__setBuyerFilter('writers')">
-                            <span class="chip-icon-box">${getCategoryPeekIconSvg('writers', 28)}</span>
-                            <span>Writers &amp; Social Copy</span>
+                        <button type="button" class="category-box-btn ${activeFilter === 'writers' ? 'active' : ''}" onclick="window.__setBuyerFilter('writers')">
+                            <span class="chip-icon-box">${getCategoryPeekIconSvg('writers', 32)}</span>
+                            <span class="category-box-label">Writers &amp; Social Copy</span>
                         </button>
-                        <button type="button" class="filter-chip ${activeFilter === 'express' ? 'active' : ''}" onclick="window.__setBuyerFilter('express')">
-                            <span class="chip-icon-box">${getCategoryPeekIconSvg('express', 28)}</span>
-                            <span>24h Express Delivery</span>
+                        <button type="button" class="category-box-btn ${activeFilter === 'express' ? 'active' : ''}" onclick="window.__setBuyerFilter('express')">
+                            <span class="chip-icon-box">${getCategoryPeekIconSvg('express', 32)}</span>
+                            <span class="category-box-label">24h Express Delivery</span>
                         </button>
                     </div>
                 </div>
