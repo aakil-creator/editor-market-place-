@@ -5146,11 +5146,19 @@ textarea::placeholder,
     }
 }
 
-/* Category Filter Chips with Large Animated Icon Bubbles */
+/* Category Filter Chips with Animated Icon Bubbles */
+.category-chips-scroll-bar {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
 .filter-chip {
-    padding: 6px 22px 6px 8px;
+    padding: 6px 18px 6px 8px;
     border-radius: 999px;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     font-weight: 700;
     background: var(--bg-card);
     color: var(--text-secondary);
@@ -5160,8 +5168,8 @@ textarea::placeholder,
     white-space: nowrap;
     display: inline-flex;
     align-items: center;
-    gap: 12px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    gap: 10px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
     outline: none;
     user-select: none;
 }
@@ -5170,8 +5178,8 @@ textarea::placeholder,
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 50px;
-    height: 50px;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
     background: var(--bg-hover);
     flex-shrink: 0;
@@ -5180,7 +5188,7 @@ textarea::placeholder,
 
 .filter-chip:hover .chip-icon-box {
     transform: scale(1.15);
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
 }
 
 .filter-chip:hover {
@@ -5188,168 +5196,145 @@ textarea::placeholder,
     color: var(--text-primary);
     border-color: var(--accent);
     transform: translateY(-2px);
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
 }
 
 .filter-chip.active {
     background: var(--accent);
     color: #ffffff;
     border-color: var(--accent);
-    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+    box-shadow: 0 6px 18px rgba(99, 102, 241, 0.38);
 }
 
 .filter-chip.active .chip-icon-box {
-    background: rgba(255, 255, 255, 0.25);
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+    background: rgba(255, 255, 255, 0.22);
 }
 
-/* ==========================================================================
-   Category Showcase Grid & Large Block Cards (Photo Inspired Layout)
-   ========================================================================== */
-.category-grid-showcase {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 14px;
-    margin-bottom: 24px;
+/* Fiverr-Style Popular Search Tags Row */
+.fiverr-popular-tags-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
 }
 
-.category-block-card {
+.popular-tags-label {
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+.fiverr-popular-tag {
     background: var(--bg-card);
-    border: 2px solid var(--border);
-    border-radius: 16px;
-    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 4px 12px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text-secondary);
     cursor: pointer;
-    display: flex;
-    flex-direction: column;
-    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease, border-color 0.2s ease;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
-    user-select: none;
-    position: relative;
+    transition: all 0.2s ease;
+    white-space: nowrap;
 }
 
-.category-block-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.14);
+.fiverr-popular-tag:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+    border-color: var(--accent);
+    transform: translateY(-1px);
+}
+
+.fiverr-popular-tag.active {
+    background: var(--accent);
+    color: #ffffff;
     border-color: var(--accent);
 }
 
-.category-block-card.active {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 2.5px var(--accent), 0 10px 30px rgba(99, 102, 241, 0.28);
-    transform: translateY(-3px);
-}
-
-.category-card-header {
-    padding: 10px 8px;
-    font-size: 0.9rem;
-    font-weight: 800;
-    color: #ffffff;
-    text-align: center;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    letter-spacing: 0.2px;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
-}
-
-/* Color themed headers */
-.cat-all .category-card-header { background: linear-gradient(135deg, #4f46e5, #6366f1); }
-.cat-editors .category-card-header { background: linear-gradient(135deg, #6c5ce7, #8b5cf6); }
-.cat-tutors .category-card-header { background: linear-gradient(135deg, #059669, #10b981); }
-.cat-writers .category-card-header { background: linear-gradient(135deg, #0284c7, #38bdf8); }
-.cat-express .category-card-header { background: linear-gradient(135deg, #d97706, #f59e0b); }
-
-.cat-active-dot {
-    font-size: 0.75rem;
-    color: #ffffff;
-    animation: pulse 1.5s infinite;
-}
-
-.category-card-body {
-    padding: 18px 10px 16px 10px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
+/* Fiverr-Style Explore Services by Category Grid */
+.fiverr-subcat-section {
+    margin-bottom: 28px;
     background: var(--bg-card);
+    border: 1.5px solid var(--border);
+    border-radius: 16px;
+    padding: 18px 20px;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.04);
+}
+
+.fiverr-subcat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+}
+
+.fiverr-subcat-card {
+    background: var(--bg-surface, var(--bg-hover));
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px;
+    cursor: pointer;
+    transition: all 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 6px;
+}
+
+.fiverr-subcat-card:hover {
+    transform: translateY(-3px);
+    border-color: var(--accent);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+    background: var(--bg-hover);
+}
+
+.fiverr-subcat-badge {
+    display: inline-block;
+    font-size: 0.72rem;
+    font-weight: 800;
+    padding: 3px 8px;
+    border-radius: 6px;
+    align-self: flex-start;
+    margin-bottom: 4px;
+}
+
+.fiverr-subcat-title {
+    font-size: 0.92rem;
+    font-weight: 800;
+    color: var(--text-primary);
+}
+
+.fiverr-subcat-desc {
+    font-size: 0.76rem;
+    color: var(--text-secondary);
+    line-height: 1.35;
     flex: 1;
 }
 
-.category-large-circle {
-    width: 96px;
-    height: 96px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 12px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
-    border: 3.5px solid transparent;
-    flex-shrink: 0;
-}
-
-.category-block-card:hover .category-large-circle {
-    transform: scale(1.1) rotate(2deg);
-}
-
-/* Big circular illustrations matching role badges */
-.circle-all {
-    background: radial-gradient(circle, #3730a3 0%, #1e1b4b 100%);
-    border-color: #6366f1;
-}
-
-.circle-editors {
-    background: radial-gradient(circle, #4c1d95 0%, #2e1065 100%);
-    border-color: #a855f7;
-}
-
-.circle-tutors {
-    background: radial-gradient(circle, #064e3b 0%, #022c22 100%);
-    border-color: #10b981;
-}
-
-.circle-writers {
-    background: radial-gradient(circle, #075985 0%, #082f49 100%);
-    border-color: #38bdf8;
-}
-
-.circle-express {
-    background: radial-gradient(circle, #78350f 0%, #451a03 100%);
-    border-color: #f59e0b;
-}
-
-.category-card-tag {
+.fiverr-subcat-arrow {
     font-size: 0.75rem;
     font-weight: 700;
-    color: var(--text-secondary);
-    text-align: center;
-    line-height: 1.25;
+    color: var(--accent);
+    margin-top: 6px;
+    transition: transform 0.2s ease;
 }
 
-.category-block-card.active .category-card-tag {
-    color: var(--text-primary);
-    font-weight: 800;
-}
-
-@media (max-width: 1024px) {
-    .category-grid-showcase {
-        grid-template-columns: repeat(3, 1fr);
-    }
+.fiverr-subcat-card:hover .fiverr-subcat-arrow {
+    transform: translateX(3px);
 }
 
 @media (max-width: 640px) {
-    .category-grid-showcase {
+    .fiverr-subcat-grid {
         grid-template-columns: repeat(2, 1fr);
-        gap: 10px;
+        gap: 8px;
     }
-    .category-large-circle {
-        width: 78px;
-        height: 78px;
+    .fiverr-subcat-card {
+        padding: 10px 12px;
     }
-    .category-card-header {
-        font-size: 0.8125rem;
-        padding: 8px 6px;
+    .fiverr-subcat-title {
+        font-size: 0.84rem;
+    }
+    .fiverr-subcat-desc {
+        display: none;
     }
 }

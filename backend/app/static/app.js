@@ -2120,7 +2120,7 @@ function BuyerDashboard() {
                                     type="text" 
                                     id="buyer-search-input" 
                                     class="form-input buyer-search-input" 
-                                    placeholder="Search video editors, IELTS coaches, YouTube, Premiere Pro..." 
+                                    placeholder="Search video ads, Reels, YouTube editing, IELTS coaches, copy..." 
                                     value="${escapeHTML(searchQuery)}" 
                                     oninput="window.__handleBuyerSearchInput(this.value)"
                                 />
@@ -2137,71 +2137,99 @@ function BuyerDashboard() {
                         </button>
                     </div>
 
-                    <!-- Category Showcase Grid with Large Circular Icons (Photo Layout) -->
-                    <div class="category-grid-showcase">
-                        <div class="category-block-card cat-all ${activeFilter === 'all' ? 'active' : ''}" onclick="window.__setBuyerFilter('all')">
-                            <div class="category-card-header">
-                                <span>All Services</span>
-                                ${activeFilter === 'all' ? '<span class="cat-active-dot">●</span>' : ''}
-                            </div>
-                            <div class="category-card-body">
-                                <div class="category-large-circle circle-all">
-                                    ${getCategoryPeekIconSvg('all', 62)}
-                                </div>
-                                <div class="category-card-tag">All Verified Talent</div>
-                            </div>
+                    <!-- Fiverr-Style Popular Search Tags -->
+                    <div class="fiverr-popular-tags-row">
+                        <span class="popular-tags-label">🔥 Popular:</span>
+                        <button type="button" class="fiverr-popular-tag ${q.includes('video ad') || q.includes('ad') ? 'active' : ''}" onclick="window.__applyPopularTag('Video Ads', 'editors')">🎬 Video Ads</button>
+                        <button type="button" class="fiverr-popular-tag ${q.includes('reel') || q.includes('tiktok') ? 'active' : ''}" onclick="window.__applyPopularTag('Reels', 'editors')">📱 Reels &amp; TikTok</button>
+                        <button type="button" class="fiverr-popular-tag ${q.includes('youtube') ? 'active' : ''}" onclick="window.__applyPopularTag('YouTube', 'editors')">📺 YouTube Editing</button>
+                        <button type="button" class="fiverr-popular-tag ${q.includes('ielts') ? 'active' : ''}" onclick="window.__applyPopularTag('IELTS', 'tutors')">🗣️ IELTS Prep</button>
+                        <button type="button" class="fiverr-popular-tag ${q.includes('social') || q.includes('copy') ? 'active' : ''}" onclick="window.__applyPopularTag('Social Media Copy', 'writers')">✍️ Social Media Copy</button>
+                        <button type="button" class="fiverr-popular-tag ${q.includes('gaming') ? 'active' : ''}" onclick="window.__applyPopularTag('Gaming', 'editors')">🎮 Gaming Edits</button>
+                        <button type="button" class="fiverr-popular-tag ${activeFilter === 'express' ? 'active' : ''}" onclick="window.__applyPopularTag('', 'express')">⚡ 24h Rush Delivery</button>
+                    </div>
+
+                    <!-- Category Pills with Animated Icons (Snappy, Interactive) -->
+                    <div class="category-chips-scroll-bar">
+                        <button type="button" class="filter-chip ${activeFilter === 'all' && !searchQuery ? 'active' : ''}" onclick="window.__applyPopularTag('', 'all')">
+                            <span class="chip-icon-box">${getCategoryPeekIconSvg('all', 28)}</span>
+                            <span>All Services</span>
+                        </button>
+                        <button type="button" class="filter-chip ${activeFilter === 'editors' ? 'active' : ''}" onclick="window.__setBuyerFilter('editors')">
+                            <span class="chip-icon-box">${getCategoryPeekIconSvg('editors_animators', 28)}</span>
+                            <span>Video Editors &amp; Animation</span>
+                        </button>
+                        <button type="button" class="filter-chip ${activeFilter === 'tutors' ? 'active' : ''}" onclick="window.__setBuyerFilter('tutors')">
+                            <span class="chip-icon-box">${getCategoryPeekIconSvg('tutors', 28)}</span>
+                            <span>English Tutors &amp; IELTS</span>
+                        </button>
+                        <button type="button" class="filter-chip ${activeFilter === 'writers' ? 'active' : ''}" onclick="window.__setBuyerFilter('writers')">
+                            <span class="chip-icon-box">${getCategoryPeekIconSvg('writers', 28)}</span>
+                            <span>Writers &amp; Social Copy</span>
+                        </button>
+                        <button type="button" class="filter-chip ${activeFilter === 'express' ? 'active' : ''}" onclick="window.__setBuyerFilter('express')">
+                            <span class="chip-icon-box">${getCategoryPeekIconSvg('express', 28)}</span>
+                            <span>24h Express Delivery</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Fiverr-Style Explore Services by Category (Social Media, Video Ads, YouTube, Tutoring, Copy) -->
+                <div class="fiverr-subcat-section">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
+                        <div style="font-size: 1.05rem; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+                            <span>🚀</span> Explore Services by Category
+                        </div>
+                        <span style="font-size: 0.78rem; color: var(--text-muted);">Click any service to filter verified talent</span>
+                    </div>
+
+                    <div class="fiverr-subcat-grid">
+                        <!-- 1. Video Ads & Commercials -->
+                        <div class="fiverr-subcat-card" onclick="window.__applyPopularTag('Video Ads', 'editors')">
+                            <div class="fiverr-subcat-badge" style="background: rgba(108, 92, 231, 0.15); color: #6c5ce7;">🎬 Video Ads</div>
+                            <div class="fiverr-subcat-title">Video Ads &amp; Commercials</div>
+                            <div class="fiverr-subcat-desc">High-converting Meta, TikTok &amp; YouTube promo ads</div>
+                            <div class="fiverr-subcat-arrow">Browse Ads Talent →</div>
                         </div>
 
-                        <div class="category-block-card cat-editors ${activeFilter === 'editors' ? 'active' : ''}" onclick="window.__setBuyerFilter('editors')">
-                            <div class="category-card-header">
-                                <span>Video Editors</span>
-                                ${activeFilter === 'editors' ? '<span class="cat-active-dot">●</span>' : ''}
-                            </div>
-                            <div class="category-card-body">
-                                <div class="category-large-circle circle-editors">
-                                    ${getCategoryPeekIconSvg('editors_animators', 62)}
-                                </div>
-                                <div class="category-card-tag">Reels, YouTube &amp; Ads</div>
-                            </div>
+                        <!-- 2. Social Media, Reels & TikTok -->
+                        <div class="fiverr-subcat-card" onclick="window.__applyPopularTag('Reels', 'editors')">
+                            <div class="fiverr-subcat-badge" style="background: rgba(236, 72, 153, 0.15); color: #ec4899;">📱 Social Media</div>
+                            <div class="fiverr-subcat-title">Reels, Shorts &amp; TikTok</div>
+                            <div class="fiverr-subcat-desc">Viral hooks, dynamic captions, sound design &amp; pacing</div>
+                            <div class="fiverr-subcat-arrow">Browse Social Video →</div>
                         </div>
 
-                        <div class="category-block-card cat-tutors ${activeFilter === 'tutors' ? 'active' : ''}" onclick="window.__setBuyerFilter('tutors')">
-                            <div class="category-card-header">
-                                <span>English Tutors</span>
-                                ${activeFilter === 'tutors' ? '<span class="cat-active-dot">●</span>' : ''}
-                            </div>
-                            <div class="category-card-body">
-                                <div class="category-large-circle circle-tutors">
-                                    ${getCategoryPeekIconSvg('tutors', 62)}
-                                </div>
-                                <div class="category-card-tag">Fluency, IELTS &amp; Accent</div>
-                            </div>
+                        <!-- 3. YouTube Long-Form & Podcasts -->
+                        <div class="fiverr-subcat-card" onclick="window.__applyPopularTag('YouTube', 'editors')">
+                            <div class="fiverr-subcat-badge" style="background: rgba(239, 68, 68, 0.15); color: #ef4444;">📺 YouTube</div>
+                            <div class="fiverr-subcat-title">YouTube &amp; Gaming Edits</div>
+                            <div class="fiverr-subcat-desc">Storytelling, B-roll, sound effects &amp; thumbnail sync</div>
+                            <div class="fiverr-subcat-arrow">Browse YouTube Talent →</div>
                         </div>
 
-                        <div class="category-block-card cat-writers ${activeFilter === 'writers' ? 'active' : ''}" onclick="window.__setBuyerFilter('writers')">
-                            <div class="category-card-header">
-                                <span>Writers &amp; Copy</span>
-                                ${activeFilter === 'writers' ? '<span class="cat-active-dot">●</span>' : ''}
-                            </div>
-                            <div class="category-card-body">
-                                <div class="category-large-circle circle-writers">
-                                    ${getCategoryPeekIconSvg('writers', 62)}
-                                </div>
-                                <div class="category-card-tag">SEO, Scripts &amp; Blogs</div>
-                            </div>
+                        <!-- 4. English Fluency & IELTS Prep -->
+                        <div class="fiverr-subcat-card" onclick="window.__applyPopularTag('IELTS', 'tutors')">
+                            <div class="fiverr-subcat-badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">🗣️ English Coaching</div>
+                            <div class="fiverr-subcat-title">Fluency &amp; IELTS Prep</div>
+                            <div class="fiverr-subcat-desc">1-on-1 speaking practice, accent reduction &amp; interviews</div>
+                            <div class="fiverr-subcat-arrow">Browse Tutors →</div>
                         </div>
 
-                        <div class="category-block-card cat-express ${activeFilter === 'express' ? 'active' : ''}" onclick="window.__setBuyerFilter('express')">
-                            <div class="category-card-header">
-                                <span style="display: inline-flex; align-items: center; gap: 4px;">⚡ 24h Express</span>
-                                ${activeFilter === 'express' ? '<span class="cat-active-dot">●</span>' : ''}
-                            </div>
-                            <div class="category-card-body">
-                                <div class="category-large-circle circle-express">
-                                    ${getCategoryPeekIconSvg('express', 62)}
-                                </div>
-                                <div class="category-card-tag">Super Fast Turnaround</div>
-                            </div>
+                        <!-- 5. Social Copy & Ad Scripts -->
+                        <div class="fiverr-subcat-card" onclick="window.__applyPopularTag('Copy', 'writers')">
+                            <div class="fiverr-subcat-badge" style="background: rgba(14, 165, 233, 0.15); color: #0ea5e9;">✍️ Copywriting</div>
+                            <div class="fiverr-subcat-title">Ad Copy &amp; Scripts</div>
+                            <div class="fiverr-subcat-desc">Engaging video scripts, social captions &amp; SEO articles</div>
+                            <div class="fiverr-subcat-arrow">Browse Writers →</div>
+                        </div>
+
+                        <!-- 6. 24h Express Delivery -->
+                        <div class="fiverr-subcat-card" onclick="window.__applyPopularTag('', 'express')">
+                            <div class="fiverr-subcat-badge" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b;">⚡ 24h Rush</div>
+                            <div class="fiverr-subcat-title">24h Express Turnaround</div>
+                            <div class="fiverr-subcat-desc">Urgent deliverables delivered in less than 24 hours</div>
+                            <div class="fiverr-subcat-arrow">Browse Rush Talent →</div>
                         </div>
                     </div>
                 </div>
@@ -2376,6 +2404,19 @@ function BuyerDashboard() {
     window.__setBuyerFilter = (filter) => {
         activeFilter = filter;
         mount(renderMarketplace());
+    };
+
+    window.__applyPopularTag = (keyword, filter = null) => {
+        searchQuery = keyword || '';
+        if (filter) {
+            activeFilter = filter;
+        }
+        mount(renderMarketplace());
+        const input = document.getElementById('buyer-search-input');
+        if (input) {
+            input.value = searchQuery;
+            input.focus();
+        }
     };
 
     return renderMarketplace();
