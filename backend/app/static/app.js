@@ -481,11 +481,88 @@ function getCategoryPeekIconSvg(niche, size = 38) {
                 <circle cx="24" cy="24" r="3" fill="#ffffff"/>
                 <circle cx="13" cy="13" r="1.5" fill="#fde68a"/>
                 <circle cx="35" cy="14" r="1.8" fill="#fde68a"/>
-                <circle cx="33" cy="33" r="1.2" fill="#fde68a"/>
-            </g>
-        </svg>`;
+            <circle cx="33" cy="33" r="1.2" fill="#fde68a"/>
+        </g>
+    </svg>`;
     }
 }
+function getTypeIconSvg(typeId, fallbackIcon = '✨', size = 32) {
+    if (!typeId) {
+        return `<svg class="type-svg type-svg-all" style="width: ${size}px; height: ${size}px;" viewBox="0 0 36 36" fill="none">
+            <circle cx="18" cy="18" r="15" fill="rgba(245, 158, 11, 0.15)"/>
+            <path class="anim-sparkle" d="M18 4L21 14L31 17L21 20L18 30L15 20L5 17L15 14Z" fill="#f59e0b"/>
+            <circle cx="18" cy="17" r="2.5" fill="#fff"/>
+        </svg>`;
+    }
+    if (typeId === 'youtube') {
+        return `<svg class="type-svg type-svg-youtube" style="width: ${size}px; height: ${size}px;" viewBox="0 0 36 36" fill="none">
+            <rect x="3" y="6" width="30" height="24" rx="7" fill="#ef4444"/>
+            <path class="anim-yt-play" d="M14 12L24 18L14 24Z" fill="#ffffff"/>
+            <circle class="anim-pulse-dot" cx="28" cy="10" r="2" fill="#fecaca"/>
+        </svg>`;
+    }
+    if (typeId === 'ads_social') {
+        return `<svg class="type-svg type-svg-social" style="width: ${size}px; height: ${size}px;" viewBox="0 0 36 36" fill="none">
+            <defs>
+                <linearGradient id="gradSocial" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#ec4899"/>
+                    <stop offset="100%" stop-color="#8b5cf6"/>
+                </linearGradient>
+            </defs>
+            <rect x="8" y="4" width="20" height="28" rx="5" fill="url(#gradSocial)"/>
+            <rect x="10" y="7" width="16" height="20" rx="3" fill="#0f172a"/>
+            <path class="anim-heart" d="M18 13C16.5 11 13 12.5 13 15C13 18 18 21 18 21C18 21 23 18 23 15C23 12.5 19.5 11 18 13Z" fill="#ec4899"/>
+            <circle cx="18" cy="29" r="1.5" fill="#e2e8f0"/>
+        </svg>`;
+    }
+    if (typeId === 'gaming') {
+        return `<svg class="type-svg type-svg-gaming" style="width: ${size}px; height: ${size}px;" viewBox="0 0 36 36" fill="none">
+            <path d="M7 13C7 10 10 9 18 9C26 9 29 10 29 13L31 23C31.5 25.5 29 27.5 27 26L23 23H13L9 26C7 27.5 4.5 25.5 5 23L7 13Z" fill="#6366f1" stroke="#4338ca" stroke-width="1.5"/>
+            <path class="anim-dpad" d="M10 16H14M12 14V18" stroke="#a5b4fc" stroke-width="2" stroke-linecap="round"/>
+            <circle class="anim-btn-1" cx="22" cy="15" r="1.5" fill="#f43f5e"/>
+            <circle class="anim-btn-2" cx="25" cy="17" r="1.5" fill="#10b981"/>
+        </svg>`;
+    }
+    if (typeId === 'animations') {
+        return `<svg class="type-svg type-svg-anim" style="width: ${size}px; height: ${size}px;" viewBox="0 0 36 36" fill="none">
+            <path d="M18 4L30 11V25L18 32L6 25V11L18 4Z" fill="#8b5cf6" stroke="#6d28d9" stroke-width="1.2"/>
+            <path d="M18 4L18 18L30 11" stroke="#c4b5fd" stroke-width="1.2"/>
+            <path d="M18 18L6 11" stroke="#c4b5fd" stroke-width="1.2"/>
+            <path d="M18 18L18 32" stroke="#4c1d95" stroke-width="1.2"/>
+            <circle class="anim-orbit" cx="24" cy="8" r="2.5" fill="#fbbf24"/>
+        </svg>`;
+    }
+    if (typeId === 'motion_graphics') {
+        return `<svg class="type-svg type-svg-motion" style="width: ${size}px; height: ${size}px;" viewBox="0 0 36 36" fill="none">
+            <ellipse cx="18" cy="18" rx="14" ry="6" stroke="#38bdf8" stroke-width="1.5" transform="rotate(-25 18 18)" class="anim-ring-1"/>
+            <ellipse cx="18" cy="18" rx="14" ry="6" stroke="#f43f5e" stroke-width="1.5" transform="rotate(35 18 18)" class="anim-ring-2"/>
+            <circle cx="18" cy="18" r="4.5" fill="#38bdf8"/>
+            <circle cx="18" cy="18" r="2" fill="#fff"/>
+        </svg>`;
+    }
+    if (typeId === 'music') {
+        return `<svg class="type-svg type-svg-music" style="width: ${size}px; height: ${size}px;" viewBox="0 0 36 36" fill="none">
+            <rect class="eq-bar-1" x="7" y="16" width="3.5" height="12" rx="1.75" fill="#a855f7"/>
+            <rect class="eq-bar-2" x="13" y="10" width="3.5" height="18" rx="1.75" fill="#ec4899"/>
+            <rect class="eq-bar-3" x="19" y="6" width="3.5" height="22" rx="1.75" fill="#3b82f6"/>
+            <rect class="eq-bar-4" x="25" y="13" width="3.5" height="15" rx="1.75" fill="#10b981"/>
+        </svg>`;
+    }
+    if (typeId === 'corporate') {
+        return `<svg class="type-svg type-svg-corp" style="width: ${size}px; height: ${size}px;" viewBox="0 0 36 36" fill="none">
+            <rect x="6" y="12" width="11" height="18" rx="2" fill="#334155" stroke="#475569" stroke-width="1"/>
+            <rect x="19" y="6" width="11" height="24" rx="2" fill="#1e293b" stroke="#0ea5e9" stroke-width="1.2"/>
+            <line x1="10" y1="16" x2="13" y2="16" stroke="#94a3b8" stroke-width="1.5"/>
+            <line x1="10" y1="20" x2="13" y2="20" stroke="#94a3b8" stroke-width="1.5"/>
+            <line x1="23" y1="10" x2="26" y2="10" stroke="#38bdf8" stroke-width="1.5"/>
+            <line x1="23" y1="14" x2="26" y2="14" stroke="#38bdf8" stroke-width="1.5"/>
+            <line x1="23" y1="18" x2="26" y2="18" stroke="#38bdf8" stroke-width="1.5"/>
+            <path class="anim-arrow" d="M12 28L20 18L26 22L32 14" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>`;
+    }
+    return `<span style="font-size: ${Math.round(size * 0.7)}px; line-height: 1;">${fallbackIcon}</span>`;
+}
+window.getTypeIconSvg = getTypeIconSvg;
 window.getCategoryPeekIconSvg = getCategoryPeekIconSvg;
 
 async function updateUnreadCountBadge() {
@@ -2081,16 +2158,51 @@ function BuyerDashboard() {
 
         const currentOptions = categoryOptionsMap[activeFilter] || categoryOptionsMap.all;
         window.__currentBuyerFilter = activeFilter;
-        if (!window.__searchPlaceholderInterval) {
-            let placeholderIdx = 0;
-            window.__searchPlaceholderInterval = setInterval(() => {
+        window.__buyerCategoryOptionsMap = categoryOptionsMap;
+
+        if (!window.__placeholderBlinkLoopStarted) {
+            window.__placeholderBlinkLoopStarted = true;
+            let optIdx = 0;
+            setInterval(() => {
                 const input = document.getElementById('buyer-search-input');
-                if (input && !input.value && document.activeElement !== input) {
-                    const opts = (categoryOptionsMap[window.__currentBuyerFilter || 'all'] || categoryOptionsMap.all);
-                    placeholderIdx = (placeholderIdx + 1) % opts.length;
-                    input.setAttribute('placeholder', `Search "${opts[placeholderIdx].label}"...`);
+                const textEl = document.getElementById('placeholder-dynamic-text');
+                const holder = document.getElementById('search-animated-placeholder');
+
+                if (input && (input.value.trim().length > 0 || document.activeElement === input)) {
+                    if (holder && !holder.classList.contains('hidden')) {
+                        holder.classList.add('hidden');
+                    }
+                    return;
                 }
-            }, 2500);
+
+                if (holder && holder.classList.contains('hidden')) {
+                    holder.classList.remove('hidden');
+                }
+
+                if (!textEl) return;
+
+                const map = window.__buyerCategoryOptionsMap || {};
+                const opts = map[window.__currentBuyerFilter || 'all'] || map.all || [];
+                if (!opts.length) return;
+
+                optIdx = (optIdx + 1) % opts.length;
+                const nextOpt = opts[optIdx];
+
+                // 1. Blink out smoothly
+                textEl.classList.add('blink-out');
+                textEl.classList.remove('blink-in');
+
+                setTimeout(() => {
+                    // 2. Change text while faded
+                    textEl.textContent = `"${nextOpt.label}"`;
+                    textEl.classList.remove('blink-out');
+                    textEl.classList.add('blink-in');
+
+                    setTimeout(() => {
+                        textEl.classList.remove('blink-in');
+                    }, 400);
+                }, 280);
+            }, 2600);
         }
 
         return el`<div>
@@ -2149,13 +2261,19 @@ function BuyerDashboard() {
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18" class="buyer-search-icon">
                                     <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
                                 </svg>
+                                <div class="search-animated-placeholder ${searchQuery ? 'hidden' : ''}" id="search-animated-placeholder" onclick="const i=document.getElementById('buyer-search-input'); if(i){ i.focus(); }">
+                                    <span class="placeholder-prefix">Search</span>
+                                    <span class="placeholder-dynamic-text" id="placeholder-dynamic-text">"${currentOptions[0]?.label || 'Video Ads'}"</span>
+                                    <span class="placeholder-cursor">|</span>
+                                </div>
                                 <input 
                                     type="text" 
                                     id="buyer-search-input" 
                                     class="form-input buyer-search-input" 
-                                    placeholder="${currentPlaceholder}" 
                                     value="${escapeHTML(searchQuery)}" 
-                                    oninput="window.__handleBuyerSearchInput(this.value)"
+                                    oninput="window.__handleBuyerSearchInput(this.value); window.__updatePlaceholderVisibility();"
+                                    onfocus="window.__updatePlaceholderVisibility(true);"
+                                    onblur="window.__updatePlaceholderVisibility();"
                                     autocomplete="off"
                                 />
                                 ${searchQuery ? `
@@ -2368,6 +2486,17 @@ function BuyerDashboard() {
     }
 
     // Attach search and filter handlers to window
+    window.__updatePlaceholderVisibility = (forceHide = false) => {
+        const input = document.getElementById('buyer-search-input');
+        const holder = document.getElementById('search-animated-placeholder');
+        if (!holder) return;
+        if (forceHide || (input && (input.value.trim().length > 0 || document.activeElement === input))) {
+            holder.classList.add('hidden');
+        } else {
+            holder.classList.remove('hidden');
+        }
+    };
+
     window.__handleBuyerSearchSubmit = (val) => {
         if (!val || !val.trim()) {
             const input = document.getElementById('buyer-search-input');
@@ -2394,6 +2523,7 @@ function BuyerDashboard() {
                 input.setSelectionRange(searchQuery.length, searchQuery.length);
             } catch (_) {}
         }
+        window.__updatePlaceholderVisibility();
     };
 
     window.__handleBuyerSearchInput = (val) => {
@@ -2405,11 +2535,13 @@ function BuyerDashboard() {
 
     window.__clearBuyerSearch = () => {
         window.__handleBuyerSearch('');
+        setTimeout(() => window.__updatePlaceholderVisibility(), 30);
     };
 
     window.__setBuyerFilter = (filter) => {
         activeFilter = filter;
         mount(renderMarketplace());
+        setTimeout(() => window.__updatePlaceholderVisibility(), 30);
     };
 
     window.__applyPopularTag = (keyword, filter = null) => {
@@ -2423,6 +2555,7 @@ function BuyerDashboard() {
             input.value = searchQuery;
             input.focus();
         }
+        window.__updatePlaceholderVisibility(true);
     };
 
     return renderMarketplace();
@@ -6000,40 +6133,26 @@ function ProvidersList() {
 
                     <!-- Category Switcher Ribbon -->
                     <div class="fiverr-category-ribbon">
-                        <button class="fiverr-ribbon-btn" onclick="setProviderNiche('')" title="Back to All Categories">
-                            <svg class="ribbon-icon ribbon-sparkle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="14" height="14">
-                                <path d="M12 2l2.5 7.5L22 12l-7.5 2.5L12 22l-2.5-7.5L2 12l7.5-2.5L12 2z" fill="currentColor" fill-opacity="0.3" stroke="currentColor"/>
-                            </svg>
-                            All Talent
+                        <button class="fiverr-ribbon-btn ${providerSearchState.niche === '' ? 'active' : ''}" onclick="setProviderNiche('')" title="Back to All Categories">
+                            <span class="ribbon-icon-wrap">${getCategoryPeekIconSvg('all', 28)}</span>
+                            <span>All Talent</span>
                         </button>
                         ${providerSearchState.niche === '' || providerSearchState.niche === 'editors_animators' ? `
                             <button class="fiverr-ribbon-btn ${providerSearchState.niche === 'editors_animators' ? 'active' : ''}" onclick="setProviderNiche('editors_animators')">
-                                <svg class="ribbon-icon ribbon-clapper" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="16" height="16">
-                                    <rect x="2" y="7" width="20" height="12" rx="2" fill="currentColor" fill-opacity="0.15" stroke="currentColor"/>
-                                    <line x1="12" y1="7" x2="12" y2="19" stroke="currentColor" stroke-opacity="0.4"/>
-                                    <line x1="2" y1="13" x2="22" y2="13" stroke="currentColor" stroke-opacity="0.4"/>
-                                    <line x1="6" y1="7" x2="6" y2="19" stroke="currentColor" stroke-opacity="0.3"/>
-                                    <line x1="18" y1="7" x2="18" y2="19" stroke="currentColor" stroke-opacity="0.3"/>
-                                </svg>
-                                Video Editing
+                                <span class="ribbon-icon-wrap">${getCategoryPeekIconSvg('editors_animators', 28)}</span>
+                                <span>Video &amp; Animation</span>
                             </button>
                         ` : ''}
                         ${providerSearchState.niche === '' || providerSearchState.niche === 'tutors' ? `
                             <button class="fiverr-ribbon-btn ${providerSearchState.niche === 'tutors' ? 'active' : ''}" onclick="setProviderNiche('tutors')">
-                                <svg class="ribbon-icon ribbon-person" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="16" height="16">
-                                    <circle cx="12" cy="8" r="4" fill="currentColor" fill-opacity="0.15" stroke="currentColor"/>
-                                    <path d="M4 20c0-4.4 3.6-8 8-8s8 3.6 8 8" fill="currentColor" fill-opacity="0.15" stroke="currentColor"/>
-                                </svg>
-                                English Tutors
+                                <span class="ribbon-icon-wrap">${getCategoryPeekIconSvg('tutors', 28)}</span>
+                                <span>English Tutors</span>
                             </button>
                         ` : ''}
                         ${providerSearchState.niche === '' || providerSearchState.niche === 'writers' ? `
                             <button class="fiverr-ribbon-btn ${providerSearchState.niche === 'writers' ? 'active' : ''}" onclick="setProviderNiche('writers')">
-                                <svg class="ribbon-icon ribbon-pen" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="16" height="16">
-                                    <path d="M12 19l-8-8c-1.5-1.5-1.5-4 0-5.5c1.5-1.5 4-1.5 5.5 0l7.5 7.5c1.5 1.5 1.5 4 0 5.5l-2.5 2.5" fill="none" stroke="currentColor"/>
-                                    <path d="M12 19l-4-4" fill="none" stroke="currentColor" stroke-opacity="0.4"/>
-                                </svg>
-                                Content &amp; Copywriting
+                                <span class="ribbon-icon-wrap">${getCategoryPeekIconSvg('writers', 28)}</span>
+                                <span>Writers &amp; Copy</span>
                             </button>
                         ` : ''}
                     </div>
@@ -6068,8 +6187,10 @@ function ProvidersList() {
                                     class="fiverr-type-pill ${providerSearchState.subType === vt.id ? 'active' : ''}"
                                     onclick="setFiverrSubType('${vt.id}')"
                                 >
-                                    <div class="fiverr-type-icon">${vt.icon}</div>
-                                    <div class="fiverr-type-label">${vt.label}</div>
+                                    <div class="fiverr-type-icon">${getTypeIconSvg(vt.id, vt.icon, 34)}</div>
+                                    <div class="fiverr-type-label-box">
+                                        <div class="fiverr-type-label">${vt.label}</div>
+                                    </div>
                                 </div>
                             `).join('')}
                         </div>
