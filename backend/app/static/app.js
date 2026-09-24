@@ -1610,13 +1610,10 @@ window.startJourney = startJourney;
 // =============== QUICK NAV: VIDEO EDITORS & TUTORS ===============
 function goToVideoEditors() {
     router('/providers');
-    // Set niche after router renders
-    setTimeout(() => { window.setProviderNiche && window.setProviderNiche('editors_animators'); }, 100);
 }
 
 function goToTutors() {
     router('/providers');
-    setTimeout(() => { window.setProviderNiche && window.setProviderNiche('tutors'); }, 100);
 }
 
 // =============== WELCOME / START YOUR JOURNEY PAGE (POST-LOGIN) ===============
