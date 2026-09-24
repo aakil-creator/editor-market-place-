@@ -722,10 +722,8 @@ function router(path) {
         '/create-package': (currentToken ? CreatePackage : Login),
         '/bookings': (currentToken ? BookingsList : Login),
         '/create-booking': (currentToken ? CreateBooking : Login),
-        '/providers': (currentToken ? ProvidersList : Login),
         '/messages': (currentToken ? MessagesInbox : Login),
         '/admin': (currentToken ? AdminDashboard : Login),
-        '/admin/niches': (currentToken ? AdminNiches : Login),
         '/admin/providers': (currentToken ? AdminProviders : Login),
         '/admin/bookings': (currentToken ? AdminBookings : Login),
         '/admin/disputes': (currentToken ? AdminDisputes : Login),
@@ -1633,7 +1631,7 @@ function WelcomePage() {
     const getDestination = () => {
         if (isAdmin) return '/admin';
         if (isProvider) return '/packages';
-        return '/providers';
+        return '/';
     };
 
     const view = el`<div>
@@ -1650,7 +1648,7 @@ function WelcomePage() {
                     </span>
                 </div>
                 <button class="btn btn-secondary btn-sm" id="welcome-skip-btn" style="padding: 6px 14px; font-size: 0.8125rem; font-weight: 600; cursor: pointer;"
-                        onclick="router('/providers'); setTimeout(function(){ window.setProviderNiche && window.setProviderNiche(''); }, 200);">
+                        onclick="router('/'); setTimeout(function(){ window.setProviderNiche && window.setProviderNiche(''); }, 200);">
                     Skip to App -->
                 </button>
             </div>
@@ -2541,7 +2539,7 @@ function BuyerDashboard() {
                     </div>
                     <div style="display: flex; align-items: center; gap: 12px;">
                         <span style="font-size: 0.8125rem; color: var(--text-muted); font-weight: 600;">🛡️ 100% Escrow Protected</span>
-                        <button class="btn btn-secondary btn-sm" onclick="router('/providers')" style="padding: 5px 12px; font-size: 0.78rem;">
+                        <button class="btn btn-secondary btn-sm" onclick="router('/')" style="padding: 5px 12px; font-size: 0.78rem;">
                             Browse Full Directory →
                         </button>
                     </div>
@@ -2557,7 +2555,7 @@ function BuyerDashboard() {
                         </p>
                         <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
                             <button class="btn btn-secondary btn-sm" onclick="window.__setBuyerFilter('all'); window.__clearBuyerSearch();">Reset Filters</button>
-                            <button class="btn btn-primary btn-sm" onclick="router('/providers')">Open Full Talent Directory</button>
+                            <button class="btn btn-primary btn-sm" onclick="router('/')">Open Full Talent Directory</button>
                         </div>
                     </div>
                 ` : `
@@ -2826,7 +2824,7 @@ function buyerWelcomeCard(recentBookings = []) {
                 </div>
             </div>
             <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-                <button class="btn btn-primary" onclick="router('/providers')">+ Hire Video Editor / Coach</button>
+                <button class="btn btn-primary" onclick="router('/')">+ Hire Video Editor / Coach</button>
                 <button class="btn btn-secondary" onclick="router('/payments')">💳 Escrow Vault</button>
             </div>
         </div>
@@ -3032,7 +3030,7 @@ function buyerSection(recentBookings) {
                     </svg>
                     <h3>No active bookings yet</h3>
                     <p>Browse top-rated video editors and English coaches, and hire with 100% escrow protection.</p>
-                    <button class="btn btn-primary" onclick="router('/providers')">Browse Talent Now</button>
+                    <button class="btn btn-primary" onclick="router('/')">Browse Talent Now</button>
                 </div>
             </div>
         `}
@@ -4133,7 +4131,7 @@ function BookingsList() {
                                 <h3>No bookings yet</h3>
                                 <p>Browse verified editors and English tutors to find the right talent for your project.</p>
                                 <div class="flex gap-2 mt-4" style="justify-content: center;">
-                                    <button class="btn btn-primary btn-sm" onclick="router('/providers')">Browse Talent</button>
+                                    <button class="btn btn-primary btn-sm" onclick="router('/')">Browse Talent</button>
                                     <button class="btn btn-secondary btn-sm" onclick="router('/create-booking')">New Booking</button>
                                 </div>
                             </div>
@@ -4613,7 +4611,7 @@ function CreateBooking() {
             ${renderAppHeader('/create-booking')}
             <div class="main">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
-                    <button class="fiverr-back-btn" onclick="router('/providers')">
+                    <button class="fiverr-back-btn" onclick="router('/')">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
                             <line x1="19" y1="12" x2="5" y2="12"></line>
                             <polyline points="12 19 5 12 12 5"></polyline>
@@ -4842,7 +4840,7 @@ function PaymentsPortal() {
                         </svg>
                         <span><-- Back to Dashboard</span>
                     </button>
-                    <button class="fiverr-back-btn" onclick="router('/providers')" style="opacity: 0.85;">
+                    <button class="fiverr-back-btn" onclick="router('/')" style="opacity: 0.85;">
                         <span>🌟 Browse Talent</span>
                     </button>
                 </div>
@@ -5689,8 +5687,8 @@ function ProvidersList() {
         if (textEl && opts[0]) {
             textEl.textContent = `"${opts[0].label}"`;
         }
-        if (window.location.pathname !== '/providers') {
-            router('/providers');
+        if (window.location.pathname !== '/') {
+            router('/');
         } else {
             loadProviders();
         }
@@ -6394,7 +6392,7 @@ function ProvidersList() {
         }
 
         return el`<div>
-            ${renderAppHeader('/providers')}
+            ${renderAppHeader('/')}
             ${renderLeftEdgePeekDock(providerSearchState.niche)}
             <div class="main">
                 <!-- Search Bar with Dynamic Animated Rotating Placeholder & Blinking Search Button -->
@@ -8712,7 +8710,7 @@ function MessagesInbox() {
                     <div style="font-size: 2.2rem; margin-bottom: 8px;">💬</div>
                     <div style="font-weight: 700; color: var(--text-primary); margin-bottom: 4px;">No messages yet</div>
                     <p style="font-size: 0.8125rem; line-height: 1.4; margin-bottom: 16px;">Browse verified video editors and english tutors to start talking directly.</p>
-                    <button class="btn btn-primary btn-sm" onclick="router('/providers')">Browse Talent</button>
+                    <button class="btn btn-primary btn-sm" onclick="router('/')">Browse Talent</button>
                 </div>
             `;
         }
@@ -8756,7 +8754,7 @@ function MessagesInbox() {
                     </div>
                     <h3 style="margin: 0 0 6px 0; color: var(--text-primary); font-weight: 800;">Your Groove Hub Inbox</h3>
                     <p style="font-size: 0.85rem; max-width: 380px; line-height: 1.45; margin: 0 0 18px 0;">Select a conversation on the left, or browse talent to talk with creators before placing your order.</p>
-                    <button class="btn btn-primary" onclick="router('/providers')">Explore Creators</button>
+                    <button class="btn btn-primary" onclick="router('/')">Explore Creators</button>
                 </div>
             `;
         }
