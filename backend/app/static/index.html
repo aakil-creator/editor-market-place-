@@ -24,7 +24,7 @@
     <link rel="manifest" href="/manifest.json">
     <link rel="stylesheet" href="/styles.css?v=20260924-v27-gis-button-fix">
     <!-- Google Identity Services (GIS) for real Google Single Sign-On -->
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="https://accounts.google.com/gsi/client" async defer onload="if(window.__refreshGoogleBtn) window.__refreshGoogleBtn();"></script>
     <!-- Razorpay Checkout for live UPI / Cards / Net Banking Payments -->
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 </head>

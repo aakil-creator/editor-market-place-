@@ -798,7 +798,8 @@ h1, h2, h3, h4, h5, h6, .logo {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
 }
 
-.gis-btn-container {
+.gis-btn-container,
+div#btn-auth-google {
     width: 100% !important;
     display: flex !important;
     justify-content: center !important;
@@ -809,9 +810,11 @@ h1, h2, h3, h4, h5, h6, .logo {
     background: transparent !important;
     border: none !important;
     box-shadow: none !important;
+    outline: none !important;
 }
 
-.gis-btn-container iframe {
+.gis-btn-container iframe,
+div#btn-auth-google iframe {
     margin: 0 auto !important;
     border-radius: var(--radius-sm) !important;
     max-width: 100% !important;

@@ -723,6 +723,33 @@ function AuthPortal(initialTab = 'login') {
     renderGoogleBtnIfReady();
     window.__refreshGoogleBtn = renderGoogleBtnIfReady;
 
+    if (!window.__gisPollInterval) {
+        let attempts = 0;
+        window.__gisPollInterval = setInterval(() => {
+            attempts++;
+            if (window.google?.accounts?.id && window.publicConfig?.google_client_id) {
+                renderGoogleBtnIfReady();
+                clearInterval(window.__gisPollInterval);
+                window.__gisPollInterval = null;
+            } else if (attempts >= 20) {
+                clearInterval(window.__gisPollInterval);
+                window.__gisPollInterval = null;
+            }
+        }, 500);
+    }
+
+    if (!window.__gisResizeAttached) {
+        window.__gisResizeAttached = true;
+        window.addEventListener('resize', () => {
+            if (window.__gisResizeTimer) clearTimeout(window.__gisResizeTimer);
+            window.__gisResizeTimer = setTimeout(() => {
+                if (typeof window.__refreshGoogleBtn === 'function') {
+                    window.__refreshGoogleBtn();
+                }
+            }, 250);
+        }, { passive: true });
+    }
+
 
     btnApple.onclick = () => handleSocialLoginFallback('apple', window.selectedType || 'BUYER');
 
