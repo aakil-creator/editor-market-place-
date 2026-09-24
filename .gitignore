@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+backend/.venv/
+.venv/
+venv/
+ENV/
+
+# Database & temp logs
+*.db-shm
+*.db-wal
+*.log
+*.err.log
+*.out.log
+backend/logs/
+backend/backups/
+backend/hermes*
+backend/server*
+backend/safe*
+backend/sv*.log
+scratch/
+nul
+backend/nul
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

@@ -1,0 +1,25 @@
+<svg class="peek-svg peek-svg-writer" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="writerGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#0284c7"/>
+    </linearGradient>
+    <linearGradient id="nibGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f8fafc"/>
+      <stop offset="100%" stop-color="#cbd5e1"/>
+    </linearGradient>
+  </defs>
+  <!-- Document / Parchment base -->
+  <rect x="8" y="10" width="22" height="30" rx="3" fill="#1e293b" stroke="#334155" stroke-width="1.5"/>
+  <line x1="13" y1="17" x2="22" y2="17" stroke="#38bdf8" stroke-width="2" stroke-linecap="round"/>
+  <line x1="13" y1="23" x2="25" y2="23" stroke="#64748b" stroke-width="1.8" stroke-linecap="round"/>
+  <line x1="13" y1="29" x2="20" y2="29" stroke="#64748b" stroke-width="1.8" stroke-linecap="round"/>
+  <!-- Ink scribble line (Drawn dynamically) -->
+  <path class="writer-ink-trail" d="M13 34 C16 32, 19 36, 23 34" stroke="#38bdf8" stroke-width="1.8" stroke-linecap="round"/>
+  <!-- Animated Fountain Pen Nib (Scribbles on peek/hover) -->
+  <g class="writer-pen-group">
+    <path d="M38 8L41 11L28 27L23 28L24 23L38 8Z" fill="url(#writerGrad)" stroke="#0369a1" stroke-width="1.2"/>
+    <path d="M23 28L26 25L24 23L23 28Z" fill="url(#nibGrad)"/>
+    <circle cx="34" cy="14" r="1" fill="#ffffff"/>
+  </g>
+</svg>

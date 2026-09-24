@@ -1,0 +1,39 @@
+{
+  "packageId": "com.editormarketplace.app",
+  "host": "localhost:8000",
+  "name": "Editor Marketplace",
+  "launcherName": "EditorMarket",
+  "themeColor": "#6C5CE7",
+  "navigationColor": "#0F1117",
+  "backgroundColor": "#0F1117",
+  "enableNotifications": true,
+  "startUrl": "/",
+  "iconUrl": "/static/icons/icon-512.png",
+  "maskableIconUrl": "/static/icons/icon-maskable-512.png",
+  "appVersionName": "1.0.0",
+  "appVersionCode": 1,
+  "shortcuts": [
+    {
+      "name": "Browse Talent",
+      "shortName": "Talent",
+      "url": "/providers",
+      "icon": "icon_shortcut_1"
+    },
+    {
+      "name": "My Bookings",
+      "shortName": "Bookings",
+      "url": "/bookings",
+      "icon": "icon_shortcut_2"
+    }
+  ],
+  "webManifestUrl": "/manifest.json",
+  "fallbackType": "customtabs",
+  "features": {
+    "playBilling": {
+      "enabled": false
+    }
+  },
+  "alphaDependencies": {
+    "enabled": false
+  }
+}
