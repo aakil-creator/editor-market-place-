@@ -560,10 +560,117 @@ function getTypeIconSvg(typeId, fallbackIcon = '✨', size = 32) {
             <path class="anim-arrow" d="M12 28L20 18L26 22L32 14" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>`;
     }
+    if (typeId === 'ielts') {
+        return `<svg class="type-svg type-svg-ielts" style="width: ${size}px; height: ${size}px;" viewBox="0 0 36 36" fill="none">
+            <circle cx="18" cy="18" r="14" fill="#059669" stroke="#047857" stroke-width="1.2"/>
+            <circle cx="18" cy="18" r="9" fill="#10b981"/>
+            <circle cx="18" cy="18" r="4.5" fill="#ffffff"/>
+            <path d="M18 6V11M18 25V30M6 18H11M25 18H30" stroke="#a7f3d0" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>`;
+    }
+    if (typeId === 'accent') {
+        return `<svg class="type-svg type-svg-accent" style="width: ${size}px; height: ${size}px;" viewBox="0 0 36 36" fill="none">
+            <rect x="13" y="6" width="10" height="16" rx="5" fill="#3b82f6" stroke="#1d4ed8" stroke-width="1.2"/>
+            <path d="M9 16C9 21 13 25 18 25C23 25 27 21 27 16" stroke="#93c5fd" stroke-width="2" stroke-linecap="round"/>
+            <line x1="18" y1="25" x2="18" y2="30" stroke="#93c5fd" stroke-width="2" stroke-linecap="round"/>
+            <line x1="13" y1="30" x2="23" y2="30" stroke="#93c5fd" stroke-width="2" stroke-linecap="round"/>
+        </svg>`;
+    }
+    if (typeId === 'business') {
+        return `<svg class="type-svg type-svg-business" style="width: ${size}px; height: ${size}px;" viewBox="0 0 36 36" fill="none">
+            <rect x="6" y="12" width="24" height="18" rx="4" fill="#f59e0b" stroke="#b45309" stroke-width="1.2"/>
+            <path d="M13 12V9C13 7.5 14.5 6 16 6H20C21.5 6 23 7.5 23 9V12" stroke="#fef3c7" stroke-width="1.8" stroke-linecap="round"/>
+            <line x1="6" y1="18" x2="30" y2="18" stroke="#78350f" stroke-width="1.5"/>
+            <circle cx="18" cy="18" r="2.5" fill="#ffffff" stroke="#78350f" stroke-width="1"/>
+        </svg>`;
+    }
+    if (typeId === 'speaking') {
+        return `<svg class="type-svg type-svg-speaking" style="width: ${size}px; height: ${size}px;" viewBox="0 0 36 36" fill="none">
+            <path d="M7 16C7 10 11 7 18 7C25 7 29 10 29 16C29 21 25 24 19 24L12 28L13 23.5C9 22 7 19.5 7 16Z" fill="#10b981" stroke="#047857" stroke-width="1.2"/>
+            <circle cx="13" cy="15.5" r="1.5" fill="#ffffff"/>
+            <circle cx="18" cy="15.5" r="1.5" fill="#ffffff"/>
+            <circle cx="23" cy="15.5" r="1.5" fill="#ffffff"/>
+        </svg>`;
+    }
+    if (typeId === 'script') {
+        return `<svg class="type-svg type-svg-script" style="width: ${size}px; height: ${size}px;" viewBox="0 0 36 36" fill="none">
+            <rect x="7" y="6" width="22" height="24" rx="3" fill="#6366f1" stroke="#4338ca" stroke-width="1.2"/>
+            <line x1="12" y1="12" x2="24" y2="12" stroke="#e0e7ff" stroke-width="2" stroke-linecap="round"/>
+            <line x1="12" y1="17" x2="24" y2="17" stroke="#c7d2fe" stroke-width="1.5" stroke-linecap="round"/>
+            <line x1="12" y1="22" x2="19" y2="22" stroke="#c7d2fe" stroke-width="1.5" stroke-linecap="round"/>
+            <circle cx="25" cy="24" r="3" fill="#fbbf24"/>
+        </svg>`;
+    }
+    if (typeId === 'copy') {
+        return `<svg class="type-svg type-svg-copy" style="width: ${size}px; height: ${size}px;" viewBox="0 0 36 36" fill="none">
+            <path d="M20 4L8 19H18L16 32L28 17H18L20 4Z" fill="#ec4899" stroke="#be185d" stroke-width="1.2" stroke-linejoin="round"/>
+            <circle cx="18" cy="18" r="2" fill="#ffffff"/>
+        </svg>`;
+    }
+    if (typeId === 'seo') {
+        return `<svg class="type-svg type-svg-seo" style="width: ${size}px; height: ${size}px;" viewBox="0 0 36 36" fill="none">
+            <circle cx="16" cy="16" r="9" stroke="#0ea5e9" stroke-width="2"/>
+            <line x1="23" y1="23" x2="30" y2="30" stroke="#0ea5e9" stroke-width="2.5" stroke-linecap="round"/>
+            <path d="M12 18L15 14L18 16L21 12" stroke="#38bdf8" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>`;
+    }
+    if (typeId === 'email') {
+        return `<svg class="type-svg type-svg-email" style="width: ${size}px; height: ${size}px;" viewBox="0 0 36 36" fill="none">
+            <rect x="5" y="8" width="26" height="20" rx="3" fill="#8b5cf6" stroke="#6d28d9" stroke-width="1.2"/>
+            <path d="M5 10L18 19L31 10" stroke="#f5f3ff" stroke-width="1.5" stroke-linejoin="round"/>
+            <circle cx="28" cy="12" r="2" fill="#34d399"/>
+        </svg>`;
+    }
     return `<span style="font-size: ${Math.round(size * 0.7)}px; line-height: 1;">${fallbackIcon}</span>`;
 }
 window.getTypeIconSvg = getTypeIconSvg;
 window.getCategoryPeekIconSvg = getCategoryPeekIconSvg;
+
+window.__initSliderMouseDrag = (sliderEl) => {
+    if (!sliderEl || sliderEl.__mouseDragInit) return;
+    sliderEl.__mouseDragInit = true;
+    let isDown = false;
+    let startX = 0;
+    let scrollLeft = 0;
+    let hasMoved = false;
+
+    sliderEl.addEventListener('mousedown', (e) => {
+        isDown = true;
+        hasMoved = false;
+        sliderEl.classList.add('grabbing');
+        startX = e.pageX - sliderEl.offsetLeft;
+        scrollLeft = sliderEl.scrollLeft;
+    });
+
+    sliderEl.addEventListener('mouseleave', () => {
+        isDown = false;
+        sliderEl.classList.remove('grabbing');
+    });
+
+    sliderEl.addEventListener('mouseup', () => {
+        isDown = false;
+        sliderEl.classList.remove('grabbing');
+    });
+
+    sliderEl.addEventListener('mousemove', (e) => {
+        if (!isDown) return;
+        e.preventDefault();
+        const x = e.pageX - sliderEl.offsetLeft;
+        const walk = (x - startX) * 1.5;
+        if (Math.abs(walk) > 4) {
+            hasMoved = true;
+        }
+        sliderEl.scrollLeft = scrollLeft - walk;
+    });
+
+    sliderEl.addEventListener('click', (e) => {
+        if (hasMoved) {
+            e.preventDefault();
+            e.stopPropagation();
+            hasMoved = false;
+        }
+    }, true);
+};
 
 async function updateUnreadCountBadge() {
     if (!currentToken) return;
@@ -1500,6 +1607,18 @@ function startJourney(preselectedRole = 'BUYER') {
 }
 window.startJourney = startJourney;
 
+// =============== QUICK NAV: VIDEO EDITORS & TUTORS ===============
+function goToVideoEditors() {
+    router('/providers');
+    // Set niche after router renders
+    setTimeout(() => { window.setProviderNiche && window.setProviderNiche('editors_animators'); }, 100);
+}
+
+function goToTutors() {
+    router('/providers');
+    setTimeout(() => { window.setProviderNiche && window.setProviderNiche('tutors'); }, 100);
+}
+
 // =============== WELCOME / START YOUR JOURNEY PAGE (POST-LOGIN) ===============
 function WelcomePage() {
     if (!currentUser && !currentToken) {
@@ -1573,14 +1692,18 @@ function WelcomePage() {
 
                     <!-- Role highlights mini cards -->
                     <div style="margin-top: 28px; display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; max-width: 520px;">
-                        <div style="background: var(--bg-hover); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; display: flex; align-items: center; gap: 10px;">
+                        <div class="mini-card mini-video" onclick="goToVideoEditors()" style="background: var(--bg-hover); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; display: flex; align-items: center; gap: 10px; cursor: pointer; transition: transform 0.2s var(--ease-spring), box-shadow 0.2s ease, border-color 0.2s ease;"
+                           onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 20px -4px rgba(99,102,241,0.2)'; this.style.borderColor='var(--accent)';"
+                           onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'; this.style.borderColor='var(--border)';">
                             <span style="font-size: 1.3rem;">🎬</span>
                             <div style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.3;">
                                 <strong style="color: var(--text-primary); display: block;">Video Editors</strong>
                                 Reels, Shorts & Longform
                             </div>
                         </div>
-                        <div style="background: var(--bg-hover); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; display: flex; align-items: center; gap: 10px;">
+                        <div class="mini-card mini-tutor" onclick="goToTutors()" style="background: var(--bg-hover); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; display: flex; align-items: center; gap: 10px; cursor: pointer; transition: transform 0.2s var(--ease-spring), box-shadow 0.2s ease, border-color 0.2s ease;"
+                           onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 20px -4px rgba(99,102,241,0.2)'; this.style.borderColor='var(--accent)';"
+                           onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'; this.style.borderColor='var(--border)';">
                             <span style="font-size: 1.3rem;">🗣️</span>
                             <div style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.3;">
                                 <strong style="color: var(--text-primary); display: block;">English Coaches</strong>
@@ -1760,12 +1883,16 @@ function Landing() {
 
             <!-- Value Proposition Row -->
             <div class="hero-features-bar">
-                <div class="hero-feature-card">
+                <div class="hero-feature-card" onclick="goToVideoEditors()" style="cursor: pointer;"
+                   onmouseover="this.style.transform='translateY(-4px)'; this.style.borderColor='#5b34ea';"
+                   onmouseout="this.style.transform='translateY(0)'; this.style.borderColor='var(--border)';">
                     <div class="hero-feature-icon">🎬</div>
                     <h3 class="hero-feature-title">Vetted Video Editors</h3>
                     <p class="hero-feature-desc">Hire verified creators for YouTube, Reels, podcasts, and commercial color grading with interactive video showreels.</p>
                 </div>
-                <div class="hero-feature-card">
+                <div class="hero-feature-card" onclick="goToTutors()" style="cursor: pointer;"
+                   onmouseover="this.style.transform='translateY(-4px)'; this.style.borderColor='#5b34ea';"
+                   onmouseout="this.style.transform='translateY(0)'; this.style.borderColor='var(--border)';">
                     <div class="hero-feature-icon">🗣️</div>
                     <h3 class="hero-feature-title">Spoken English Coaches</h3>
                     <p class="hero-feature-desc">Master fluency, accent neutralization, IELTS, and corporate presentation skills with 1-on-1 certified tutors.</p>
@@ -2047,10 +2174,19 @@ function BuyerDashboard() {
                 apiFetch('/bookings').catch(() => []),
                 apiFetch('/educators/summary').catch(() => [])
             ]);
-            packages = Array.isArray(pkgsRes) ? pkgsRes : [];
             bookings = Array.isArray(bksRes) ? bksRes : [];
             providers = Array.isArray(edusRes) ? edusRes : [];
             window.__cachedProviders = providers;
+            let fetchedPackages = Array.isArray(pkgsRes) ? pkgsRes : [];
+            if (fetchedPackages.length === 0 && providers.length > 0) {
+                fetchedPackages = providers.flatMap(pr => (pr.packages || []).map(pkg => ({
+                    ...pkg,
+                    provider_id: pr.id,
+                    provider_name: pr.name,
+                    niche: pr.niche || pkg.niche
+                })));
+            }
+            packages = fetchedPackages;
         } catch (e) {
             showToast(e.message || 'Error loading marketplace', 'error');
         } finally {
@@ -2078,32 +2214,39 @@ function BuyerDashboard() {
 
         // Filter packages based on activeFilter and searchQuery
         const filteredPackages = approvedPackages.filter(p => {
-            const matchesQuery = !q || 
-                (p.title && p.title.toLowerCase().includes(q)) ||
-                (p.description && p.description.toLowerCase().includes(q)) ||
-                (p.provider_name && p.provider_name.toLowerCase().includes(q)) ||
-                (p.niche && p.niche.toLowerCase().includes(q));
+            const pkgTitle = (p.title || '').toLowerCase();
+            const pkgDesc = (p.description || '').toLowerCase();
+            const pkgProvider = (p.provider_name || '').toLowerCase();
+            const pkgNiche = (p.niche || '').toLowerCase();
+            const pkgTurnaround = (p.turnaround || '').toLowerCase();
+            const fullPkgText = `${pkgTitle} ${pkgDesc} ${pkgProvider} ${pkgNiche} ${pkgTurnaround}`;
+
+            const matchesQuery = !q || fullPkgText.includes(q);
 
             if (!matchesQuery) return false;
-            if (activeFilter === 'editors') return (p.niche && (p.niche.includes('editor') || p.niche.includes('video'))) || (p.title && (p.title.toLowerCase().includes('video') || p.title.toLowerCase().includes('edit') || p.title.toLowerCase().includes('reel')));
-            if (activeFilter === 'tutors') return (p.niche && p.niche.includes('tutor')) || (p.title && (p.title.toLowerCase().includes('english') || p.title.toLowerCase().includes('tutor') || p.title.toLowerCase().includes('ielts') || p.title.toLowerCase().includes('speaking')));
-            if (activeFilter === 'writers') return (p.niche && p.niche.includes('writer')) || (p.title && (p.title.toLowerCase().includes('writer') || p.title.toLowerCase().includes('copy') || p.title.toLowerCase().includes('script')));
-            if (activeFilter === 'express') return (p.turnaround && (p.turnaround.toLowerCase().includes('24') || p.turnaround.toLowerCase().includes('1 day') || p.turnaround.toLowerCase().includes('immediate')));
+            if (activeFilter === 'editors') return (pkgNiche && (pkgNiche.includes('editor') || pkgNiche.includes('video'))) || pkgTitle.includes('video') || pkgTitle.includes('edit') || pkgTitle.includes('reel') || pkgTitle.includes('gaming') || pkgTitle.includes('animat');
+            if (activeFilter === 'tutors') return (pkgNiche && pkgNiche.includes('tutor')) || pkgTitle.includes('english') || pkgTitle.includes('tutor') || pkgTitle.includes('ielts') || pkgTitle.includes('speaking') || pkgTitle.includes('accent') || pkgTitle.includes('interview');
+            if (activeFilter === 'writers') return (pkgNiche && pkgNiche.includes('writer')) || pkgTitle.includes('writer') || pkgTitle.includes('copy') || pkgTitle.includes('script') || pkgTitle.includes('seo');
+            if (activeFilter === 'express') return (pkgTurnaround && (pkgTurnaround.includes('24') || pkgTurnaround.includes('1 day') || pkgTurnaround.includes('immediate')));
             return true;
         });
 
         // Filter providers based on activeFilter and searchQuery
         const filteredProviders = allProviders.filter(pr => {
             const skillsStr = (pr.skills || []).join(' ').toLowerCase();
-            const matchesQuery = !q ||
-                (pr.name && pr.name.toLowerCase().includes(q)) ||
-                (pr.niche && pr.niche.toLowerCase().includes(q)) ||
-                skillsStr.includes(q);
+            const packagesStr = (pr.packages || []).map(p => `${p.title || ''} ${p.description || ''}`).join(' ').toLowerCase();
+            const bioStr = (pr.bio || '').toLowerCase();
+            const specStr = (pr.specialization || '').toLowerCase();
+            const prName = (pr.name || '').toLowerCase();
+            const prNiche = (pr.niche || '').toLowerCase();
+            const fullText = `${prName} ${prNiche} ${skillsStr} ${packagesStr} ${bioStr} ${specStr}`;
+
+            const matchesQuery = !q || fullText.includes(q);
 
             if (!matchesQuery) return false;
-            if (activeFilter === 'editors') return pr.niche === 'editors_animators' || skillsStr.includes('video') || skillsStr.includes('edit');
-            if (activeFilter === 'tutors') return pr.niche === 'tutors' || skillsStr.includes('english') || skillsStr.includes('tutor');
-            if (activeFilter === 'writers') return pr.niche === 'writers' || skillsStr.includes('write') || skillsStr.includes('copy');
+            if (activeFilter === 'editors') return prNiche === 'editors_animators' || skillsStr.includes('video') || skillsStr.includes('edit');
+            if (activeFilter === 'tutors') return prNiche === 'tutors' || skillsStr.includes('english') || skillsStr.includes('tutor') || skillsStr.includes('ielts') || skillsStr.includes('accent');
+            if (activeFilter === 'writers') return prNiche === 'writers' || skillsStr.includes('write') || skillsStr.includes('copy') || skillsStr.includes('script');
             if (activeFilter === 'express') return (pr.response_time && pr.response_time.includes('24')) || pr.availability === 'immediate';
             return true;
         });
@@ -2159,6 +2302,45 @@ function BuyerDashboard() {
         const currentOptions = categoryOptionsMap[activeFilter] || categoryOptionsMap.all;
         window.__currentBuyerFilter = activeFilter;
         window.__buyerCategoryOptionsMap = categoryOptionsMap;
+
+        const categorySlidersData = {
+            editors: {
+                badge: '🎬 Video Editing Specialties',
+                items: [
+                    { id: 'ads_social', label: 'Social Ads & Reels', sub: 'TikTok, Reels & UGC hooks', query: 'reel', icon: '📱' },
+                    { id: 'gaming', label: 'Gaming Streams & Edits', sub: 'Twitch highlights & stream cuts', query: 'gaming', icon: '🎮' },
+                    { id: 'youtube', label: 'YouTube Longform', sub: 'Retention edits & viral pacing', query: 'youtube', icon: '📺' },
+                    { id: 'animations', label: '2D & 3D Animations', sub: 'Character animation & 3D models', query: 'animation', icon: '🎨' },
+                    { id: 'motion_graphics', label: 'Motion Graphics & VFX', sub: 'After Effects lower thirds & titles', query: 'motion', icon: '✨' },
+                    { id: 'music', label: 'Music & Cinematic', sub: 'Beat-sync VFX & color grading', query: 'music', icon: '🎬' },
+                    { id: 'express', label: '24h Rush Delivery', sub: 'Same-day express turnaround', query: '24', icon: '⚡' }
+                ]
+            },
+            tutors: {
+                badge: '🗣️ English Tutoring Specialties',
+                items: [
+                    { id: 'ielts', label: 'IELTS & TOEFL Prep', sub: 'Band 7.5+ speaking & mock tests', query: 'ielts', icon: '🎯' },
+                    { id: 'accent', label: 'Accent Reduction', sub: 'Neutral pronunciation & clarity', query: 'accent', icon: '🗣️' },
+                    { id: 'business', label: 'Business English', sub: 'Corporate emails, pitches & interviews', query: 'business', icon: '💼' },
+                    { id: 'speaking', label: 'Daily Fluency', sub: 'Casual conversation & speaking confidence', query: 'speaking', icon: '💬' },
+                    { id: 'interview', label: 'Interview Coaching', sub: 'Job & visa mock interviews', query: 'interview', icon: '🎯' },
+                    { id: 'english', label: 'Cambridge Certified', sub: 'Structured grammar & spoken practice', query: 'english', icon: '⚡' }
+                ]
+            },
+            writers: {
+                badge: '✍️ Scriptwriter & Copy Specialties',
+                items: [
+                    { id: 'script', label: 'YouTube Video Scripts', sub: 'Retention storytelling, hooks & outlines', query: 'script', icon: '📺' },
+                    { id: 'copy', label: 'Social Ad Copy & UGC', sub: 'Converting hooks for TikTok & Meta ads', query: 'copy', icon: '📱' },
+                    { id: 'seo', label: 'SEO Blog Posts & Guides', sub: 'Keyword-ranked articles & pillar posts', query: 'seo', icon: '📰' },
+                    { id: 'social', label: 'Social Media Captions', sub: 'Carousel slides, X threads & posts', query: 'social', icon: '💬' },
+                    { id: 'email', label: 'Email Newsletters', sub: 'High open-rate subject lines & sequences', query: 'email', icon: '📧' },
+                    { id: 'express', label: '24h Rush Scripts', sub: 'Urgent same-day turnaround copy', query: '24', icon: '⚡' }
+                ]
+            }
+        };
+
+        const activeSliderConfig = categorySlidersData[activeFilter] || null;
 
         if (!window.__placeholderBlinkLoopStarted) {
             window.__placeholderBlinkLoopStarted = true;
@@ -2294,15 +2476,15 @@ function BuyerDashboard() {
                             <span class="chip-icon-box">${getCategoryPeekIconSvg('all', 32)}</span>
                             <span class="category-box-label">All Services</span>
                         </button>
-                        <button type="button" class="category-box-btn" onclick="setProviderNiche('editors_animators')">
+                        <button type="button" class="category-box-btn ${activeFilter === 'editors' ? 'active' : ''}" onclick="window.__setBuyerFilter('editors')">
                             <span class="chip-icon-box">${getCategoryPeekIconSvg('editors_animators', 32)}</span>
                             <span class="category-box-label">Video Editors</span>
                         </button>
-                        <button type="button" class="category-box-btn" onclick="setProviderNiche('tutors')">
+                        <button type="button" class="category-box-btn ${activeFilter === 'tutors' ? 'active' : ''}" onclick="window.__setBuyerFilter('tutors')">
                             <span class="chip-icon-box">${getCategoryPeekIconSvg('tutors', 32)}</span>
                             <span class="category-box-label">English Tutors</span>
                         </button>
-                        <button type="button" class="category-box-btn" onclick="setProviderNiche('writers')">
+                        <button type="button" class="category-box-btn ${activeFilter === 'writers' ? 'active' : ''}" onclick="window.__setBuyerFilter('writers')">
                             <span class="chip-icon-box">${getCategoryPeekIconSvg('writers', 32)}</span>
                             <span class="category-box-label">Writers &amp; Copy</span>
                         </button>
@@ -2312,36 +2494,33 @@ function BuyerDashboard() {
                         </button>
                     </div>
 
-                    <!-- Popular Options Slider (Down of Icons & Only Shown when Video Editors is Open) -->
-                    ${activeFilter === 'editors' ? `
+                    <!-- Popular Options Slider (Down of Icons & Shown for Editors, Tutors, and Writers) -->
+                    ${activeSliderConfig ? `
                     <div class="editor-slider-container">
                         <div class="editor-slider-header">
                             <div style="display: flex; align-items: center; gap: 8px;">
-                                <span class="editor-slider-badge">🎬 Popular Editing Options</span>
-                                <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 500;">Slide to explore video specialties</span>
+                                <span class="editor-slider-badge">${activeSliderConfig.badge}</span>
+                                <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 500;">🖱️ Scroll with mouse wheel or drag to slide</span>
                             </div>
                             <div class="editor-slider-arrows">
-                                <button type="button" class="slider-arrow-btn" onclick="const el=document.getElementById('editor-popular-slider'); if(el) el.scrollBy({ left: -220, behavior: 'smooth' });" title="Slide Left">‹</button>
-                                <button type="button" class="slider-arrow-btn" onclick="const el=document.getElementById('editor-popular-slider'); if(el) el.scrollBy({ left: 220, behavior: 'smooth' });" title="Slide Right">›</button>
+                                <button type="button" class="slider-arrow-btn" onclick="const el=document.getElementById('category-popular-slider'); if(el) el.scrollBy({ left: -220, behavior: 'smooth' });" title="Slide Left">‹</button>
+                                <button type="button" class="slider-arrow-btn" onclick="const el=document.getElementById('category-popular-slider'); if(el) el.scrollBy({ left: 220, behavior: 'smooth' });" title="Slide Right">›</button>
                             </div>
                         </div>
 
-                        <div class="editor-popular-slider-track" id="editor-popular-slider">
-                            ${[
-                                { id: 'youtube', label: 'YouTube Longform', sub: 'Retention edits & viral pacing', query: 'youtube', icon: '📺' },
-                                { id: 'ads_social', label: 'Social Ads & Reels', sub: 'TikTok, Reels & UGC hooks', query: 'ads_social', icon: '📱' },
-                                { id: 'gaming', label: 'Gaming Edits', sub: 'Montages & stream highlights', query: 'gaming', icon: '🎮' },
-                                { id: 'animations', label: '2D/3D Animations', sub: 'Character & 3D Blender models', query: 'animations', icon: '🎨' },
-                                { id: 'motion_graphics', label: 'Motion Graphics', sub: 'After Effects VFX & dynamic intros', query: 'motion_graphics', icon: '✨' },
-                                { id: 'music', label: 'Music & Cinematic', sub: 'Beat-sync VFX & color grading', query: 'music', icon: '🎬' },
-                                { id: 'express', label: '24h Rush Delivery', sub: 'Same-day express turnaround', query: '24', icon: '⚡' }
-                            ].map((opt, idx) => {
+                        <div 
+                            class="editor-popular-slider-track" 
+                            id="category-popular-slider"
+                            onwheel="if (Math.abs(event.deltaY) > Math.abs(event.deltaX)) { this.scrollLeft += event.deltaY; event.preventDefault(); }"
+                            onmouseenter="window.__initSliderMouseDrag(this)"
+                        >
+                            ${activeSliderConfig.items.map((opt, idx) => {
                                 const isSelected = searchQuery.toLowerCase() === opt.query.toLowerCase();
                                 return `
                                 <div 
                                     class="editor-slide-card ${isSelected ? 'active' : ''}" 
-                                    onclick="${isSelected ? `window.__clearBuyerSearch()` : `window.__applyPopularTag('${escapeJs(opt.query)}', 'editors')`}"
-                                    style="animation-delay: ${(idx * 0.05).toFixed(2)}s;"
+                                    onclick="${isSelected ? `window.__clearBuyerSearch()` : `window.__applyPopularTag('${escapeJs(opt.query)}', '${escapeJs(activeFilter)}')`}"
+                                    style="animation-delay: ${(idx * 0.04).toFixed(2)}s;"
                                     title="Filter by ${opt.label}"
                                 >
                                     <div class="slide-card-top">

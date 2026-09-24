@@ -162,16 +162,16 @@ class PackageResponse(BaseModel):
     id: int
     provider_id: int
     niche: str
-    package_type: PackageType
+    package_type: Optional[str] = "per_deliverable"
     title: str
     price: float
     scope: str
     turnaround: str
     revision_limit: int
-    sample_reference: Optional[str]
-    status: str
-    admin_notes: Optional[str]
-    created_at: datetime
+    sample_reference: Optional[str] = None
+    status: Optional[str] = "approved"
+    admin_notes: Optional[str] = None
+    created_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
@@ -468,3 +468,26 @@ async def get_current_user(
     if not user.is_active:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User inactive")
     return user
+
+security_optional = HTTPBearer(auto_error=False)
+
+async def get_current_user_optional(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security_optional),
+    db = Depends(get_db)
+) -> Optional[User]:
+    if not credentials:
+        return None
+    try:
+        token = credentials.credentials
+        payload = decode_token(token)
+        if not payload:
+            return None
+        user_id = payload.get("sub")
+        if not user_id:
+            return None
+        user = db.query(User).filter(User.id == int(user_id)).first()
+        if user and not user.is_active:
+            return None
+        return user
+    except Exception:
+        return None

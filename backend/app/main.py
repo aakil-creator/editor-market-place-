@@ -38,7 +38,7 @@ from .schemas import (
     BankDetailsUpdate, PlatformSettingsUpdate, PlatformSettingsResponse,
     SocialLoginRequest, RoleSwitchRequest,
     ForgotPasswordRequest, ForgotPasswordResponse, ResetPasswordWithTokenRequest, VerifyEmailRequest,
-    get_current_user
+    get_current_user, get_current_user_optional
 )
 from .security import hash_password, verify_password, create_access_token, hash_token
 
@@ -784,7 +784,7 @@ def get_packages(
     niche: Optional[str] = None,
     provider_id: Optional[int] = None,
     status: Optional[str] = None,
-    current_user = Depends(get_current_user),
+    current_user: Optional[User] = Depends(get_current_user_optional),
     db = Depends(get_db)
 ):
     query = db.query(Package)
@@ -792,12 +792,14 @@ def get_packages(
         query = query.filter(Package.niche == niche)
     if provider_id:
         query = query.filter(Package.provider_id == provider_id)
-    # Only apply status filter for non-providers; providers need to see pending packages too
-    if status and current_user.user_type != UserType.PROVIDER:
-        query = query.filter(Package.status == status)
-    if current_user.user_type == UserType.PROVIDER and not provider_id:
+    if current_user and current_user.user_type == UserType.PROVIDER and not provider_id:
         query = query.filter(Package.provider_id == current_user.id)
+    elif status:
+        query = query.filter(Package.status == status)
+    else:
+        query = query.filter(or_(Package.status == 'approved', Package.status == None))
     return query.all()
+
 
 @api_app.get("/packages/{package_id}", response_model=PackageResponse)
 def get_package(package_id: int, current_user = Depends(get_current_user), db = Depends(get_db)):
