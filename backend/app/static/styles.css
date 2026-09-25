@@ -5167,6 +5167,34 @@ button:active, .btn:active, .nav-btn:active, .payment-tab-btn:active, .tab:activ
     background: #4f46e5;
 }
 
+/* ===== Telegram refinements: date pills, ticks, grouped bubbles ===== */
+.tg-date-separator {
+    display: flex;
+    justify-content: center;
+    margin: 10px 0 6px;
+}
+.tg-date-separator span {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    background: rgba(120, 130, 160, 0.16);
+    border: 1px solid var(--border);
+    padding: 3px 12px;
+    border-radius: 999px;
+}
+.tg-ticks { font-size: 0.7rem; letter-spacing: -1px; opacity: 0.75; }
+.tg-ticks-read { color: #38bdf8; opacity: 1; }
+.inbox-msg-row.grouped { margin-top: -4px; }
+.inbox-msg-row.grouped .inbox-msg-bubble { border-radius: 18px; }
+.inbox-msg-row.sent.grouped .inbox-msg-bubble { border-bottom-right-radius: 18px; }
+.inbox-msg-row.received.grouped .inbox-msg-bubble { border-bottom-left-radius: 18px; }
+.inbox-msg-avatar-spacer { visibility: hidden; }
+.inbox-msg-row.flagged .inbox-msg-bubble {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.4);
+    color: var(--text-primary);
+}
+
 /* Security Suspension Modal */
 .security-alert-modal-overlay {
     position: fixed;
@@ -6090,4 +6118,267 @@ textarea::placeholder,
     .fiverr-subcat-desc {
         display: none;
     }
+}
+
+/* ==========================================================================
+   FIVERR-STYLE GIG CARDS
+   ========================================================================== */
+
+.fiverr-gig-card {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    transition: all 0.25s var(--ease-spring);
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,.03);
+}
+
+.fiverr-gig-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--accent);
+    box-shadow: 0 12px 30px -4px rgba(0,0,0,.08), 0 0 0 1px var(--accent);
+}
+
+.fiverr-gig-thumb-wrap {
+    position: relative;
+    width: 100%;
+    padding-top: 56.25%;
+    background: #111827;
+    overflow: hidden;
+    cursor: pointer;
+    border-radius: 14px 14px 0 0;
+}
+
+.fiverr-gig-thumb-wrap img {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    object-fit: cover;
+    transition: transform 0.35s var(--ease-spring);
+}
+
+.fiverr-gig-thumb-wrap:hover img {
+    transform: scale(1.05);
+}
+
+.fiverr-gig-badge {
+    position: absolute;
+    top: 8px; left: 8px;
+    font-size: 0.65rem;
+    font-weight: 800;
+    padding: 3px 7px;
+    border-radius: 5px;
+    background: rgba(0,0,0,.7);
+    color: #fff;
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(255,255,255,.15);
+    z-index: 2;
+}
+
+.fiverr-gig-heart {
+    position: absolute;
+    top: 8px; right: 8px;
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(0,0,0,.5);
+    backdrop-filter: blur(4px);
+    color: #fff;
+    font-size: 0.9rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    z-index: 2;
+    padding: 0;
+}
+
+.fiverr-gig-heart:hover {
+    background: rgba(239,68,68,.8);
+    transform: scale(1.1);
+}
+
+.fiverr-gig-heart.active {
+    background: rgba(239,68,68,.85);
+}
+
+.fiverr-gig-play-hint {
+    position: absolute;
+    bottom: 8px; left: 50%;
+    transform: translateX(-50%);
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: rgba(0,0,0,.55);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 0.85rem;
+    opacity: 0;
+    transition: opacity 0.25s ease, transform 0.25s var(--ease-spring);
+}
+
+.fiverr-gig-thumb-wrap:hover .fiverr-gig-play-hint {
+    opacity: 1;
+    transform: translateX(-50%) scale(1.08);
+}
+
+.fiverr-gig-content {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    padding: 12px 14px 10px;
+}
+
+.fiverr-gig-creator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.fiverr-gig-avatar {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    background: var(--accent-gradient);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 0.75rem;
+    flex-shrink: 0;
+}
+
+.fiverr-gig-creator-name {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 120px;
+}
+
+.fiverr-gig-level-badge {
+    font-size: 0.6rem;
+    font-weight: 800;
+    padding: 1px 5px;
+    border-radius: 3px;
+    background: rgba(99,102,241,.12);
+    color: var(--accent);
+    border: 1px solid rgba(99,102,241,.2);
+    white-space: nowrap;
+}
+
+.fiverr-gig-title {
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.35;
+    margin-bottom: 4px;
+    cursor: pointer;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.fiverr-gig-title:hover {
+    color: var(--accent);
+}
+
+.fiverr-gig-rating-row {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+}
+
+.fiverr-gig-star {
+    color: var(--warning);
+    font-size: 0.65rem;
+    margin-right: 1px;
+}
+
+.fiverr-gig-rating-val {
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-right: 1px;
+}
+
+.fiverr-gig-reviews {
+    color: var(--text-muted);
+}
+
+.fiverr-gig-skills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-bottom: 8px;
+}
+
+.fiverr-gig-skill {
+    font-size: 0.63rem;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: var(--bg-hover);
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+    white-space: nowrap;
+}
+
+.fiverr-gig-footer {
+    margin-top: auto;
+    padding: 10px 14px;
+    border-top: 1px solid var(--border);
+    background: var(--bg-hover);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.fiverr-gig-price-label {
+    font-size: 0.6rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+
+.fiverr-gig-price-val {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--accent);
+    line-height: 1.2;
+    margin-top: 1px;
+}
+
+.fiverr-gig-price-display {
+    display: flex;
+    flex-direction: column;
+}
+
+.fiverr-gig-delivery {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    font-weight: 600;
+    text-align: right;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.fiverr-gig-actions {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
 }

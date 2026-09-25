@@ -2945,44 +2945,64 @@ function BuyerDashboard() {
                             const initial = providerName.charAt(0).toUpperCase();
 
                             return `
-                            <div class="card fiverr-gig-card" style="display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg-card); transition: all 0.25s ease;">
-                                <div style="padding: 16px;">
-                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                                        <div style="display: flex; align-items: center; gap: 10px;">
-                                            <div style="width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #a855f7); color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.9rem;">
-                                                ${initial}
-                                            </div>
-                                            <div>
-                                                <div style="font-weight: 700; font-size: 0.92rem; color: var(--text-primary);">${escapeHTML(providerName)}</div>
-                                                <div style="font-size: 0.72rem; color: var(--success); font-weight: 600;">🟢 Online now</div>
-                                            </div>
-                                        </div>
-                                        <span class="badge badge-info" style="font-size: 0.7rem; padding: 4px 8px;">${nicheBadge}</span>
+                            <div class="card fiverr-gig-card" style="overflow: hidden;">
+                                <!-- 16:9 Thumbnail -->
+                                <div class="fiverr-gig-thumb-wrap" onclick="openFiverrPortfolioModal(${pkg.provider_id})">
+                                    <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:white; font-size:2.5rem; background: linear-gradient(135deg, #1e1b4b, #312e81);">
+                                        ${isTutor ? '🗣️' : '🎬'}
                                     </div>
-
-                                    <h4 style="font-size: 1rem; font-weight: 700; margin-bottom: 8px; color: var(--text-primary); line-height: 1.4;">${escapeHTML(pkg.title)}</h4>
-                                    <p style="font-size: 0.8125rem; color: var(--text-secondary); line-height: 1.45; margin-bottom: 14px; min-height: 40px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
-                                        ${escapeHTML(pkg.description || 'Custom tailored high quality service with 100% escrow protection and guaranteed turnaround.')}
-                                    </p>
-
-                                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 10px;">
-                                        <span>⏱️ ${escapeHTML(pkg.turnaround || '24 hours')}</span>
-                                        <span>🔄 ${pkg.revision_limit || 2} revisions</span>
-                                    </div>
+                                    <span class="fiverr-gig-badge">${nicheBadge}</span>
                                 </div>
 
-                                <div class="card-footer" style="background: var(--bg-hover); padding: 12px 16px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+                                <!-- Card Body -->
+                                <div class="fiverr-gig-content">
                                     <div>
-                                        <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Price</div>
-                                        <div style="font-size: 1.25rem; font-weight: 800; color: var(--accent);">₹${(pkg.price || 0).toLocaleString()}</div>
+                                        <!-- Seller Row -->
+                                        <div class="fiverr-gig-creator">
+                                            <div class="fiverr-gig-avatar">${initial}</div>
+                                            <div style="overflow: hidden; flex: 1;">
+                                                <div class="fiverr-gig-creator-name" title="${escapeHTML(providerName)}">${escapeHTML(providerName)}</div>
+                                                <div style="font-size:0.63rem; color: var(--success); font-weight: 600;">🟢 Online now</div>
+                                            </div>
+                                            <span class="fiverr-gig-level-badge">${nicheBadge.split(' ')[0]}</span>
+                                        </div>
+
+                                        <!-- Title -->
+                                        <div class="fiverr-gig-title" onclick="openFiverrPortfolioModal(${pkg.provider_id})">${escapeHTML(pkg.title)}</div>
+
+                                        <!-- Rating -->
+                                        <div class="fiverr-gig-rating-row">
+                                            <span class="fiverr-gig-star">★</span>
+                                            <span class="fiverr-gig-rating-val">${pkg.rating ? pkg.rating.toFixed(1) : '5.0'}</span>
+                                            <span class="fiverr-gig-reviews">(${pkg.total_reviews || 0})</span>
+                                            <span style="color: var(--text-muted); margin: 0 3px;">·</span>
+                                            <span style="color: var(--accent); font-weight: 600; font-size: 0.65rem;">100% Escrow</span>
+                                        </div>
+
+                                        <!-- Skills chips -->
+                                        <div class="fiverr-gig-skills">
+                                            ${(pkg.tags || []).slice(0, 3).map(s => `<span class="fiverr-gig-skill">${escapeHTML(s)}</span>`).join('')}
+                                            ${(pkg.tags || []).length === 0 ? '<span class="fiverr-gig-skill">Video Editing</span><span class="fiverr-gig-skill">Post Production</span>' : ''}
+                                        </div>
                                     </div>
-                                    <div style="display: flex; gap: 6px;">
-                                        <button class="btn btn-secondary btn-sm" onclick="openPreBookingChat(${pkg.provider_id}, '${escapeJs(providerName)}')" title="Message creator before ordering" style="padding: 6px 12px; font-weight: 700;">
-                                            💬 Chat
-                                        </button>
-                                        <button class="btn btn-primary btn-sm" onclick="selectProvider(${pkg.provider_id}, ${pkg.id})" style="padding: 6px 14px; font-weight: 700;">
-                                            Order Now
-                                        </button>
+
+                                    <!-- Footer: Price + Actions -->
+                                    <div class="fiverr-gig-footer">
+                                        <div class="fiverr-gig-price-display">
+                                            <span class="fiverr-gig-price-label">Starting at</span>
+                                            <span class="fiverr-gig-price-val">₹${(pkg.price || 0).toLocaleString()}</span>
+                                        </div>
+                                        <div style="display: flex; gap: 6px; align-items: center;">
+                                            <span class="fiverr-gig-delivery">⚡ ${escapeHTML(pkg.turnaround || '24h')}</span>
+                                            <div style="display: flex; gap: 6px;">
+                                                <button class="btn btn-outline btn-sm" style="flex: 0 0 auto; padding: 5px 10px; font-weight: 700; font-size: 0.7rem;" onclick="event.stopPropagation(); openPreBookingChat(${pkg.provider_id}, '${escapeJs(providerName)}')">
+                                                    💬 Chat
+                                                </button>
+                                                <button class="btn btn-primary btn-sm" style="flex: 0 0 auto; padding: 5px 12px; font-weight: 700; font-size: 0.7rem;" onclick="event.stopPropagation(); selectProvider(${pkg.provider_id}, ${pkg.id})">
+                                                    Order
+                                                </button>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -8433,18 +8453,49 @@ window.startChatWithProvider = async (providerId) => {
         chatLoading.style.display = 'none';
         chatMessages.style.display = 'block';
         chatInputArea.style.display = 'block';
+        chatMessages.style.margin = '0 12px 12px';
 
         if (msgs.length > 0) {
-            chatMessages.innerHTML = msgs.map(m => `
-                <div style="margin-bottom: 10px; ${m.sender_type === 'provider' ? 'display: flex; justify-content: flex-start;' : 'display: flex; justify-content: flex-end;'}">
-                    <div style="max-width: 80%; padding: 10px 14px; border-radius: 16px; ${m.sender_type === 'provider' ? 'background: var(--accent); color: white; border-bottom-left-radius: 4px;' : 'background: var(--bg-hover); color: var(--text-primary); border-bottom-right-radius: 4px;'}">
-                        <div style="font-size: 0.7rem; margin-bottom: 4px; opacity: 0.7; font-weight: 600;">${m.sender_type === 'provider' ? 'Provider' : 'You'} · ${new Date(m.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
-                        <div style="white-space: pre-wrap; line-height: 1.4; font-size: 0.9rem;">${m.content || ''}</div>
+            let html = '';
+            let lastDateKey = '';
+            const dayLabel = (d) => {
+                const today = new Date(); today.setHours(0,0,0,0);
+                const yesterday = new Date(today); yesterday.setDate(today.getDate() - 1);
+                const dd = new Date(d); dd.setHours(0,0,0,0);
+                if (dd.getTime() === today.getTime()) return 'Today';
+                if (dd.getTime() === yesterday.getTime()) return 'Yesterday';
+                return new Date(d).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+            };
+            msgs.forEach((m, idx) => {
+                const isMe = m.sender_id === currentUser?.id;
+                const msgDate = new Date(m.created_at);
+                const dateKey = msgDate.toDateString();
+                if (dateKey !== lastDateKey) {
+                    lastDateKey = dateKey;
+                    html += `<div style="display:flex;justify-content:center;margin:10px 0 6px;"><span style="font-size:0.65rem;color:var(--text-muted);background:var(--bg-hover);padding:2px 10px;border-radius:8px;font-weight:600;">${dayLabel(m.created_at)}</span></div>`;
+                }
+                const timeStr = msgDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                const next = msgs[idx + 1];
+                const grouped = next && next.sender_id === m.sender_id && new Date(next.created_at).toDateString() === dateKey;
+                html += `<div class="inbox-msg-row ${isMe ? 'sent' : 'received'} ${grouped ? 'grouped' : ''}">
+                    ${!isMe && !grouped ? `<div class="inbox-msg-avatar" style="width:28px;height:28px;font-size:0.7rem;border-radius:50%;background:var(--accent-gradient);color:white;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;">${(m.sender_name || 'U').charAt(0).toUpperCase()}</div>` : (!isMe ? '<div style="width:28px;flex-shrink:0;"></div>' : '')}
+                    <div class="inbox-msg-bubble-wrap" style="margin-bottom: 2px;">
+                        <div class="inbox-msg-bubble">
+                            <div class="inbox-msg-bubble-content">
+                                <div class="inbox-msg-text">${escapeHTML(m.content || m.message || '')}</div>
+                            </div>
+                        </div>
+                        <div class="inbox-msg-timestamp" style="font-size:0.6rem;opacity:0.6;">${timeStr}${isMe ? (m.is_read ? ' ✓✓' : ' ✓') : ''}</div>
                     </div>
-                </div>
-            `).join('');
+                </div>`;
+            });
+            chatMessages.innerHTML = html;
         } else {
-            chatMessages.innerHTML = `<div style="text-align: center; padding: 30px; color: var(--text-muted); font-size: 0.875rem;">No messages yet. Start the conversation!</div>`;
+            chatMessages.innerHTML = `<div style="margin: auto; text-align: center; padding: 24px; color: var(--text-muted); max-width: 380px;">
+                <div style="font-size: 2.2rem; margin-bottom: 8px;">👋</div>
+                <div style="font-weight: 700; color: var(--text-primary); margin-bottom: 4px;">Say hi to ${escapeHTML(providerName)}!</div>
+                <p style="font-size: 0.8125rem; line-height: 1.45;">Discuss project requirements, turnaround times, or revision expectations. When you're ready, click <strong>"View Packages / Hire"</strong> at the top to place your order with 100% Escrow Protection.</p>
+            </div>`;
         }
         chatMessages.scrollTop = chatMessages.scrollHeight;
     } catch (e) {
@@ -8469,10 +8520,18 @@ window.sendChatMessage = async (e) => {
     const chatMessages = document.getElementById('chat-messages');
     const chatLoading = document.getElementById('chat-loading');
 
-    // Add our message immediately
+    // Add our message immediately with Telegram-style bubble
     const ourMsg = document.createElement('div');
-    ourMsg.style.cssText = 'margin-bottom: 10px; display: flex; justify-content: flex-end;';
-    ourMsg.innerHTML = `<div style="max-width: 80%; padding: 10px 14px; border-radius: 16px; background: var(--bg-hover); color: var(--text-primary); border-bottom-right-radius: 4px;"><div style="font-size: 0.7rem; margin-bottom: 4px; opacity: 0.7; font-weight: 600;">You · just now</div><div style="white-space: pre-wrap; line-height: 1.4; font-size: 0.9rem;">${content}</div></div>`;
+    ourMsg.className = 'inbox-msg-row sent';
+    ourMsg.style.marginBottom = '2px';
+    ourMsg.innerHTML = `<div class="inbox-msg-bubble-wrap" style="margin-bottom:2px;">
+        <div class="inbox-msg-bubble">
+            <div class="inbox-msg-bubble-content">
+                <div class="inbox-msg-text">${escapeHTML(content)}</div>
+            </div>
+        </div>
+        <div class="inbox-msg-timestamp" style="font-size:0.6rem;opacity:0.6;">just now ✓</div>
+    </div>`;
     chatMessages.appendChild(ourMsg);
     chatMessages.scrollTop = chatMessages.scrollHeight;
 
