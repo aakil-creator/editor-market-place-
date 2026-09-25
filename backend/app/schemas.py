@@ -36,7 +36,7 @@ class PackageType(str, Enum):
 # Auth schemas
 class UserCreate(BaseModel):
     name: str
-    username: Optional[str] = None
+    username: str  # Required — must be unique across all users, cannot match name
     phone: str
     email: str
     password: str

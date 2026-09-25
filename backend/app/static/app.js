@@ -229,14 +229,14 @@ async function toggleUserMode() {
         });
         if (res.token) {
             currentToken = res.token;
-            localStorage.setItem('token', res.token);
+            localStorage.setItem('access_token', res.token);  // Fixed: was 'token'
         }
         if (res.user) {
             currentUser = res.user;
-            localStorage.setItem('user', JSON.stringify(currentUser));
+            localStorage.setItem('current_user', JSON.stringify(currentUser));  // Fixed: was 'user'
         } else {
             currentUser.user_type = targetRole;
-            localStorage.setItem('user', JSON.stringify(currentUser));
+            localStorage.setItem('current_user', JSON.stringify(currentUser));  // Fixed: was 'user'
         }
         localStorage.setItem('grove_hub_active_mode', targetRole);
         showToast(`Switched to ${targetTitle}!`, 'success');
@@ -1183,6 +1183,14 @@ function AuthPortal(initialTab = 'login') {
                             <label class="form-label">Full Name</label>
                             <input type="text" class="form-input" id="reg-name" placeholder="John Doe" required autocomplete="name">
                         </div>
+                        <div class="form-group">
+                            <label class="form-label" style="display:flex;align-items:center;gap:6px;">Username <span style="color:var(--danger);font-size:0.75rem;">*required</span></label>
+                            <div style="position:relative;">
+                                <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:0.9rem;pointer-events:none;">@</span>
+                                <input type="text" class="form-input" id="reg-username" placeholder="your_unique_username" required autocomplete="username" style="padding-left:26px;" maxlength="30">
+                            </div>
+                            <div id="reg-username-hint" style="font-size:0.75rem;margin-top:4px;color:var(--text-muted);">3–30 characters. Letters, numbers, underscores only. Must be unique and different from your name.</div>
+                        </div>
                         <div class="form-row">
                             <div class="form-group">
                                 <label class="form-label">Phone Number</label>
@@ -1379,6 +1387,67 @@ function AuthPortal(initialTab = 'login') {
         };
     }
 
+    // Auto-suggest username from name input
+    const regNameInput = view.querySelector('#reg-name');
+    const regUsernameInput = view.querySelector('#reg-username');
+    const regUsernameHint = view.querySelector('#reg-username-hint');
+
+    if (regNameInput && regUsernameInput) {
+        // Auto-fill username when user types their name (only if username is still empty/auto)
+        let usernameTouched = false;
+        regUsernameInput.addEventListener('input', () => { usernameTouched = true; });
+
+        regNameInput.addEventListener('input', () => {
+            if (!usernameTouched || !regUsernameInput.value) {
+                const suggested = regNameInput.value.toLowerCase()
+                    .replace(/[^a-z0-9_\s]/g, '')
+                    .trim()
+                    .replace(/\s+/g, '_')
+                    .substring(0, 25);
+                if (suggested) {
+                    regUsernameInput.value = suggested;
+                    usernameTouched = false; // allow re-auto-fill
+                }
+            }
+        });
+
+        // Real-time username availability check
+        let usernameCheckTimer = null;
+        regUsernameInput.addEventListener('input', () => {
+            clearTimeout(usernameCheckTimer);
+            const val = regUsernameInput.value.replace(/[^a-zA-Z0-9_]/g, '').toLowerCase();
+            regUsernameInput.value = val; // sanitize in-place
+
+            if (!val) {
+                if (regUsernameHint) regUsernameHint.innerHTML = '<span style="color:var(--text-muted);">3–30 characters. Letters, numbers, underscores only.</span>';
+                return;
+            }
+            if (val.length < 3) {
+                if (regUsernameHint) regUsernameHint.innerHTML = '<span style="color:var(--danger);">⚠ Too short — at least 3 characters</span>';
+                return;
+            }
+            if (regUsernameHint) regUsernameHint.innerHTML = '<span style="color:var(--text-muted);">⏳ Checking availability...</span>';
+
+            usernameCheckTimer = setTimeout(async () => {
+                try {
+                    // Use the existing providers search — if a provider with this username exists, it's taken
+                    // We check by trying the public endpoint
+                    const res = await fetch(`/api/providers/by-username/${encodeURIComponent(val)}`);
+                    if (res.status === 200) {
+                        // Found — username taken
+                        if (regUsernameHint) regUsernameHint.innerHTML = '<span style="color:var(--danger);">❌ @' + val + ' is already taken</span>';
+                    } else if (res.status === 404) {
+                        if (regUsernameHint) regUsernameHint.innerHTML = '<span style="color:#10b981;">✅ @' + val + ' is available!</span>';
+                    } else {
+                        if (regUsernameHint) regUsernameHint.innerHTML = '<span style="color:var(--text-muted);">3–30 characters. Letters, numbers, underscores only.</span>';
+                    }
+                } catch (_) {
+                    if (regUsernameHint) regUsernameHint.innerHTML = '<span style="color:var(--text-muted);">3–30 characters. Letters, numbers, underscores only.</span>';
+                }
+            }, 500);
+        });
+    }
+
     // Role selection in Register
     const regTabBuyer = view.querySelector('#reg-tab-buyer');
     const regTabProv = view.querySelector('#reg-tab-prov');
@@ -1496,19 +1565,30 @@ function AuthPortal(initialTab = 'login') {
         if (errContainer) errContainer.innerHTML = '';
 
         const name = (view.querySelector('#reg-name')?.value || '').trim();
+        const rawUsername = (view.querySelector('#reg-username')?.value || '').trim();
+        const username = rawUsername.replace(/[^a-zA-Z0-9_]/g, '').toLowerCase();
         const phone = (view.querySelector('#reg-phone')?.value || '').trim();
         const email = (view.querySelector('#reg-email')?.value || '').trim();
         const password = view.querySelector('#reg-password')?.value || '';
         const role = window.selectedType || 'BUYER';
         const btn = view.querySelector('#reg-submit-btn');
+        const regUsernameHint = view.querySelector('#reg-username-hint');
 
-        if (!name || !phone || !email || !password) {
+        if (!name || !username || !phone || !email || !password) {
             if (errContainer) {
                 errContainer.innerHTML = `
                     <div style="background: rgba(239, 68, 68, 0.12); border: 1px solid var(--danger, #ef4444); color: var(--danger, #ef4444); padding: 10px 14px; border-radius: 8px; margin-bottom: 16px; font-size: 0.85rem;">
-                        ⚠️ Please fill in all fields to create your account.
+                        ⚠️ ${!username ? 'Please choose a username — it must be unique.' : 'Please fill in all fields to create your account.'}
                     </div>
                 `;
+            }
+            if (!username) view.querySelector('#reg-username')?.focus();
+            return;
+        }
+
+        if (username.length < 3) {
+            if (errContainer) {
+                errContainer.innerHTML = `<div style="background: rgba(239, 68, 68, 0.12); border: 1px solid var(--danger, #ef4444); color: var(--danger, #ef4444); padding: 10px 14px; border-radius: 8px; margin-bottom: 16px; font-size: 0.85rem;">⚠️ Username must be at least 3 characters.</div>`;
             }
             return;
         }
@@ -1522,6 +1602,7 @@ function AuthPortal(initialTab = 'login') {
         try {
             const data = {
                 name,
+                username,
                 phone,
                 email,
                 password,
@@ -4541,9 +4622,7 @@ function CreateBooking() {
             hideLoading();
 
             // Step 2: Launch Razorpay Standard Checkout
-            const rzpKey = orderData.razorpay_key_id && orderData.razorpay_key_id !== 'rzp_test_placeholder'
-                ? orderData.razorpay_key_id
-                : (window.publicConfig?.razorpay_key_id && window.publicConfig?.razorpay_key_id !== 'rzp_test_placeholder' ? window.publicConfig.razorpay_key_id : 'rzp_test_placeholder');
+            const rzpKey = orderData.razorpay_key_id;
 
             if (typeof Razorpay !== 'undefined') {
                 const options = {
@@ -4553,7 +4632,7 @@ function CreateBooking() {
                     name: "Groove Hub",
                     description: `${selectedPkg.title} (100% Escrow Protected)`,
                     image: "/static/icons/icon-192.png",
-                    order_id: orderData.order_id && !orderData.order_id.startsWith('order_sim_') && !orderData.order_id.startsWith('order_') ? orderData.order_id : undefined,
+                    order_id: orderData.order_id && orderData.order_id.startsWith('order_') ? orderData.order_id : undefined,
                     prefill: {
                         name: currentUser?.name || orderData.buyer_name,
                         email: currentUser?.email || orderData.buyer_email || 'client@example.com',
@@ -7776,6 +7855,9 @@ function LogoutPage() {
 window.logout = () => {
     currentToken = null;
     currentUser = null;
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('current_user');
+    localStorage.removeItem('grove_hub_active_mode');
     sessionStorage.clear();
     router('/login');
 };

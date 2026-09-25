@@ -40,7 +40,7 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_type = Column(Enum(UserType), default=UserType.BUYER)
     name = Column(String, nullable=False)
-    username = Column(String, unique=True, index=True, nullable=True)
+    username = Column(String, unique=True, index=True, nullable=False)
     phone = Column(String, unique=True, index=True)
     email = Column(String, unique=True, index=True)
     password_hash = Column(String, nullable=False)

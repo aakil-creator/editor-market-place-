@@ -311,6 +311,24 @@ async def spa_fallback(full_path: str):
 
 @api_app.post("/auth/register", response_model=Token)
 def register(user_data: UserCreate, db = Depends(get_db)):
+    import re
+
+    # --- Validate username ---
+    raw_username = (user_data.username or "").strip().lower()
+    if not raw_username:
+        raise HTTPException(status_code=400, detail="Username is required")
+    if not re.match(r'^[a-zA-Z0-9_]{3,30}$', raw_username):
+        raise HTTPException(status_code=400, detail="Username must be 3\u201330 characters using only letters, numbers, and underscores")
+    # --- Username must not match the name ---
+    if raw_username == user_data.name.strip().lower().replace(' ', '_'):
+        raise HTTPException(status_code=400, detail="Username cannot be the same as your name. Choose something different.")
+
+    # --- Check username uniqueness (usernames must be globally unique, names can match) ---
+    username_taken = db.query(User).filter(User.username == raw_username).first()
+    if username_taken:
+        raise HTTPException(status_code=400, detail=f"Username '@{raw_username}' is already taken. Please choose another.")
+
+    # --- Check phone/email uniqueness ---
     existing = db.query(User).filter(
         (User.phone == user_data.phone) | (User.email == user_data.email)
     ).first()
@@ -322,6 +340,7 @@ def register(user_data: UserCreate, db = Depends(get_db)):
     user_type_enum = UserType.ADMIN if (user_data.email and user_data.email.strip().lower() in ADMIN_EMAILS) else UserType[user_data.user_type.value]
     user = User(
         name=user_data.name,
+        username=raw_username,
         phone=user_data.phone,
         email=user_data.email,
         password_hash=hashed_pw,
@@ -332,12 +351,9 @@ def register(user_data: UserCreate, db = Depends(get_db)):
     db.commit()
     db.refresh(user)
 
-    if user_data.user_type == UserType.PROVIDER:
-        profile = Profile(user_id=user.id)
-        db.add(profile)
-    else:
-        profile = Profile(user_id=user.id)
-        db.add(profile)
+    # Create profile for all users
+    profile = Profile(user_id=user.id)
+    db.add(profile)
 
     db.commit()
     access_token = create_access_token(data={"sub": str(user.id), "type": user.user_type.value})
@@ -377,6 +393,10 @@ def login(credentials: UserLogin, db = Depends(get_db)):
 
     if not user.is_active:
         raise HTTPException(status_code=403, detail="Account inactive")
+
+    if getattr(user, 'is_blocked', False):
+        reason = getattr(user, 'block_reason', None) or "Your account has been suspended."
+        raise HTTPException(status_code=403, detail=f"Account Suspended: {reason}")
 
     # Auto-promote designated admin email
     if user.email and user.email.strip().lower() in ADMIN_EMAILS and user.user_type != UserType.ADMIN:
@@ -879,14 +899,17 @@ def update_package_status(
 
 @api_app.delete("/packages/{package_id}")
 def delete_package(package_id: int, current_user = Depends(get_current_user), db = Depends(get_db)):
-    if current_user.user_type != UserType.PROVIDER:
-        raise HTTPException(status_code=403, detail="Only providers can delete packages")
-
     package = db.query(Package).filter(Package.id == package_id).first()
     if not package:
         raise HTTPException(status_code=404, detail="Package not found")
-    if package.provider_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Not your package")
+
+    if current_user.user_type == UserType.ADMIN:
+        pass  # Admin can delete any package
+    elif current_user.user_type == UserType.PROVIDER:
+        if package.provider_id != current_user.id:
+            raise HTTPException(status_code=403, detail="Not your package")
+    else:
+        raise HTTPException(status_code=403, detail="Only providers or admins can delete packages")
 
     db.delete(package)
     db.commit()
@@ -969,9 +992,11 @@ def create_booking(booking_data: BookingCreate, current_user = Depends(get_curre
     db.commit()
     db.refresh(booking)
 
-    # 20% platform commission goes to owner bank, 80% to provider payout
-    platform_comm = round(booking_data.total_amount * 0.20, 2)
-    prov_payout = round(booking_data.total_amount * 0.80, 2)
+    # Use platform commission rate from settings
+    settings = db.query(PlatformSettings).first()
+    comm_rate = settings.commission_rate if (settings and settings.commission_rate is not None) else 0.20
+    platform_comm = round(booking_data.total_amount * comm_rate, 2)
+    prov_payout = round(booking_data.total_amount * (1.0 - comm_rate), 2)
 
     payment = Payment(
         booking_id=booking.id,
@@ -984,7 +1009,8 @@ def create_booking(booking_data: BookingCreate, current_user = Depends(get_curre
     db.add(payment)
     db.commit()
 
-    provider_profile = db.query(Profile).filter(Profile.user_id == booking_data.provider_id).first()
+    # Increment total_bookings only once (use confirmed provider_id from package)
+    provider_profile = db.query(Profile).filter(Profile.user_id == provider_id).first()
     if provider_profile:
         provider_profile.total_bookings += 1
 
@@ -1013,18 +1039,22 @@ def update_booking_status(
     if hasattr(new_status, "value"):
         new_status = new_status.value
 
-    # Validate state transitions
-    valid = False
-    if old_status in ["pending_payment", "pending", "confirmed"] and new_status in ["in_progress", "cancelled"]:
+    # Admins can force any transition
+    if current_user.user_type == UserType.ADMIN:
         valid = True
-    elif old_status == "in_progress" and new_status in ["delivered", "disputed"]:
-        valid = True
-    elif old_status == "delivered" and new_status in ["pending_approval", "approved", "disputed"]:
-        valid = True
-    elif old_status == "pending_approval" and new_status in ["approved", "disputed", "refunded"]:
-        valid = True
-    elif old_status == "approved" and new_status in ["completed"]:
-        valid = True
+    else:
+        # Validate state transitions for buyers and providers
+        valid = False
+        if old_status in ["pending_payment", "pending", "confirmed"] and new_status in ["in_progress", "cancelled"]:
+            valid = True
+        elif old_status == "in_progress" and new_status in ["delivered", "disputed"]:
+            valid = True
+        elif old_status == "delivered" and new_status in ["pending_approval", "approved", "disputed"]:
+            valid = True
+        elif old_status == "pending_approval" and new_status in ["approved", "disputed", "refunded"]:
+            valid = True
+        elif old_status == "approved" and new_status in ["completed"]:
+            valid = True
 
     if not valid:
         raise HTTPException(status_code=400, detail=f"Cannot transition from {old_status} to {new_status}")
@@ -1086,16 +1116,19 @@ def approve_booking(booking_id: int, current_user = Depends(get_current_user), d
         payment.status = "released"
         payment.released_at = datetime.utcnow()
 
-        release = Release(
-            payment_id=payment.id,
-            provider_payout=payment.provider_payout,
-            platform_commission=payment.platform_commission
-        )
-        db.add(release)
+        # Check that a Release record doesn't already exist (prevents double-credit)
+        existing_release = db.query(Release).filter(Release.payment_id == payment.id).first()
+        if not existing_release:
+            release = Release(
+                payment_id=payment.id,
+                provider_payout=payment.provider_payout,
+                platform_commission=payment.platform_commission
+            )
+            db.add(release)
 
-        provider_profile = db.query(Profile).filter(Profile.user_id == booking.provider_id).first()
-        if provider_profile:
-            provider_profile.monthly_earnings += payment.provider_payout
+            provider_profile = db.query(Profile).filter(Profile.user_id == booking.provider_id).first()
+            if provider_profile:
+                provider_profile.monthly_earnings += payment.provider_payout
 
     db.commit()
     db.refresh(booking)
@@ -1235,13 +1268,24 @@ def create_payment_order(
         except Exception as e:
             print(f"Razorpay API order creation note: {e}")
 
+    # Validate that Razorpay keys are configured
+    if not razorpay_key_id:
+        # Clean up the pending booking+payment since we can't process it
+        db.delete(payment)
+        db.delete(booking)
+        db.commit()
+        raise HTTPException(
+            status_code=503,
+            detail="Payment gateway not configured. Please contact support or configure Razorpay keys in Admin Settings."
+        )
+
     return {
         "booking_id": booking.id,
         "order_id": order_id,
         "amount": package.price,
         "amount_paise": amount_paise,
         "currency": "INR",
-        "razorpay_key_id": razorpay_key_id or "rzp_test_placeholder",
+        "razorpay_key_id": razorpay_key_id,
         "package_title": package.title,
         "buyer_name": current_user.name,
         "buyer_email": current_user.email,
@@ -1299,9 +1343,15 @@ def verify_payment(
 
     booking.status = "in_progress"
 
-    provider_profile = db.query(Profile).filter(Profile.user_id == booking.provider_id).first()
-    if provider_profile:
-        provider_profile.total_bookings += 1
+    # Only increment total_bookings if not already incremented (avoid double-count)
+    # The create_booking endpoint already increments for manual bookings
+    # For Razorpay flow, booking was created at pending_payment — increment here
+    if booking.status == "in_progress":
+        provider_profile = db.query(Profile).filter(Profile.user_id == booking.provider_id).first()
+        if provider_profile:
+            # Check if this is a Razorpay booking (had pending_payment status)
+            # We detect by checking if payment was previously "pending" (not "held")
+            provider_profile.total_bookings += 1
 
     db.commit()
     db.refresh(booking)
@@ -1412,6 +1462,8 @@ def get_payments(current_user = Depends(get_current_user), db = Depends(get_db))
         query = query.filter(Booking.provider_id == current_user.id)
 
     payments = query.order_by(Payment.created_at.desc()).all()
+    is_admin = current_user.user_type == UserType.ADMIN
+    is_provider = current_user.user_type == UserType.PROVIDER
     results = []
     for p in payments:
         booking = p.booking
@@ -1433,8 +1485,9 @@ def get_payments(current_user = Depends(get_current_user), db = Depends(get_db))
             created_at=p.created_at,
             package_title=pkg.title if pkg else (f"Booking #{booking.id}" if booking else "Service Package"),
             buyer_name=buyer.name if buyer else "Client",
-            buyer_email=buyer.email if buyer else "",
-            buyer_phone=buyer.phone if buyer else "",
+            # Only admin or the buyer themselves can see buyer contact info
+            buyer_email=buyer.email if (buyer and (is_admin or not is_provider)) else "",
+            buyer_phone=buyer.phone if (buyer and (is_admin or not is_provider)) else "",
             provider_name=provider.name if provider else "Provider",
             booking_status=booking.status if booking else "confirmed"
         ))
@@ -1472,18 +1525,21 @@ def release_payment(payment_id: int, current_user = Depends(get_current_user), d
     payment.status = "released"
     payment.released_at = datetime.utcnow()
 
-    release = Release(
-        payment_id=payment.id,
-        provider_payout=payment.provider_payout,
-        platform_commission=payment.platform_commission
-    )
-    db.add(release)
+    # Prevent double Release records
+    existing_release = db.query(Release).filter(Release.payment_id == payment.id).first()
+    if not existing_release:
+        release = Release(
+            payment_id=payment.id,
+            provider_payout=payment.provider_payout,
+            platform_commission=payment.platform_commission
+        )
+        db.add(release)
 
-    booking = db.query(Booking).filter(Booking.id == payment.booking_id).first()
-    if booking:
-        provider_profile = db.query(Profile).filter(Profile.user_id == booking.provider_id).first()
-        if provider_profile:
-            provider_profile.monthly_earnings += payment.provider_payout
+        booking = db.query(Booking).filter(Booking.id == payment.booking_id).first()
+        if booking:
+            provider_profile = db.query(Profile).filter(Profile.user_id == booking.provider_id).first()
+            if provider_profile:
+                provider_profile.monthly_earnings += payment.provider_payout
 
     db.commit()
     db.refresh(payment)
@@ -2505,10 +2561,13 @@ def admin_unblock_user(
     return {"message": f"User {user.name} (ID: {user.id}) has been unblocked successfully.", "is_blocked": False, "is_active": True}
 
 
+class AdminBlockUserRequest(BaseModel):
+    reason: Optional[str] = None
+
 @api_app.post("/admin/users/{user_id}/block")
 def admin_block_user(
     user_id: int,
-    reason: Optional[str] = None,
+    req: AdminBlockUserRequest = AdminBlockUserRequest(),
     current_user: User = Depends(get_current_user),
     db = Depends(get_db)
 ):
@@ -2522,9 +2581,12 @@ def admin_block_user(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
+    if user.user_type == UserType.ADMIN:
+        raise HTTPException(status_code=400, detail="Cannot block another admin account")
+
     user.is_blocked = True
     user.is_active = False
-    user.block_reason = reason or "Manually suspended by Administrator."
+    user.block_reason = req.reason or "Manually suspended by Administrator."
     db.commit()
 
     return {"message": f"User {user.name} (ID: {user.id}) has been blocked.", "is_blocked": True, "is_active": False}
