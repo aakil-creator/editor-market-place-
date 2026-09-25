@@ -16,7 +16,8 @@ from fastapi.responses import FileResponse, JSONResponse
 import re
 import os
 import uuid
-from datetime import datetime
+import random
+from datetime import datetime, timedelta
 
 # --- Chat video upload directory ---
 CHAT_UPLOAD_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static', 'chat_uploads')
@@ -30,7 +31,7 @@ from .database import get_db, engine, Base, SessionLocal
 from .models import (
     User, Profile, Package, Booking, Payment, Release, Review, Dispute, Niche,
     UserType, BookingStatus, PaymentStatus, PackageType, Message, PortfolioItem, PlatformSettings,
-    PasswordResetToken, EmailVerificationToken
+    PasswordResetToken, EmailVerificationToken, OtpVerification
 )
 from .schemas import (
     UserCreate, UserUpdate, UserLogin, Token, UserResponse, ProfileCreate, ProfileUpdate,
@@ -43,7 +44,7 @@ from .schemas import (
     AdminStats, NicheCreate, NicheUpdate, NicheResponse,
     MessageCreate, MessageResponse, DirectMessageCreate, ConversationSummary, PortfolioItemCreate, PortfolioItemResponse,
     BankDetailsUpdate, PlatformSettingsUpdate, PlatformSettingsResponse,
-    SocialLoginRequest, RoleSwitchRequest,
+    SocialLoginRequest, RoleSwitchRequest, OtpRequest, OtpVerifyRequest,
     ForgotPasswordRequest, ForgotPasswordResponse, ResetPasswordWithTokenRequest, VerifyEmailRequest,
     get_current_user, get_current_user_optional
 )
@@ -153,6 +154,19 @@ def ensure_schema():
                 )
             """))
             conn.execute(text("CREATE INDEX IF NOT EXISTS ix_email_verification_tokens_token_hash ON email_verification_tokens(token_hash)"))
+
+            # Ensure otp_verifications table exists
+            conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS otp_verifications (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    phone VARCHAR NOT NULL,
+                    otp_code VARCHAR NOT NULL,
+                    expires_at DATETIME NOT NULL,
+                    used BOOLEAN DEFAULT 0,
+                    created_at DATETIME
+                )
+            """))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS ix_otp_verifications_phone ON otp_verifications(phone)"))
 
             # Ensure primary admin rahura2026@gmail.com has ADMIN role
             conn.execute(text("UPDATE users SET user_type = 'ADMIN', is_verified = 1, is_active = 1 WHERE lower(email) = 'rahura2026@gmail.com'"))
@@ -2188,13 +2202,13 @@ def detect_contact_sharing(text_content: str):
 
     # 5. Phone number detection
     # Match patterns like: +91 9876543210, 98765-43210, 9 8 7 6 5 4 3 2 1 0, 9876543210
-    clusters = re.findall(r'(?:(?:[s-.]?91|0)[..-]?)?[6-9](?:[..-]?.){9}', normalized)
+    clusters = re.findall(r'(?:(?:\+?91|0)[\s\-]?)?[6-9]\d(?:[\s\-]?\d){8}', normalized)
     if clusters:
         return True, f"Sharing personal phone number ({clusters[0].strip()})"
 
     # Clean non-digits and test contiguous digit streams
-    digits_only = re.sub(r'[^.]', '', normalized)
-    if re.search(r'(?:^|[^0-9])(?:91|0)?([6-9].{9})(?:[^0-9]|$)', digits_only):
+    digits_only = re.sub(r'[^\d]', '', normalized)
+    if re.search(r'(?:91|0)?([6-9]\d{9})', digits_only):
         return True, "Sharing personal phone number"
 
     # 6. Bypass phrases combined with numbers
