@@ -9,11 +9,18 @@ if sys.platform == 'win32':
     except Exception:
         pass
 
-from fastapi import FastAPI, Depends, HTTPException, status, Request
+from fastapi import FastAPI, Depends, HTTPException, status, Request, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 import re
+import os
+import uuid
+from datetime import datetime
+
+# --- Chat video upload directory ---
+CHAT_UPLOAD_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static', 'chat_uploads')
+os.makedirs(CHAT_UPLOAD_DIR, exist_ok=True)
 from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime
@@ -87,6 +94,20 @@ def ensure_schema():
                 conn.execute(text("ALTER TABLE profiles ADD COLUMN bank_ifsc_code TEXT"))
             if "upi_id" not in columns:
                 conn.execute(text("ALTER TABLE profiles ADD COLUMN upi_id TEXT"))
+            
+            # --- Message model columns (for admin delete/mask) ---
+            cursor_msg = conn.execute(text("PRAGMA table_info(messages)"))
+            cols_msg = [row[1] for row in cursor_msg.fetchall()]
+            if "is_deleted" not in cols_msg:
+                conn.execute(text("ALTER TABLE messages ADD COLUMN is_deleted BOOLEAN DEFAULT 0"))
+            if "is_masked" not in cols_msg:
+                conn.execute(text("ALTER TABLE messages ADD COLUMN is_masked BOOLEAN DEFAULT 0"))
+            if "masked_by_admin_id" not in cols_msg:
+                conn.execute(text("ALTER TABLE messages ADD COLUMN masked_by_admin_id INTEGER"))
+            if "deleted_by_admin_id" not in cols_msg:
+                conn.execute(text("ALTER TABLE messages ADD COLUMN deleted_by_admin_id INTEGER"))
+            if "deleted_at" not in cols_msg:
+                conn.execute(text("ALTER TABLE messages ADD COLUMN deleted_at DATETIME"))
             
             # Check platform_settings columns
             cursor_ps = conn.execute(text("PRAGMA table_info(platform_settings)"))
@@ -2071,6 +2092,28 @@ def detect_contact_sharing(text_content: str):
     return False, None
 
 
+def mask_sensitive_content(text_content: str) -> str:
+    """
+    Sanitize chat text by masking phones and social handles before storage.
+    Returns masked string. Used both for flagging AND for stored content.
+    """
+    if not text_content:
+        return text_content
+    import re as _re
+    
+    def _mask_phone(m):
+        digits = _re.sub(r'[^0-9]', '', m.group(0))
+        if len(digits) >= 10:
+            return '📞 [contact hidden - ' + str(len(digits)) + ' digits]'
+        return m.group(0)
+    
+    out = _re.sub(r'(?<!\\w)(\\+?\\d[\\s\\-.]?){7,}\\d(?!\\w)', _mask_phone, text_content)
+    out = _re.sub(r'(@[a-zA-Z0-9_]{2,30})(?!\\w)', lambda m: '[🔗 ' + m.group(1)[:2] + '…' + m.group(1)[-2:] + ']', out)
+    out = _re.sub(r'https?://(?:www\\.)?(instagram\\.com|facebook\\.com)/@?[a-zA-Z0-9_.+-]+', '[🔗 social link hidden]', out)
+    out = _re.sub(r'(?<!\\w)(instagram\\.com|facebook\\.com)/@?[a-zA-Z0-9_.+-]+', '[🔗 social link hidden]', out)
+    return out
+
+
 def count_prior_flags(db, user_id: int) -> int:
     """Count prior flagged (blocked) messages sent by a user — strike system."""
     try:
@@ -2121,6 +2164,55 @@ def handle_moderation_violation(db, sender: User, receiver_id: int, booking_id, 
         status_code=status.HTTP_400_BAD_REQUEST,
         detail=f"Warning (Strike 1): Your message was blocked — {reason}. Keep all contact details and payments on Grove Hub. A repeat violation will suspend your account."
     )
+
+
+# ============== CHAT VIDEO UPLOAD ==============
+
+ALLOWED_VIDEO_TYPES = {
+    'video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/x-matroska',
+    'video/webm', 'video/mpeg', 'video/ogg'
+}
+ALLOWED_VIDEO_EXTENSIONS = {'.mp4', '.mov', '.avi', '.mkv', '.webm', '.mpeg', '.mpg', '.3gp'}
+
+@api_app.post("/messages/upload")
+async def upload_chat_video(
+    video: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+):
+    """Upload a video file to be attached to a chat message."""
+    if not video.content_type:
+        # Guess from filename if content_type is missing
+        ext = os.path.splitext(video.filename or '')[1].lower()
+        video.content_type = {
+            '.mp4': 'video/mp4', '.mov': 'video/quicktime', '.avi': 'video/x-msvideo',
+            '.mkv': 'video/x-matroska', '.webm': 'video/webm', '.mpeg': 'video/mpeg',
+            '.mpg': 'video/mpeg', '.3gp': 'video/3gpp'
+        }.get(ext, 'application/octet-stream')
+    
+    if video.content_type not in ALLOWED_VIDEO_TYPES:
+        # Also check extension as fallback
+        ext = os.path.splitext(video.filename or '')[1].lower()
+        if ext not in ALLOWED_VIDEO_EXTENSIONS:
+            raise HTTPException(status_code=400, detail="Only video files (mp4, mov, avi, mkv, webm) are allowed")
+    
+    if video.size and video.size > 50 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="Video file too large (max 50MB)")
+    
+    # Generate unique filename
+    ext = os.path.splitext(video.filename or '')[1].lower()
+    if not ext:
+        ext = '.mp4'
+    safe_name = f"{uuid.uuid4().hex}{ext}"
+    file_path = os.path.join(CHAT_UPLOAD_DIR, safe_name)
+    
+    # Save file
+    content = await video.read()
+    with open(file_path, 'wb') as f:
+        f.write(content)
+    
+    # Return public URL
+    url = f"/static/chat_uploads/{safe_name}"
+    return {"url": url, "filename": safe_name}
 
 
 @api_app.post("/bookings/{booking_id}/messages", response_model=MessageResponse)
@@ -2377,6 +2469,9 @@ def send_direct_message_to_user(
         raise HTTPException(status_code=400, detail="Message content cannot be empty")
 
     clean_content = msg_data.message.strip()
+    
+    # --- Mask sensitive content before storing ---
+    clean_content = mask_sensitive_content(clean_content)
 
     # Anti-disintermediation check (strike-based: warn first, suspend on repeat)
     flagged, reason = detect_contact_sharing(clean_content)
@@ -2447,7 +2542,7 @@ def get_admin_all_chats(
     if current_user.user_type != UserType.ADMIN:
         raise HTTPException(status_code=403, detail="Admin only")
 
-    messages = db.query(Message).order_by(Message.created_at.desc()).all()
+    messages = db.query(Message).filter(Message.is_deleted == False).order_by(Message.created_at.desc()).all()
 
     convos = {}
     for m in messages:
@@ -2529,9 +2624,12 @@ def get_admin_chat_transcript(
         raise HTTPException(status_code=404, detail="User not found")
 
     messages = db.query(Message).filter(
-        or_(
-            and_(Message.sender_id == user1_id, Message.receiver_id == user2_id),
-            and_(Message.sender_id == user2_id, Message.receiver_id == user1_id)
+        and_(
+            or_(
+                and_(Message.sender_id == user1_id, Message.receiver_id == user2_id),
+                and_(Message.sender_id == user2_id, Message.receiver_id == user1_id)
+            ),
+            Message.is_deleted == False
         )
     ).order_by(Message.created_at.asc()).all()
 
@@ -2571,7 +2669,9 @@ def get_admin_flagged_messages(
     if current_user.user_type != UserType.ADMIN:
         raise HTTPException(status_code=403, detail="Admin only")
 
-    flagged_msgs = db.query(Message).filter(Message.is_flagged == True).order_by(Message.created_at.desc()).all()
+    flagged_msgs = db.query(Message).filter(
+        and_(Message.is_flagged == True, Message.is_deleted == False)
+    ).order_by(Message.created_at.desc()).all()
 
     user_ids = list(set([m.sender_id for m in flagged_msgs] + [m.receiver_id for m in flagged_msgs]))
     users = db.query(User).filter(User.id.in_(user_ids)).all() if user_ids else []
@@ -2656,6 +2756,69 @@ def admin_block_user(
     db.commit()
 
     return {"message": f"User {user.name} (ID: {user.id}) has been blocked.", "is_blocked": True, "is_active": False}
+
+
+# ============== ADMIN MESSAGE MANAGEMENT ==============
+
+@api_app.post("/admin/messages/{message_id}/mask")
+def admin_mask_message(
+    message_id: int,
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    """Admin: toggle mask/unmask a message (shows [message hidden by admin] to users)."""
+    if current_user.user_type != UserType.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin only")
+    msg = db.query(Message).filter(Message.id == message_id).first()
+    if not msg:
+        raise HTTPException(status_code=404, detail="Message not found")
+    msg.is_masked = not msg.is_masked
+    msg.masked_by_admin_id = current_user.id
+    db.commit()
+    return {"message": "Message masked" if msg.is_masked else "Message unmasked", "is_masked": msg.is_masked}
+
+
+@api_app.delete("/admin/messages/{message_id}")
+def admin_delete_message(
+    message_id: int,
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    """Admin: soft-delete a message (removed from users, kept for admin audit)."""
+    if current_user.user_type != UserType.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin only")
+    msg = db.query(Message).filter(Message.id == message_id).first()
+    if not msg:
+        raise HTTPException(status_code=404, detail="Message not found")
+    msg.is_deleted = True
+    msg.deleted_by_admin_id = current_user.id
+    msg.deleted_at = datetime.utcnow()
+    db.commit()
+    return {"message": "Message deleted"}
+
+
+@api_app.delete("/admin/chats/user/{user1_id}/with/{user2_id}")
+def admin_delete_conversation(
+    user1_id: int,
+    user2_id: int,
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    """Admin: soft-delete all messages in a conversation between two users."""
+    if current_user.user_type != UserType.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin only")
+    count = db.query(Message).filter(
+        or_(
+            and_(Message.sender_id == user1_id, Message.receiver_id == user2_id),
+            and_(Message.sender_id == user2_id, Message.receiver_id == user1_id)
+        )
+    ).update({
+        Message.is_deleted: True,
+        Message.deleted_by_admin_id: current_user.id,
+        Message.deleted_at: datetime.utcnow()
+    })
+    db.commit()
+    return {"message": f"Conversation deleted ({count} messages)", "deleted_count": count}
 
 
 # ============== PORTFOLIO ROUTES ==============

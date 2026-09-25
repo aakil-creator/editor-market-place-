@@ -6166,6 +6166,54 @@ textarea::placeholder,
     }
 }
 
+/* Admin chat message card styles */
+.admin-msg-card {
+    transition: all 0.15s ease;
+}
+.admin-msg-card:hover {
+    border-color: var(--accent) !important;
+}
+.admin-msg-text {
+    line-height: 1.45;
+}
+.admin-mask-btn:hover {
+    color: var(--warning) !important;
+}
+
+/* Inbox chat attach button */
+.inbox-attach-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-secondary);
+    font-size: 1.3rem;
+    padding: 4px 6px;
+    line-height: 1;
+    border-radius: 50%;
+    transition: all 0.15s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.inbox-attach-btn:hover {
+    color: var(--accent);
+    background: rgba(99, 102, 241, 0.1);
+}
+.inbox-chat-input-bar {
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+    padding: 8px 12px;
+    background: var(--bg-card);
+    border-top: 1px solid var(--border);
+}
+.inbox-chat-input-bar .inbox-chat-textarea {
+    flex: 1;
+    resize: none;
+    overflow-y: auto;
+    max-height: 120px;
+}
+
 /* ==========================================================================
    FIVERR-STYLE GIG CARDS
    ========================================================================== */

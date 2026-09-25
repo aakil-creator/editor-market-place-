@@ -263,6 +263,11 @@ class Message(Base):
     is_read = Column(Boolean, default=False)
     is_flagged = Column(Boolean, default=False)
     flag_reason = Column(String, nullable=True)
+    is_deleted = Column(Boolean, default=False)
+    is_masked = Column(Boolean, default=False)  # Admin-masked: shows "[message hidden by admin]" to users
+    masked_by_admin_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    deleted_by_admin_id = Column(Integer, nullable=True)
+    deleted_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
 class PortfolioItem(Base):

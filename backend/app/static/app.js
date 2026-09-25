@@ -9020,9 +9020,11 @@ function MessagesInbox() {
         }
     }
 
-    async function sendMessage(text) {
+    async function sendMessage(text, fileUrl = null) {
         if (!text || !text.trim() || !activeUserId) return;
         const clean = text.trim();
+        // Client-side masking (server-side also applies)
+        const maskedText = window.__maskMessageText(clean);
         const inputEl = document.getElementById('inbox-message-input');
         if (inputEl) inputEl.value = '';
 
@@ -9032,7 +9034,8 @@ function MessagesInbox() {
             sender_id: currentUser?.id,
             receiver_id: activeUserId,
             sender_name: currentUser?.name || 'You',
-            message: clean,
+            message: maskedText,
+            file_url: fileUrl,
             created_at: new Date().toISOString(),
             is_read: false,
             is_flagged: false
@@ -9040,9 +9043,11 @@ function MessagesInbox() {
         renderMessagesStream();
 
         try {
+            const body = { message: maskedText };
+            if (fileUrl) body.file_url = fileUrl;
             const res = await apiFetch(`/messages/user/${activeUserId}`, {
                 method: 'POST',
-                body: JSON.stringify({ message: clean })
+                body: JSON.stringify(body)
             });
             const idx = messages.findIndex(m => m.id === tempId);
             if (idx !== -1) messages[idx] = res;
@@ -9060,6 +9065,62 @@ function MessagesInbox() {
     }
 
     window.__inboxSendMessage = sendMessage;
+
+    // --- Video upload from gallery ---
+    window.__inboxUploadVideo = async () => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'video/*';
+        input.onchange = async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            if (file.size > 50 * 1024 * 1024) {
+                showToast('Video too large (max 50MB)', 'error');
+                return;
+            }
+            showToast('Uploading video...', 'info');
+            try {
+                const formData = new FormData();
+                formData.append('video', file);
+                const res = await fetch('/api/messages/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                if (!res.ok) throw new Error('Upload failed');
+                const data = await res.json();
+                // Pre-fill message input with a note + video
+                const inputEl = document.getElementById('inbox-message-input');
+                if (inputEl) {
+                    inputEl.value = '📹 Video sent';
+                    window.__inboxSendMessage(inputEl.value);
+                }
+            } catch (err) {
+                showToast('Video upload failed: ' + err.message, 'error');
+            }
+        };
+        input.click();
+    };
+
+    // --- Message masking on client side (in addition to server-side) ---
+    window.__maskMessageText = (text) => {
+        if (!text) return text;
+        // Mask phone numbers (continuous digit streams 10+ chars, with optional +91/0 prefix)
+        let masked = text.replace(/(?<!\w)(\+?\d[\s\-\.]?){7,}\d(?!\w)/g, (m) => {
+            const digits = m.replace(/\D/g, '');
+            if (digits.length >= 10) {
+                return '📞 [contact hidden - ' + digits.length + ' digits]';
+            }
+            return m;
+        });
+        // Mask @usernames (Instagram/Facebook style)
+        masked = masked.replace(/(@[a-zA-Z0-9_]{2,30})(?!\w)/g, (m) => {
+            return '[🔗 ' + m.slice(0, 2) + '…' + m.slice(-2) + ']';
+        });
+        // Mask instagram.com / facebook.com URLs
+        masked = masked.replace(/https?:\/\/(?:www\.)?(instagram\.com|facebook\.com)\/@?[a-zA-Z0-9_.+-]+/gi, '[🔗 social link hidden]');
+        masked = masked.replace(/(?<!\w)(instagram\.com|facebook\.com)\/@?[a-zA-Z0-9_.+-]+/gi, '[🔗 social link hidden]');
+        return masked;
+    };
 
     window.__selectInboxConversation = (otherId, otherName, otherRole) => {
         activeUserId = otherId;
@@ -9240,6 +9301,9 @@ function MessagesInbox() {
 
             <!-- Bottom Input Bar (Telegram-style: auto-resize, Enter=send, Shift+Enter=newline) -->
             <div class="inbox-chat-input-bar">
+                <button class="inbox-attach-btn" onclick="window.__inboxUploadVideo()" title="Send video from gallery" style="background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--text-secondary);padding:4px;line-height:1;">
+                    📎
+                </button>
                 <textarea
                     id="inbox-message-input"
                     class="inbox-chat-textarea"
@@ -9401,9 +9465,64 @@ function AdminChatsView() {
         }
     };
 
+    // --- Admin: Toggle mask a message ---
+    window.__adminMaskMessage = async (messageId) => {
+        try {
+            const res = await apiFetch(`/admin/messages/${messageId}/mask`, { method: 'POST' });
+            showToast(res.message || (res.is_masked ? 'Message masked' : 'Message unmasked'), 'success');
+            window.__adminRefreshFlagged();
+            // Reload the transcript modal if open
+            const modal = document.querySelector('.fiverr-escrow-modal');
+            if (modal) modal.remove();
+            if (window.__lastTranscriptData) {
+                openTranscriptModal(window.__lastTranscriptData);
+            }
+        } catch (err) {
+            showToast(err.message, 'error');
+        }
+    };
+
+    // --- Admin: Delete a message (soft-delete) ---
+    window.__adminDeleteMessage = async (messageId) => {
+        if (!confirm('Delete this message? It will be removed from users but kept for admin audit.')) return;
+        try {
+            const res = await apiFetch(`/admin/messages/${messageId}`, { method: 'DELETE' });
+            showToast(res.message || 'Message deleted', 'success');
+            window.__adminRefreshFlagged();
+            const modal = document.querySelector('.fiverr-escrow-modal');
+            if (modal) modal.remove();
+            if (window.__lastTranscriptData) {
+                openTranscriptModal(window.__lastTranscriptData);
+            }
+        } catch (err) {
+            showToast(err.message, 'error');
+        }
+    };
+
+    // --- Admin: Delete entire conversation ---
+    window.__adminDeleteConversation = async (user1Id, user2Id) => {
+        if (!confirm('Delete this entire conversation? All messages will be removed from users but kept for admin audit.')) return;
+        try {
+            const res = await apiFetch(`/admin/chats/user/${user1Id}/with/${user2Id}`, { method: 'DELETE' });
+            showToast(res.message || 'Conversation deleted', 'success');
+            loadData();
+        } catch (err) {
+            showToast(err.message, 'error');
+        }
+    };
+
+    // --- Admin: Refresh flagged messages ---
+    window.__adminRefreshFlagged = async () => {
+        try {
+            const res = await apiFetch('/admin/flagged-messages');
+            flaggedMessages = res || [];
+        } catch (err) { /* silent */ }
+    };
+
     window.__adminInspectChatTranscript = async (user1Id, user2Id) => {
         try {
             const data = await apiFetch(`/admin/chats/user/${user1Id}/with/${user2Id}`);
+            window.__lastTranscriptData = data;
             openTranscriptModal(data);
         } catch (err) {
             showToast(err.message, 'error');
@@ -9434,15 +9553,25 @@ function AdminChatsView() {
                 <div style="flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 10px; background: var(--bg-hover); border-radius: 10px; margin-bottom: 16px;">
                     ${msgs.length === 0 ? '<div style="text-align: center; color: var(--text-muted); padding: 20px;">No messages</div>' : msgs.map(m => {
                         const isFlagged = m.is_flagged;
+                        const isMasked = m.is_masked;
                         const isU1 = m.sender_id === u1.id;
+                        const isDeleted = m.is_deleted;
                         return `
-                            <div style="padding: 10px 14px; border-radius: 12px; background: ${isFlagged ? 'rgba(239, 68, 68, 0.12)' : (isU1 ? 'var(--bg-card)' : 'rgba(99, 102, 241, 0.08)')}; border: 1px solid ${isFlagged ? 'rgba(239, 68, 68, 0.4)' : 'var(--border)'};">
-                                <div style="display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 0.75rem;">
-                                    <strong>${m.sender_name}</strong>
-                                    <span style="color: var(--text-muted);">${m.created_at ? new Date(m.created_at).toLocaleString() : ''}</span>
+                            <div class="admin-msg-card" style="padding: 10px 14px; border-radius: 12px; background: ${isFlagged ? 'rgba(239, 68, 68, 0.12)' : (isU1 ? 'var(--bg-card)' : 'rgba(99, 102, 241, 0.08)')}; border: 1px solid ${isFlagged ? 'rgba(239, 68, 68, 0.4)' : 'var(--border)'}; position: relative;">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px;">
+                                    <div style="display: flex; gap: 6px; font-size: 0.75rem; align-items: center;">
+                                        <strong>${m.sender_name}</strong>
+                                        <span style="color: var(--text-muted);">${m.created_at ? new Date(m.created_at).toLocaleString() : ''}</span>
+                                        ${isMasked ? '<span style="color: #f59e0b; font-weight: 700; font-size: 0.65rem;">🔒 Masked</span>' : ''}
+                                        ${isDeleted ? '<span style="color: #ef4444; font-weight: 700; font-size: 0.65rem;">🗑️ Deleted</span>' : ''}
+                                    </div>
+                                    <div style="display: flex; gap: 4px;">
+                                        ${!isDeleted ? `<button class="btn btn-sm btn-outline" style="padding:2px 8px;font-size:0.7rem;" onclick="window.__adminMaskMessage(${m.id})" title="${isMasked ? 'Unmask' : 'Mask'} this message">${isMasked ? '🔓 Unmask' : '🔒 Mask'}</button>` : ''}
+                                        ${!isDeleted ? `<button class="btn btn-sm btn-danger" style="padding:2px 8px;font-size:0.7rem;" onclick="window.__adminDeleteMessage(${m.id})" title="Delete this message">🗑️ Delete</button>` : ''}
+                                    </div>
                                 </div>
-                                <div style="font-size: 0.875rem; color: var(--text-primary); word-break: break-word;">
-                                    ${escapeHTML(m.message)}
+                                <div class="admin-msg-text" style="font-size: 0.875rem; color: var(--text-primary); word-break: break-word; ${isMasked ? 'color: var(--text-muted); font-style: italic;' : ''}">
+                                    ${isMasked ? '[message hidden by admin]' : escapeHTML(m.message)}
                                 </div>
                                 ${isFlagged ? `<div style="font-size: 0.75rem; color: #ef4444; font-weight: 700; margin-top: 4px;">🛑 Flagged Violation: ${m.flag_reason || 'Contact exchange attempt'}</div>` : ''}
                             </div>
@@ -9454,6 +9583,7 @@ function AdminChatsView() {
                     <div style="display: flex; gap: 8px;">
                         ${u1.is_blocked ? `<button class="btn btn-sm btn-danger" onclick="window.__adminUnblockUser(${u1.id}, '${u1.name}'); this.closest('.fiverr-escrow-modal').remove();">Unblock ${u1.name}</button>` : ''}
                         ${u2.is_blocked ? `<button class="btn btn-sm btn-danger" onclick="window.__adminUnblockUser(${u2.id}, '${u2.name}'); this.closest('.fiverr-escrow-modal').remove();">Unblock ${u2.name}</button>` : ''}
+                        <button class="btn btn-sm btn-primary" style="background:#ef4444;border-color:#ef4444;" onclick="window.__adminDeleteConversation(${u1.id}, ${u2.id}); this.closest('.fiverr-escrow-modal').remove();" title="Delete entire conversation">🗑️ Delete Conversation</button>
                     </div>
                     <button class="btn btn-secondary" onclick="this.closest('.fiverr-escrow-modal').remove()">Close</button>
                 </div>
@@ -9611,6 +9741,7 @@ function AdminChatsView() {
                                     ` : `
                                         <span style="color: var(--text-muted); font-size: 0.75rem;">Strike 1 — warn</span>
                                     `}
+                                    <button class="btn btn-sm btn-danger" style="padding:2px 8px;font-size:0.7rem;margin-left:4px;" onclick="window.__adminDeleteMessage(${m.message_id})" title="Delete this flagged message">🗑️</button>
                                 </td>
                             </tr>
                         `;}).join('')}
