@@ -1348,6 +1348,40 @@ function AuthPortal(initialTab = 'login') {
                         <button type="submit" class="btn btn-primary" id="login-submit-btn" style="width: 100%; padding: 13px; font-weight: 700; font-size: 1rem; justify-content: center; margin-top: 8px;">
                             Sign In
                         </button>
+
+                        <!-- OTP Login Divider -->
+                        <div style="display: flex; align-items: center; gap: 10px; margin: 16px 0 10px;">
+                            <div style="flex: 1; height: 1px; background: var(--border);"></div>
+                            <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">or</span>
+                            <div style="flex: 1; height: 1px; background: var(--border);"></div>
+                        </div>
+
+                        <!-- OTP Login Panel -->
+                        <div id="otp-login-section" style="display: none;">
+                            <div class="form-group">
+                                <label class="form-label">Phone Number</label>
+                                <input type="tel" class="form-input" id="otp-phone" placeholder="+91 98765 43210" autocomplete="tel">
+                            </div>
+                            <button type="button" id="otp-send-btn" class="btn btn-outline" style="width: 100%; padding: 12px; font-weight: 700;" onclick="window.__sendOtp()">
+                                Send OTP Code
+                            </button>
+                            <div id="otp-status" style="font-size: 0.8rem; margin-top: 8px; min-height: 20px;"></div>
+
+                            <!-- OTP Verification (shown after sending) -->
+                            <div id="otp-verify-section" style="display: none; margin-top: 12px;">
+                                <div class="form-group">
+                                    <label class="form-label">Enter OTP Code</label>
+                                    <input type="text" class="form-input" id="otp-code" placeholder="6 digits" maxlength="6" inputmode="numeric" style="text-align: center; font-size: 1.2rem; letter-spacing: 8px;">
+                                </div>
+                                <button type="button" id="otp-verify-btn" class="btn btn-primary" style="width: 100%; padding: 13px; font-weight: 700; font-size: 1rem; justify-content: center;" onclick="window.__verifyOtp()">
+                                    Verify & Sign In
+                                </button>
+                                <button type="button" style="width: 100%; padding: 10px; margin-top: 8px; background: none; border: none; color: var(--accent); font-weight: 600; cursor: pointer;" onclick="window.__cancelOtp()">
+                                    ← Back to password login
+                                </button>
+                            </div>
+                        </div>
+
                         <div style="text-align: center; margin-top: 14px;">
                             <button type="button" onclick="router('/forgot-password')" style="background: none; border: none; padding: 0; font-size: 0.85rem; color: var(--accent); text-decoration: none; font-weight: 600; cursor: pointer;">Forgot Password?</button>
                         </div>
@@ -1760,7 +1794,107 @@ function AuthPortal(initialTab = 'login') {
         }
     });
 
-    // Register Form Submit Handler
+    // ---- OTP Phone Login ----
+    window.__otpPhone = '';
+    window.__otpPending = false;
+
+    window.__sendOtp = async () => {
+        const phone = (view.querySelector('#otp-phone')?.value || '').trim();
+        const status = view.querySelector('#otp-status');
+        const sendBtn = view.querySelector('#otp-send-btn');
+        const verifySection = view.querySelector('#otp-verify-section');
+
+        if (!phone || phone.replace(/\D/g, '').length < 10) {
+            if (status) status.innerHTML = '<span style="color:var(--danger);">⚠️ Enter a valid phone number</span>';
+            return;
+        }
+
+        window.__otpPhone = phone;
+        if (status) status.innerHTML = '<span style="color:var(--accent);">📱 Sending OTP...</span>';
+        if (sendBtn) sendBtn.disabled = true;
+
+        try {
+            const result = await apiFetch('/auth/otp-request', {
+                method: 'POST',
+                body: JSON.stringify({ phone: phone })
+            });
+
+            // Demo: OTP is returned in response (in production, SMS would deliver it)
+            const otp = result.otp || '';
+            if (status) {
+                status.innerHTML = `<span style="color:#10b981;font-weight:700;">✅ OTP sent to ${phone}!</span>
+                    <span style="display:block;font-size:0.7rem;color:var(--text-muted);margin-top:4px;">Your OTP: <strong>${otp}</strong> (enter it below)</span>`;
+            }
+            if (verifySection) verifySection.style.display = 'block';
+            if (sendBtn) sendBtn.style.display = 'none';
+            view.querySelector('#otp-code')?.focus();
+        } catch (err) {
+            if (status) status.innerHTML = `<span style="color:var(--danger);">❌ ${err.message || 'Failed to send OTP'}</span>`;
+            if (sendBtn) sendBtn.disabled = false;
+        }
+    };
+
+    window.__verifyOtp = async () => {
+        const phone = window.__otpPhone || '';
+        const otpCode = (view.querySelector('#otp-code')?.value || '').trim();
+        const status = view.querySelector('#otp-status');
+        const verifyBtn = view.querySelector('#otp-verify-btn');
+
+        if (!phone || !otpCode) {
+            if (status) status.innerHTML = '<span style="color:var(--danger);">⚠️ Enter both phone and OTP</span>';
+            return;
+        }
+        if (otpCode.length !== 6 || !/^\d{6}$/.test(otpCode)) {
+            if (status) status.innerHTML = '<span style="color:var(--danger);">⚠️ OTP must be 6 digits</span>';
+            return;
+        }
+
+        if (status) status.innerHTML = '<span style="color:var(--accent);">🔐 Verifying OTP...</span>';
+        if (verifyBtn) verifyBtn.disabled = true;
+
+        try {
+            const result = await apiFetch('/auth/otp-verify', {
+                method: 'POST',
+                body: JSON.stringify({ phone: phone, otp: otpCode })
+            });
+
+            currentToken = result.access_token;
+            localStorage.setItem('access_token', currentToken);
+
+            currentUser = await apiFetch('/auth/me');
+            localStorage.setItem('current_user', JSON.stringify(currentUser));
+
+            showToast(`Welcome, ${currentUser.name || 'User'}!`, 'success');
+            window.__cancelOtp();
+            if (currentUser?.user_type === 'ADMIN') {
+                router('/admin');
+            } else {
+                router('/');
+            }
+        } catch (err) {
+            if (status) status.innerHTML = `<span style="color:var(--danger);">❌ ${err.message || 'OTP verification failed'}</span>`;
+            if (verifyBtn) verifyBtn.disabled = false;
+        }
+    };
+
+    window.__cancelOtp = () => {
+        window.__otpPhone = '';
+        window.__otpPending = false;
+        const phoneInput = view.querySelector('#otp-phone');
+        if (phoneInput) phoneInput.removeAttribute('disabled');
+        if (phoneInput) phoneInput.value = '';
+        if (view.querySelector('#otp-code')) view.querySelector('#otp-code').value = '';
+        const otpSection = view.querySelector('#otp-login-section');
+        const verifySection = view.querySelector('#otp-verify-section');
+        const status = view.querySelector('#otp-status');
+        const sendBtn = view.querySelector('#otp-send-btn');
+        if (verifySection) verifySection.style.display = 'none';
+        if (status) status.innerHTML = '';
+        if (sendBtn) sendBtn.style.display = 'block';
+        view.querySelector('#login-phone')?.focus();
+    };
+
+    // ---- Register Form Submit Handler
     const regForm = view.querySelector('#register-form');
     regForm.addEventListener('submit', async (e) => {
         e.preventDefault();
