@@ -4785,8 +4785,8 @@ button:active, .btn:active, .nav-btn:active, .payment-tab-btn:active, .tab:activ
 .inbox-item {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 14px 18px;
+    gap: 10px;
+    padding: 11px 14px;
     border-bottom: 1px solid var(--border);
     cursor: pointer;
     transition: background 0.15s ease;
@@ -4799,11 +4799,12 @@ button:active, .btn:active, .nav-btn:active, .payment-tab-btn:active, .tab:activ
 .inbox-item.active {
     background: rgba(99, 102, 241, 0.08);
     border-left: 3px solid var(--accent);
+    padding-left: 11px;
 }
 
 .inbox-item-avatar {
-    width: 44px;
-    height: 44px;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
     background: linear-gradient(135deg, #6366f1, #a855f7);
     color: #fff;
@@ -4811,17 +4812,17 @@ button:active, .btn:active, .nav-btn:active, .payment-tab-btn:active, .tab:activ
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.1rem;
+    font-size: 1rem;
     flex-shrink: 0;
     position: relative;
 }
 
 .inbox-item-avatar .online-dot {
     position: absolute;
-    bottom: 1px;
-    right: 1px;
-    width: 10px;
-    height: 10px;
+    bottom: 0px;
+    right: 0px;
+    width: 9px;
+    height: 9px;
     border-radius: 50%;
     background: #10b981;
     border: 2px solid var(--bg-card);
@@ -4883,81 +4884,238 @@ button:active, .btn:active, .nav-btn:active, .payment-tab-btn:active, .tab:activ
 }
 
 .inbox-escrow-trust-banner {
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(16, 185, 129, 0.08) 100%);
-    border-bottom: 1px solid rgba(99, 102, 241, 0.2);
-    padding: 10px 18px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 0.78rem;
-    color: var(--text-secondary);
-    line-height: 1.4;
+    display: none;
 }
 
-.inbox-escrow-trust-banner strong {
-    color: var(--text-primary);
+.inbox-system-message {
+    padding: 8px 14px;
+    margin-bottom: 4px;
+}
+
+.inbox-system-msg-bubble {
+    background: rgba(99, 102, 241, 0.06);
+    border: 1px solid rgba(99, 102, 241, 0.15);
+    border-radius: 12px;
+    padding: 8px 12px;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    line-height: 1.35;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.inbox-system-msg-bubble strong {
+    color: var(--text-secondary);
 }
 
 .inbox-messages-stream {
     flex: 1;
     overflow-y: auto;
-    padding: 18px 20px;
+    padding: 18px 14px 12px;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 6px;
     background: var(--bg-surface, var(--bg-hover));
 }
 
+/* ===== TELEGRAM-STYLE MESSAGE BUBBLES ===== */
+
 .inbox-msg-row {
     display: flex;
-    flex-direction: column;
-    max-width: 72%;
+    flex-direction: row;
+    align-items: flex-end;
+    max-width: 80%;
+    position: relative;
 }
 
 .inbox-msg-row.sent {
+    flex-direction: row-reverse;
     align-self: flex-end;
-    align-items: flex-end;
 }
 
 .inbox-msg-row.received {
+    flex-direction: row;
     align-self: flex-start;
-    align-items: flex-start;
 }
 
-.inbox-bubble {
-    padding: 10px 15px;
-    border-radius: 16px;
+.inbox-msg-row.sent .inbox-msg-avatar {
+    display: none;
+}
+
+.inbox-msg-row.received .inbox-msg-avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6366f1, #a855f7);
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-right: 8px;
+    position: absolute;
+    bottom: 4px;
+}
+
+.inbox-msg-bubble-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0;
+}
+
+.inbox-msg-row.received .inbox-msg-bubble-wrap {
+    flex-direction: row;
+    align-items: flex-end;
+}
+
+.inbox-msg-bubble {
+    padding: 8px 14px;
+    border-radius: 18px;
     font-size: 0.875rem;
-    line-height: 1.45;
+    line-height: 1.4;
     word-break: break-word;
     position: relative;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+    max-width: 100%;
 }
 
-.inbox-msg-row.sent .inbox-bubble {
+.inbox-msg-row.sent .inbox-msg-bubble {
     background: linear-gradient(135deg, #6366f1, #4f46e5);
     color: #ffffff;
     border-bottom-right-radius: 4px;
 }
 
-.inbox-msg-row.received .inbox-bubble {
-    background: var(--bg-card);
-    color: var(--text-primary);
-    border: 1px solid var(--border);
+/* Telegram-style tail on sent bubble */
+.inbox-msg-row.sent .inbox-msg-bubble::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    right: -6px;
+    width: 10px;
+    height: 10px;
+    background: #4f46e5;
+    border-radius: 0 0 0 5px;
+}
+
+.inbox-msg-row.received .inbox-msg-bubble {
+    background: #e8e8f0;
+    color: #1a1a2e;
     border-bottom-left-radius: 4px;
+    border: 1px solid rgba(0, 0, 0, 0.06);
 }
 
-.inbox-msg-row.flagged .inbox-bubble {
-    background: rgba(239, 68, 68, 0.12);
-    color: #ef4444;
-    border: 1px solid rgba(239, 68, 68, 0.35);
+/* Telegram-style tail on received bubble */
+.inbox-msg-row.received .inbox-msg-bubble::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: -6px;
+    width: 10px;
+    height: 10px;
+    background: #e8e8f0;
+    border-radius: 0 0 5px 0;
 }
 
-.inbox-meta {
-    font-size: 0.7rem;
+.inbox-msg-bubble-content {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.inbox-msg-text {
+    font-size: 0.875rem;
+    line-height: 1.4;
+    word-break: break-word;
+    white-space: pre-wrap;
+}
+
+.inbox-msg-attachment {
+    margin-top: 4px;
+    font-size: 0.78rem;
+}
+
+.inbox-msg-timestamp {
+    font-size: 0.65rem;
     color: var(--text-muted);
-    margin-top: 3px;
+    margin-top: 2px;
     padding: 0 4px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    justify-content: flex-end;
+}
+
+.inbox-msg-row.sent .inbox-msg-timestamp {
+    color: rgba(255, 255, 255, 0.65);
+}
+
+.inbox-msg-row.received .inbox-msg-timestamp {
+    color: #8e8ea0;
+}
+
+/* Unread indicator dot for received messages */
+.inbox-msg-row.received.unread .inbox-msg-bubble {
+    background: #d4d4e8;
+}
+
+/* ===== CHAT INPUT BAR ===== */
+
+.inbox-chat-input-bar {
+    padding: 10px 14px;
+    border-top: 1px solid var(--border);
+    background: var(--bg-card);
+    display: flex;
+    gap: 8px;
+    align-items: flex-end;
+}
+
+.inbox-chat-textarea {
+    flex: 1;
+    min-height: 38px;
+    max-height: 80px;
+    padding: 9px 12px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--bg-surface, var(--bg-hover));
+    color: var(--text-primary);
+    font-size: 0.85rem;
+    font-family: inherit;
+    resize: none;
+    outline: none;
+    line-height: 1.4;
+}
+
+.inbox-chat-textarea:focus {
+    border-color: var(--accent);
+}
+
+.inbox-send-btn {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+    transition: transform 0.12s ease, background 0.12s ease;
+}
+
+.inbox-send-btn:hover {
+    background: #5a5cf0;
+    transform: scale(1.05);
+}
+
+.inbox-send-btn:active {
+    transform: scale(0.95);
 }
 
 .inbox-chat-input-bar {

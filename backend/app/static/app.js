@@ -8706,10 +8706,10 @@ function MessagesInbox() {
 
         if (filtered.length === 0) {
             return `
-                <div style="padding: 36px 20px; text-align: center; color: var(--text-muted);">
-                    <div style="font-size: 2.2rem; margin-bottom: 8px;">💬</div>
-                    <div style="font-weight: 700; color: var(--text-primary); margin-bottom: 4px;">No messages yet</div>
-                    <p style="font-size: 0.8125rem; line-height: 1.4; margin-bottom: 16px;">Browse verified video editors and english tutors to start talking directly.</p>
+                <div style="padding: 36px 20px; text-align: center; color: var(--text-muted); flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                    <div style="font-size: 2.5rem; margin-bottom: 10px;">💬</div>
+                    <div style="font-weight: 700; color: var(--text-primary); margin-bottom: 6px; font-size: 1rem;">No messages yet</div>
+                    <p style="font-size: 0.8rem; line-height: 1.4; margin-bottom: 14px; text-align: center;">Browse verified video editors and english tutors to start talking directly.</p>
                     <button class="btn btn-primary btn-sm" onclick="router('/')">Browse Talent</button>
                 </div>
             `;
@@ -8790,11 +8790,16 @@ function MessagesInbox() {
                 </div>
             </div>
 
-            <!-- Escrow Safety Guarantee Notice -->
-            <div class="inbox-escrow-trust-banner">
-                <span style="font-size: 1.15rem;">🛡️</span>
-                <div>
-                    <strong>Platform Trust & Safety:</strong> Keep all communications and payments on Groove Hub. Attempting to share phone numbers, WhatsApp, UPI, or off-platform contact details triggers <strong>instant account suspension</strong>.
+            <!-- Escrow Safety Guarantee Notice (Telegram-style system message) -->
+            <div class="inbox-system-message">
+                <div class="inbox-system-msg-bubble">
+                    <div style="display: flex; align-items: flex-start; gap: 8px;">
+                        <span style="font-size: 0.9rem; flex-shrink: 0; margin-top: 1px;">🛡️</span>
+                        <div style="flex: 1;">
+                            <strong style="color: var(--text-secondary); font-weight: 600;">Platform Trust & Safety</strong>
+                            <span style="color: var(--text-muted);"> — Keep all communications and payments on Groove Hub. Sharing phone numbers, WhatsApp, UPI, or off-platform details triggers instant account suspension.</span>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -8808,7 +8813,7 @@ function MessagesInbox() {
                 <textarea
                     id="inbox-message-input"
                     class="inbox-chat-textarea"
-                    placeholder="Type your message to ${activeUserName}... (Press Enter to send)"
+                    placeholder="Type a message..."
                     rows="1"
                     onkeydown="if(event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); window.__inboxSendMessage(this.value); }"
                 ></textarea>
@@ -8837,32 +8842,43 @@ function MessagesInbox() {
         return messages.map(m => {
             const isMe = m.sender_id === currentUser?.id;
             const timeStr = new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const initial = (m.sender_name || (isMe ? 'You' : 'U')).charAt(0).toUpperCase();
 
             if (m.is_flagged) {
                 return `
                     <div class="inbox-msg-row sent flagged">
-                        <div class="inbox-bubble">
-                            <div style="display: flex; align-items: center; gap: 6px; font-weight: 700; margin-bottom: 4px;">
-                                <span>🛑 Message Blocked by Safety Guard</span>
-                            </div>
-                            <div style="text-decoration: line-through; opacity: 0.7;">${escapeHTML(m.message)}</div>
-                            <div style="font-size: 0.75rem; margin-top: 6px; font-weight: 600;">
-                                Reason: ${m.flag_reason || 'Personal contact sharing policy violation'}
+                        <div class="inbox-msg-bubble-wrap">
+                            <div class="inbox-msg-bubble">
+                                <div class="inbox-msg-bubble-content">
+                                    <div style="display: flex; align-items: center; gap: 6px; font-weight: 700; margin-bottom: 4px;">
+                                        <span>🛑 Message Blocked by Safety Guard</span>
+                                    </div>
+                                    <div style="text-decoration: line-through; opacity: 0.7;">${escapeHTML(m.message)}</div>
+                                    <div style="font-size: 0.75rem; margin-top: 4px; font-weight: 600;">
+                                        Reason: ${m.flag_reason || 'Personal contact sharing policy violation'}
+                                    </div>
+                                </div>
+                                <div class="inbox-msg-timestamp" style="color: #ef4444;">Blocked • Not delivered</div>
                             </div>
                         </div>
-                        <div class="inbox-meta" style="color: #ef4444;">Blocked • Not delivered</div>
                     </div>
                 `;
             }
 
             return `
-                <div class="inbox-msg-row ${isMe ? 'sent' : 'received'}">
-                    <div class="inbox-bubble">
-                        ${escapeHTML(m.message)}
-                        ${m.file_url ? `<div style="margin-top: 6px;"><a href="${m.file_url}" target="_blank" rel="noopener noreferrer" style="color: inherit; text-decoration: underline; font-size: 0.8rem;">📎 Attachment Link</a></div>` : ''}
-                    </div>
-                    <div class="inbox-meta">
-                        ${timeStr} ${isMe ? (m.is_read ? '✓✓' : '✓') : ''}
+                <div class="inbox-msg-row ${isMe ? 'sent' : 'received'} ${!isMe && !m.is_read ? 'unread' : ''}">
+                    ${!isMe ? `<div class="inbox-msg-avatar">${initial}</div>` : ''}
+                    <div class="inbox-msg-bubble-wrap">
+                        <div class="inbox-msg-bubble">
+                            <div class="inbox-msg-bubble-content">
+                                <div class="inbox-msg-text">${escapeHTML(m.message)}</div>
+                                ${m.file_url ? `<div class="inbox-msg-attachment"><a href="${m.file_url}" target="_blank" rel="noopener noreferrer" style="color: inherit; text-decoration: underline;">📎 Attachment</a></div>` : ''}
+                            </div>
+                        </div>
+                        <div class="inbox-msg-timestamp">
+                            ${timeStr}
+                            ${isMe ? (m.is_read ? '✓✓' : '✓') : ''}
+                        </div>
                     </div>
                 </div>
             `;
