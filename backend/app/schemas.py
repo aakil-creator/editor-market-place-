@@ -57,6 +57,15 @@ class SocialLoginRequest(BaseModel):
     token: Optional[str] = None
     user_type: Optional[UserType] = UserType.BUYER
 
+
+class OtpRequest(BaseModel):
+    phone: str
+
+
+class OtpVerifyRequest(BaseModel):
+    phone: str
+    otp: str
+
 class RoleSwitchRequest(BaseModel):
     role: str
 
