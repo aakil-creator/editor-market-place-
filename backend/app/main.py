@@ -59,7 +59,11 @@ def ensure_schema():
             if "username" not in cols_users:
                 conn.execute(text("ALTER TABLE users ADD COLUMN username VARCHAR"))
                 conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_users_username ON users(username)"))
-            
+
+            # --- Add profile_image column (added to User model; migrate existing DBs) ---
+            if "profile_image" not in cols_users:
+                conn.execute(text("ALTER TABLE users ADD COLUMN profile_image VARCHAR"))
+
             # Backfill any null usernames
             users_cursor = conn.execute(text("SELECT id, name, email FROM users WHERE username IS NULL OR username = ''"))
             for u_id, u_name, u_email in users_cursor.fetchall():
@@ -458,9 +462,10 @@ def social_login(req: SocialLoginRequest, db = Depends(get_db)):
     import random
     import urllib.request
     import json
+    import traceback
 
-    verified_email = req.email.strip().lower() if req.email else ""
-    verified_name = req.name.strip() if req.name else ""
+    verified_email = (req.email or "").strip().lower()
+    verified_name = (req.name or "").strip()
 
     # If Google ID token is provided, verify against Google's public tokeninfo endpoint
     if req.token and req.provider == "google":
@@ -479,37 +484,47 @@ def social_login(req: SocialLoginRequest, db = Depends(get_db)):
     if not verified_email or "@" not in verified_email:
         raise HTTPException(status_code=400, detail="Valid email is required")
 
-    user = db.query(User).filter(User.email == verified_email).first()
-    if not user:
-        user_type_enum = UserType.ADMIN if verified_email in ADMIN_EMAILS else (UserType[req.user_type.value] if req.user_type else UserType.BUYER)
-        display_name = verified_name if verified_name else verified_email.split("@")[0].capitalize()
-        unique_suffix = random.randint(10000000, 99999999)
-        temp_phone = f"+9199{unique_suffix}"
+    try:
+        user = db.query(User).filter(User.email == verified_email).first()
+        if not user:
+            user_type_enum = UserType.ADMIN if verified_email in ADMIN_EMAILS else (UserType[req.user_type.value] if req.user_type else UserType.BUYER)
+            display_name = verified_name if verified_name else verified_email.split("@")[0].capitalize()
+            unique_suffix = random.randint(10000000, 99999999)
+            temp_phone = f"+9199{unique_suffix}"
 
-        user = User(
-            name=display_name,
-            phone=temp_phone,
-            email=verified_email,
-            password_hash=hash_password(f"social_{req.provider}_{unique_suffix}"),
-            user_type=user_type_enum,
-            is_verified=True,
-            is_active=True
-        )
-        db.add(user)
-        db.commit()
-        db.refresh(user)
+            user = User(
+                name=display_name,
+                phone=temp_phone,
+                email=verified_email,
+                password_hash=hash_password(f"social_{req.provider}_{unique_suffix}"),
+                user_type=user_type_enum,
+                is_verified=True,
+                is_active=True
+            )
+            db.add(user)
+            db.commit()
+            db.refresh(user)
 
-        profile = Profile(user_id=user.id)
-        db.add(profile)
-        db.commit()
-    elif not user.is_active:
-        raise HTTPException(status_code=401, detail="Account inactive")
-    elif verified_email in ADMIN_EMAILS and user.user_type != UserType.ADMIN:
-        user.user_type = UserType.ADMIN
-        db.commit()
+            profile = Profile(user_id=user.id)
+            db.add(profile)
+            db.commit()
+        elif not user.is_active:
+            raise HTTPException(status_code=401, detail="Account inactive")
+        elif verified_email in ADMIN_EMAILS and user.user_type != UserType.ADMIN:
+            user.user_type = UserType.ADMIN
+            db.commit()
 
-    access_token = create_access_token(data={"sub": str(user.id), "type": user.user_type.value})
-    return {"access_token": access_token, "token_type": "bearer"}
+        access_token = create_access_token(data={"sub": str(user.id), "type": user.user_type.value})
+        return {"access_token": access_token, "token_type": "bearer"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"social_login error: {e}")
+        import traceback as _t
+        print(_t.format_exc())
+        if "UNIQUE constraint" in str(e) or "unique constraint" in str(e).lower() or "duplicate" in str(e).lower():
+            raise HTTPException(status_code=400, detail="Account with this email already exists. Please use a different email or log in.")
+        raise HTTPException(status_code=500, detail=f"Social login failed: {str(e)[:200]}")
 
 @api_app.get("/auth/me", response_model=UserResponse)
 def get_me(current_user = Depends(get_current_user)):
