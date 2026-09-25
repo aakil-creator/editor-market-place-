@@ -413,6 +413,52 @@
     border-radius: var(--radius-sm);
 }
 
+/* Admin tables wrapper — horizontal scroll instead of clipping out of the card */
+.table-container {
+    width: 100%;
+    overflow-x: auto;
+    border-radius: var(--radius-sm);
+}
+.table-container .table {
+    min-width: 880px;
+}
+.table-container .table th,
+.table-container .table td {
+    white-space: nowrap;
+}
+.table-container .table td:nth-child(3) {
+    white-space: normal;
+    word-break: break-word;
+    min-width: 170px;
+}
+
+/* Admin tab buttons (e.g. Chats & Safety Moderation: All / Flagged) */
+.tabs {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.tab-btn {
+    padding: 8px 16px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.tab-btn:hover {
+    border-color: var(--accent);
+    color: var(--text-primary);
+}
+.tab-btn.active {
+    background: linear-gradient(135deg, #6366f1, #4f46e5);
+    border-color: #4f46e5;
+    color: #fff;
+}
+
 .table {
     width: 100%;
     border-collapse: collapse;

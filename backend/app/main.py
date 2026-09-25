@@ -1705,8 +1705,8 @@ def get_admin_stats(current_user = Depends(get_current_user), db = Depends(get_d
         total_users=total_users,
         total_providers=total_providers,
         total_bookings=total_bookings,
-        total_revenue=total_revenue,
-        total_commissions=total_revenue,
+        total_revenue=float(total_revenue or 0),
+        total_commissions=float(total_revenue or 0),
         active_niches=active_niches
     )
 
@@ -1964,6 +1964,8 @@ def get_admin_all_providers(current_user = Depends(get_current_user), db = Depen
             "email": u.email,
             "is_verified": u.is_verified,
             "is_active": u.is_active,
+            "is_blocked": bool(getattr(u, 'is_blocked', False)),
+            "block_reason": getattr(u, 'block_reason', None),
             "created_at": u.created_at.isoformat() if u.created_at else None,
             "niche": u.profile.niche if u.profile else None,
             "service_area": u.profile.service_area if u.profile else None,
@@ -2069,6 +2071,58 @@ def detect_contact_sharing(text_content: str):
     return False, None
 
 
+def count_prior_flags(db, user_id: int) -> int:
+    """Count prior flagged (blocked) messages sent by a user — strike system."""
+    try:
+        return db.query(Message).filter(
+            Message.sender_id == user_id,
+            Message.is_flagged == True
+        ).count()
+    except Exception:
+        return 0
+
+
+def handle_moderation_violation(db, sender: User, receiver_id: int, booking_id, clean_content: str, file_url, reason: str):
+    """
+    Strike-based moderation:
+    - Strike 1: warn — save flagged message (not delivered), return 400 with warning.
+    - Strike 2+: suspend account — save flagged message, block user, return 403.
+    Returns (saved_msg, status_code, detail).
+    """
+    prior = count_prior_flags(db, sender.id)
+    flagged_msg = Message(
+        booking_id=booking_id,
+        sender_id=sender.id,
+        receiver_id=receiver_id,
+        message=clean_content,
+        file_url=file_url,
+        is_read=False,
+        is_flagged=True,
+        flag_reason=reason,
+        created_at=datetime.utcnow()
+    )
+    db.add(flagged_msg)
+    db.commit()
+    db.refresh(flagged_msg)
+
+    if prior >= 1:
+        # Second offence — suspend (keep is_active True so user can still
+        # read own bookings/payments and appeal; get_current_user blocks sends via is_blocked)
+        sender.is_blocked = True
+        sender.block_reason = f"Account suspended: Sharing direct contact details ({reason}) violates Grove Hub platform safety rules. (Strike {prior + 1})"
+        db.commit()
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Security Alert: Your message was blocked and your account has been suspended for attempting to share off-platform contact details ({reason}). To protect buyers and sellers under escrow, all communications and payments must stay on Grove Hub."
+        )
+
+    # First offence — warn, do not suspend
+    raise HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail=f"Warning (Strike 1): Your message was blocked — {reason}. Keep all contact details and payments on Grove Hub. A repeat violation will suspend your account."
+    )
+
+
 @api_app.post("/bookings/{booking_id}/messages", response_model=MessageResponse)
 def send_booking_message(
     booking_id: int,
@@ -2095,32 +2149,14 @@ def send_booking_message(
     else:
         receiver_id = booking.provider_id
 
-    # Anti-disintermediation check
+    # Anti-disintermediation check (strike-based: warn first, suspend on repeat)
     flagged, reason = detect_contact_sharing(clean_content)
     if flagged:
-        # Save flagged message for admin inspection
-        flagged_msg = Message(
-            booking_id=booking_id,
-            sender_id=current_user.id,
-            receiver_id=receiver_id,
-            message=clean_content,
-            file_url=msg_data.file_url.strip() if msg_data.file_url else None,
-            is_read=False,
-            is_flagged=True,
-            flag_reason=reason,
-            created_at=datetime.utcnow()
-        )
-        db.add(flagged_msg)
-
-        # Block sender immediately
-        current_user.is_blocked = True
-        current_user.is_active = False
-        current_user.block_reason = f"Account suspended: Sharing direct contact details ({reason}) violates Grove Hub platform safety rules."
-        db.commit()
-
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=f"Security Alert: Your message was blocked and your account has been suspended for attempting to share off-platform contact details ({reason}). To protect buyers and sellers under escrow, all communications and payments must stay on Grove Hub."
+        handle_moderation_violation(
+            db, current_user, receiver_id, booking_id,
+            clean_content,
+            msg_data.file_url.strip() if msg_data.file_url else None,
+            reason
         )
 
     msg = Message(
@@ -2212,6 +2248,9 @@ def get_user_conversations(
         or_(Message.sender_id == user_id, Message.receiver_id == user_id)
     ).order_by(Message.created_at.desc()).all()
 
+    # Group by (other_user, booking_id) so the same buyer+provider pair
+    # across different orders keeps separate booking context (Telegram topics).
+    # Direct (pre-booking) chats use booking_id=None.
     conversations_map = {}
     for msg in messages:
         # Hide flagged messages if sender was someone else
@@ -2219,16 +2258,19 @@ def get_user_conversations(
             continue
 
         other_id = msg.receiver_id if msg.sender_id == user_id else msg.sender_id
-        if other_id not in conversations_map:
-            conversations_map[other_id] = {
+        key = (other_id, msg.booking_id)
+        if key not in conversations_map:
+            conversations_map[key] = {
+                "other_id": other_id,
                 "latest_msg": msg,
                 "unread_count": 0,
                 "booking_id": msg.booking_id
             }
         if msg.receiver_id == user_id and not msg.is_read:
-            conversations_map[other_id]["unread_count"] += 1
+            conversations_map[key]["unread_count"] += 1
 
-    other_users = db.query(User).filter(User.id.in_(conversations_map.keys())).all() if conversations_map else []
+    other_ids = list(set(k[0] for k in conversations_map.keys()))
+    other_users = db.query(User).filter(User.id.in_(other_ids)).all() if other_ids else []
     user_obj_map = {u.id: u for u in other_users}
 
     booking_ids = [c["booking_id"] for c in conversations_map.values() if c["booking_id"]]
@@ -2241,8 +2283,8 @@ def get_user_conversations(
 
     result = []
     sorted_convos = sorted(conversations_map.items(), key=lambda x: x[1]["latest_msg"].created_at, reverse=True)
-    for other_id, data in sorted_convos:
-        u = user_obj_map.get(other_id)
+    for _key, data in sorted_convos:
+        u = user_obj_map.get(data["other_id"])
         if not u:
             continue
         last_m = data["latest_msg"]
@@ -2254,7 +2296,7 @@ def get_user_conversations(
             last_message_at=last_m.created_at,
             unread_count=data["unread_count"],
             booking_id=data["booking_id"],
-            is_blocked=u.is_blocked,
+            is_blocked=bool(getattr(u, 'is_blocked', False)),
             package_title=packages_map.get(data["booking_id"])
         ))
     return result
@@ -2336,33 +2378,14 @@ def send_direct_message_to_user(
 
     clean_content = msg_data.message.strip()
 
-    # Anti-disintermediation check: scan for phone numbers, WhatsApp, UPI, email, etc.
+    # Anti-disintermediation check (strike-based: warn first, suspend on repeat)
     flagged, reason = detect_contact_sharing(clean_content)
     if flagged:
-        # 1. Record flagged message for admin inspection
-        flagged_msg = Message(
-            booking_id=msg_data.booking_id,
-            sender_id=current_user.id,
-            receiver_id=other_user_id,
-            message=clean_content,
-            file_url=msg_data.file_url.strip() if msg_data.file_url else None,
-            is_read=False,
-            is_flagged=True,
-            flag_reason=reason,
-            created_at=datetime.utcnow()
-        )
-        db.add(flagged_msg)
-
-        # 2. Block the offender immediately
-        current_user.is_blocked = True
-        current_user.is_active = False
-        current_user.block_reason = f"Account suspended: Sharing direct contact details ({reason}) violates Grove Hub platform safety rules."
-        db.commit()
-
-        # 3. Deny request with 403 Forbidden explaining suspension
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=f"Security Alert: Your message was blocked and your account has been suspended for attempting to share off-platform contact details ({reason}). To protect buyers and sellers under escrow, all communications and payments must stay on Grove Hub."
+        handle_moderation_violation(
+            db, current_user, other_user_id, msg_data.booking_id,
+            clean_content,
+            msg_data.file_url.strip() if msg_data.file_url else None,
+            reason
         )
 
     # Clean message - deliver normally
