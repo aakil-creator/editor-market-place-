@@ -343,7 +343,7 @@ def register(user_data: UserCreate, db = Depends(get_db)):
     if not raw_username:
         raise HTTPException(status_code=400, detail="Username is required")
     if not re.match(r'^[a-zA-Z0-9_]{3,30}$', raw_username):
-        raise HTTPException(status_code=400, detail="Username must be 3\u201330 characters using only letters, numbers, and underscores")
+        raise HTTPException(status_code=400, detail="Username must be 3.201330 characters using only letters, numbers, and underscores")
     # --- Username must not match the name ---
     if raw_username == user_data.name.strip().lower().replace(' ', '_'):
         raise HTTPException(status_code=400, detail="Username cannot be the same as your name. Choose something different.")
@@ -394,7 +394,7 @@ def login(credentials: UserLogin, db = Depends(get_db)):
     from sqlalchemy import or_
 
     raw_input = credentials.phone.strip()
-    digits = re.sub(r'\D', '', raw_input)
+    digits = re.sub(r'.', '', raw_input)
     if digits.startswith('91') and len(digits) == 12:
         digits = digits[2:]
 
@@ -437,7 +437,7 @@ def reset_password(req: PasswordResetRequest, db = Depends(get_db)):
     from sqlalchemy import or_
 
     raw_input = req.email_or_phone.strip()
-    digits = re.sub(r'\D', '', raw_input)
+    digits = re.sub(r'.', '', raw_input)
     if digits.startswith('91') and len(digits) == 12:
         digits = digits[2:]
 
@@ -601,7 +601,7 @@ def update_me(
             raise HTTPException(status_code=400, detail="Email already in use")
         current_user.email = new_email
     if user_data.phone is not None and user_data.phone.strip():
-        clean_phone = re.sub(r'\D', '', user_data.phone.strip())
+        clean_phone = re.sub(r'.', '', user_data.phone.strip())
         if clean_phone.startswith('91') and len(clean_phone) == 12:
             clean_phone = clean_phone[2:]
         existing = db.query(User).filter(User.phone == clean_phone, User.id != current_user.id).first()
@@ -688,7 +688,7 @@ def forgot_password(req: ForgotPasswordRequest, db = Depends(get_db)):
     import secrets
 
     raw_input = req.email_or_phone.strip()
-    digits = re.sub(r'\D', '', raw_input)
+    digits = re.sub(r'.', '', raw_input)
     if digits.startswith('91') and len(digits) == 12:
         digits = digits[2:]
 
@@ -2047,23 +2047,23 @@ def detect_contact_sharing(text_content: str):
     lower = text_content.lower()
 
     # 1. Email pattern
-    email_pattern = r'\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b'
+    email_pattern = r'.[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+.[a-zA-Z]{2,}.'
     if re.search(email_pattern, text_content):
         return True, "Sharing personal email address"
 
     # 2. UPI / Direct payment pattern
-    upi_pattern = r'[a-zA-Z0-9.\-_]{2,}@(okhdfcbank|okaxis|oksbi|okicici|paytm|ybl|axl|ibl|barodampay|upi)'
+    upi_pattern = r'[a-zA-Z0-9.._]{2,}@(okhdfcbank|okaxis|oksbi|okicici|paytm|ybl|axl|ibl|barodampay|upi)'
     if re.search(upi_pattern, lower):
         return True, "Sharing direct UPI handle"
 
     # 3. Off-platform chat & social handles
     chat_patterns = [
-        (r'wa\.me/\d+', "WhatsApp link"),
-        (r't\.me/[a-zA-Z0-9_]+', "Telegram link"),
-        (r'\b(whatsapp|whats app|watsapp|watsap|wa\.me)\b', "WhatsApp mention"),
-        (r'\b(telegram|tele gram|t\.me)\b', "Telegram mention"),
-        (r'\b(instagram\.com|instagr\.am)\b', "Instagram link"),
-        (r'\b(gpay|phonepe|paytm)\b.*(?:number|no|transfer|send|direct|id|acc)', "Off-platform payment")
+        (r'wa.me/.+', "WhatsApp link"),
+        (r't.me/[a-zA-Z0-9_]+', "Telegram link"),
+        (r'.(whatsapp|whats app|watsapp|watsap|wa.me).', "WhatsApp mention"),
+        (r'.(telegram|tele gram|t.me).', "Telegram mention"),
+        (r'.(instagram.com|instagr.am).', "Instagram link"),
+        (r'.(gpay|phonepe|paytm)..*(?:number|no|transfer|send|direct|id|acc)', "Off-platform payment")
     ]
     for pattern, label in chat_patterns:
         if re.search(pattern, lower):
@@ -2072,21 +2072,21 @@ def detect_contact_sharing(text_content: str):
     # 4. Spelled-out numbers normalization
     normalized = lower
     for word, digit in NUMBER_WORDS.items():
-        normalized = re.sub(r'\b' + word + r'\b', digit, normalized)
+        normalized = re.sub(r'.' + word + r'.', digit, normalized)
 
     # 5. Phone number detection
     # Match patterns like: +91 9876543210, 98765-43210, 9 8 7 6 5 4 3 2 1 0, 9876543210
-    clusters = re.findall(r'(?:(?:\+?91|0)[\s.-]?)?[6-9](?:[\s.-]?\d){9}', normalized)
+    clusters = re.findall(r'(?:(?:[s-.]?91|0)[..-]?)?[6-9](?:[..-]?.){9}', normalized)
     if clusters:
         return True, f"Sharing personal phone number ({clusters[0].strip()})"
 
     # Clean non-digits and test contiguous digit streams
-    digits_only = re.sub(r'[^\d]', '', normalized)
-    if re.search(r'(?:^|[^0-9])(?:91|0)?([6-9]\d{9})(?:[^0-9]|$)', digits_only):
+    digits_only = re.sub(r'[^.]', '', normalized)
+    if re.search(r'(?:^|[^0-9])(?:91|0)?([6-9].{9})(?:[^0-9]|$)', digits_only):
         return True, "Sharing personal phone number"
 
     # 6. Bypass phrases combined with numbers
-    if re.search(r'\b(call me|call on|ring me|my number|my ph|my contact|contact me on|reach me at|dial|ping me)\b.*?\d{5,}', lower):
+    if re.search(r'.(call me|call on|ring me|my number|my ph|my contact|contact me on|reach me at|dial|ping me)..*?.{5,}', lower):
         return True, "Exchanging direct phone contact"
 
     return False, None
@@ -2100,18 +2100,19 @@ def mask_sensitive_content(text_content: str) -> str:
     if not text_content:
         return text_content
     import re as _re
-    
+
     def _mask_phone(m):
         digits = _re.sub(r'[^0-9]', '', m.group(0))
         if len(digits) >= 10:
-            return '📞 [contact hidden - ' + str(len(digits)) + ' digits]'
+            return '📠 [contact hidden - ' + str(len(digits)) + ' digits]'
         return m.group(0)
-    
-    out = _re.sub(r'(?<!\\w)(\\+?\\d[\\s\\-.]?){7,}\\d(?!\\w)', _mask_phone, text_content)
-    out = _re.sub(r'(@[a-zA-Z0-9_]{2,30})(?!\\w)', lambda m: '[🔗 ' + m.group(1)[:2] + '…' + m.group(1)[-2:] + ']', out)
-    out = _re.sub(r'https?://(?:www\\.)?(instagram\\.com|facebook\\.com)/@?[a-zA-Z0-9_.+-]+', '[🔗 social link hidden]', out)
-    out = _re.sub(r'(?<!\\w)(instagram\\.com|facebook\\.com)/@?[a-zA-Z0-9_.+-]+', '[🔗 social link hidden]', out)
+
+    out = _re.sub(r'(?<!\w)(\+?\d[\s\-\.]?){7,}\d(?!\w)', _mask_phone, text_content)
+    out = _re.sub(r'(@[a-zA-Z0-9_]{2,30})(?!\w)', lambda m: '[🔗 ' + m.group(1)[:2] + '…' + m.group(1)[-2:] + ']', out)
+    out = _re.sub(r'https?://(?:www\.)?(instagram\.com|facebook\.com)/@?[a-zA-Z0-9_.+-]+', '[🔗 social link hidden]', out)
+    out = _re.sub(r'(?<!\w)(instagram\.com|facebook\.com)/@?[a-zA-Z0-9_.+-]+', '[🔗 social link hidden]', out)
     return out
+
 
 
 def count_prior_flags(db, user_id: int) -> int:
