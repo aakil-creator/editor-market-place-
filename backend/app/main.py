@@ -535,6 +535,11 @@ def social_login(req: SocialLoginRequest, db = Depends(get_db)):
             user.user_type = UserType.ADMIN
             db.commit()
 
+        # Update profile image for existing users when signing in with Google and a picture is available
+        if google_picture and user.profile_image != google_picture:
+            user.profile_image = google_picture
+            db.commit()
+
         access_token = create_access_token(data={"sub": str(user.id), "type": user.user_type.value})
         return {"access_token": access_token, "token_type": "bearer"}
     except HTTPException:
