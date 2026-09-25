@@ -651,7 +651,7 @@ function renderAppHeader(activeRoute = '') {
                 <button class="nav-btn" onclick="toggleTheme()" title="Toggle Theme" style="padding: 8px 12px;">
                     ${currentTheme === 'dark' ? '☀️' : '🌙'}
                 </button>
-                <button class="nav-btn" onclick="logout()" style="color: var(--danger);">Logout</button>
+                ${renderProfileAvatar(32)}${renderProfileMenu()}
             </div>
         </div>
         <!-- Buyer Mobile Bottom Nav -->
@@ -3784,6 +3784,38 @@ function Settings() {
         return el`<div>
             ${renderAppHeader('/settings')}
             <div class="main">
+                <!-- Profile Avatar Card — shown for all users -->
+                <div style="margin-bottom: 20px;">
+                    <div style="display: flex; align-items: center; gap: 16px; padding: 16px 20px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow);">
+                        <div style="position: relative; flex-shrink: 0;">
+                            ${renderProfileAvatar(64)}
+                        </div>
+                        <div style="flex: 1; min-width: 0;">
+                            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                <h2 style="margin: 0; font-size: 1.25rem; font-weight: 800; color: var(--text-primary);">${escapeHTML(currentUser?.name || 'Your Profile')}</h2>
+                                <span class="badge" style="background: currentUser?.user_type === 'PROVIDER' ? 'rgba(16,185,129,0.12)' : currentUser?.user_type === 'ADMIN' ? 'rgba(239,68,68,0.12)' : 'rgba(99,102,241,0.12)'; color: currentUser?.user_type === 'PROVIDER' ? 'var(--success)' : currentUser?.user_type === 'ADMIN' ? 'var(--danger)' : 'var(--accent)'; font-size: 0.7rem; padding: 3px 8px; border-radius: 5px; border: 1px solid currentUser?.user_type === 'PROVIDER' ? 'rgba(16,185,129,0.25)' : currentUser?.user_type === 'ADMIN' ? 'rgba(239,68,68,0.25)' : 'rgba(99,102,241,0.25)';">
+                                    ${currentUser?.user_type || 'User'}
+                                </span>
+                                ${currentUser?.username ? `<span style="font-size:0.75rem;color:var(--text-muted);">@${escapeHTML(currentUser.username)}</span>` : ''}
+                            </div>
+                            <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px; display: flex; align-items: center; gap: 6px;">
+                                <span>📧 ${currentUser?.email || '—'}</span>
+                                ${currentUser?.phone ? `<span>📱 ${currentUser.phone}</span>` : ''}
+                            </div>
+                            <div style="margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap;">
+                                <button class="btn btn-outline btn-sm" onclick="openProfileIconPicker()" style="font-weight: 600;">
+                                    🖼️ Change Profile Photo
+                                </button>
+                                <button class="btn btn-primary btn-sm" onclick="router('/profile')" style="font-weight: 600;">
+                                    ✏️ Edit Profile
+                                </button>
+                                ${currentUser?.user_type === 'PROVIDER' ? `<button class="btn btn-secondary btn-sm" onclick="router('/packages')" style="font-weight: 600;">📦 Manage Packages</button>` : ''}
+                                ${currentUser?.user_type !== 'ADMIN' ? `<button class="btn btn-secondary btn-sm" onclick="toggleUserMode()" style="font-weight: 600;">${currentUser?.user_type === 'PROVIDER' ? '🛍️ Switch to Buyer' : '💼 Switch to Provider'}</button>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="section-title">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
                         <circle cx="12" cy="12" r="3"/>
@@ -4259,7 +4291,7 @@ function MyPackages() {
             <div class="header-nav">
                 <button class="nav-btn" onclick="router('/')">Dashboard</button>
                 <button class="nav-btn" onclick="router('/profile')">Profile</button>
-                <button class="nav-btn" onclick="logout()" style="color: var(--danger);">Logout</button>
+                ${renderProfileAvatar(32)}${renderProfileMenu()}
             </div>
         </div>
         <div class="main">
