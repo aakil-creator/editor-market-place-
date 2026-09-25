@@ -7454,6 +7454,18 @@ function AdminProviders() {
         }
     };
 
+    // Global unblock (also defined in AdminChatsView) so Providers page can reinstate safety-blocked accounts
+    if (!window.__adminUnblockUser) {
+        window.__adminUnblockUser = async (userId, userName) => {
+            if (!confirm(`Unblock "${userName}" (ID: ${userId})? Messaging access will be reinstated.`)) return;
+            try {
+                const res = await apiFetch(`/admin/users/${userId}/unblock`, { method: 'POST' });
+                showToast(res.message || 'User unblocked', 'success');
+                loadProviders();
+            } catch (err) { showToast(err.message, 'error'); }
+        };
+    }
+
     function renderAdminProviders() {
         return el`<div>
             ${renderAppHeader('/admin/providers')}
@@ -7483,20 +7495,23 @@ function AdminProviders() {
                                 </tr>
                             </thead>
                             <tbody>
-                                ${providers.map(p => `
+                                ${providers.map(p => {
+                                    const jsName = (p.name || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+                                    const blocked = !!p.is_blocked;
+                                    return `
                                     <tr>
                                         <td>#${p.id}</td>
-                                        <td><strong>${p.name}</strong></td>
+                                        <td><strong>${escapeHTML(p.name || '')}</strong>${blocked ? ' <span class="badge badge-danger" style="font-size:0.65rem;">BLOCKED</span>' : ''}</td>
                                         <td>
-                                            <div style="font-size: 0.8125rem;">${p.phone || '-'}</div>
-                                            <div style="font-size: 0.75rem; color: var(--text-muted);">${p.email || '-'}</div>
+                                            <div style="font-size: 0.8125rem;">${escapeHTML(p.phone || '-')}</div>
+                                            <div style="font-size: 0.75rem; color: var(--text-muted);">${escapeHTML(p.email || '-')}</div>
                                         </td>
-                                        <td><span class="badge badge-info">${p.niche || p.service_area || 'General'}</span></td>
+                                        <td><span class="badge badge-info">${escapeHTML(p.niche || p.service_area || 'General')}</span></td>
                                         <td>${p.rating > 0 ? `${p.rating} ⭐` : 'New'}</td>
                                         <td>${p.total_bookings}</td>
                                         <td>
-                                            <span class="badge ${p.is_active ? 'badge-success' : 'badge-danger'}">
-                                                ${p.is_active ? 'Active' : 'Suspended'}
+                                            <span class="badge ${!blocked && p.is_active ? 'badge-success' : 'badge-danger'}">
+                                                ${blocked ? 'Safety-blocked' : (p.is_active ? 'Active' : 'Suspended')}
                                             </span>
                                         </td>
                                         <td>
@@ -7505,17 +7520,20 @@ function AdminProviders() {
                                             </span>
                                         </td>
                                         <td>
-                                            <div style="display: flex; gap: 4px;">
+                                            <div style="display: flex; gap: 4px; flex-wrap: wrap;">
                                                 ${!p.is_verified ? `
                                                     <button class="btn btn-primary btn-sm" onclick="approveProvider(${p.id})">Verify</button>
                                                 ` : ''}
                                                 <button class="btn btn-secondary btn-sm" onclick="toggleProviderActive(${p.id})">
                                                     ${p.is_active ? 'Suspend' : 'Activate'}
                                                 </button>
+                                                ${blocked ? `
+                                                    <button class="btn btn-primary btn-sm" style="background:#10b981;border-color:#10b981;" onclick="window.__adminUnblockUser(${p.id}, '${jsName}')">Unblock</button>
+                                                ` : ''}
                                             </div>
                                         </td>
                                     </tr>
-                                `).join('')}
+                                `;}).join('')}
                             </tbody>
                         </table>
                     </div>
@@ -8348,22 +8366,49 @@ window.startChatWithProvider = async (providerId) => {
     modalRoot.id = 'chat-modal-root';
     modalRoot.className = 'modal-overlay';
     modalRoot.innerHTML = `
-        <div class="modal" style="max-width: 520px; max-height: 80vh; display: flex; flex-direction: column;">
-            <div class="modal-header" style="cursor: move;">
-                <div>
-                    <h2 style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary);">💬 Quick Chat</h2>
-                    <div style="font-size: 0.75rem; color: var(--text-muted);">Chat with this provider directly</div>
+        <div class="modal" style="max-width: 520px; max-height: 85vh; display: flex; flex-direction: column;">
+            <!-- Chat Header (Telegram-style) -->
+            <div style="padding: 12px 16px; border-bottom: 1px solid var(--border); background: var(--bg-primary); display: flex; align-items: center; gap: 10px; flex-shrink: 0;">
+                <button onclick="document.getElementById('chat-modal-root').remove()" style="background: none; border: none; font-size: 1.3rem; cursor: pointer; color: var(--text-primary); padding: 2px 6px; display: flex; align-items: center; flex-shrink: 0;">←</button>
+                <div class="inbox-item-avatar" style="width: 38px; height: 38px; font-size: 0.95rem; flex-shrink: 0; position: relative;">
+                    ${initial}
+                    <div class="online-dot"></div>
                 </div>
-                <button class="modal-close" onclick="document.getElementById('chat-modal-root').remove()">✕</button>
+                <div style="flex: 1; min-width: 0;">
+                    <div style="font-weight: 800; font-size: 0.95rem; color: var(--text-primary); display: flex; align-items: center; gap: 6px;">
+                        <span>${escapeHTML(providerName)}</span>
+                        <span style="font-size: 0.65rem; padding: 1px 6px; border-radius: 4px; background: rgba(16, 185, 129, 0.1); color: var(--success); font-weight: 700; white-space: nowrap;">last seen recently</span>
+                    </div>
+                    <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 1px;">
+                        100% Escrow Protected • Instant In-App Chat
+                    </div>
+                </div>
+                <button class="btn btn-primary btn-sm" onclick="selectProvider(${providerId})" style="font-weight: 700; display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
+                    <span>📦</span> View Packages / Hire
+                </button>
             </div>
-            <div class="modal-body" style="padding: 0; overflow: hidden; display: flex; flex-direction: column;">
+
+            <!-- Escrow Safety Notice (Telegram-style system message) -->
+            <div class="inbox-system-message" style="padding: 0 12px 6px;">
+                <div class="inbox-system-msg-bubble">
+                    <div style="display: flex; align-items: flex-start; gap: 8px;">
+                        <span style="font-size: 0.9rem; flex-shrink: 0; margin-top: 1px;">🛡️</span>
+                        <div style="flex: 1;">
+                            <strong style="color: var(--text-secondary); font-weight: 600;">Platform Trust & Safety</strong>
+                            <span style="color: var(--text-muted);"> — Keep all communications and payments on Groove Hub. First violation = warning, repeat sharing of phone numbers, WhatsApp, UPI or off-platform details suspends your account.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-body" style="padding: 0; overflow: hidden; display: flex; flex-direction: column; flex: 1;">
                 <!-- Loading -->
                 <div id="chat-loading" class="loading" style="padding: 20px; text-align: center;">
                     <div class="spinner"></div>
                     <div style="margin-top: 8px; font-size: 0.8rem; color: var(--text-muted);">Connecting to chat...</div>
                 </div>
-                <!-- Messages -->
-                <div id="chat-messages" style="display: none; flex: 1; overflow-y: auto; padding: 12px; background: var(--bg-secondary); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);"></div>
+                <!-- Messages Stream -->
+                <div id="chat-messages" style="display: none; flex: 1; overflow-y: auto; padding: 12px; background: var(--bg-secondary); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); margin: 0 12px 12px;"></div>
                 <!-- Input -->
                 <div id="chat-input-area" style="display: none; padding: 10px 12px; background: var(--bg-primary); border-top: 1px solid var(--border);">
                     <form onsubmit="sendChatMessage(event)" style="display: flex; gap: 8px;">
@@ -8993,7 +9038,11 @@ function MessagesInbox() {
         } catch (err) {
             messages = messages.filter(m => m.id !== tempId);
             renderMessagesStream();
-            showToast(err.message, 'error');
+            const isWarning = /warning\s*\(strike 1\)/i.test(err.message || '');
+            showToast(err.message, isWarning ? 'info' : 'error');
+            // Reload so the sender sees the flagged/388-blocked bubble + admin trail
+            try { await loadMessages(true); } catch (_) {}
+            loadConversations(true);
         }
     }
 
@@ -9096,18 +9145,20 @@ function MessagesInbox() {
         return filtered.map(c => {
             const isActive = c.other_user_id === activeUserId;
             const timeStr = formatRelativeTime(c.last_message_at);
-            const initial = (c.other_user_name || 'U').charAt(0).toUpperCase();
+            const initial = escapeHTML((c.other_user_name || 'U').charAt(0).toUpperCase());
+            const safeName = escapeHTML(c.other_user_name || 'User');
+            const jsName = (c.other_user_name || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
             const roleBadge = c.other_user_type === 'PROVIDER' ? 'Creator' : 'Client';
 
             return `
-                <div class="inbox-item ${isActive ? 'active' : ''}" data-user-id="${c.other_user_id}" onclick="window.__selectInboxConversation(${c.other_user_id}, '${(c.other_user_name || '').replace(/'/g, "\\'")}', '${c.other_user_type}')">
+                <div class="inbox-item ${isActive ? 'active' : ''}" data-user-id="${c.other_user_id}" onclick="window.__selectInboxConversation(${c.other_user_id}, '${jsName}', '${c.other_user_type}')">
                     <div class="inbox-item-avatar">
                         ${initial}
                         <div class="online-dot"></div>
                     </div>
                     <div class="inbox-item-content">
                         <div class="inbox-item-name">
-                            <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${c.other_user_name}</span>
+                            <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${safeName}</span>
                             <span class="inbox-item-time">${timeStr}</span>
                         </div>
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 2px;">
@@ -9137,7 +9188,9 @@ function MessagesInbox() {
             `;
         }
 
-        const initial = (activeUserName || 'U').charAt(0).toUpperCase();
+        const initial = escapeHTML((activeUserName || 'U').charAt(0).toUpperCase());
+        const safeActiveName = escapeHTML(activeUserName || 'Chat');
+        const isProviderChat = (activeUserRole || 'PROVIDER') === 'PROVIDER';
 
         return `
             <!-- Chat Header -->
@@ -9152,8 +9205,8 @@ function MessagesInbox() {
                     </div>
                     <div>
                         <div style="font-weight: 800; font-size: 0.95rem; color: var(--text-primary); display: flex; align-items: center; gap: 6px;">
-                            <span>${activeUserName}</span>
-                            <span style="font-size: 0.65rem; padding: 1px 6px; border-radius: 4px; background: rgba(16, 185, 129, 0.1); color: var(--success); font-weight: 700;">🟢 Online</span>
+                            <span>${safeActiveName}</span>
+                            <span style="font-size: 0.65rem; padding: 1px 6px; border-radius: 4px; background: rgba(16, 185, 129, 0.1); color: var(--success); font-weight: 700;">last seen recently</span>
                         </div>
                         <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 1px;">
                             100% Escrow Protected • Instant In-App Chat
@@ -9162,9 +9215,9 @@ function MessagesInbox() {
                 </div>
 
                 <div style="display: flex; gap: 8px;">
-                    <button class="btn btn-primary btn-sm" onclick="selectProvider(${activeUserId})" style="font-weight: 700; display: flex; align-items: center; gap: 6px;">
-                        <span>📦 View Packages / Hire</span>
-                    </button>
+                    ${isProviderChat
+                        ? `<button class="btn btn-primary btn-sm" onclick="selectProvider(${activeUserId})" style="font-weight: 700; display: flex; align-items: center; gap: 6px;"><span>📦 View Packages / Hire</span></button>`
+                        : `<button class="btn btn-secondary btn-sm" onclick="window.__selectInboxConversation(${activeUserId}, '${safeActiveName.replace(/'/g, "\\'")}', '${activeUserRole}')" style="font-weight: 700;"><span>👤 View Profile</span></button>`}
                 </div>
             </div>
 
@@ -9175,7 +9228,33 @@ function MessagesInbox() {
                         <span style="font-size: 0.9rem; flex-shrink: 0; margin-top: 1px;">🛡️</span>
                         <div style="flex: 1;">
                             <strong style="color: var(--text-secondary); font-weight: 600;">Platform Trust & Safety</strong>
-                            <span style="color: var(--text-muted);"> — Keep all communications and payments on Groove Hub. Sharing phone numbers, WhatsApp, UPI, or off-platform details triggers instant account suspension.</span>
+                            <span style="color: var(--text-muted);"> — Keep all communications and payments on Groove Hub. First violation = warning, repeat sharing of phone numbers, WhatsApp, UPI or off-platform details suspends your account.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Escrow Safety Notice (Telegram-style system message) -->
+            <div class="inbox-system-message" style="padding: 0 16px;">
+                <div class="inbox-system-msg-bubble">
+                    <div style="display: flex; align-items: flex-start; gap: 8px;">
+                        <span style="font-size: 0.9rem; flex-shrink: 0; margin-top: 1px;">🛡️</span>
+                        <div style="flex: 1;">
+                            <strong style="color: var(--text-secondary); font-weight: 600;">Platform Trust & Safety</strong>
+                            <span style="color: var(--text-muted);"> — Keep all communications and payments on Groove Hub. First violation = warning, repeat sharing of phone numbers, WhatsApp, UPI or off-platform details suspends your account.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Escrow Safety Notice -->
+            <div class="inbox-system-message" style="padding: 0 12px 8px;">
+                <div class="inbox-system-msg-bubble">
+                    <div style="display: flex; align-items: flex-start; gap: 8px;">
+                        <span style="font-size: 0.9rem; flex-shrink: 0; margin-top: 1px;">🛡️</span>
+                        <div style="flex: 1;">
+                            <strong style="color: var(--text-secondary); font-weight: 600;">Platform Trust & Safety</strong>
+                            <span style="color: var(--text-muted);"> — Keep all communications and payments on Groove Hub. First violation = warning, repeat sharing of phone numbers, WhatsApp, UPI or off-platform details suspends your account.</span>
                         </div>
                     </div>
                 </div>
@@ -9186,13 +9265,14 @@ function MessagesInbox() {
                 ${renderMessagesHTML()}
             </div>
 
-            <!-- Bottom Input Bar -->
+            <!-- Bottom Input Bar (Telegram-style: auto-resize, Enter=send, Shift+Enter=newline) -->
             <div class="inbox-chat-input-bar">
                 <textarea
                     id="inbox-message-input"
                     class="inbox-chat-textarea"
-                    placeholder="Type a message..."
+                    placeholder="Write a message..."
                     rows="1"
+                    oninput="this.style.height='auto'; this.style.height=Math.min(this.scrollHeight,120)+'px'"
                     onkeydown="if(event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); window.__inboxSendMessage(this.value); }"
                 ></textarea>
                 <button class="inbox-send-btn" onclick="window.__inboxSendMessage(document.getElementById('inbox-message-input')?.value)" title="Send Message">
@@ -9217,13 +9297,38 @@ function MessagesInbox() {
             `;
         }
 
-        return messages.map(m => {
+        // Telegram-style: date separators + grouped bubbles (avatar only on
+        // last message of a sender group) + blue double-tick when read.
+        let html = '';
+        let lastDateKey = '';
+        const dayLabel = (d) => {
+            const today = new Date(); today.setHours(0,0,0,0);
+            const yesterday = new Date(today); yesterday.setDate(today.getDate() - 1);
+            const dd = new Date(d); dd.setHours(0,0,0,0);
+            if (dd.getTime() === today.getTime()) return 'Today';
+            if (dd.getTime() === yesterday.getTime()) return 'Yesterday';
+            return new Date(d).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+        };
+        const safeUrl = (u) => {
+            const s = String(u || '');
+            if (!/^https?:\/\//i.test(s)) return '#';
+            return s.replace(/"/g, '%22');
+        };
+        messages.forEach((m, idx) => {
             const isMe = m.sender_id === currentUser?.id;
-            const timeStr = new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            const initial = (m.sender_name || (isMe ? 'You' : 'U')).charAt(0).toUpperCase();
+            const msgDate = new Date(m.created_at);
+            const dateKey = msgDate.toDateString();
+            if (dateKey !== lastDateKey) {
+                lastDateKey = dateKey;
+                html += `<div class="tg-date-separator"><span>${dayLabel(m.created_at)}</span></div>`;
+            }
+            const timeStr = msgDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const initial = escapeHTML((m.sender_name || (isMe ? 'You' : 'U')).charAt(0).toUpperCase());
+            const next = messages[idx + 1];
+            const grouped = next && next.sender_id === m.sender_id && new Date(next.created_at).toDateString() === dateKey;
 
             if (m.is_flagged) {
-                return `
+                html += `
                     <div class="inbox-msg-row sent flagged">
                         <div class="inbox-msg-bubble-wrap">
                             <div class="inbox-msg-bubble">
@@ -9233,7 +9338,7 @@ function MessagesInbox() {
                                     </div>
                                     <div style="text-decoration: line-through; opacity: 0.7;">${escapeHTML(m.message)}</div>
                                     <div style="font-size: 0.75rem; margin-top: 4px; font-weight: 600;">
-                                        Reason: ${m.flag_reason || 'Personal contact sharing policy violation'}
+                                        Reason: ${escapeHTML(m.flag_reason || 'Personal contact sharing policy violation')}
                                     </div>
                                 </div>
                                 <div class="inbox-msg-timestamp" style="color: #ef4444;">Blocked • Not delivered</div>
@@ -9241,26 +9346,28 @@ function MessagesInbox() {
                         </div>
                     </div>
                 `;
+                return;
             }
 
-            return `
-                <div class="inbox-msg-row ${isMe ? 'sent' : 'received'} ${!isMe && !m.is_read ? 'unread' : ''}">
-                    ${!isMe ? `<div class="inbox-msg-avatar">${initial}</div>` : ''}
+            html += `
+                <div class="inbox-msg-row ${isMe ? 'sent' : 'received'} ${!isMe && !m.is_read ? 'unread' : ''} ${grouped ? 'grouped' : ''}">
+                    ${!isMe && !grouped ? `<div class="inbox-msg-avatar">${initial}</div>` : (!isMe ? '<div class="inbox-msg-avatar inbox-msg-avatar-spacer"></div>' : '')}
                     <div class="inbox-msg-bubble-wrap">
                         <div class="inbox-msg-bubble">
                             <div class="inbox-msg-bubble-content">
                                 <div class="inbox-msg-text">${escapeHTML(m.message)}</div>
-                                ${m.file_url ? `<div class="inbox-msg-attachment"><a href="${m.file_url}" target="_blank" rel="noopener noreferrer" style="color: inherit; text-decoration: underline;">📎 Attachment</a></div>` : ''}
+                                ${m.file_url ? `<div class="inbox-msg-attachment"><a href="${safeUrl(m.file_url)}" target="_blank" rel="noopener noreferrer" style="color: inherit; text-decoration: underline;">📎 Attachment</a></div>` : ''}
                             </div>
                         </div>
                         <div class="inbox-msg-timestamp">
                             ${timeStr}
-                            ${isMe ? (m.is_read ? '✓✓' : '✓') : ''}
+                            ${isMe ? (m.is_read ? '<span class="tg-ticks tg-ticks-read">✓✓</span>' : '<span class="tg-ticks">✓</span>') : ''}
                         </div>
                     </div>
                 </div>
             `;
-        }).join('');
+        });
+        return html;
     }
 
     function renderMessagesStream() {
@@ -9440,18 +9547,20 @@ function AdminChatsView() {
                             const u1 = c.user1;
                             const u2 = c.user2;
                             const hasViolation = c.has_violation;
+                            const u1js = (u1.name || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+                            const u2js = (u2.name || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
 
                             return `
                                 <tr style="border-bottom: 1px solid var(--border); transition: background 0.15s ease;">
                                     <td style="padding: 12px 16px;">
-                                        <strong>${u1.name}</strong> <span class="badge ${u1.user_type === 'PROVIDER' ? 'badge-primary' : 'badge-secondary'}" style="font-size: 0.65rem;">${u1.user_type}</span>
+                                        <strong>${escapeHTML(u1.name || '')}</strong> <span class="badge ${u1.user_type === 'PROVIDER' ? 'badge-primary' : 'badge-secondary'}" style="font-size: 0.65rem;">${escapeHTML(u1.user_type || '')}</span>
                                         ${u1.is_blocked ? '<span class="badge badge-danger" style="margin-left: 4px; font-size: 0.65rem;">BLOCKED</span>' : ''}
-                                        <div style="font-size: 0.72rem; color: var(--text-muted);">${u1.email}</div>
+                                        <div style="font-size: 0.72rem; color: var(--text-muted);">${escapeHTML(u1.email || '')}</div>
                                     </td>
                                     <td style="padding: 12px 16px;">
-                                        <strong>${u2.name}</strong> <span class="badge ${u2.user_type === 'PROVIDER' ? 'badge-primary' : 'badge-secondary'}" style="font-size: 0.65rem;">${u2.user_type}</span>
+                                        <strong>${escapeHTML(u2.name || '')}</strong> <span class="badge ${u2.user_type === 'PROVIDER' ? 'badge-primary' : 'badge-secondary'}" style="font-size: 0.65rem;">${escapeHTML(u2.user_type || '')}</span>
                                         ${u2.is_blocked ? '<span class="badge badge-danger" style="margin-left: 4px; font-size: 0.65rem;">BLOCKED</span>' : ''}
-                                        <div style="font-size: 0.72rem; color: var(--text-muted);">${u2.email}</div>
+                                        <div style="font-size: 0.72rem; color: var(--text-muted);">${escapeHTML(u2.email || '')}</div>
                                     </td>
                                     <td style="padding: 12px 16px;">
                                         ${c.total_messages} msgs
@@ -9467,8 +9576,8 @@ function AdminChatsView() {
                                             <button class="btn btn-secondary btn-sm" onclick="window.__adminInspectChatTranscript(${u1.id}, ${u2.id})">
                                                 Inspect
                                             </button>
-                                            ${u1.is_blocked ? `<button class="btn btn-primary btn-sm" style="background: #10b981; border-color: #10b981;" onclick="window.__adminUnblockUser(${u1.id}, '${u1.name}')">Unblock ${u1.name.split(' ')[0]}</button>` : ''}
-                                            ${u2.is_blocked ? `<button class="btn btn-primary btn-sm" style="background: #10b981; border-color: #10b981;" onclick="window.__adminUnblockUser(${u2.id}, '${u2.name}')">Unblock ${u2.name.split(' ')[0]}</button>` : ''}
+                                            ${u1.is_blocked ? `<button class="btn btn-primary btn-sm" style="background: #10b981; border-color: #10b981;" onclick="window.__adminUnblockUser(${u1.id}, '${u1js}')">Unblock ${escapeHTML((u1.name || '').split(' ')[0])}</button>` : ''}
+                                            ${u2.is_blocked ? `<button class="btn btn-primary btn-sm" style="background: #10b981; border-color: #10b981;" onclick="window.__adminUnblockUser(${u2.id}, '${u2js}')">Unblock ${escapeHTML((u2.name || '').split(' ')[0])}</button>` : ''}
                                         </div>
                                     </td>
                                 </tr>
@@ -9499,15 +9608,17 @@ function AdminChatsView() {
                         </tr>
                     </thead>
                     <tbody>
-                        ${flaggedMessages.map(m => `
+                        ${flaggedMessages.map(m => {
+                            const sjs = (m.sender.name || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+                            return `
                             <tr style="border-bottom: 1px solid var(--border);">
                                 <td style="padding: 12px 16px;">
-                                    <strong>${m.sender.name}</strong> (ID: ${m.sender.id})
-                                    <div style="font-size: 0.72rem; color: var(--text-muted);">${m.sender.email}</div>
+                                    <strong>${escapeHTML(m.sender.name || '')}</strong> (ID: ${m.sender.id})
+                                    <div style="font-size: 0.72rem; color: var(--text-muted);">${escapeHTML(m.sender.email || '')}</div>
                                 </td>
                                 <td style="padding: 12px 16px;">
-                                    <strong>${m.receiver.name}</strong>
-                                    <div style="font-size: 0.72rem; color: var(--text-muted);">${m.receiver.email}</div>
+                                    <strong>${escapeHTML(m.receiver.name || '')}</strong>
+                                    <div style="font-size: 0.72rem; color: var(--text-muted);">${escapeHTML(m.receiver.email || '')}</div>
                                 </td>
                                 <td style="padding: 12px 16px; max-width: 240px; word-break: break-word;">
                                     <span style="background: rgba(239, 68, 68, 0.1); color: #ef4444; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem;">
@@ -9515,22 +9626,22 @@ function AdminChatsView() {
                                     </span>
                                 </td>
                                 <td style="padding: 12px 16px; color: #ef4444; font-weight: 700;">
-                                    🛑 ${m.flag_reason}
+                                    🛑 ${escapeHTML(m.flag_reason || '')}
                                 </td>
                                 <td style="padding: 12px 16px;">
-                                    ${m.sender.is_blocked ? '<span class="badge badge-danger">BLOCKED</span>' : '<span class="badge badge-success">ACTIVE</span>'}
+                                    ${m.sender.is_blocked ? '<span class="badge badge-danger">BLOCKED</span>' : '<span class="badge badge-warning">WARNED</span>'}
                                 </td>
                                 <td style="padding: 12px 16px; text-align: right;">
                                     ${m.sender.is_blocked ? `
-                                        <button class="btn btn-primary btn-sm" style="background: #10b981; border-color: #10b981;" onclick="window.__adminUnblockUser(${m.sender.id}, '${m.sender.name}')">
+                                        <button class="btn btn-primary btn-sm" style="background: #10b981; border-color: #10b981;" onclick="window.__adminUnblockUser(${m.sender.id}, '${sjs}')">
                                             Re-instate / Unblock
                                         </button>
                                     ` : `
-                                        <span style="color: var(--text-muted); font-size: 0.75rem;">Not suspended</span>
+                                        <span style="color: var(--text-muted); font-size: 0.75rem;">Strike 1 — warn</span>
                                     `}
                                 </td>
                             </tr>
-                        `).join('')}
+                        `;}).join('')}
                     </tbody>
                 </table>
             </div>
