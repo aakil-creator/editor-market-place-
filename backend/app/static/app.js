@@ -8375,19 +8375,6 @@ window.startChatWithProvider = async (providerId) => {
                 </button>
             </div>
 
-            <!-- Escrow Safety Notice (Telegram-style system message) -->
-            <div class="inbox-system-message" style="padding: 0 12px 6px;">
-                <div class="inbox-system-msg-bubble">
-                    <div style="display: flex; align-items: flex-start; gap: 8px;">
-                        <span style="font-size: 0.9rem; flex-shrink: 0; margin-top: 1px;">🛡️</span>
-                        <div style="flex: 1;">
-                            <strong style="color: var(--text-secondary); font-weight: 600;">Platform Trust & Safety</strong>
-                            <span style="color: var(--text-muted);"> — Keep all communications and payments on Groove Hub. First violation = warning, repeat sharing of phone numbers, WhatsApp, UPI or off-platform details suspends your account.</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
             <div class="modal-body" style="padding: 0; overflow: hidden; display: flex; flex-direction: column; flex: 1;">
                 <!-- Loading -->
                 <div id="chat-loading" class="loading" style="padding: 20px; text-align: center;">
@@ -9243,45 +9230,6 @@ function MessagesInbox() {
                     ${isProviderChat
                         ? `<button class="btn btn-primary btn-sm" onclick="selectProvider(${activeUserId})" style="font-weight: 700; display: flex; align-items: center; gap: 6px;"><span>📦 View Packages / Hire</span></button>`
                         : `<button class="btn btn-secondary btn-sm" onclick="window.__selectInboxConversation(${activeUserId}, '${safeActiveName.replace(/'/g, "\\'")}', '${activeUserRole}')" style="font-weight: 700;"><span>👤 View Profile</span></button>`}
-                </div>
-            </div>
-
-            <!-- Escrow Safety Guarantee Notice (Telegram-style system message) -->
-            <div class="inbox-system-message">
-                <div class="inbox-system-msg-bubble">
-                    <div style="display: flex; align-items: flex-start; gap: 8px;">
-                        <span style="font-size: 0.9rem; flex-shrink: 0; margin-top: 1px;">🛡️</span>
-                        <div style="flex: 1;">
-                            <strong style="color: var(--text-secondary); font-weight: 600;">Platform Trust & Safety</strong>
-                            <span style="color: var(--text-muted);"> — Keep all communications and payments on Groove Hub. First violation = warning, repeat sharing of phone numbers, WhatsApp, UPI or off-platform details suspends your account.</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Escrow Safety Notice (Telegram-style system message) -->
-            <div class="inbox-system-message" style="padding: 0 16px;">
-                <div class="inbox-system-msg-bubble">
-                    <div style="display: flex; align-items: flex-start; gap: 8px;">
-                        <span style="font-size: 0.9rem; flex-shrink: 0; margin-top: 1px;">🛡️</span>
-                        <div style="flex: 1;">
-                            <strong style="color: var(--text-secondary); font-weight: 600;">Platform Trust & Safety</strong>
-                            <span style="color: var(--text-muted);"> — Keep all communications and payments on Groove Hub. First violation = warning, repeat sharing of phone numbers, WhatsApp, UPI or off-platform details suspends your account.</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Escrow Safety Notice -->
-            <div class="inbox-system-message" style="padding: 0 12px 8px;">
-                <div class="inbox-system-msg-bubble">
-                    <div style="display: flex; align-items: flex-start; gap: 8px;">
-                        <span style="font-size: 0.9rem; flex-shrink: 0; margin-top: 1px;">🛡️</span>
-                        <div style="flex: 1;">
-                            <strong style="color: var(--text-secondary); font-weight: 600;">Platform Trust & Safety</strong>
-                            <span style="color: var(--text-muted);"> — Keep all communications and payments on Groove Hub. First violation = warning, repeat sharing of phone numbers, WhatsApp, UPI or off-platform details suspends your account.</span>
-                        </div>
-                    </div>
                 </div>
             </div>
 
