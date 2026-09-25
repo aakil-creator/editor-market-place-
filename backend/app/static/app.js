@@ -1398,28 +1398,50 @@ function AuthPortal(initialTab = 'login') {
         regUsernameInput.addEventListener('input', () => { usernameTouched = true; });
 
         regNameInput.addEventListener('input', () => {
-            if (!usernameTouched || !regUsernameInput.value) {
-                const suggested = regNameInput.value.toLowerCase()
-                    .replace(/[^a-z0-9_\s]/g, '')
-                    .trim()
-                    .replace(/\s+/g, '_')
-                    .substring(0, 25);
-                if (suggested) {
-                    regUsernameInput.value = suggested;
-                    usernameTouched = false; // allow re-auto-fill
+            // Re-check if username matches name (in case name was edited after username was set)
+            const currentUsername = (regUsernameInput.value || '').trim();
+            if (currentUsername) {
+                const nameNormalized = regNameInput.value.toLowerCase().replace(/\s+/g, '_');
+                if (currentUsername === nameNormalized) {
+                    if (regUsernameHint) regUsernameHint.innerHTML = '<span style="color:var(--danger);">❌ Username cannot match your name — choose something different</span>';
+                } else if (currentUsername.length >= 3) {
+                    clearTimeout(usernameCheckTimer);
+                    usernameCheckTimer = setTimeout(async () => {
+                        try {
+                            const res = await fetch(`/api/providers/by-username/${encodeURIComponent(currentUsername)}`, { method: 'GET' });
+                            const data = await res.json();
+                            if (data && data.provider) {
+                                if (regUsernameHint) regUsernameHint.innerHTML = '<span style="color:var(--danger);">❌ @' + currentUsername + ' is already taken</span>';
+                            } else {
+                                if (regUsernameHint) regUsernameHint.innerHTML = '<span style="color:#10b981;">✅ @' + currentUsername + ' is available!</span>';
+                            }
+                        } catch {
+                            if (regUsernameHint) regUsernameHint.innerHTML = '<span style="color:var(--text-muted);">3–30 characters. Letters, numbers, underscores only.</span>';
+                        }
+                    }, 400);
                 }
             }
         });
 
-        // Real-time username availability check
+        // Real-time username availability check + name-match check
         let usernameCheckTimer = null;
         regUsernameInput.addEventListener('input', () => {
             clearTimeout(usernameCheckTimer);
             const val = regUsernameInput.value.replace(/[^a-zA-Z0-9_]/g, '').toLowerCase();
             regUsernameInput.value = val; // sanitize in-place
 
+            // --- Name-match check: username cannot be the same as the name ---
+            const nameField = document.getElementById('reg-name');
+            if (nameField && val) {
+                const nameNormalized = nameField.value.toLowerCase().replace(/\s+/g, '_');
+                if (val === nameNormalized) {
+                    if (regUsernameHint) regUsernameHint.innerHTML = '<span style="color:var(--danger);">❌ Username cannot match your name — choose something different</span>';
+                    return;
+                }
+            }
+
             if (!val) {
-                if (regUsernameHint) regUsernameHint.innerHTML = '<span style="color:var(--text-muted);">3–30 characters. Letters, numbers, underscores only.</span>';
+                if (regUsernameHint) regUsernameHint.innerHTML = '<span style="color:var(--text-muted);">3–30 characters. Letters, numbers, underscores only. Must be unique and different from your name.</span>';
                 return;
             }
             if (val.length < 3) {
@@ -1439,7 +1461,7 @@ function AuthPortal(initialTab = 'login') {
                     } else if (res.status === 404) {
                         if (regUsernameHint) regUsernameHint.innerHTML = '<span style="color:#10b981;">✅ @' + val + ' is available!</span>';
                     } else {
-                        if (regUsernameHint) regUsernameHint.innerHTML = '<span style="color:var(--text-muted);">3–30 characters. Letters, numbers, underscores only.</span>';
+                        if (regUsernameHint) regUsernameHint.innerHTML = '<span style="color:var(--text-muted);">3–30 characters. Letters, numbers, underscores only. Must be unique and different from your name.</span>';
                     }
                 } catch (_) {
                     if (regUsernameHint) regUsernameHint.innerHTML = '<span style="color:var(--text-muted);">3–30 characters. Letters, numbers, underscores only.</span>';
