@@ -69,6 +69,7 @@ class UserResponse(BaseModel):
     email: str
     is_verified: bool
     is_active: bool
+    profile_image: Optional[str] = None
     created_at: datetime
 
     class Config:

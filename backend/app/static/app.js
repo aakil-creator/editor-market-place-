@@ -250,6 +250,99 @@ async function toggleUserMode() {
 window.toggleUserMode = toggleUserMode;
 
 // Universal App Header with 100% strict Separation of Modes (Buyer Mode, Provider Mode, and Admin Console)
+
+// Profile avatar — replaces logout button in all headers
+// Shows user's profile image if set, otherwise initials in a colored circle
+function renderProfileAvatar(size = 32) {
+    const user = currentUser;
+    if (!user) return '';
+    const initial = (user.name || 'U').charAt(0).toUpperCase();
+    const isProvider = user.user_type === 'PROVIDER';
+    const gradient = isProvider
+        ? 'linear-gradient(135deg, #f97316, #ef4444)'
+        : 'linear-gradient(135deg, #3b82f6, #6366f1)';
+    const label = isProvider ? 'PROVIDER' : (user.user_type === 'ADMIN' ? 'ADMIN' : 'BUYER');
+    const imgTag = user.profile_image
+        ? `<img src="${user.profile_image}" alt="${user.name}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;" onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'flex\';" />`
+        : '';
+    return `
+        <div class="header-user-avatar" title="${user.name} (${label})" style="cursor:pointer;" onclick="window.__toggleProfileMenu()">
+            <div class="header-user-avatar-img" style="width:${size}px;height:${size}px;border-radius:50%;background:${gradient};display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:${size >= 40 ? '0.95rem' : '0.8rem'};${imgTag ? 'overflow:hidden;' : ''}border:2px solid var(--bg-card);position:relative;">
+                ${imgTag}
+                <span style="${imgTag ? 'display:none;' : ''}">${initial}</span>
+                <span class="header-user-status-dot" style="position:absolute;bottom:0;right:0;width:10px;height:10px;border-radius:50%;background:#10b981;border:2px solid var(--bg-card);${size < 36 ? 'width:7px;height:7px;bottom:-1px;right:-1px;' : ''}"></span>
+            </div>
+        </div>
+    `;
+}
+
+// Profile dropdown menu — shown on avatar click
+function renderProfileMenu() {
+    const user = currentUser;
+    if (!user) return '';
+    const isProvider = user.user_type === 'PROVIDER';
+    return `
+        <div id="profile-menu-dropdown" class="profile-menu-dropdown" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;z-index:9999;align-items:flex-end;justify-content:flex-end;padding:16px;">
+            <div class="profile-menu-panel" style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow-lg);min-width:220px;overflow:hidden;">
+                <div style="display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--border);">
+                    <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#a855f7);display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:0.9rem;flex-shrink:0;">${(user.name || 'U').charAt(0).toUpperCase()}</div>
+                    <div style="flex:1;min-width:0;">
+                        <div style="font-weight:700;font-size:0.9rem;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${user.name}</div>
+                        <div style="font-size:0.7rem;color:var(--text-muted);">${isProvider ? 'Provider' : (user.user_type === 'ADMIN' ? 'Admin' : 'Buyer')}</div>
+                    </div>
+                </div>
+                <button class="profile-menu-btn" onclick="router('/profile')" style="display:flex;align-items:center;gap:8px;padding:10px 16px;font-size:0.8rem;font-weight:600;color:var(--text-primary);background:transparent;border:none;width:100%;text-align:left;cursor:pointer;border-bottom:1px solid var(--border);">
+                    <span>🎨</span> My Profile
+                </button>
+                <button class="profile-menu-btn" onclick="toggleUserMode()" style="display:flex;align-items:center;gap:8px;padding:10px 16px;font-size:0.8rem;font-weight:600;color:var(--text-primary);background:transparent;border:none;width:100%;text-align:left;cursor:pointer;border-bottom:1px solid var(--border);">
+                    <span>${isProvider ? '🛍️' : '💼'}</span> ${isProvider ? 'Switch to Buyer Mode' : 'Switch to Provider Mode'}
+                </button>
+                <button class="profile-menu-btn profile-menu-logout" onclick="logout()" style="display:flex;align-items:center;gap:8px;padding:10px 16px;font-size:0.8rem;font-weight:600;color:var(--danger);background:transparent;border:none;width:100%;text-align:left;cursor:pointer;margin-top:4px;">
+                    <span>🚪</span> Logout
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+// Toggle profile dropdown
+window.__toggleProfileMenu = () => {
+    const existing = document.getElementById('profile-menu-dropdown');
+    if (existing) {
+        existing.style.display = existing.style.display === 'none' ? 'flex' : 'none';
+    }
+};
+
+// Close profile menu on outside click
+document.addEventListener('click', (e) => {
+    const menu = document.getElementById('profile-menu-dropdown');
+    const avatar = e.target.closest('.header-user-avatar');
+    if (menu && !avatar && !menu.contains(e.target)) {
+        menu.style.display = 'none';
+    }
+});
+
+// Close profile menu on Escape
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        const menu = document.getElementById('profile-menu-dropdown');
+        if (menu) menu.style.display = 'none';
+    }
+});
+
+// Inject profile menu styles
+(function injectProfileMenuStyles() {
+    const style = document.createElement('style');
+    style.textContent = `
+        .profile-menu-dropdown { animation: none; }
+        @keyframes profileMenuIn {
+            from { opacity: 0; transform: translateY(8px) scale(0.97); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+    `;
+    document.head.appendChild(style);
+})();
+
 function renderAppHeader(activeRoute = '') {
     const isAdmin = currentUser?.user_type === 'ADMIN';
     const isProvider = currentUser?.user_type === 'PROVIDER';
@@ -274,7 +367,7 @@ function renderAppHeader(activeRoute = '') {
                     <button class="nav-btn" onclick="toggleTheme()" title="Toggle Theme" style="padding: 8px 12px;">
                         ${currentTheme === 'dark' ? '☀️' : '🌙'}
                     </button>
-                    <button class="nav-btn" onclick="logout()" style="color: var(--danger); font-weight: 700;">Logout</button>
+                    ${renderProfileAvatar(32)}${renderProfileMenu()}
                 </div>
             </div>
             <!-- Admin Mobile Bottom Nav -->
@@ -326,7 +419,7 @@ function renderAppHeader(activeRoute = '') {
                     <button class="nav-btn" onclick="toggleTheme()" title="Toggle Theme" style="padding: 8px 12px;">
                         ${currentTheme === 'dark' ? '☀️' : '🌙'}
                     </button>
-                    <button class="nav-btn" onclick="logout()" style="color: var(--danger);">Logout</button>
+                    ${renderProfileAvatar(32)}${renderProfileMenu()}
                 </div>
             </div>
             <!-- Provider Mobile Bottom Nav -->

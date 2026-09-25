@@ -48,6 +48,7 @@ class User(Base):
     is_active = Column(Boolean, default=True)
     is_blocked = Column(Boolean, default=False)
     block_reason = Column(String, nullable=True)
+    profile_image = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
