@@ -468,6 +468,8 @@ def social_login(req: SocialLoginRequest, db = Depends(get_db)):
     verified_name = (req.name or "").strip()
 
     # If Google ID token is provided, verify against Google's public tokeninfo endpoint
+    # and extract profile picture from the JWT payload
+    google_picture = None
     if req.token and req.provider == "google":
         try:
             req_url = f"https://oauth2.googleapis.com/tokeninfo?id_token={req.token}"
@@ -478,8 +480,26 @@ def social_login(req: SocialLoginRequest, db = Depends(get_db)):
                         verified_email = token_info["email"].strip().lower()
                     if "name" in token_info and not verified_name:
                         verified_name = token_info["name"].strip()
+                    # tokeninfo endpoint doesn't return picture — decode JWT directly
         except Exception as e:
             print(f"Google tokeninfo verification note: {e}")
+
+        # Decode JWT payload to get picture URL
+        try:
+            import base64
+            # JWT format: header.payload.signature  — decode the payload (2nd segment)
+            jwt_parts = req.token.split(".")
+            if len(jwt_parts) == 3:
+                payload_b64 = jwt_parts[1]
+                # Add padding if needed
+                payload_b64 += "=" * (4 - len(payload_b64) % 4) if len(payload_b64) % 4 else ""
+                payload_json = base64.urlsafe_b64decode(payload_b64).decode("utf-8")
+                payload = json.loads(payload_json)
+                if "picture" in payload and payload["picture"]:
+                    google_picture = payload["picture"]
+                    print(f"Google profile picture: {google_picture}")
+        except Exception as e:
+            print(f"Google JWT picture extraction note: {e}")
 
     if not verified_email or "@" not in verified_email:
         raise HTTPException(status_code=400, detail="Valid email is required")
@@ -499,7 +519,8 @@ def social_login(req: SocialLoginRequest, db = Depends(get_db)):
                 password_hash=hash_password(f"social_{req.provider}_{unique_suffix}"),
                 user_type=user_type_enum,
                 is_verified=True,
-                is_active=True
+                is_active=True,
+                profile_image=google_picture
             )
             db.add(user)
             db.commit()
@@ -565,6 +586,8 @@ def update_me(
         if not user_data.current_password or not verify_password(user_data.current_password, current_user.password_hash):
             raise HTTPException(status_code=400, detail="Current password incorrect")
         current_user.password_hash = hash_password(user_data.new_password)
+    if user_data.profile_image is not None:
+        current_user.profile_image = user_data.profile_image.strip() if user_data.profile_image and user_data.profile_image.strip() else None
 
     db.commit()
     db.refresh(current_user)

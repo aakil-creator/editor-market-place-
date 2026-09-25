@@ -281,16 +281,22 @@ function renderProfileMenu() {
     const user = currentUser;
     if (!user) return '';
     const isProvider = user.user_type === 'PROVIDER';
+    const hasImage = !!(user.profile_image);
     return `
         <div id="profile-menu-dropdown" class="profile-menu-dropdown" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;z-index:9999;align-items:flex-end;justify-content:flex-end;padding:16px;">
             <div class="profile-menu-panel" style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow-lg);min-width:220px;overflow:hidden;">
                 <div style="display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--border);">
-                    <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#a855f7);display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:0.9rem;flex-shrink:0;">${(user.name || 'U').charAt(0).toUpperCase()}</div>
+                    <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#a855f7);display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:0.9rem;flex-shrink:0;overflow:hidden;${hasImage ? 'border:2px solid var(--bg-card);' : ''}">
+                        ${hasImage ? `<img src="${user.profile_image}" alt="" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" /><span style="display:none;">${(user.name || 'U').charAt(0).toUpperCase()}</span>` : `<span>${(user.name || 'U').charAt(0).toUpperCase()}</span>`}
+                    </div>
                     <div style="flex:1;min-width:0;">
                         <div style="font-weight:700;font-size:0.9rem;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${user.name}</div>
                         <div style="font-size:0.7rem;color:var(--text-muted);">${isProvider ? 'Provider' : (user.user_type === 'ADMIN' ? 'Admin' : 'Buyer')}</div>
                     </div>
                 </div>
+                <button class="profile-menu-btn" onclick="openProfileIconPicker()" style="display:flex;align-items:center;gap:8px;padding:10px 16px;font-size:0.8rem;font-weight:600;color:var(--text-primary);background:transparent;border:none;width:100%;text-align:left;cursor:pointer;border-bottom:1px solid var(--border);">
+                    <span>🖼️</span> Change Icon
+                </button>
                 <button class="profile-menu-btn" onclick="router('/profile')" style="display:flex;align-items:center;gap:8px;padding:10px 16px;font-size:0.8rem;font-weight:600;color:var(--text-primary);background:transparent;border:none;width:100%;text-align:left;cursor:pointer;border-bottom:1px solid var(--border);">
                     <span>🎨</span> My Profile
                 </button>
@@ -310,6 +316,181 @@ window.__toggleProfileMenu = () => {
     const existing = document.getElementById('profile-menu-dropdown');
     if (existing) {
         existing.style.display = existing.style.display === 'none' ? 'flex' : 'none';
+    }
+};
+
+// Change Icon picker — opens modal with Google photo / Upload / Remove options
+window.openProfileIconPicker = () => {
+    const existing = document.getElementById('profile-menu-dropdown');
+    if (existing) existing.style.display = 'none';
+
+    const overlay = document.getElementById('profile-icon-picker');
+    if (overlay) { overlay.remove(); return; }
+
+    const imgUrl = currentUser?.profile_image || '';
+    const modal = document.createElement('div');
+    modal.id = 'profile-icon-picker';
+    modal.className = 'modal-backdrop';
+    modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px; animation:fadeIn 0.15s ease;';
+
+    modal.innerHTML = `
+        <div class="card" style="max-width:420px;width:100%;box-shadow:var(--shadow-lg);border:1px solid var(--border);animation:fadeIn 0.2s ease;">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border);">
+                <h3 style="margin:0;font-size:1rem;font-weight:700;color:var(--text-primary);display:flex;align-items:center;gap:8px;">
+                    <span>🖼️</span> Change Profile Icon
+                </h3>
+                <button onclick="this.closest('#profile-icon-picker').remove()" style="background:none;border:none;font-size:1.2rem;color:var(--text-muted);cursor:pointer;line-height:1;padding:4px 8px;">✕</button>
+            </div>
+            <div style="padding:20px;">
+                <div style="text-align:center;margin-bottom:18px;">
+                    <div style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#a855f7);display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:2rem;margin:0 auto 10px;overflow:hidden;border:3px solid var(--border);position:relative;">
+                        ${imgUrl ? `<img src="${imgUrl}" alt="" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" /><span style="display:none;">${currentUser?.name?.charAt(0).toUpperCase() || 'U'}</span>` : `<span>${currentUser?.name?.charAt(0).toUpperCase() || 'U'}</span>`}
+                    </div>
+                    <div style="font-size:0.8rem;color:var(--text-muted);">Current icon</div>
+                </div>
+
+                <div style="display:flex;flex-direction:column;gap:10px;">
+                    <button id="btn-use-google-photo" class="btn btn-outline" style="width:100%;justify-content:center;${imgUrl && currentUser?.profile_image?.includes('googleusercontent') ? 'opacity:0.5;pointer-events:none;' : ''}">
+                        <span style="font-size:1.1rem;margin-right:6px;">📸</span> Use Google Profile Photo
+                    </button>
+                    <button id="btn-upload-custom" class="btn btn-outline" style="width:100%;justify-content:center;">
+                        <span style="font-size:1.1rem;margin-right:6px;">📁</span> Upload Custom Photo
+                    </button>
+                    <button id="btn-remove-photo" class="btn btn-secondary" style="width:100%;justify-content:center;color:var(--danger);">
+                        <span style="font-size:1.1rem;margin-right:6px;">🗑️</span> Remove Photo
+                    </button>
+                </div>
+
+                <div id="icon-preview-container" style="margin-top:16px;display:none;text-align:center;">
+                    <div style="width:60px;height:60px;border-radius:50%;overflow:hidden;margin:0 auto 8px;border:2px solid var(--accent);box-shadow:0 0 0 3px rgba(99,102,241,0.2);">
+                        <img id="icon-preview-img" src="" style="width:100%;height:100%;object-fit:cover;display:block;" />
+                    </div>
+                    <div style="font-size:0.75rem;color:var(--text-muted);">Preview — tap "Save" to apply</div>
+                    <button id="btn-save-icon" class="btn btn-primary" style="margin-top:8px;width:100%;justify-content:center;">
+                        <span style="margin-right:6px;">💾</span> Save Icon
+                    </button>
+                </div>
+
+                <input type="file" id="icon-file-input" accept="image/*" style="display:none;max-width:100%;" />
+                <input type="hidden" id="icon-preview-url" />
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+
+    // Close on backdrop click
+    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+
+    // --- Use Google Photo ---
+    const googleBtn = modal.querySelector('#btn-use-google-photo');
+    if (googleBtn) {
+        googleBtn.onclick = async () => {
+            if (!currentUser) return;
+            // Re-fetch via Google Sign-In to get the latest credential
+            try {
+                if (window.google?.accounts?.id) {
+                    await new Promise((resolve) => {
+                        googleBtn.disabled = true;
+                        googleBtn.innerHTML = '<span style="display:inline-block;width:14px;height:14px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:8px;"></span> Connecting to Google…';
+                        window.google.accounts.id.revoke(currentUser.email, () => {
+                            window.google.accounts.id.signIn({
+                                callback: async (response) => {
+                                    if (response?.credential) {
+                                        // Save the Google picture directly
+                                        const payload = JSON.parse(atob(response.credential.split('.')[1] + '='.repeat((4 - response.credential.split('.')[1].length % 4) % 4)));
+                                        const pic = payload.picture || '';
+                                        await saveProfileImage(pic);
+                                    }
+                                    googleBtn.disabled = false;
+                                    googleBtn.innerHTML = '<span style="font-size:1.1rem;margin-right:6px;">📸</span> Use Google Profile Photo';
+                                    resolve();
+                                },
+                                cancel_on_tap_outside: false,
+                            });
+                        });
+                    });
+                } else {
+                    showToast('Google Sign-In not available. Upload a custom photo instead.', 'warning');
+                }
+            } catch (e) {
+                googleBtn.disabled = false;
+                googleBtn.innerHTML = '<span style="font-size:1.1rem;margin-right:6px;">📸</span> Use Google Profile Photo';
+                showToast('Could not fetch Google photo. Try uploading instead.', 'error');
+            }
+        };
+    }
+
+    // --- Upload Custom ---
+    const uploadBtn = modal.querySelector('#btn-upload-custom');
+    const fileInput = modal.querySelector('#icon-file-input');
+    if (uploadBtn && fileInput) {
+        uploadBtn.onclick = () => fileInput.click();
+        fileInput.onchange = (e) => {
+            const file = e.target.files?.[0];
+            if (!file) return;
+            const url = URL.createObjectURL(file);
+            const previewImg = modal.querySelector('#icon-preview-img');
+            const previewContainer = modal.querySelector('#icon-preview-container');
+            const previewUrlInput = modal.querySelector('#icon-preview-url');
+            if (previewImg) previewImg.src = url;
+            if (previewContainer) previewContainer.style.display = 'block';
+            if (previewUrlInput) previewUrlInput.value = url;
+            if (googleBtn) googleBtn.style.display = 'none';
+        };
+    }
+
+    // --- Preview save ---
+    const saveBtn = modal.querySelector('#btn-save-icon');
+    if (saveBtn) {
+        saveBtn.onclick = async () => {
+            const previewUrl = modal.querySelector('#icon-preview-url')?.value;
+            if (!previewUrl) return;
+            const previewImg = modal.querySelector('#icon-preview-img');
+            if (!previewImg || !previewImg.src) return;
+            // Upload to server as base64 data URL or keep blob URL for preview
+            // Convert to data URL for persistence
+            try {
+                const res = await fetch(previewUrl);
+                const blob = await res.blob();
+                const reader = new FileReader();
+                reader.onloadend = async () => {
+                    const dataUrl = reader.result;
+                    await saveProfileImage(dataUrl);
+                };
+                reader.readAsDataURL(blob);
+            } catch {
+                showToast('Failed to read image. Try again.', 'error');
+            }
+        };
+    }
+
+    // --- Remove Photo ---
+    const removeBtn = modal.querySelector('#btn-remove-photo');
+    if (removeBtn) {
+        removeBtn.onclick = async () => {
+            const ok = confirm('Remove your profile photo? You will go back to initials.');
+            if (ok) {
+                await saveProfileImage('');
+                modal.remove();
+            }
+        };
+    }
+};
+
+// Save profile image to backend
+window.saveProfileImage = async (imageUrl) => {
+    try {
+        const res = await apiFetch('/auth/me', {
+            method: 'PATCH',
+            body: JSON.stringify({ profile_image: imageUrl || null })
+        });
+        currentUser = res;
+        localStorage.setItem('current_user', JSON.stringify(currentUser));
+        showToast(currentUser?.profile_image ? 'Profile icon updated!' : 'Profile photo removed.', 'success');
+        // Re-render current page
+        router(window.location.pathname);
+    } catch (e) {
+        showToast(e.message || 'Failed to update profile icon.', 'error');
     }
 };
 

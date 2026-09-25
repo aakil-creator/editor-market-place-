@@ -80,6 +80,7 @@ class UserUpdate(BaseModel):
     username: Optional[str] = None
     email: Optional[str] = None
     phone: Optional[str] = None
+    profile_image: Optional[str] = None  # Image URL — Google picture or custom upload
     current_password: Optional[str] = None
     new_password: Optional[str] = None
 
