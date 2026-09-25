@@ -5983,70 +5983,6 @@ window.__providerCategoryOptionsMap = providerCategoryOptionsMap;
 
 // (getCategoryPeekIconSvg is globally defined with size and animation support)
 
-function renderLeftEdgePeekDock(activeNiche = '') {
-    return `<div class="left-edge-peek-dock" id="left-edge-peek-dock" aria-label="Category Quick Peek Switcher">
-        <div class="peek-dock-item peek-item-video ${activeNiche === 'editors_animators' ? 'active' : ''}" 
-             onclick="setProviderNiche('editors_animators')" 
-             title="Video Editing (Reels, Ads, YouTube)">
-            <div class="peek-dock-tab">
-                <span class="peek-edge-strip"></span>
-                <div class="peek-icon-bubble">
-                    ${getCategoryPeekIconSvg('editors_animators')}
-                </div>
-                <div class="peek-text-group">
-                    <div class="peek-title">Video Editing ${activeNiche === 'editors_animators' ? '<span class="peek-active-indicator"></span>' : ''}</div>
-                    <div class="peek-subtitle">Reels, YouTube, Ads</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="peek-dock-item peek-item-tutor ${activeNiche === 'tutors' ? 'active' : ''}" 
-             onclick="setProviderNiche('tutors')" 
-             title="English Tutors (Fluency, IELTS, Accent)">
-            <div class="peek-dock-tab">
-                <span class="peek-edge-strip"></span>
-                <div class="peek-icon-bubble">
-                    ${getCategoryPeekIconSvg('tutors')}
-                </div>
-                <div class="peek-text-group">
-                    <div class="peek-title">English Tutors ${activeNiche === 'tutors' ? '<span class="peek-active-indicator"></span>' : ''}</div>
-                    <div class="peek-subtitle">Fluency, IELTS, Accent</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="peek-dock-item peek-item-writer ${activeNiche === 'writers' ? 'active' : ''}" 
-             onclick="setProviderNiche('writers')" 
-             title="Writing &amp; Copywriting (SEO, Scripts, Blogs)">
-            <div class="peek-dock-tab">
-                <span class="peek-edge-strip"></span>
-                <div class="peek-icon-bubble">
-                    ${getCategoryPeekIconSvg('writers')}
-                </div>
-                <div class="peek-text-group">
-                    <div class="peek-title">Content &amp; Copy ${activeNiche === 'writers' ? '<span class="peek-active-indicator"></span>' : ''}</div>
-                    <div class="peek-subtitle">SEO, Scripts, Blogs</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="peek-dock-item peek-item-all ${!activeNiche ? 'active' : ''}" 
-             onclick="setProviderNiche('')" 
-             title="All Verified Talent">
-            <div class="peek-dock-tab">
-                <span class="peek-edge-strip"></span>
-                <div class="peek-icon-bubble">
-                    ${getCategoryPeekIconSvg('')}
-                </div>
-                <div class="peek-text-group">
-                    <div class="peek-title">All Talent ${!activeNiche ? '<span class="peek-active-indicator"></span>' : ''}</div>
-                    <div class="peek-subtitle">100% Escrow Protected</div>
-                </div>
-            </div>
-        </div>
-    </div>`;
-}
-
 function ProvidersList() {
     let providers = [];
     let loading = true;
@@ -6820,7 +6756,6 @@ function ProvidersList() {
 
         return el`<div>
             ${renderAppHeader('/')}
-            ${renderLeftEdgePeekDock(providerSearchState.niche)}
             <div class="main">
                 <!-- Search Bar with Dynamic Animated Rotating Placeholder & Blinking Search Button -->
                 <div class="card provider-search-bar-card" style="padding: 14px 16px; margin-bottom: 20px;">
@@ -9166,7 +9101,6 @@ function MessagesInbox() {
 
         return el`<div>
             ${renderAppHeader('/messages')}
-            ${renderLeftEdgePeekDock('')}
             <div class="inbox-wrapper">
                 <div class="inbox-container ${activeUserId ? 'show-chat' : ''}">
                     <!-- Left Sidebar: Conversations List -->
@@ -9585,7 +9519,6 @@ function AdminChatsView() {
     function renderAdminChatsView() {
         return el`<div>
             ${renderAppHeader('/admin')}
-            ${renderLeftEdgePeekDock('')}
             <div class="main">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                     <div>
