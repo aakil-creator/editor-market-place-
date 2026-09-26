@@ -41,6 +41,7 @@ class UserCreate(BaseModel):
     email: str
     password: str
     user_type: UserType = UserType.BUYER
+    tos_accepted: bool = False  # Must be True — Terms of Service + Privacy Policy consent
 
 class UserLogin(BaseModel):
     phone: str
@@ -49,6 +50,9 @@ class UserLogin(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"
+    otp: Optional[str] = None
+    phone: Optional[str] = None
+    message: Optional[str] = None
 
 class SocialLoginRequest(BaseModel):
     provider: str  # 'google' or 'apple'
@@ -60,6 +64,14 @@ class SocialLoginRequest(BaseModel):
 
 class OtpRequest(BaseModel):
     phone: str
+
+
+class OtpResponse(BaseModel):
+    access_token: Optional[str] = None
+    token_type: str = "bearer"
+    otp: Optional[str] = None
+    phone: Optional[str] = None
+    message: str
 
 
 class OtpVerifyRequest(BaseModel):

@@ -46,6 +46,8 @@ class User(Base):
     password_hash = Column(String, nullable=False)
     is_verified = Column(Boolean, default=False)
     is_active = Column(Boolean, default=True)
+    tos_accepted = Column(Boolean, default=False)
+    tos_accepted_at = Column(DateTime, nullable=True)
     is_blocked = Column(Boolean, default=False)
     block_reason = Column(String, nullable=True)
     profile_image = Column(String, nullable=True)

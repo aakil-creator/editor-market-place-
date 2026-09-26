@@ -72,6 +72,12 @@ def ensure_schema():
             if "profile_image" not in cols_users:
                 conn.execute(text("ALTER TABLE users ADD COLUMN profile_image VARCHAR"))
 
+            # --- ToS consent columns (existing accounts grandfathered: not re-asked) ---
+            if "tos_accepted" not in cols_users:
+                conn.execute(text("ALTER TABLE users ADD COLUMN tos_accepted BOOLEAN DEFAULT 0"))
+            if "tos_accepted_at" not in cols_users:
+                conn.execute(text("ALTER TABLE users ADD COLUMN tos_accepted_at DATETIME"))
+
             # Backfill any null usernames
             users_cursor = conn.execute(text("SELECT id, name, email FROM users WHERE username IS NULL OR username = ''"))
             for u_id, u_name, u_email in users_cursor.fetchall():
@@ -346,18 +352,69 @@ async def spa_fallback(full_path: str):
     
     raise HTTPException(status_code=404, detail="Not found")
 
+# ============== RATE LIMITING (brute-force protection) ==============
+
+_RATE_BUCKETS = {}
+
+def _client_ip(request) -> str:
+    try:
+        xf = request.headers.get("x-forwarded-for") if request else None
+        if xf:
+            return xf.split(",")[0].strip()
+        if request is not None and getattr(request, "client", None):
+            return request.client.host or "unknown"
+    except Exception:
+        pass
+    return "unknown"
+
+def check_rate_limit(key: str, limit: int, window_seconds: int):
+    """Sliding-window rate limiter (in-memory). Raises 429 when exceeded."""
+    import time
+    now = time.time()
+    hits = [h for h in _RATE_BUCKETS.get(key, []) if now - h < window_seconds]
+    if len(hits) >= limit:
+        raise HTTPException(
+            status_code=429,
+            detail="Too many attempts. Please wait a few minutes and try again."
+        )
+    hits.append(now)
+    _RATE_BUCKETS[key] = hits
+
+
+def _issue_email_verification(db, user, hours: int = 24) -> str:
+    """Invalidate old tokens and issue a fresh email-verification token (raw)."""
+    import secrets
+    from datetime import datetime, timedelta
+    db.query(EmailVerificationToken).filter(
+        EmailVerificationToken.user_id == user.id,
+        EmailVerificationToken.used == False
+    ).update({"used": True}, synchronize_session=False)
+    raw = secrets.token_urlsafe(32)
+    db.add(EmailVerificationToken(
+        user_id=user.id,
+        token_hash=hash_token(raw),
+        expires_at=datetime.utcnow() + timedelta(hours=hours)
+    ))
+    db.commit()
+    return raw
+
+
 # ============== AUTH ROUTES ==============
 
-@api_app.post("/auth/register", response_model=Token)
+@api_app.post("/auth/register")
 def register(user_data: UserCreate, db = Depends(get_db)):
     import re
+
+    # --- Terms of Service consent (required, like Fiverr's join checkbox) ---
+    if not user_data.tos_accepted:
+        raise HTTPException(status_code=400, detail="You must accept the Terms of Service and Privacy Policy to create an account.")
 
     # --- Validate username ---
     raw_username = (user_data.username or "").strip().lower()
     if not raw_username:
         raise HTTPException(status_code=400, detail="Username is required")
     if not re.match(r'^[a-zA-Z0-9_]{3,30}$', raw_username):
-        raise HTTPException(status_code=400, detail="Username must be 3.201330 characters using only letters, numbers, and underscores")
+        raise HTTPException(status_code=400, detail="Username must be 3–30 characters using only letters, numbers, and underscores")
     # --- Username must not match the name ---
     if raw_username == user_data.name.strip().lower().replace(' ', '_'):
         raise HTTPException(status_code=400, detail="Username cannot be the same as your name. Choose something different.")
@@ -384,7 +441,11 @@ def register(user_data: UserCreate, db = Depends(get_db)):
         email=user_data.email,
         password_hash=hashed_pw,
         user_type=user_type_enum,
-        is_verified=True
+        # Email+password signups must verify their email before login.
+        # (Google/OTP signups are pre-verified by their provider.)
+        is_verified=False,
+        tos_accepted=True,
+        tos_accepted_at=datetime.utcnow()
     )
     db.add(user)
     db.commit()
@@ -395,20 +456,30 @@ def register(user_data: UserCreate, db = Depends(get_db)):
     db.add(profile)
 
     db.commit()
-    access_token = create_access_token(data={"sub": str(user.id), "type": user.user_type.value})
-    return {"access_token": access_token, "token_type": "bearer"}
+
+    # Issue the email-verification token (demo: returned so the UI can show it;
+    # in production this is emailed instead). No login JWT until verified.
+    verification_token = _issue_email_verification(db, user)
+    return {
+        "must_verify": True,
+        "email": user.email,
+        "verification_token": verification_token,
+        "message": "Account created. Please verify your email to sign in."
+    }
 
 class PasswordResetRequest(BaseModel):
     email_or_phone: str
     new_password: str
 
 @api_app.post("/auth/login", response_model=Token)
-def login(credentials: UserLogin, db = Depends(get_db)):
+def login(credentials: UserLogin, request: Request, db = Depends(get_db)):
     import re
     from sqlalchemy import or_
 
     raw_input = credentials.phone.strip()
-    digits = re.sub(r'.', '', raw_input)
+    check_rate_limit(f"login:{_client_ip(request)}:{raw_input.lower()}", limit=10, window_seconds=300)
+
+    digits = re.sub(r'\D', '', raw_input)
     if digits.startswith('91') and len(digits) == 12:
         digits = digits[2:]
 
@@ -436,6 +507,12 @@ def login(credentials: UserLogin, db = Depends(get_db)):
     if getattr(user, 'is_blocked', False):
         reason = getattr(user, 'block_reason', None) or "Your account has been suspended."
         raise HTTPException(status_code=403, detail=f"Account Suspended: {reason}")
+
+    if not user.is_verified:
+        raise HTTPException(
+            status_code=403,
+            detail="EMAIL_NOT_VERIFIED: Please verify your email before signing in. Use the verification code from registration or request a new one."
+        )
 
     # Auto-promote designated admin email
     if user.email and user.email.strip().lower() in ADMIN_EMAILS and user.user_type != UserType.ADMIN:
@@ -493,11 +570,13 @@ def get_public_config(db = Depends(get_db)):
 @api_app.post("/auth/social-login", response_model=Token)
 @api_app.post("/auth/google", response_model=Token)
 @api_app.post("/auth/apple", response_model=Token)
-def social_login(req: SocialLoginRequest, db = Depends(get_db)):
+def social_login(req: SocialLoginRequest, request: Request, db = Depends(get_db)):
     import random
     import urllib.request
     import json
     import traceback
+
+    check_rate_limit(f"social:{_client_ip(request)}", limit=20, window_seconds=300)
 
     # SECURITY: never trust client-supplied email/name alone. A Google ID token
     # is mandatory and must verify against Google (fail closed). Apple has no
@@ -632,13 +711,14 @@ def social_login(req: SocialLoginRequest, db = Depends(get_db)):
 # ============== OTP PHONE LOGIN ==============
 
 @api_app.post("/auth/otp-request", response_model=OtpResponse)
-def request_otp(req: OtpRequest, db = Depends(get_db)):
+def request_otp(req: OtpRequest, request: Request, db = Depends(get_db)):
     """Generate and store a 6-digit OTP for the given phone. Returns OTP for demo/client verification."""
     import random
     raw_phone = req.phone.strip()
     digits = re.sub(r'\D', '', raw_phone)
     if not digits or len(digits) < 10:
         raise HTTPException(status_code=400, detail="Valid phone number required")
+    check_rate_limit(f"otp-req:{digits}", limit=5, window_seconds=600)
 
     user = db.query(User).filter(
         or_(User.phone == raw_phone, User.phone == digits)
@@ -689,12 +769,13 @@ def request_otp(req: OtpRequest, db = Depends(get_db)):
 
 
 @api_app.post("/auth/otp-verify", response_model=Token)
-def verify_otp(req: OtpVerifyRequest, db = Depends(get_db)):
+def verify_otp(req: OtpVerifyRequest, request: Request, db = Depends(get_db)):
     """Verify OTP and return access token."""
     raw_phone = req.phone.strip()
     digits = re.sub(r'\D', '', raw_phone)
     if not digits or len(digits) < 10:
         raise HTTPException(status_code=400, detail="Valid phone number required")
+    check_rate_limit(f"otp-verify:{digits}", limit=10, window_seconds=300)
 
     otp_record = db.query(OtpVerification).filter(
         and_(
@@ -772,7 +853,11 @@ def update_me(
         existing = db.query(User).filter(User.email == new_email, User.id != current_user.id).first()
         if existing:
             raise HTTPException(status_code=400, detail="Email already in use")
-        current_user.email = new_email
+        if new_email != (current_user.email or "").lower():
+            # New address must be re-verified before next sign-in
+            current_user.email = new_email
+            current_user.is_verified = False
+            _issue_email_verification(db, current_user)
     if user_data.phone is not None and user_data.phone.strip():
         clean_phone = re.sub(r'.', '', user_data.phone.strip())
         if clean_phone.startswith('91') and len(clean_phone) == 12:
@@ -853,9 +938,10 @@ def logout(current_user = Depends(get_current_user)):
     return {"message": "Logged out successfully"}
 
 @api_app.post("/auth/forgot-password", response_model=ForgotPasswordResponse)
-def forgot_password(req: ForgotPasswordRequest, db = Depends(get_db)):
+def forgot_password(req: ForgotPasswordRequest, request: Request, db = Depends(get_db)):
     """Generate a password reset token. In production, send email. Here we return the token for demo."""
     import re
+    check_rate_limit(f"forgot:{_client_ip(request)}:{req.email_or_phone.strip().lower()}", limit=5, window_seconds=600)
     from sqlalchemy import or_
     from datetime import datetime, timedelta
     import secrets
@@ -947,9 +1033,9 @@ def confirm_reset_password(req: ResetPasswordWithTokenRequest, db = Depends(get_
     access_token = create_access_token(data={"sub": str(user.id), "type": user.user_type.value})
     return {"access_token": access_token, "token_type": "bearer"}
 
-@api_app.post("/auth/verify-email", response_model=ForgotPasswordResponse)
+@api_app.post("/auth/verify-email", response_model=Token)
 def verify_email(req: VerifyEmailRequest, db = Depends(get_db)):
-    """Verify email with verification token"""
+    """Verify email with verification token. Returns a login token on success."""
     from datetime import datetime
 
     token_hash = hash_token(req.token.strip())
@@ -969,7 +1055,40 @@ def verify_email(req: VerifyEmailRequest, db = Depends(get_db)):
     email_token.used = True
     db.commit()
 
-    return {"message": "Email verified successfully"}
+    access_token = create_access_token(data={"sub": str(user.id), "type": user.user_type.value})
+    return {"access_token": access_token, "token_type": "bearer"}
+
+
+@api_app.post("/auth/resend-verification", response_model=ForgotPasswordResponse)
+def resend_verification(req: ForgotPasswordRequest, request: Request, db = Depends(get_db)):
+    """Issue a fresh email-verification token. Demo: returned in response (production: emailed)."""
+    import re
+    from sqlalchemy import or_
+
+    raw_input = req.email_or_phone.strip()
+    check_rate_limit(f"verify-resend:{_client_ip(request)}:{raw_input.lower()}", limit=5, window_seconds=600)
+
+    digits = re.sub(r'\D', '', raw_input)
+    if digits.startswith('91') and len(digits) == 12:
+        digits = digits[2:]
+
+    user = db.query(User).filter(
+        or_(
+            User.phone == raw_input,
+            User.phone == digits,
+            User.email == raw_input.lower()
+        )
+    ).first()
+
+    # Don't reveal whether the account exists
+    if not user:
+        return {"message": "If an account with these details exists, a new verification code has been sent."}
+
+    if user.is_verified:
+        return {"message": "This account is already verified. You can sign in."}
+
+    raw_token = _issue_email_verification(db, user)
+    return {"message": f"New verification code generated. Use this code to verify: {raw_token}", "reset_token": raw_token}
 
 # ============== PROFILE ROUTES ==============
 

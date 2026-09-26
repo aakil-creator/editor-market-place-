@@ -1340,6 +1340,12 @@ function AuthPortal(initialTab = 'login') {
                                 </button>
                             </div>
                         </div>
+                        <div class="form-group" style="margin-top: 4px;">
+                            <label style="display: flex; align-items: flex-start; gap: 8px; font-size: 0.8rem; color: var(--text-secondary); line-height: 1.45; cursor: pointer;">
+                                <input type="checkbox" id="reg-tos" style="margin-top: 3px; width: 16px; height: 16px; accent-color: var(--accent); flex-shrink: 0;">
+                                <span>I agree to the <a href="/terms" onclick="event.preventDefault(); router('/terms')" style="color: var(--accent); font-weight: 600;">Terms of Service</a> and <a href="/privacy" onclick="event.preventDefault(); router('/privacy')" style="color: var(--accent); font-weight: 600;">Privacy Policy</a></span>
+                            </label>
+                        </div>
                         <button type="submit" class="btn btn-primary" id="reg-submit-btn" style="width: 100%; padding: 13px; font-weight: 700; font-size: 1rem; justify-content: center; margin-top: 8px;">
                             Create Account
                         </button>
@@ -1666,19 +1672,30 @@ function AuthPortal(initialTab = 'login') {
                 btn.innerHTML = origBtnHtml;
             }
             const isCredErr = err.message && (err.message.toLowerCase().includes('credential') || err.message.toLowerCase().includes('401'));
+            const isUnverified = err.message && err.message.includes('EMAIL_NOT_VERIFIED');
             if (errContainer) {
                 errContainer.innerHTML = `
                     <div style="background: rgba(239, 68, 68, 0.12); border: 1px solid var(--danger, #ef4444); color: var(--danger, #ef4444); padding: 12px 14px; border-radius: 8px; margin-bottom: 16px; font-size: 0.85rem; line-height: 1.4;">
                         <div style="font-weight: 700; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
-                            <span>⚠️</span> ${isCredErr ? 'Invalid Phone/Email or Password' : (err.message || 'Login failed')}
+                            <span>⚠️</span> ${isUnverified ? 'Email Not Verified' : (isCredErr ? 'Invalid Phone/Email or Password' : (err.message || 'Login failed'))}
                         </div>
                         <div style="font-size: 0.8rem; color: var(--text-secondary);">
-                            ${isCredErr ?
+                            ${isUnverified ?
+                        `Please verify your email before signing in. <button type="button" id="btn-go-verify" style="background:none;border:none;color:var(--accent);font-weight:700;text-decoration:underline;cursor:pointer;padding:0;">Verify now</button>` :
+                        (isCredErr ?
                         `No account found with these credentials. Don't have an account yet? <button type="button" id="btn-switch-to-reg" style="background:none;border:none;color:var(--accent);font-weight:700;text-decoration:underline;cursor:pointer;padding:0;">Create Account here</button> with these details, or use Google / Apple above.` :
-                        err.message}
+                        err.message)}
                         </div>
                     </div>
                 `;
+
+                const verifyBtn = errContainer.querySelector('#btn-go-verify');
+                if (verifyBtn) {
+                    verifyBtn.onclick = () => {
+                        try { sessionStorage.removeItem('pending_verification'); } catch (_) {}
+                        router('/verify-email' + (phoneInput ? `?email=${encodeURIComponent(phoneInput)}` : ''));
+                    };
+                }
 
                 const switchBtn = errContainer.querySelector('#btn-switch-to-reg');
                 if (switchBtn) {
@@ -1849,6 +1866,14 @@ function AuthPortal(initialTab = 'login') {
             return;
         }
 
+        if (!view.querySelector('#reg-tos')?.checked) {
+            if (errContainer) {
+                errContainer.innerHTML = `<div style="background: rgba(239, 68, 68, 0.12); border: 1px solid var(--danger, #ef4444); color: var(--danger, #ef4444); padding: 10px 14px; border-radius: 8px; margin-bottom: 16px; font-size: 0.85rem;">⚠️ Please accept the Terms of Service and Privacy Policy to create your account.</div>`;
+            }
+            view.querySelector('#reg-tos')?.focus();
+            return;
+        }
+
         const origText = btn ? btn.innerHTML : 'Create Account';
         if (btn) {
             btn.disabled = true;
@@ -1862,12 +1887,24 @@ function AuthPortal(initialTab = 'login') {
                 phone,
                 email,
                 password,
-                user_type: role
+                user_type: role,
+                tos_accepted: true
             };
             const result = await apiFetch('/auth/register', {
                 method: 'POST',
                 body: JSON.stringify(data)
             });
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = origText;
+            }
+            if (result && result.must_verify) {
+                // Email verification required before first sign-in (demo: code shown on verify page)
+                try { sessionStorage.setItem('pending_verification', JSON.stringify({ email: result.email || email, token: result.verification_token || '' })); } catch (_) {}
+                showToast('Account created! Please verify your email to sign in.', 'success');
+                router('/verify-email' + (result.email || email ? `?email=${encodeURIComponent(result.email || email)}` : ''));
+                return;
+            }
             currentToken = result.access_token;
             localStorage.setItem('access_token', currentToken);
             currentUser = await apiFetch('/auth/me');
@@ -3596,6 +3633,7 @@ function Settings() {
 
     window.handleAccountSave = async (e) => {
         e.preventDefault();
+        let redirected = false;
         try {
             showLoading();
             const usernameInput = document.getElementById('setting-username');
@@ -3611,12 +3649,20 @@ function Settings() {
                 method: 'PATCH',
                 body: JSON.stringify(data)
             });
+            localStorage.setItem('current_user', JSON.stringify(currentUser));
+            if (currentUser && currentUser.is_verified === false) {
+                showToast('Email changed — please verify your new address before your next sign-in.', 'info');
+                try { sessionStorage.removeItem('pending_verification'); } catch (_) {}
+                redirected = true;
+                router('/verify-email' + (currentUser.email ? `?email=${encodeURIComponent(currentUser.email)}` : ''));
+                return;
+            }
             showToast('Account details & handle updated', 'success');
         } catch (e) {
             showToast(e.message || 'Update failed', 'error');
         } finally {
             hideLoading();
-            mount(renderSettingsView());
+            if (!redirected) mount(renderSettingsView());
         }
     };
 
@@ -8065,7 +8111,59 @@ function ResetPasswordPage() {
 
 function VerifyEmailPage() {
     const urlParams = new URLSearchParams(window.location.search);
-    const token = urlParams.get('token') || '';
+    let pending = null;
+    try { pending = JSON.parse(sessionStorage.getItem('pending_verification') || 'null'); } catch (_) {}
+    const emailParam = urlParams.get('email') || (pending && pending.email) || '';
+    const tokenParam = urlParams.get('token') || (pending && pending.token) || '';
+
+    window.handleVerifyEmailSubmit = async (e) => {
+        if (e) e.preventDefault();
+        const token = (document.getElementById('verify-token')?.value || '').trim();
+        const errBox = document.getElementById('verify-error-container');
+        const btn = document.getElementById('verify-email-btn');
+        if (errBox) errBox.innerHTML = '';
+        if (!token) {
+            if (errBox) errBox.innerHTML = '<div style="background: rgba(239,68,68,0.12); border:1px solid #ef4444; color:#ef4444; padding:10px 14px; border-radius:8px; font-size:0.85rem;">⚠️ Please enter your verification code.</div>';
+            return;
+        }
+        if (btn) { btn.disabled = true; btn.textContent = 'Verifying...'; }
+        try {
+            const res = await apiFetch('/auth/verify-email', { method: 'POST', body: JSON.stringify({ token }) });
+            currentToken = res.access_token;
+            localStorage.setItem('access_token', currentToken);
+            currentUser = await apiFetch('/auth/me');
+            localStorage.setItem('current_user', JSON.stringify(currentUser));
+            try { sessionStorage.removeItem('pending_verification'); } catch (_) {}
+            showToast('Email verified! Welcome to Groove Hub.', 'success');
+            router(currentUser?.user_type === 'ADMIN' ? '/admin' : '/');
+        } catch (err) {
+            if (errBox) errBox.innerHTML = `<div style="background: rgba(239,68,68,0.12); border:1px solid #ef4444; color:#ef4444; padding:10px 14px; border-radius:8px; font-size:0.85rem;">⚠️ ${err.message || 'Verification failed.'}</div>`;
+            if (btn) { btn.disabled = false; btn.textContent = 'Verify Email'; }
+        }
+    };
+
+    window.handleResendVerification = async () => {
+        const email = (document.getElementById('verify-email')?.value || '').trim();
+        const errBox = document.getElementById('verify-error-container');
+        const demoBox = document.getElementById('verify-demo-token');
+        if (!email) {
+            if (errBox) errBox.innerHTML = '<div style="background: rgba(239,68,68,0.12); border:1px solid #ef4444; color:#ef4444; padding:10px 14px; border-radius:8px; font-size:0.85rem;">⚠️ Enter your email first.</div>';
+            return;
+        }
+        try {
+            const res = await apiFetch('/auth/resend-verification', { method: 'POST', body: JSON.stringify({ email_or_phone: email }) });
+            if (res.reset_token) {
+                try { sessionStorage.setItem('pending_verification', JSON.stringify({ email, token: res.reset_token })); } catch (_) {}
+                const input = document.getElementById('verify-token');
+                if (input) input.value = res.reset_token;
+                if (demoBox) { demoBox.style.display = 'block'; document.getElementById('verify-demo-code').textContent = res.reset_token; }
+            }
+            showToast(res.message || 'New code sent.', 'success');
+        } catch (err) {
+            if (errBox) errBox.innerHTML = `<div style="background: rgba(239,68,68,0.12); border:1px solid #ef4444; color:#ef4444; padding:10px 14px; border-radius:8px; font-size:0.85rem;">⚠️ ${err.message || 'Could not resend code.'}</div>`;
+        }
+    };
+
     return el`<div>
 		<div class="header">
 			${renderLogo(32, true)}
@@ -8079,11 +8177,27 @@ function VerifyEmailPage() {
 				<div class="card-body" style="padding: 32px 24px; text-align: center;">
 					<div style="margin-bottom: 20px;">${renderLogo(48, true)}</div>
 					<h1 style="font-size: 1.5rem; font-weight: 700;">Verify Your Email</h1>
-					<p style="color: var(--text-muted); font-size: 0.875rem; margin: 8px 0 24px;">Click the button below to verify your email address.</p>
+					<p style="color: var(--text-muted); font-size: 0.875rem; margin: 8px 0 20px;">Enter the verification code for your email address.</p>
 					<div id="verify-error-container"></div>
-					<button class="btn btn-primary" style="width: 100%; padding: 13px; font-weight: 700;" id="verify-email-btn">Verify Email</button>
+					<form onsubmit="handleVerifyEmailSubmit(event)" style="text-align: left;">
+						<div class="form-group">
+							<label class="form-label">Email Address</label>
+							<input type="email" class="form-input" id="verify-email" placeholder="name@example.com" value="${emailParam}" required autocomplete="email">
+						</div>
+						<div class="form-group" style="margin-top: 8px;">
+							<label class="form-label">Verification Code</label>
+							<input type="text" class="form-input" id="verify-token" placeholder="Paste your verification code" value="${tokenParam}" required autocomplete="off" style="font-family: monospace;">
+						</div>
+						<button type="submit" class="btn btn-primary" style="width: 100%; padding: 13px; font-weight: 700; margin-top: 12px;" id="verify-email-btn">Verify Email</button>
+					</form>
+					<div id="verify-demo-token" style="display: ${tokenParam ? 'block' : 'none'}; margin-top: 14px; background: rgba(16,185,129,0.08); border: 1px dashed var(--border); border-radius: 8px; padding: 10px 12px; font-size: 0.78rem; color: var(--text-secondary); word-break: break-all;">
+						Demo code: <code id="verify-demo-code">${tokenParam}</code>
+					</div>
+					<div style="margin-top: 14px; font-size: 0.85rem; color: var(--text-secondary);">
+						Didn't get a code? <button onclick="handleResendVerification()" style="background:none;border:none;color:var(--accent);font-weight:700;cursor:pointer;padding:0;">Resend code</button>
+					</div>
 					<div style="margin-top: 16px;">
-						<button class="btn btn-secondary" onclick="router('/login')" style="font-size: 0.85rem;"><-- Back to Sign In</button>
+						<button class="btn btn-secondary" onclick="router('/login')" style="font-size: 0.85rem;">← Back to Sign In</button>
 					</div>
 				</div>
 			</div>
