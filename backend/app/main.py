@@ -44,7 +44,7 @@ from .schemas import (
     AdminStats, NicheCreate, NicheUpdate, NicheResponse,
     MessageCreate, MessageResponse, DirectMessageCreate, ConversationSummary, PortfolioItemCreate, PortfolioItemResponse,
     BankDetailsUpdate, PlatformSettingsUpdate, PlatformSettingsResponse,
-    SocialLoginRequest, RoleSwitchRequest, OtpRequest, OtpVerifyRequest,
+    SocialLoginRequest, RoleSwitchRequest, OtpRequest, OtpResponse, OtpVerifyRequest,
     ForgotPasswordRequest, ForgotPasswordResponse, ResetPasswordWithTokenRequest, VerifyEmailRequest,
     get_current_user, get_current_user_optional
 )
@@ -499,25 +499,40 @@ def social_login(req: SocialLoginRequest, db = Depends(get_db)):
     import json
     import traceback
 
-    verified_email = (req.email or "").strip().lower()
-    verified_name = (req.name or "").strip()
+    # SECURITY: never trust client-supplied email/name alone. A Google ID token
+    # is mandatory and must verify against Google (fail closed). Apple has no
+    # server-side verifier configured, so it is rejected until one is added.
+    if (req.provider or "").strip().lower() != "google":
+        raise HTTPException(
+            status_code=400,
+            detail="Apple sign-in is not available yet. Please use Google or email/phone login."
+        )
+    if not req.token:
+        raise HTTPException(
+            status_code=401,
+            detail="Google sign-in requires a valid ID token. Please try again or use email/phone login."
+        )
 
-    # If Google ID token is provided, verify against Google's public tokeninfo endpoint
+    verified_email = ""
+    verified_name = (req.name or "").strip()
+    token_audience = ""
+
+    # Verify the Google ID token against Google's public tokeninfo endpoint
     # and extract profile picture from the JWT payload
     google_picture = None
-    if req.token and req.provider == "google":
-        try:
-            req_url = f"https://oauth2.googleapis.com/tokeninfo?id_token={req.token}"
-            with urllib.request.urlopen(req_url, timeout=4) as resp:
-                if resp.status == 200:
-                    token_info = json.loads(resp.read().decode())
-                    if "email" in token_info:
-                        verified_email = token_info["email"].strip().lower()
-                    if "name" in token_info and not verified_name:
-                        verified_name = token_info["name"].strip()
-                    # tokeninfo endpoint doesn't return picture — decode JWT directly
-        except Exception as e:
-            print(f"Google tokeninfo verification note: {e}")
+    try:
+        req_url = f"https://oauth2.googleapis.com/tokeninfo?id_token={req.token}"
+        with urllib.request.urlopen(req_url, timeout=4) as resp:
+            if resp.status == 200:
+                token_info = json.loads(resp.read().decode())
+                if "email" in token_info:
+                    verified_email = token_info["email"].strip().lower()
+                if "name" in token_info and not verified_name:
+                    verified_name = token_info["name"].strip()
+                token_audience = (token_info.get("aud") or "").strip()
+                # tokeninfo endpoint doesn't return picture — decode JWT directly
+    except Exception as e:
+        print(f"Google tokeninfo verification note: {e}")
 
         # Decode JWT payload to get picture URL
         try:
@@ -537,7 +552,33 @@ def social_login(req: SocialLoginRequest, db = Depends(get_db)):
             print(f"Google JWT picture extraction note: {e}")
 
     if not verified_email or "@" not in verified_email:
-        raise HTTPException(status_code=400, detail="Valid email is required")
+        raise HTTPException(
+            status_code=401,
+            detail="Google token verification failed. Please try again or use email/phone login."
+        )
+
+    # The token must have been issued for THIS app (audience = our client ID),
+    # otherwise a token from another app could be replayed here.
+    try:
+        settings = db.query(PlatformSettings).first()
+        expected_aud = (
+            os.environ.get("GOOGLE_CLIENT_ID")
+            or (settings.google_client_id if settings and settings.google_client_id else "")
+        ).strip()
+        if (
+            token_audience
+            and expected_aud
+            and ".apps.googleusercontent.com" in expected_aud
+            and token_audience != expected_aud
+        ):
+            raise HTTPException(
+                status_code=401,
+                detail="Google token was not issued for this app. Please try again."
+            )
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Google audience check note: {e}")
 
     try:
         user = db.query(User).filter(User.email == verified_email).first()
@@ -590,9 +631,9 @@ def social_login(req: SocialLoginRequest, db = Depends(get_db)):
 
 # ============== OTP PHONE LOGIN ==============
 
-@api_app.post("/auth/otp-request", response_model=Token)
+@api_app.post("/auth/otp-request", response_model=OtpResponse)
 def request_otp(req: OtpRequest, db = Depends(get_db)):
-    """Generate and store a 6-digit OTP for the given phone. Returns OTP for demo."""
+    """Generate and store a 6-digit OTP for the given phone. Returns OTP for demo/client verification."""
     import random
     raw_phone = req.phone.strip()
     digits = re.sub(r'\D', '', raw_phone)
@@ -696,7 +737,13 @@ def verify_otp(req: OtpVerifyRequest, db = Depends(get_db)):
         db.commit()
 
     access_token = create_access_token(data={"sub": str(user.id), "type": user.user_type.value})
-    return {"access_token": access_token, "token_type": "bearer"}
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "otp": req.otp,
+        "phone": raw_phone,
+        "message": "Login successful"
+    }
 
 
 @api_app.get("/auth/me", response_model=UserResponse)
@@ -2212,8 +2259,10 @@ def detect_contact_sharing(text_content: str):
         return True, "Sharing personal phone number"
 
     # 6. Bypass phrases combined with numbers
-    if re.search(r'.(call me|call on|ring me|my number|my ph|my contact|contact me on|reach me at|dial|ping me)..*?.{5,}', lower):
-        return True, "Exchanging direct phone contact"
+    # Only flag if there are actual phone digits (not already masked)
+    if re.search(r'(call me|call on|ring me|my number|my ph|my contact|contact me on|reach me at|dial|ping me)', lower):
+        # Check if there's an actual phone pattern present (not just the phrase)
+        has_phone = bool(re.search(r'(?:(?:\+?91|0)[\s\-]?)?[6-9]\d(?:[\s\-]?\d){7,10}', text_content))
 
     return False, None
 
@@ -2228,17 +2277,19 @@ def mask_sensitive_content(text_content: str) -> str:
     import re as _re
 
     def _mask_phone(m):
-        digits = _re.sub(r'[^0-9]', '', m.group(0))
+        digits = _re.sub(r'\D', '', m.group(0))
         if len(digits) >= 10:
             return '📠 [contact hidden - ' + str(len(digits)) + ' digits]'
         return m.group(0)
 
-    out = _re.sub(r'(?<!\w)(\+?\d[\s\-\.]?){7,}\d(?!\w)', _mask_phone, text_content)
+    # Mask continuous digit streams (phone numbers): 7+ digit groups ending in a digit
+    out = _re.sub(r'(?<!\w)(\+?\d[\s\-/.]?){7,}\d(?!\w)', _mask_phone, text_content)
+    # Mask @usernames
     out = _re.sub(r'(@[a-zA-Z0-9_]{2,30})(?!\w)', lambda m: '[🔗 ' + m.group(1)[:2] + '…' + m.group(1)[-2:] + ']', out)
+    # Mask instagram.com / facebook.com URLs (with or without http)
     out = _re.sub(r'https?://(?:www\.)?(instagram\.com|facebook\.com)/@?[a-zA-Z0-9_.+-]+', '[🔗 social link hidden]', out)
     out = _re.sub(r'(?<!\w)(instagram\.com|facebook\.com)/@?[a-zA-Z0-9_.+-]+', '[🔗 social link hidden]', out)
     return out
-
 
 
 def count_prior_flags(db, user_id: int) -> int:
@@ -2655,6 +2706,65 @@ def get_unread_messages_count(
     return {"unread_count": count}
 
 
+@api_app.get("/messages/inbox", response_model=List[MessageResponse])
+@api_app.get("/messages", response_model=List[MessageResponse])
+def get_user_inbox_messages(
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    """Retrieve all received messages in the current user's inbox."""
+    messages = db.query(Message).filter(
+        Message.receiver_id == current_user.id,
+        Message.is_deleted == False
+    ).order_by(Message.created_at.desc()).all()
+
+    sender_ids = list(set([m.sender_id for m in messages]))
+    senders = db.query(User).filter(User.id.in_(sender_ids)).all() if sender_ids else []
+    s_map = {s.id: s.name for s in senders}
+
+    result = []
+    for m in messages:
+        if m.is_flagged and m.sender_id != current_user.id and current_user.user_type != UserType.ADMIN:
+            continue
+        result.append(MessageResponse(
+            id=m.id,
+            booking_id=m.booking_id,
+            sender_id=m.sender_id,
+            receiver_id=m.receiver_id,
+            sender_name=s_map.get(m.sender_id, "User"),
+            receiver_name=current_user.name,
+            message=m.message,
+            file_url=m.file_url,
+            is_read=m.is_read,
+            is_flagged=m.is_flagged,
+            flag_reason=m.flag_reason,
+            created_at=m.created_at
+        ))
+    return result
+
+
+class UserFlagMessageRequest(BaseModel):
+    reason: Optional[str] = "Reported by user"
+
+@api_app.post("/messages/{message_id}/flag")
+def user_flag_message(
+    message_id: int,
+    req: UserFlagMessageRequest = UserFlagMessageRequest(),
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    """User endpoint to report/flag an inappropriate message in a chat."""
+    msg = db.query(Message).filter(Message.id == message_id).first()
+    if not msg:
+        raise HTTPException(status_code=404, detail="Message not found")
+    if current_user.id not in [msg.sender_id, msg.receiver_id] and current_user.user_type != UserType.ADMIN:
+        raise HTTPException(status_code=403, detail="Not authorized to flag this message")
+    msg.is_flagged = True
+    msg.flag_reason = req.reason or "Reported by user"
+    db.commit()
+    return {"message": "Message reported successfully", "is_flagged": True, "message_id": message_id}
+
+
 # ============== ADMIN MODERATION & CHAT ROUTES ==============
 
 @api_app.get("/admin/chats")
@@ -2906,12 +3016,14 @@ def admin_mask_message(
 
 
 @api_app.delete("/admin/messages/{message_id}")
+@api_app.post("/admin/messages/{message_id}/delete")
+@api_app.post("/admin/messages/{message_id}")
 def admin_delete_message(
     message_id: int,
     current_user: User = Depends(get_current_user),
     db = Depends(get_db)
 ):
-    """Admin: soft-delete a message (removed from users, kept for admin audit)."""
+    """Admin: soft-delete a message (removed from users, kept for admin audit). Supports both DELETE and POST."""
     if current_user.user_type != UserType.ADMIN:
         raise HTTPException(status_code=403, detail="Admin only")
     msg = db.query(Message).filter(Message.id == message_id).first()
@@ -2921,8 +3033,25 @@ def admin_delete_message(
     msg.deleted_by_admin_id = current_user.id
     msg.deleted_at = datetime.utcnow()
     db.commit()
-    return {"message": "Message deleted"}
+    return {"message": "Message deleted", "id": message_id}
 
+@api_app.post("/admin/messages/{message_id}/flag")
+def admin_flag_message(
+    message_id: int,
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    """Admin: flag a message for review."""
+    if current_user.user_type != UserType.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin only")
+    msg = db.query(Message).filter(Message.id == message_id).first()
+    if not msg:
+        raise HTTPException(status_code=404, detail="Message not found")
+    msg.is_flagged = True
+    msg.flag_reason = "Flagged by admin"
+    msg.flagged_by_admin_id = current_user.id
+    db.commit()
+    return {"message": "Message flagged", "is_flagged": True}
 
 @api_app.delete("/admin/chats/user/{user1_id}/with/{user2_id}")
 def admin_delete_conversation(
@@ -2946,6 +3075,106 @@ def admin_delete_conversation(
     })
     db.commit()
     return {"message": f"Conversation deleted ({count} messages)", "deleted_count": count}
+
+
+@api_app.get("/admin/users")
+def get_admin_users_list(
+    role: Optional[str] = None,
+    search: Optional[str] = None,
+    limit: int = 100,
+    offset: int = 0,
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    """Admin endpoint to view, search, and filter all registered users on the platform."""
+    if current_user.user_type != UserType.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin only")
+
+    query = db.query(User)
+    if role:
+        try:
+            target_role = UserType[role.upper()]
+            query = query.filter(User.user_type == target_role)
+        except Exception:
+            pass
+    if search:
+        s = f"%{search.strip()}%"
+        query = query.filter(or_(User.name.ilike(s), User.email.ilike(s), User.phone.ilike(s)))
+
+    total = query.count()
+    users = query.order_by(User.created_at.desc()).offset(offset).limit(limit).all()
+
+    return {
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+        "users": [
+            {
+                "id": u.id,
+                "name": u.name,
+                "username": u.username,
+                "email": u.email,
+                "phone": u.phone,
+                "user_type": u.user_type.value,
+                "is_verified": u.is_verified,
+                "is_active": u.is_active,
+                "is_blocked": getattr(u, 'is_blocked', False),
+                "block_reason": getattr(u, 'block_reason', None),
+                "created_at": u.created_at.isoformat() if u.created_at else None
+            }
+            for u in users
+        ]
+    }
+
+
+@api_app.get("/admin/stats", response_model=AdminStats)
+def get_admin_stats(
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    """Admin endpoint to get high-level platform statistics and metrics."""
+    if current_user.user_type != UserType.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin only")
+
+    total_users = db.query(User).count()
+    total_providers = db.query(User).filter(User.user_type == UserType.PROVIDER).count()
+    total_bookings = db.query(Booking).count()
+
+    completed_payments = db.query(Payment).filter(
+        Payment.status.in_(["held", "released", "HELD", "RELEASED", PaymentStatus.HELD.value, PaymentStatus.RELEASED.value])
+    ).all()
+    total_revenue = sum([p.amount for p in completed_payments]) if completed_payments else 0.0
+    total_commissions = sum([p.platform_commission for p in completed_payments]) if completed_payments else 0.0
+    active_niches = db.query(Niche).filter(Niche.is_active == True).count()
+
+    return AdminStats(
+        total_users=total_users,
+        total_providers=total_providers,
+        total_bookings=total_bookings,
+        total_revenue=float(total_revenue),
+        total_commissions=float(total_commissions),
+        active_niches=active_niches
+    )
+
+
+@api_app.get("/admin/dashboard")
+def get_admin_dashboard_api(
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    """Admin dashboard JSON API endpoint for administration clients."""
+    if current_user.user_type != UserType.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin only")
+
+    stats = get_admin_stats(current_user=current_user, db=db)
+    recent_bookings = db.query(Booking).order_by(Booking.created_at.desc()).limit(10).all()
+    recent_users = db.query(User).order_by(User.created_at.desc()).limit(10).all()
+
+    return {
+        "stats": stats,
+        "recent_bookings_count": len(recent_bookings),
+        "recent_users_count": len(recent_users)
+    }
 
 
 # ============== PORTFOLIO ROUTES ==============

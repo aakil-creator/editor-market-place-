@@ -1141,139 +1141,41 @@ async function handleGoogleSignIn(initialRole = null, credential = null) {
 }
 
 // Modal fallback for Google/Apple sign-in when GIS is unavailable or no client ID
+// Social sign-in fallback — shown only when real Google GIS is unavailable.
+// NOTE: there is deliberately NO email/name form here. The backend only accepts
+// cryptographically verified Google ID tokens, so typing an email can never log
+// anyone in (previously this form allowed account takeover with just an email).
 async function handleSocialLoginFallback(provider, initialRole = null) {
     const providerName = provider === 'google' ? 'Google' : 'Apple';
-    const role = initialRole || window.selectedType || 'BUYER';
-    let chosenRole = role;
-
-    // Remove any existing modal
     const existing = document.getElementById('social-login-modal');
     if (existing) existing.remove();
 
-    // Display sleek account selection dialog
     const overlay = document.createElement('div');
     overlay.id = 'social-login-modal';
     overlay.className = 'modal-backdrop';
     overlay.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(8px); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px;';
-
     overlay.innerHTML = `
-        <div class="card" style="max-width: 440px; width: 100%; box-shadow: var(--shadow-lg); border: 1px solid var(--border); animation: fadeIn 0.2s ease;">
-            <div class="card-header" style="border-bottom: 1px solid var(--border); padding: 18px 20px; display: flex; justify-content: space-between; align-items: center;">
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    ${provider === 'google' ? `
-                        <svg width="22" height="22" viewBox="0 0 18 18">
-                            <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.616z"/>
-                            <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"/>
-                            <path fill="#FBBC05" d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.961H.957C.347 6.173 0 7.548 0 9s.348 2.827.957 4.039l3.007-2.332z"/>
-                            <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.961L3.964 7.293C4.672 5.166 6.656 3.58 9 3.58z"/>
-                        </svg>` : `
-                        <svg width="20" height="20" viewBox="0 0 170 170" fill="currentColor">
-                            <path d="M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.19-2.12-9.97-3.17-14.34-3.17-4.58 0-9.49 1.05-14.74 3.17-5.26 2.13-9.5 3.24-12.74 3.35-4.35.13-9.16-1.9-14.42-6.08-3.7-3.05-7.6-7.79-11.7-14.24-6.3-9.91-11.25-20.98-14.85-33.2-3.6-12.22-5.4-23.77-5.4-34.65 0-14.73 3.65-26.96 10.96-36.68 7.3-9.73 16.48-14.71 27.53-14.96 4.9.12 10.37 1.33 16.4 3.63 6.03 2.3 9.94 3.52 11.73 3.66 2.01-.27 6.02-1.57 12.03-3.9 6.01-2.33 11.37-3.4 16.07-3.21 11.19.74 20.37 4.96 27.55 12.65-9.87 5.99-14.67 14.36-14.41 25.1.26 8.35 3.38 15.35 9.36 21 5.98 5.66 13.06 8.89 21.23 9.69-2.26 6.8-4.99 13.79-8.19 20.97zM119.22 31.84c0-7.23 2.61-13.9 7.82-20.02 5.22-6.12 11.59-9.86 19.11-11.22.13 1.06.2 2.06.2 3 0 7.34-2.73 14.19-8.18 20.55-5.46 6.36-11.96 10.09-19.51 11.19-.27-1.19-.44-2.36-.44-3.5z"/>
-                        </svg>`}
-                    <div>
-                        <h3 style="font-size: 1.15rem; font-weight: 700; margin: 0;">Sign in with ${providerName}</h3>
-                        <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;">Choose an account to continue to Groove Hub</div>
-                    </div>
+        <div class="card" style="max-width: 420px; width: 100%; box-shadow: var(--shadow-lg); border: 1px solid var(--border); animation: fadeIn 0.2s ease;">
+            <div class="card-body" style="padding: 24px 20px; text-align: center;">
+                <div style="font-size: 2rem; margin-bottom: 10px;">&#x1F510;</div>
+                <h3 style="margin: 0 0 8px; font-size: 1.05rem; color: var(--text-primary);">${providerName} sign-in unavailable</h3>
+                <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5; margin: 0 0 18px;">
+                    ${provider === 'apple'
+                        ? 'Apple sign-in is not enabled yet. Please sign in with your email/phone and password, or with a phone OTP.'
+                        : 'Google could not be reached right now. Please sign in with your email/phone and password, or with a phone OTP.'}
+                </p>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn btn-primary" id="fallback-email-btn" style="flex: 1; justify-content: center; padding: 12px; font-weight: 700;">Use email / phone</button>
+                    <button class="btn btn-secondary" id="fallback-cancel-btn" style="padding: 12px 18px;">Close</button>
                 </div>
-                <button type="button" id="close-social-modal" style="background:transparent; border:none; color:var(--text-muted); font-size:1.25rem; cursor:pointer; padding: 4px 8px;">✕</button>
-            </div>
-            <div class="card-body" style="padding: 20px;">
-                <div id="social-modal-error"></div>
-                <form id="social-auth-form" onsubmit="return false;">
-                    <div class="form-group">
-                        <label class="form-label">${providerName} Email Address</label>
-                        <input type="email" class="form-input" id="social-email" placeholder="name@${provider === 'google' ? 'gmail.com' : 'icloud.com'}" value="" required autofocus>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Full Name</label>
-                        <input type="text" class="form-input" id="social-name" placeholder="Your full name" value="" required>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Account Role</label>
-                        <div class="tabs" style="margin-top: 6px;">
-                            <button type="button" class="tab ${role === 'BUYER' ? 'active' : ''}" id="social-role-buyer">🎯 Buyer (Hire Talent)</button>
-                            <button type="button" class="tab ${role === 'PROVIDER' ? 'active' : ''}" id="social-role-provider">🎨 Provider (Offer Services)</button>
-                        </div>
-                    </div>
-                    <div style="display: flex; gap: 10px; margin-top: 22px;">
-                        <button type="submit" class="btn btn-primary" id="social-submit-btn" style="flex: 1; justify-content: center; padding: 12px; font-weight: 700;">
-                            Continue with ${providerName}
-                        </button>
-                        <button type="button" class="btn btn-secondary" id="cancel-social-modal" style="width: auto; padding: 12px 18px;">
-                            Cancel
-                        </button>
-                    </div>
-                </form>
             </div>
         </div>
     `;
-
     document.body.appendChild(overlay);
-
-    const buyerBtn = overlay.querySelector('#social-role-buyer');
-    const provBtn = overlay.querySelector('#social-role-provider');
-    if (buyerBtn && provBtn) {
-        buyerBtn.onclick = () => { chosenRole = 'BUYER'; window.selectedType = 'BUYER'; buyerBtn.classList.add('active'); provBtn.classList.remove('active'); };
-        provBtn.onclick = () => { chosenRole = 'PROVIDER'; window.selectedType = 'PROVIDER'; provBtn.classList.add('active'); buyerBtn.classList.remove('active'); };
-    }
-
     const close = () => overlay.remove();
-    overlay.querySelector('#close-social-modal').onclick = close;
-    overlay.querySelector('#cancel-social-modal').onclick = close;
-
-    const socialForm = overlay.querySelector('#social-auth-form');
-    socialForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const email = (overlay.querySelector('#social-email')?.value || '').trim();
-        const name = (overlay.querySelector('#social-name')?.value || '').trim();
-        const sBtn = overlay.querySelector('#social-submit-btn');
-        const errBox = overlay.querySelector('#social-modal-error');
-        if (errBox) errBox.innerHTML = '';
-
-        if (!email || !name) {
-            if (errBox) {
-                errBox.innerHTML = `<div style="background: rgba(239, 68, 68, 0.12); border: 1px solid var(--danger, #ef4444); color: var(--danger, #ef4444); padding: 10px 14px; border-radius: 8px; margin-bottom: 14px; font-size: 0.85rem;">⚠️ Please enter both your email and full name.</div>`;
-            }
-            return;
-        }
-
-        const origText = sBtn.innerHTML;
-        sBtn.disabled = true;
-        sBtn.innerHTML = `<span style="display:inline-block;width:14px;height:14px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:8px;vertical-align:middle;"></span> Connecting...`;
-
-        try {
-            const res = await apiFetch(`/auth/${provider}`, {
-                method: 'POST',
-                body: JSON.stringify({
-                    provider,
-                    email,
-                    name,
-                    user_type: chosenRole
-                })
-            });
-            currentToken = res.access_token;
-            localStorage.setItem('access_token', currentToken);
-            currentUser = await apiFetch('/auth/me');
-            localStorage.setItem('current_user', JSON.stringify(currentUser));
-            close();
-            showToast(`Signed in with ${providerName} as ${currentUser.name}!`, 'success');
-            if (currentUser?.user_type === 'ADMIN') {
-                router('/admin');
-            } else {
-                router('/');
-            }
-        } catch (err) {
-            sBtn.disabled = false;
-            sBtn.innerHTML = origText;
-            if (errBox) {
-                errBox.innerHTML = `
-                    <div style="background: rgba(239, 68, 68, 0.12); border: 1px solid var(--danger, #ef4444); color: var(--danger, #ef4444); padding: 10px 14px; border-radius: 8px; margin-bottom: 14px; font-size: 0.85rem;">
-                        ⚠️ ${err.message || `Failed to sign in with ${providerName}`}
-                    </div>
-                `;
-            }
-        }
-    });
+    overlay.querySelector('#fallback-cancel-btn').onclick = close;
+    overlay.onclick = (e) => { if (e.target === overlay) close(); };
+    overlay.querySelector('#fallback-email-btn').onclick = () => { close(); router('/login'); };
 }
 
 function handleSocialLogin(provider, initialRole = null) {
@@ -1356,8 +1258,12 @@ function AuthPortal(initialTab = 'login') {
                             <div style="flex: 1; height: 1px; background: var(--border);"></div>
                         </div>
 
+                        <button type="button" id="otp-toggle-btn" class="btn btn-outline" style="width: 100%; padding: 12px; font-weight: 700;" onclick="window.__toggleOtp()">
+                            📱 Login with OTP instead
+                        </button>
+
                         <!-- OTP Login Panel -->
-                        <div id="otp-login-section" style="display: none;">
+                        <div id="otp-login-section" style="display: none; margin-top: 10px;">
                             <div class="form-group">
                                 <label class="form-label">Phone Number</label>
                                 <input type="tel" class="form-input" id="otp-phone" placeholder="+91 98765 43210" autocomplete="tel">
@@ -1877,6 +1783,16 @@ function AuthPortal(initialTab = 'login') {
         }
     };
 
+    window.__toggleOtp = () => {
+        const otpSection = view.querySelector('#otp-login-section');
+        const toggleBtn = view.querySelector('#otp-toggle-btn');
+        if (!otpSection) return;
+        const show = otpSection.style.display === 'none';
+        otpSection.style.display = show ? 'block' : 'none';
+        if (toggleBtn) toggleBtn.style.display = show ? 'none' : 'block';
+        if (show) view.querySelector('#otp-phone')?.focus();
+    };
+
     window.__cancelOtp = () => {
         window.__otpPhone = '';
         window.__otpPending = false;
@@ -1888,9 +1804,12 @@ function AuthPortal(initialTab = 'login') {
         const verifySection = view.querySelector('#otp-verify-section');
         const status = view.querySelector('#otp-status');
         const sendBtn = view.querySelector('#otp-send-btn');
+        const toggleBtn = view.querySelector('#otp-toggle-btn');
+        if (otpSection) otpSection.style.display = 'none';
         if (verifySection) verifySection.style.display = 'none';
         if (status) status.innerHTML = '';
         if (sendBtn) sendBtn.style.display = 'block';
+        if (toggleBtn) toggleBtn.style.display = 'block';
         view.querySelector('#login-phone')?.focus();
     };
 
