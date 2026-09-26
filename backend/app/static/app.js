@@ -4429,12 +4429,9 @@ function MyPackages() {
             </div>
         </div>
         <div class="main">
-            <div class="section-title">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
-                    <line x1="12" y1="5" x2="12" y2="19"/>
-                    <line x1="5" y1="12" x2="19" y2="12"/>
-                </svg>
-                My Packages
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <div class="section-title" style="margin: 0;">My Packages</div>
+                <button class="btn btn-secondary btn-sm" onclick="router('/')">← Back to Dashboard</button>
             </div>
             <div class="flex items-center justify-between mb-4">
                 <span style="color: var(--text-secondary); font-size: 0.875rem;">${packages.length} package${packages.length !== 1 ? 's' : ''}</span>
@@ -9283,7 +9280,12 @@ function MessagesInbox() {
 
         return el`<div>
             ${renderAppHeader('/messages')}
-            <div class="inbox-wrapper">
+            <div class="main">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <div class="section-title" style="margin: 0;">💬 Direct Messages</div>
+                    <button class="btn btn-secondary btn-sm" onclick="router('/')">← Back to Dashboard</button>
+                </div>
+                <div class="inbox-wrapper">
                 <div class="inbox-container ${activeUserId ? 'show-chat' : ''}">
                     <!-- Left Sidebar: Conversations List -->
                     <div class="inbox-sidebar">
