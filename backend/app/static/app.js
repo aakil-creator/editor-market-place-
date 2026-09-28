@@ -9438,7 +9438,7 @@ function MessagesInbox() {
 
         return el`<div>
             ${renderAppHeader('/messages')}
-            <div class="main">
+            <div class="main inbox-main-page">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
                     <div class="section-title" style="margin: 0;">💬 Direct Messages</div>
                     <button class="btn btn-secondary btn-sm" onclick="router('/')">← Back to Dashboard</button>
@@ -9562,29 +9562,29 @@ function MessagesInbox() {
         return `
             <!-- Chat Header -->
             <div class="inbox-chat-header">
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <button class="inbox-mobile-back-btn" onclick="window.__inboxMobileBackToList()" style="display: none; background: none; border: none; font-size: 1.2rem; cursor: pointer; color: var(--text-primary); padding: 4px;">
+                <div style="display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1;">
+                    <button class="inbox-mobile-back-btn" onclick="window.__inboxMobileBackToList()" style="display: none; background: none; border: none; font-size: 1.3rem; cursor: pointer; color: var(--text-primary); padding: 4px; line-height: 1;">
                         ←
                     </button>
-                    <div class="inbox-item-avatar" style="width: 38px; height: 38px; font-size: 0.95rem;">
+                    <div class="inbox-item-avatar" style="width: 38px; height: 38px; font-size: 0.95rem; flex-shrink: 0;">
                         ${initial}
                         <div class="online-dot"></div>
                     </div>
-                    <div>
-                        <div style="font-weight: 800; font-size: 0.95rem; color: var(--text-primary); display: flex; align-items: center; gap: 6px;">
-                            <span>${safeActiveName}</span>
-                            <span style="font-size: 0.65rem; padding: 1px 6px; border-radius: 4px; background: rgba(16, 185, 129, 0.1); color: var(--success); font-weight: 700;">last seen recently</span>
+                    <div style="min-width: 0; flex: 1;">
+                        <div style="font-weight: 800; font-size: 0.92rem; color: var(--text-primary); display: flex; align-items: center; gap: 6px;">
+                            <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 140px;">${safeActiveName}</span>
+                            <span style="font-size: 0.62rem; padding: 1px 5px; border-radius: 4px; background: rgba(16, 185, 129, 0.1); color: var(--success); font-weight: 700; white-space: nowrap; flex-shrink: 0;">online</span>
                         </div>
-                        <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 1px;">
-                            100% Escrow Protected • Instant In-App Chat
+                        <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            100% Escrow Protected Chat
                         </div>
                     </div>
                 </div>
 
-                <div style="display: flex; gap: 8px;">
+                <div style="flex-shrink: 0; margin-left: 8px;">
                     ${isProviderChat
-                        ? `<button class="btn btn-primary btn-sm" onclick="selectProvider(${activeUserId})" style="font-weight: 700; display: flex; align-items: center; gap: 6px;"><span>📦 View Packages / Hire</span></button>`
-                        : `<button class="btn btn-secondary btn-sm" onclick="window.__selectInboxConversation(${activeUserId}, '${safeActiveName.replace(/'/g, "\\'")}', '${activeUserRole}')" style="font-weight: 700;"><span>👤 View Profile</span></button>`}
+                        ? `<button class="btn btn-primary btn-sm" onclick="selectProvider(${activeUserId})" style="font-weight: 700; font-size: 0.75rem; padding: 6px 10px; display: flex; align-items: center; gap: 4px;"><span>📦 Hire</span></button>`
+                        : `<button class="btn btn-secondary btn-sm" onclick="window.__selectInboxConversation(${activeUserId}, '${safeActiveName.replace(/'/g, "\\'")}', '${activeUserRole}')" style="font-weight: 700; font-size: 0.75rem; padding: 6px 10px;"><span>👤 Profile</span></button>`}
                 </div>
             </div>
 
