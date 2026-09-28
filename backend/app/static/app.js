@@ -184,7 +184,7 @@ function showSuspendedModal(detail) {
     overlay.innerHTML = `
         <div class="security-alert-modal-card">
             <div style="width: 64px; height: 64px; border-radius: 50%; background: rgba(239, 68, 68, 0.15); color: #ef4444; font-size: 2rem; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
-                ðŸ›‘
+                🛑
             </div>
             <h2 style="color: #ef4444; font-size: 1.35rem; font-weight: 800; margin: 0 0 10px;">Account Suspended</h2>
             <div style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 10px; padding: 12px 14px; margin-bottom: 18px; font-size: 0.85rem; color: var(--text-primary); text-align: left; line-height: 1.45;">
@@ -290,7 +290,7 @@ async function toggleUserMode() {
 
     const currentRole = currentUser.user_type || 'BUYER';
     const targetRole = currentRole === 'PROVIDER' ? 'BUYER' : 'PROVIDER';
-    const targetTitle = targetRole === 'PROVIDER' ? 'Provider Mode ðŸ’¼' : 'Buyer Mode ðŸ›ï¸';
+    const targetTitle = targetRole === 'PROVIDER' ? 'Provider Mode 💼' : 'Buyer Mode 🛍️';
 
     showLoading();
     try {
@@ -322,7 +322,7 @@ window.toggleUserMode = toggleUserMode;
 
 // Universal App Header with 100% strict Separation of Modes (Buyer Mode, Provider Mode, and Admin Console)
 
-// Profile avatar â€” click opens the full action menu (Edit Profile, Upload Portfolio, Orders, etc.)
+// Profile avatar — click opens the full action menu (Edit Profile, Upload Portfolio, Orders, etc.)
 function renderProfileAvatar(size = 34) {
     const user = currentUser;
     if (!user) return '';
@@ -346,7 +346,7 @@ function renderProfileAvatar(size = 34) {
     `;
 }
 
-// Full Profile dropdown menu â€” provides fast access to Edit Profile, Upload Portfolio, Showreels, Packages, Orders, and Settings
+// Full Profile dropdown menu — provides fast access to Edit Profile, Upload Portfolio, Showreels, Packages, Orders, and Settings
 function renderProfileMenu() {
     const user = currentUser;
     if (!user) return '';
@@ -367,7 +367,7 @@ function renderProfileMenu() {
                     <div class="profile-menu-header-name">${escapeJs(user.name)}</div>
                     <div class="profile-menu-header-handle">${escapeJs(handle)}</div>
                     <div class="profile-menu-header-badge" style="background:${isAdmin ? 'rgba(239,68,68,0.12);color:#ef4444;' : (isProvider ? 'rgba(249,115,22,0.12);color:#f97316;' : 'rgba(99,102,241,0.12);color:#6366f1;')}">
-                        ${isAdmin ? 'ðŸ›¡ï¸ Admin Console' : (isProvider ? 'ðŸ’¼ Creator Studio' : 'ðŸ›ï¸ Client Mode')}
+                        ${isAdmin ? '🛡️ Admin Console' : (isProvider ? '💼 Creator Studio' : '🛍️ Client Mode')}
                     </div>
                 </div>
             </div>
@@ -376,21 +376,21 @@ function renderProfileMenu() {
             <div class="profile-menu-section">
                 <div class="profile-menu-section-title">Creative Profile</div>
                 <button class="profile-menu-item" onclick="openSettingsTab('profile')">
-                    <span class="profile-menu-item-icon">âœï¸</span>
+                    <span class="profile-menu-item-icon">✏️</span>
                     <span>Edit Profile</span>
                     <span class="profile-menu-item-badge">Bio & Skills</span>
                 </button>
                 <button class="profile-menu-item" onclick="openSettingsTab('portfolio')">
-                    <span class="profile-menu-item-icon">ðŸ“</span>
+                    <span class="profile-menu-item-icon">📁</span>
                     <span>Upload Portfolio</span>
                     <span class="profile-menu-item-badge">4K Reels</span>
                 </button>
                 <button class="profile-menu-item" onclick="openProfileIconPicker()">
-                    <span class="profile-menu-item-icon">ðŸ–¼ï¸</span>
+                    <span class="profile-menu-item-icon">🖼️</span>
                     <span>Change Profile Icon</span>
                 </button>
                 <button class="profile-menu-item" onclick="window.__closeProfileMenu(); router('/profile');">
-                    <span class="profile-menu-item-icon">ðŸŽ¨</span>
+                    <span class="profile-menu-item-icon">🎨</span>
                     <span>Public Profile Preview</span>
                 </button>
             </div>
@@ -402,29 +402,29 @@ function renderProfileMenu() {
                 <div class="profile-menu-section-title">Workspace & Orders</div>
                 ${isProvider ? `
                 <button class="profile-menu-item" onclick="window.__closeProfileMenu(); router('/packages');">
-                    <span class="profile-menu-item-icon">ðŸ“¦</span>
+                    <span class="profile-menu-item-icon">📦</span>
                     <span>My Packages & Pricing</span>
                 </button>
                 ` : ''}
                 <button class="profile-menu-item" onclick="window.__closeProfileMenu(); router('/bookings');">
-                    <span class="profile-menu-item-icon">ðŸ“‹</span>
+                    <span class="profile-menu-item-icon">📋</span>
                     <span>${isProvider ? 'Client Orders' : 'My Orders & Escrow'}</span>
                 </button>
                 <button class="profile-menu-item" onclick="window.__closeProfileMenu(); router('/messages');">
-                    <span class="profile-menu-item-icon">ðŸ’¬</span>
+                    <span class="profile-menu-item-icon">💬</span>
                     <span>Messages & Inbox</span>
                 </button>
                 <button class="profile-menu-item" onclick="window.__closeProfileMenu(); router('/payments');">
-                    <span class="profile-menu-item-icon">ðŸ’³</span>
+                    <span class="profile-menu-item-icon">💳</span>
                     <span>${isProvider ? 'Earnings & Payouts' : 'Wallet & Escrow'}</span>
                 </button>
                 <button class="profile-menu-item" onclick="openSettingsTab('bank')">
-                    <span class="profile-menu-item-icon">ðŸ¦</span>
+                    <span class="profile-menu-item-icon">🏦</span>
                     <span>Bank & Payout Setup</span>
                 </button>
                 ${isAdmin ? `
                 <button class="profile-menu-item" onclick="window.__closeProfileMenu(); router('/admin');">
-                    <span class="profile-menu-item-icon">ðŸ›¡ï¸</span>
+                    <span class="profile-menu-item-icon">🛡️</span>
                     <span>Admin Control Center</span>
                 </button>
                 ` : ''}
@@ -436,15 +436,15 @@ function renderProfileMenu() {
             <div class="profile-menu-section">
                 <div class="profile-menu-section-title">Account</div>
                 <button class="profile-menu-item" onclick="openSettingsTab('account')">
-                    <span class="profile-menu-item-icon">âš™ï¸</span>
+                    <span class="profile-menu-item-icon">⚙️</span>
                     <span>Account & Security</span>
                 </button>
                 <button class="profile-menu-item" onclick="window.__closeProfileMenu(); toggleUserMode();">
-                    <span class="profile-menu-item-icon">${isProvider ? 'ðŸ›ï¸' : 'ðŸ’¼'}</span>
+                    <span class="profile-menu-item-icon">${isProvider ? '🛍️' : '💼'}</span>
                     <span>${isProvider ? 'Switch to Buyer Mode' : 'Switch to Provider Mode'}</span>
                 </button>
                 <button class="profile-menu-item profile-menu-logout" onclick="window.__closeProfileMenu(); logout();">
-                    <span class="profile-menu-item-icon">ðŸšª</span>
+                    <span class="profile-menu-item-icon">🚪</span>
                     <span>Sign Out</span>
                 </button>
             </div>
@@ -495,7 +495,7 @@ if (!window.__profileMenuGlobalListenerAdded) {
     window.__profileMenuGlobalListenerAdded = true;
 }
 
-// Change Icon picker â€” opens modal with Google photo / Upload / Remove options
+// Change Icon picker — opens modal with Google photo / Upload / Remove options
 window.openProfileIconPicker = () => {
     const existing = document.getElementById('profile-menu-dropdown');
     if (existing) existing.style.display = 'none';
@@ -513,9 +513,9 @@ window.openProfileIconPicker = () => {
         <div class="card" style="max-width:420px;width:100%;box-shadow:var(--shadow-lg);border:1px solid var(--border);animation:fadeIn 0.2s ease;">
             <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border);">
                 <h3 style="margin:0;font-size:1rem;font-weight:700;color:var(--text-primary);display:flex;align-items:center;gap:8px;">
-                    <span>ðŸ–¼ï¸</span> Change Profile Icon
+                    <span>🖼️</span> Change Profile Icon
                 </h3>
-                <button onclick="this.closest('#profile-icon-picker').remove()" style="background:none;border:none;font-size:1.2rem;color:var(--text-muted);cursor:pointer;line-height:1;padding:4px 8px;">âœ•</button>
+                <button onclick="this.closest('#profile-icon-picker').remove()" style="background:none;border:none;font-size:1.2rem;color:var(--text-muted);cursor:pointer;line-height:1;padding:4px 8px;">✕</button>
             </div>
             <div style="padding:20px;">
                 <div style="text-align:center;margin-bottom:18px;">
@@ -527,13 +527,13 @@ window.openProfileIconPicker = () => {
 
                 <div style="display:flex;flex-direction:column;gap:10px;">
                     <button id="btn-use-google-photo" class="btn btn-outline" style="width:100%;justify-content:center;${imgUrl && currentUser?.profile_image?.includes('googleusercontent') ? 'opacity:0.5;pointer-events:none;' : ''}">
-                        <span style="font-size:1.1rem;margin-right:6px;">ðŸ“¸</span> Use Google Profile Photo
+                        <span style="font-size:1.1rem;margin-right:6px;">📸</span> Use Google Profile Photo
                     </button>
                     <button id="btn-upload-custom" class="btn btn-outline" style="width:100%;justify-content:center;">
-                        <span style="font-size:1.1rem;margin-right:6px;">ðŸ“</span> Upload Custom Photo
+                        <span style="font-size:1.1rem;margin-right:6px;">📁</span> Upload Custom Photo
                     </button>
                     <button id="btn-remove-photo" class="btn btn-secondary" style="width:100%;justify-content:center;color:var(--danger);">
-                        <span style="font-size:1.1rem;margin-right:6px;">ðŸ—‘ï¸</span> Remove Photo
+                        <span style="font-size:1.1rem;margin-right:6px;">🗑️</span> Remove Photo
                     </button>
                 </div>
 
@@ -541,9 +541,9 @@ window.openProfileIconPicker = () => {
                     <div style="width:60px;height:60px;border-radius:50%;overflow:hidden;margin:0 auto 8px;border:2px solid var(--accent);box-shadow:0 0 0 3px rgba(99,102,241,0.2);">
                         <img id="icon-preview-img" src="" style="width:100%;height:100%;object-fit:cover;display:block;" />
                     </div>
-                    <div style="font-size:0.75rem;color:var(--text-muted);">Preview â€” tap "Save" to apply</div>
+                    <div style="font-size:0.75rem;color:var(--text-muted);">Preview — tap "Save" to apply</div>
                     <button id="btn-save-icon" class="btn btn-primary" style="margin-top:8px;width:100%;justify-content:center;">
-                        <span style="margin-right:6px;">ðŸ’¾</span> Save Icon
+                        <span style="margin-right:6px;">💾</span> Save Icon
                     </button>
                 </div>
 
@@ -567,7 +567,7 @@ window.openProfileIconPicker = () => {
                 if (window.google?.accounts?.id) {
                     await new Promise((resolve) => {
                         googleBtn.disabled = true;
-                        googleBtn.innerHTML = '<span style="display:inline-block;width:14px;height:14px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:8px;"></span> Connecting to Googleâ€¦';
+                        googleBtn.innerHTML = '<span style="display:inline-block;width:14px;height:14px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:8px;"></span> Connecting to Google…';
                         window.google.accounts.id.revoke(currentUser.email, () => {
                             window.google.accounts.id.signIn({
                                 callback: async (response) => {
@@ -578,7 +578,7 @@ window.openProfileIconPicker = () => {
                                         await saveProfileImage(pic);
                                     }
                                     googleBtn.disabled = false;
-                                    googleBtn.innerHTML = '<span style="font-size:1.1rem;margin-right:6px;">ðŸ“¸</span> Use Google Profile Photo';
+                                    googleBtn.innerHTML = '<span style="font-size:1.1rem;margin-right:6px;">📸</span> Use Google Profile Photo';
                                     resolve();
                                 },
                                 cancel_on_tap_outside: false,
@@ -590,7 +590,7 @@ window.openProfileIconPicker = () => {
                 }
             } catch (e) {
                 googleBtn.disabled = false;
-                googleBtn.innerHTML = '<span style="font-size:1.1rem;margin-right:6px;">ðŸ“¸</span> Use Google Profile Photo';
+                googleBtn.innerHTML = '<span style="font-size:1.1rem;margin-right:6px;">📸</span> Use Google Profile Photo';
                 showToast('Could not fetch Google photo. Try uploading instead.', 'error');
             }
         };
@@ -705,9 +705,9 @@ function renderLaunchPromoBanner() {
     return `
         <div class="launch-promo-banner" id="launch-promo-banner">
             <div class="launch-promo-content">
-                <span class="launch-promo-pill">ðŸš€ PLAY STORE LAUNCH SPECIAL</span>
+                <span class="launch-promo-pill">🚀 PLAY STORE LAUNCH SPECIAL</span>
                 <span class="launch-promo-text">
-                    <strong>0% Platform Commission for 1 Month!</strong> Creators keep <strong>100%</strong> of every order â€¢ 100% Escrow Protected â€¢ Zero fees for all accounts!
+                    <strong>0% Platform Commission for 1 Month!</strong> Creators keep <strong>100%</strong> of every order • 100% Escrow Protected • Zero fees for all accounts!
                 </span>
             </div>
             <button class="launch-promo-close" onclick="sessionStorage.setItem('hide_launch_promo', '1'); document.getElementById('launch-promo-banner')?.remove()" title="Dismiss">&times;</button>
@@ -727,19 +727,19 @@ function renderAppHeader(activeRoute = '') {
             <div class="header" style="border-bottom: 2px solid rgba(239, 68, 68, 0.35);">
                 <div class="header-logo-group">
                     ${renderLogo(32, true)}
-                    <span class="mode-badge-pill mode-badge-admin">ðŸ›¡ï¸ Admin</span>
+                    <span class="mode-badge-pill mode-badge-admin">🛡️ Admin</span>
                 </div>
                 <div class="header-nav" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-                    <button class="nav-btn ${activeRoute === '/admin' || activeRoute === '/' ? 'active' : ''}" onclick="router('/admin')">ðŸ“Š Dashboard</button>
-                    <button class="nav-btn ${activeRoute === '/admin/chats' ? 'active' : ''}" onclick="router('/admin/chats')">ðŸ’¬ Chats Guard</button>
-                    <button class="nav-btn ${activeRoute === '/admin/providers' ? 'active' : ''}" onclick="router('/admin/providers')">ðŸ‘¥ Providers</button>
-                    <button class="nav-btn ${activeRoute === '/admin/bookings' ? 'active' : ''}" onclick="router('/admin/bookings')">ðŸ“‹ Bookings & Escrow</button>
-                    <button class="nav-btn ${activeRoute === '/admin/disputes' ? 'active' : ''}" onclick="router('/admin/disputes')">âš–ï¸ Disputes</button>
-                    <button class="nav-btn ${activeRoute === '/payments' ? 'active' : ''}" onclick="router('/payments')">ðŸ’³ Financials</button>
-                    <button class="nav-btn ${activeRoute === '/admin/niches' ? 'active' : ''}" onclick="router('/admin/niches')">ðŸ—‚ï¸ Niches</button>
-                    <button class="nav-btn ${activeRoute === '/settings' ? 'active' : ''}" onclick="router('/settings')">âš™ï¸ Settings</button>
+                    <button class="nav-btn ${activeRoute === '/admin' || activeRoute === '/' ? 'active' : ''}" onclick="router('/admin')">📊 Dashboard</button>
+                    <button class="nav-btn ${activeRoute === '/admin/chats' ? 'active' : ''}" onclick="router('/admin/chats')">💬 Chats Guard</button>
+                    <button class="nav-btn ${activeRoute === '/admin/providers' ? 'active' : ''}" onclick="router('/admin/providers')">👥 Providers</button>
+                    <button class="nav-btn ${activeRoute === '/admin/bookings' ? 'active' : ''}" onclick="router('/admin/bookings')">📋 Bookings & Escrow</button>
+                    <button class="nav-btn ${activeRoute === '/admin/disputes' ? 'active' : ''}" onclick="router('/admin/disputes')">⚖️ Disputes</button>
+                    <button class="nav-btn ${activeRoute === '/payments' ? 'active' : ''}" onclick="router('/payments')">💳 Financials</button>
+                    <button class="nav-btn ${activeRoute === '/admin/niches' ? 'active' : ''}" onclick="router('/admin/niches')">🗂️ Niches</button>
+                    <button class="nav-btn ${activeRoute === '/settings' ? 'active' : ''}" onclick="router('/settings')">⚙️ Settings</button>
                     <button class="nav-btn" onclick="toggleTheme()" title="Toggle Theme" style="padding: 8px 12px;">
-                        ${currentTheme === 'dark' ? 'â˜€ï¸' : 'ðŸŒ™'}
+                        ${currentTheme === 'dark' ? '☀️' : '🌙'}
                     </button>
                     <div class="profile-dropdown-wrapper">${renderProfileAvatar(34)}${renderProfileMenu()}</div>
                 </div>
@@ -777,22 +777,22 @@ function renderAppHeader(activeRoute = '') {
             <div class="header">
                 <div class="header-logo-group">
                     ${renderLogo(32, true)}
-                    <span class="mode-badge-pill mode-badge-provider">ðŸ’¼ Provider</span>
+                    <span class="mode-badge-pill mode-badge-provider">💼 Provider</span>
                     <button type="button" class="btn-switch-mode" onclick="toggleUserMode()" title="Switch to Buyer Mode to hire talent">
-                        ðŸ›ï¸ Switch to Buyer Mode
+                        🛍️ Switch to Buyer Mode
                     </button>
                 </div>
                 <div class="header-nav" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-                    <button class="nav-btn ${activeRoute === '/' ? 'active' : ''}" onclick="router('/')">ðŸ“Š Studio</button>
-                    <button class="nav-btn ${activeRoute === '/packages' || activeRoute === '/create-package' ? 'active' : ''}" onclick="router('/packages')">ðŸ“¦ My Packages</button>
-                    <button class="nav-btn ${activeRoute === '/bookings' ? 'active' : ''}" onclick="router('/bookings')">ðŸ“‹ Client Orders</button>
+                    <button class="nav-btn ${activeRoute === '/' ? 'active' : ''}" onclick="router('/')">📊 Studio</button>
+                    <button class="nav-btn ${activeRoute === '/packages' || activeRoute === '/create-package' ? 'active' : ''}" onclick="router('/packages')">📦 My Packages</button>
+                    <button class="nav-btn ${activeRoute === '/bookings' ? 'active' : ''}" onclick="router('/bookings')">📋 Client Orders</button>
                     <button class="nav-btn ${activeRoute === '/messages' ? 'active' : ''}" onclick="router('/messages')" id="nav-btn-messages">
-                        ðŸ’¬ Messages <span class="nav-unread-badge" id="header-unread-count" style="display:none; background:#ff4757; color:#fff; font-size:0.7rem; font-weight:700; padding:1px 6px; border-radius:10px; margin-left:4px;"></span>
+                        💬 Messages <span class="nav-unread-badge" id="header-unread-count" style="display:none; background:#ff4757; color:#fff; font-size:0.7rem; font-weight:700; padding:1px 6px; border-radius:10px; margin-left:4px;"></span>
                     </button>
-                    <button class="nav-btn ${activeRoute === '/payments' ? 'active' : ''}" onclick="router('/payments')">ðŸ’³ Earnings & Payouts</button>
-                    <button class="nav-btn ${activeRoute === '/profile' || activeRoute === '/settings' ? 'active' : ''}" onclick="router('/profile')">ðŸŽ¨ My Profile</button>
+                    <button class="nav-btn ${activeRoute === '/payments' ? 'active' : ''}" onclick="router('/payments')">💳 Earnings & Payouts</button>
+                    <button class="nav-btn ${activeRoute === '/profile' || activeRoute === '/settings' ? 'active' : ''}" onclick="router('/profile')">🎨 My Profile</button>
                     <button class="nav-btn" onclick="toggleTheme()" title="Toggle Theme" style="padding: 8px 12px;">
-                        ${currentTheme === 'dark' ? 'â˜€ï¸' : 'ðŸŒ™'}
+                        ${currentTheme === 'dark' ? '☀️' : '🌙'}
                     </button>
                     <div class="profile-dropdown-wrapper">${renderProfileAvatar(34)}${renderProfileMenu()}</div>
                 </div>
@@ -830,21 +830,21 @@ function renderAppHeader(activeRoute = '') {
         <div class="header">
             <div class="header-logo-group">
                 ${renderLogo(32, true)}
-                <span class="mode-badge-pill mode-badge-buyer">ðŸ›ï¸ Buyer</span>
+                <span class="mode-badge-pill mode-badge-buyer">🛍️ Buyer</span>
                 <button type="button" class="btn-switch-mode" onclick="toggleUserMode()" title="Switch to Provider Mode to offer your services">
-                    ðŸ’¼ Switch to Provider Mode
+                    💼 Switch to Provider Mode
                 </button>
             </div>
             <div class="header-nav" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-                <button class="nav-btn ${activeRoute === '/' ? 'active' : ''}" onclick="router('/')">ðŸ  Home</button>
+                <button class="nav-btn ${activeRoute === '/' ? 'active' : ''}" onclick="router('/')">🏠 Home</button>
                 <button class="nav-btn ${activeRoute === '/messages' ? 'active' : ''}" onclick="router('/messages')" id="nav-btn-messages">
-                    ðŸ’¬ Messages <span class="nav-unread-badge" id="header-unread-count" style="display:none; background:#ff4757; color:#fff; font-size:0.7rem; font-weight:700; padding:1px 6px; border-radius:10px; margin-left:4px;"></span>
+                    💬 Messages <span class="nav-unread-badge" id="header-unread-count" style="display:none; background:#ff4757; color:#fff; font-size:0.7rem; font-weight:700; padding:1px 6px; border-radius:10px; margin-left:4px;"></span>
                 </button>
-                <button class="nav-btn ${activeRoute === '/bookings' ? 'active' : ''}" onclick="router('/bookings')">ðŸ“¦ My Orders</button>
-                <button class="nav-btn ${activeRoute === '/payments' ? 'active' : ''}" onclick="router('/payments')">ðŸ’³ Wallet / Escrow</button>
-                <button class="nav-btn ${activeRoute === '/settings' ? 'active' : ''}" onclick="router('/settings')">âš™ï¸ Settings</button>
+                <button class="nav-btn ${activeRoute === '/bookings' ? 'active' : ''}" onclick="router('/bookings')">📦 My Orders</button>
+                <button class="nav-btn ${activeRoute === '/payments' ? 'active' : ''}" onclick="router('/payments')">💳 Wallet / Escrow</button>
+                <button class="nav-btn ${activeRoute === '/settings' ? 'active' : ''}" onclick="router('/settings')">⚙️ Settings</button>
                 <button class="nav-btn" onclick="toggleTheme()" title="Toggle Theme" style="padding: 8px 12px;">
-                    ${currentTheme === 'dark' ? 'â˜€ï¸' : 'ðŸŒ™'}
+                    ${currentTheme === 'dark' ? '☀️' : '🌙'}
                 </button>
                 <div class="profile-dropdown-wrapper">${renderProfileAvatar(34)}${renderProfileMenu()}</div>
             </div>
@@ -1030,10 +1030,10 @@ async function openFiverrPortfolioModal(providerId, providerName) {
                     <div>
                         <h3 style="margin: 0; font-size: 1.2rem; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 6px;">
                             ${escapeHTML(name)}
-                            <span style="font-size: 0.65rem; background: rgba(16, 185, 129, 0.12); color: var(--success); padding: 2px 6px; border-radius: 4px; font-weight: 700;">â˜… PRO VERIFIED</span>
+                            <span style="font-size: 0.65rem; background: rgba(16, 185, 129, 0.12); color: var(--success); padding: 2px 6px; border-radius: 4px; font-weight: 700;">★ PRO VERIFIED</span>
                         </h3>
                         <div style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 2px;">
-                            â˜… ${rating} (${totalOrders} orders) â€¢ âš¡ Response: ${escapeHTML(responseTime)} â€¢ 100% Escrow Protected
+                            ★ ${rating} (${totalOrders} orders) • ⚡ Response: ${escapeHTML(responseTime)} • 100% Escrow Protected
                         </div>
                     </div>
                 </div>
@@ -1048,7 +1048,7 @@ async function openFiverrPortfolioModal(providerId, providerName) {
                     <img src="${sanitizeUrl(primaryThumbnailUrl || thumb)}" style="position: absolute; top:0; left:0; width:100%; height:100%; object-fit: cover;" alt="${escapeHTML(name)}">
                     <div style="position: absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background: rgba(0,0,0,0.45); color:white; text-align:center; padding:16px;">
                         <div style="width: 56px; height: 56px; border-radius: 50%; background: rgba(255,255,255,0.95); color: #0f172a; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-bottom: 10px; box-shadow: 0 4px 16px rgba(0,0,0,0.4); padding-left: 4px;">
-                            â–¶
+                            ▶
                         </div>
                         <div style="font-weight: 700; font-size: 1.05rem;">${escapeHTML(primaryMedia?.title || 'Verified 4K Creator Showcase')}</div>
                         <div style="font-size: 0.8125rem; opacity: 0.85; max-width: 460px; margin-top: 4px;">${escapeHTML(primaryMedia?.description || 'High-retention editing, motion graphics, and sound design deliverables with 100% Escrow Protection.')}</div>
@@ -1059,7 +1059,7 @@ async function openFiverrPortfolioModal(providerId, providerName) {
             <!-- Skills & Specializations -->
             ${skills && skills.length > 0 ? `
                 <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px;">
-                    ${skills.map(s => `<span style="font-size: 0.75rem; background: var(--bg-hover); color: var(--text-secondary); border: 1px solid var(--border); padding: 3px 8px; border-radius: 6px; font-weight: 600;">âœ¨ ${escapeHTML(s)}</span>`).join('')}
+                    ${skills.map(s => `<span style="font-size: 0.75rem; background: var(--bg-hover); color: var(--text-secondary); border: 1px solid var(--border); padding: 3px 8px; border-radius: 6px; font-weight: 600;">✨ ${escapeHTML(s)}</span>`).join('')}
                 </div>
             ` : ''}
 
@@ -1067,21 +1067,21 @@ async function openFiverrPortfolioModal(providerId, providerName) {
             <div style="background: var(--bg-hover); padding: 12px 16px; border-radius: 10px; margin-bottom: 18px; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border);">
                 <div>
                     <div style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Starting Package</div>
-                    <div style="font-weight: 800; color: var(--accent); font-size: 1.25rem;">â‚¹${Number(startingPrice).toLocaleString()}</div>
+                    <div style="font-weight: 800; color: var(--accent); font-size: 1.25rem;">₹${Number(startingPrice).toLocaleString()}</div>
                 </div>
                 <div style="text-align: right;">
                     <div style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Standard Delivery</div>
-                    <div style="font-weight: 700; color: var(--text-primary); font-size: 0.9rem;">âš¡ ${escapeHTML(turnaround)}</div>
+                    <div style="font-weight: 700; color: var(--text-primary); font-size: 0.9rem;">⚡ ${escapeHTML(turnaround)}</div>
                 </div>
             </div>
 
             <!-- Call to Actions -->
             <div style="display: flex; gap: 10px;">
                 <button class="btn btn-outline" onclick="this.closest('.fiverr-escrow-modal').remove(); openPreBookingChat(${providerId})" style="flex: 1; min-height: 46px; font-weight: 700; border-color: var(--accent); color: var(--accent); display: flex; align-items: center; justify-content: center; gap: 6px;">
-                    ðŸ’¬ Chat with ${escapeHTML(name)}
+                    💬 Chat with ${escapeHTML(name)}
                 </button>
                 <button class="btn btn-primary" onclick="this.closest('.fiverr-escrow-modal').remove(); selectProvider(${providerId})" style="flex: 1.4; font-weight: 700; min-height: 46px; display: flex; align-items: center; justify-content: center; gap: 6px;">
-                    ðŸ“¦ View Packages / Hire
+                    📦 View Packages / Hire
                 </button>
             </div>
         `;
@@ -1091,7 +1091,7 @@ async function openFiverrPortfolioModal(providerId, providerName) {
         if (bodyEl) {
             bodyEl.innerHTML = `
                 <div style="text-align: center; padding: 24px; color: var(--text-muted);">
-                    <div style="font-size: 2rem; margin-bottom: 8px;">âš ï¸</div>
+                    <div style="font-size: 2rem; margin-bottom: 8px;">⚠️</div>
                     <div style="font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">Unable to load profile details</div>
                     <p style="font-size: 0.8rem; margin-bottom: 12px;">${escapeHTML(err.message || 'Please try again')}</p>
                     <button class="btn btn-secondary btn-sm" onclick="this.closest('.fiverr-escrow-modal').remove()">Close</button>
@@ -1162,7 +1162,7 @@ function getCategoryPeekIconSvg(niche, size = 38) {
     </svg>`;
     }
 }
-function getTypeIconSvg(typeId, fallbackIcon = 'âœ¨', size = 32) {
+function getTypeIconSvg(typeId, fallbackIcon = '✨', size = 32) {
     if (!typeId) {
         return `<svg class="type-svg type-svg-all" style="width: ${size}px; height: ${size}px;" viewBox="0 0 36 36" fill="none">
             <circle cx="18" cy="18" r="15" fill="rgba(245, 158, 11, 0.15)"/>
@@ -1588,7 +1588,7 @@ async function handleGoogleSignIn(initialRole = null, credential = null) {
         const origBtnHtml = btn ? btn.innerHTML : '';
         if (btn && btn.tagName === 'BUTTON') {
             btn.disabled = true;
-            btn.innerHTML = '<span style="display:inline-block;width:14px;height:14px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:8px;vertical-align:middle;"></span> Signing in with Googleâ€¦';
+            btn.innerHTML = '<span style="display:inline-block;width:14px;height:14px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:8px;vertical-align:middle;"></span> Signing in with Google…';
         }
 
         try {
@@ -1662,7 +1662,7 @@ async function handleSocialLoginFallback(provider, initialRole = null) {
     overlay.innerHTML = `
         <div class="card" style="max-width: 380px; width: 100%; box-shadow: var(--shadow-lg); border: 1px solid var(--border); border-radius: 16px; animation: fadeIn 0.2s ease;">
             <div class="card-body" style="padding: 24px 20px; text-align: center;">
-                <div style="font-size: 2rem; margin-bottom: 10px;">ðŸ”</div>
+                <div style="font-size: 2rem; margin-bottom: 10px;">🔐</div>
                 <h3 style="margin: 0 0 8px; font-size: 1.1rem; font-weight: 800; color: var(--text-primary);">${providerName} Sign-In</h3>
                 <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5; margin: 0 0 18px;">
                     ${provider === 'apple'
@@ -1764,7 +1764,7 @@ function AuthPortal(initialTab = 'login') {
                         </div>
 
                         <button type="button" id="otp-toggle-btn" class="btn btn-outline" style="width: 100%; padding: 12px; font-weight: 700;" onclick="window.__toggleOtp()">
-                            ðŸ“± Login with OTP instead
+                            📱 Login with OTP instead
                         </button>
 
                         <!-- OTP Login Panel -->
@@ -1788,7 +1788,7 @@ function AuthPortal(initialTab = 'login') {
                                     Verify & Sign In
                                 </button>
                                 <button type="button" style="width: 100%; padding: 10px; margin-top: 8px; background: none; border: none; color: var(--accent); font-weight: 600; cursor: pointer;" onclick="window.__cancelOtp()">
-                                    â† Back to password login
+                                    ← Back to password login
                                 </button>
                             </div>
                         </div>
@@ -1815,7 +1815,7 @@ function AuthPortal(initialTab = 'login') {
                                 <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:0.9rem;pointer-events:none;">@</span>
                                 <input type="text" class="form-input" id="reg-username" placeholder="your_unique_username" required autocomplete="username" style="padding-left:26px;" maxlength="30">
                             </div>
-                            <div id="reg-username-hint" style="font-size:0.75rem;margin-top:4px;color:var(--text-muted);">3â€“30 characters. Letters, numbers, underscores only. Must be unique and different from your name.</div>
+                            <div id="reg-username-hint" style="font-size:0.75rem;margin-top:4px;color:var(--text-muted);">3–30 characters. Letters, numbers, underscores only. Must be unique and different from your name.</div>
                         </div>
                         <div class="form-row">
                             <div class="form-group">
@@ -1838,10 +1838,10 @@ function AuthPortal(initialTab = 'login') {
                             <label class="form-label">I want to:</label>
                             <div class="tabs" style="margin-top: 8px;">
                                 <button type="button" class="tab ${(window.selectedType || 'BUYER') === 'BUYER' ? 'active' : ''}" id="reg-tab-buyer">
-                                    ðŸŽ¯ Hire Talent (Buyer)
+                                    🎯 Hire Talent (Buyer)
                                 </button>
                                 <button type="button" class="tab ${(window.selectedType || 'BUYER') === 'PROVIDER' ? 'active' : ''}" id="reg-tab-prov">
-                                    ðŸŽ¨ Offer Services (Creator)
+                                    🎨 Offer Services (Creator)
                                 </button>
                             </div>
                         </div>
@@ -1899,7 +1899,7 @@ function AuthPortal(initialTab = 'login') {
     tabLogin.onclick = () => switchTab('login');
     tabRegister.onclick = () => switchTab('register');
 
-    // Social buttons â€” Google uses renderButton() when GIS is available and configured
+    // Social buttons — Google uses renderButton() when GIS is available and configured
     const renderGoogleBtnIfReady = () => {
         let googleBtn = view.querySelector('#btn-auth-google');
         if (!googleBtn) return;
@@ -1963,7 +1963,7 @@ function AuthPortal(initialTab = 'login') {
                         if (window.google?.accounts?.id && window.publicConfig?.google_client_id) {
                             clearInterval(waitForGis);
                             renderGoogleBtnIfReady();
-                            // Sign in immediately after render â€” no second click needed
+                            // Sign in immediately after render — no second click needed
                             try { window.google.accounts.id.signIn(); } catch(e) {}
                         } else if (waited >= 8000) {
                             clearInterval(waitForGis);
@@ -1974,7 +1974,7 @@ function AuthPortal(initialTab = 'login') {
                     }, 100);
                 } else {
                     renderGoogleBtnIfReady();
-                    // Sign in immediately â€” no second click needed
+                    // Sign in immediately — no second click needed
                     try { window.google.accounts.id.signIn(); } catch(e) {}
                 }
             };
@@ -2063,7 +2063,7 @@ function AuthPortal(initialTab = 'login') {
             if (currentUsername) {
                 const nameNormalized = regNameInput.value.toLowerCase().replace(/\s+/g, '_');
                 if (currentUsername === nameNormalized) {
-                    if (regUsernameHint) regUsernameHint.innerHTML = '<span style="color:var(--danger);">âŒ Username cannot match your name â€” choose something different</span>';
+                    if (regUsernameHint) regUsernameHint.innerHTML = '<span style="color:var(--danger);">❌ Username cannot match your name — choose something different</span>';
                 } else if (currentUsername.length >= 3) {
                     clearTimeout(usernameCheckTimer);
                     usernameCheckTimer = setTimeout(async () => {
@@ -2071,12 +2071,12 @@ function AuthPortal(initialTab = 'login') {
                             const res = await fetch(`/api/providers/by-username/${encodeURIComponent(currentUsername)}`, { method: 'GET' });
                             const data = await res.json();
                             if (data && data.provider) {
-                                if (regUsernameHint) regUsernameHint.innerHTML = '<span style="color:var(--danger);">âŒ @' + currentUsername + ' is already taken</span>';
+                                if (regUsernameHint) regUsernameHint.innerHTML = '<span style="color:var(--danger);">❌ @' + currentUsername + ' is already taken</span>';
                             } else {
-                                if (regUsernameHint) regUsernameHint.innerHTML = '<span style="color:#10b981;">âœ… @' + currentUsername + ' is available!</span>';
+                                if (regUsernameHint) regUsernameHint.innerHTML = '<span style="color:#10b981;">✅ @' + currentUsername + ' is available!</span>';
                             }
                         } catch {
-                            if (regUsernameHint) regUsernameHint.innerHTML = '<span style="color:var(--text-muted);">3â€“30 characters. Letters, numbers, underscores only.</span>';
+                            if (regUsernameHint) regUsernameHint.innerHTML = '<span style="color:var(--text-muted);">3–30 characters. Letters, numbers, underscores only.</span>';
                         }
                     }, 400);
                 }
@@ -2095,36 +2095,36 @@ function AuthPortal(initialTab = 'login') {
             if (nameField && val) {
                 const nameNormalized = nameField.value.toLowerCase().replace(/\s+/g, '_');
                 if (val === nameNormalized) {
-                    if (regUsernameHint) regUsernameHint.innerHTML = '<span style="color:var(--danger);">âŒ Username cannot match your name â€” choose something different</span>';
+                    if (regUsernameHint) regUsernameHint.innerHTML = '<span style="color:var(--danger);">❌ Username cannot match your name — choose something different</span>';
                     return;
                 }
             }
 
             if (!val) {
-                if (regUsernameHint) regUsernameHint.innerHTML = '<span style="color:var(--text-muted);">3â€“30 characters. Letters, numbers, underscores only. Must be unique and different from your name.</span>';
+                if (regUsernameHint) regUsernameHint.innerHTML = '<span style="color:var(--text-muted);">3–30 characters. Letters, numbers, underscores only. Must be unique and different from your name.</span>';
                 return;
             }
             if (val.length < 3) {
-                if (regUsernameHint) regUsernameHint.innerHTML = '<span style="color:var(--danger);">âš  Too short â€” at least 3 characters</span>';
+                if (regUsernameHint) regUsernameHint.innerHTML = '<span style="color:var(--danger);">⚠ Too short — at least 3 characters</span>';
                 return;
             }
-            if (regUsernameHint) regUsernameHint.innerHTML = '<span style="color:var(--text-muted);">â³ Checking availability...</span>';
+            if (regUsernameHint) regUsernameHint.innerHTML = '<span style="color:var(--text-muted);">⏳ Checking availability...</span>';
 
             usernameCheckTimer = setTimeout(async () => {
                 try {
-                    // Use the existing providers search â€” if a provider with this username exists, it's taken
+                    // Use the existing providers search — if a provider with this username exists, it's taken
                     // We check by trying the public endpoint
                     const res = await fetch(`/api/providers/by-username/${encodeURIComponent(val)}`);
                     if (res.status === 200) {
-                        // Found â€” username taken
-                        if (regUsernameHint) regUsernameHint.innerHTML = '<span style="color:var(--danger);">âŒ @' + val + ' is already taken</span>';
+                        // Found — username taken
+                        if (regUsernameHint) regUsernameHint.innerHTML = '<span style="color:var(--danger);">❌ @' + val + ' is already taken</span>';
                     } else if (res.status === 404) {
-                        if (regUsernameHint) regUsernameHint.innerHTML = '<span style="color:#10b981;">âœ… @' + val + ' is available!</span>';
+                        if (regUsernameHint) regUsernameHint.innerHTML = '<span style="color:#10b981;">✅ @' + val + ' is available!</span>';
                     } else {
-                        if (regUsernameHint) regUsernameHint.innerHTML = '<span style="color:var(--text-muted);">3â€“30 characters. Letters, numbers, underscores only. Must be unique and different from your name.</span>';
+                        if (regUsernameHint) regUsernameHint.innerHTML = '<span style="color:var(--text-muted);">3–30 characters. Letters, numbers, underscores only. Must be unique and different from your name.</span>';
                     }
                 } catch (_) {
-                    if (regUsernameHint) regUsernameHint.innerHTML = '<span style="color:var(--text-muted);">3â€“30 characters. Letters, numbers, underscores only.</span>';
+                    if (regUsernameHint) regUsernameHint.innerHTML = '<span style="color:var(--text-muted);">3–30 characters. Letters, numbers, underscores only.</span>';
                 }
             }, 500);
         });
@@ -2164,7 +2164,7 @@ function AuthPortal(initialTab = 'login') {
             if (errContainer) {
                 errContainer.innerHTML = `
                     <div style="background: rgba(239, 68, 68, 0.12); border: 1px solid var(--danger, #ef4444); color: var(--danger, #ef4444); padding: 10px 14px; border-radius: 8px; margin-bottom: 16px; font-size: 0.85rem;">
-                        âš ï¸ Please enter both phone/email and password.
+                        ⚠️ Please enter both phone/email and password.
                     </div>
                 `;
             }
@@ -2210,7 +2210,7 @@ function AuthPortal(initialTab = 'login') {
                 errContainer.innerHTML = `
                     <div style="background: rgba(239, 68, 68, 0.12); border: 1px solid var(--danger, #ef4444); color: var(--danger, #ef4444); padding: 12px 14px; border-radius: 8px; margin-bottom: 16px; font-size: 0.85rem; line-height: 1.4;">
                         <div style="font-weight: 700; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
-                            <span>âš ï¸</span> ${isUnverified ? 'Email Not Verified' : (isCredErr ? 'Invalid Phone/Email or Password' : (err.message || 'Login failed'))}
+                            <span>⚠️</span> ${isUnverified ? 'Email Not Verified' : (isCredErr ? 'Invalid Phone/Email or Password' : (err.message || 'Login failed'))}
                         </div>
                         <div style="font-size: 0.8rem; color: var(--text-secondary);">
                             ${isUnverified ?
@@ -2261,12 +2261,12 @@ function AuthPortal(initialTab = 'login') {
         const verifySection = view.querySelector('#otp-verify-section');
 
         if (!phone || phone.replace(/\D/g, '').length < 10) {
-            if (status) status.innerHTML = '<span style="color:var(--danger);">âš ï¸ Enter a valid phone number</span>';
+            if (status) status.innerHTML = '<span style="color:var(--danger);">⚠️ Enter a valid phone number</span>';
             return;
         }
 
         window.__otpPhone = phone;
-        if (status) status.innerHTML = '<span style="color:var(--accent);">ðŸ“± Sending OTP...</span>';
+        if (status) status.innerHTML = '<span style="color:var(--accent);">📱 Sending OTP...</span>';
         if (sendBtn) sendBtn.disabled = true;
 
         try {
@@ -2278,14 +2278,14 @@ function AuthPortal(initialTab = 'login') {
             // Demo: OTP is returned in response (in production, SMS would deliver it)
             const otp = result.otp || '';
             if (status) {
-                status.innerHTML = `<span style="color:#10b981;font-weight:700;">âœ… OTP sent to ${phone}!</span>
+                status.innerHTML = `<span style="color:#10b981;font-weight:700;">✅ OTP sent to ${phone}!</span>
                     <span style="display:block;font-size:0.7rem;color:var(--text-muted);margin-top:4px;">Your OTP: <strong>${otp}</strong> (enter it below)</span>`;
             }
             if (verifySection) verifySection.style.display = 'block';
             if (sendBtn) sendBtn.style.display = 'none';
             view.querySelector('#otp-code')?.focus();
         } catch (err) {
-            if (status) status.innerHTML = `<span style="color:var(--danger);">âŒ ${escapeHTML(err.message || 'Failed to send OTP')}</span>`;
+            if (status) status.innerHTML = `<span style="color:var(--danger);">❌ ${escapeHTML(err.message || 'Failed to send OTP')}</span>`;
             if (sendBtn) sendBtn.disabled = false;
         }
     };
@@ -2297,15 +2297,15 @@ function AuthPortal(initialTab = 'login') {
         const verifyBtn = view.querySelector('#otp-verify-btn');
 
         if (!phone || !otpCode) {
-            if (status) status.innerHTML = '<span style="color:var(--danger);">âš ï¸ Enter both phone and OTP</span>';
+            if (status) status.innerHTML = '<span style="color:var(--danger);">⚠️ Enter both phone and OTP</span>';
             return;
         }
         if (otpCode.length !== 6 || !/^\d{6}$/.test(otpCode)) {
-            if (status) status.innerHTML = '<span style="color:var(--danger);">âš ï¸ OTP must be 6 digits</span>';
+            if (status) status.innerHTML = '<span style="color:var(--danger);">⚠️ OTP must be 6 digits</span>';
             return;
         }
 
-        if (status) status.innerHTML = '<span style="color:var(--accent);">ðŸ” Verifying OTP...</span>';
+        if (status) status.innerHTML = '<span style="color:var(--accent);">🔐 Verifying OTP...</span>';
         if (verifyBtn) verifyBtn.disabled = true;
 
         try {
@@ -2328,7 +2328,7 @@ function AuthPortal(initialTab = 'login') {
                 router('/');
             }
         } catch (err) {
-            if (status) status.innerHTML = `<span style="color:var(--danger);">âŒ ${escapeHTML(err.message || 'OTP verification failed')}</span>`;
+            if (status) status.innerHTML = `<span style="color:var(--danger);">❌ ${escapeHTML(err.message || 'OTP verification failed')}</span>`;
             if (verifyBtn) verifyBtn.disabled = false;
         }
     };
@@ -2384,7 +2384,7 @@ function AuthPortal(initialTab = 'login') {
             if (errContainer) {
                 errContainer.innerHTML = `
                     <div style="background: rgba(239, 68, 68, 0.12); border: 1px solid var(--danger, #ef4444); color: var(--danger, #ef4444); padding: 10px 14px; border-radius: 8px; margin-bottom: 16px; font-size: 0.85rem;">
-                        âš ï¸ ${!username ? 'Please choose a username â€” it must be unique.' : 'Please fill in all fields to create your account.'}
+                        ⚠️ ${!username ? 'Please choose a username — it must be unique.' : 'Please fill in all fields to create your account.'}
                     </div>
                 `;
             }
@@ -2394,14 +2394,14 @@ function AuthPortal(initialTab = 'login') {
 
         if (username.length < 3) {
             if (errContainer) {
-                errContainer.innerHTML = `<div style="background: rgba(239, 68, 68, 0.12); border: 1px solid var(--danger, #ef4444); color: var(--danger, #ef4444); padding: 10px 14px; border-radius: 8px; margin-bottom: 16px; font-size: 0.85rem;">âš ï¸ Username must be at least 3 characters.</div>`;
+                errContainer.innerHTML = `<div style="background: rgba(239, 68, 68, 0.12); border: 1px solid var(--danger, #ef4444); color: var(--danger, #ef4444); padding: 10px 14px; border-radius: 8px; margin-bottom: 16px; font-size: 0.85rem;">⚠️ Username must be at least 3 characters.</div>`;
             }
             return;
         }
 
         if (!view.querySelector('#reg-tos')?.checked) {
             if (errContainer) {
-                errContainer.innerHTML = `<div style="background: rgba(239, 68, 68, 0.12); border: 1px solid var(--danger, #ef4444); color: var(--danger, #ef4444); padding: 10px 14px; border-radius: 8px; margin-bottom: 16px; font-size: 0.85rem;">âš ï¸ Please accept the Terms of Service and Privacy Policy to create your account.</div>`;
+                errContainer.innerHTML = `<div style="background: rgba(239, 68, 68, 0.12); border: 1px solid var(--danger, #ef4444); color: var(--danger, #ef4444); padding: 10px 14px; border-radius: 8px; margin-bottom: 16px; font-size: 0.85rem;">⚠️ Please accept the Terms of Service and Privacy Policy to create your account.</div>`;
             }
             view.querySelector('#reg-tos')?.focus();
             return;
@@ -2459,7 +2459,7 @@ function AuthPortal(initialTab = 'login') {
                 errContainer.innerHTML = `
                     <div style="background: rgba(239, 68, 68, 0.12); border: 1px solid var(--danger, #ef4444); color: var(--danger, #ef4444); padding: 12px 14px; border-radius: 8px; margin-bottom: 16px; font-size: 0.85rem; line-height: 1.4;">
                         <div style="font-weight: 700; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
-                            <span>âš ï¸</span> Registration Failed
+                            <span>⚠️</span> Registration Failed
                         </div>
                         <div style="font-size: 0.8rem; color: var(--text-secondary);">
                             ${escapeHTML(err.message || 'Could not create account')}.
@@ -2509,25 +2509,25 @@ function startJourney(preselectedRole = 'BUYER') {
         <div class="card" style="max-width: 480px; width: 100%; box-shadow: var(--shadow-lg); border: 1px solid var(--border); animation: fadeIn 0.25s ease;">
             <div class="card-header" style="border-bottom: 1px solid var(--border); padding-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
                 <div style="display: flex; align-items: center; gap: 10px;">
-                    <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(91, 52, 234, 0.1); color: #5b34ea; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">ðŸš€</div>
+                    <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(91, 52, 234, 0.1); color: #5b34ea; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">🚀</div>
                     <div>
                         <h3 style="font-size: 1.2rem; font-weight: 800; margin: 0; color: var(--text-primary);">Start Your Journey</h3>
                         <p style="font-size: 0.75rem; color: var(--text-secondary); margin: 2px 0 0;">Choose how you want to use Groove Hub</p>
                     </div>
                 </div>
-                <button type="button" id="close-journey-modal" style="background:transparent; border:none; color:var(--text-muted); font-size:1.3rem; cursor:pointer; padding: 4px;">âœ•</button>
+                <button type="button" id="close-journey-modal" style="background:transparent; border:none; color:var(--text-muted); font-size:1.3rem; cursor:pointer; padding: 4px;">✕</button>
             </div>
             <div class="card-body" style="padding-top: 20px;">
                 <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px;">
                     <div class="journey-role-card ${chosenRole === 'BUYER' ? 'active' : ''}" id="journey-card-buyer">
-                        <div class="journey-role-icon">ðŸŽ¯</div>
+                        <div class="journey-role-icon">🎯</div>
                         <div class="journey-role-content">
                             <h4>I want to hire talent</h4>
                             <p>Find verified video editors, animators & English tutors. 100% Escrow protected with milestone approvals.</p>
                         </div>
                     </div>
                     <div class="journey-role-card ${chosenRole === 'PROVIDER' ? 'active' : ''}" id="journey-card-provider">
-                        <div class="journey-role-icon">ðŸŽ¨</div>
+                        <div class="journey-role-icon">🎨</div>
                         <div class="journey-role-content">
                             <h4>I want to offer my services</h4>
                             <p>Publish service packages, deliver client projects, and keep 80% guaranteed payouts with direct UPI / Bank transfer.</p>
@@ -2647,7 +2647,7 @@ function WelcomePage() {
     const isAdmin = user.user_type === 'ADMIN';
 
     const roleLabel = isAdmin ? 'Admin' : isProvider ? 'Creator / Educator' : 'Client / Buyer';
-    const roleEmoji = isAdmin ? 'âš¡' : isProvider ? 'ðŸŽ¨' : 'ðŸŽ¯';
+    const roleEmoji = isAdmin ? '⚡' : isProvider ? '🎨' : '🎯';
 
     const getDestination = () => {
         if (isAdmin) return '/admin';
@@ -2681,7 +2681,7 @@ function WelcomePage() {
                 <!-- Left Column -->
                 <div class="hero-left">
                     <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(91, 52, 234, 0.08); border: 1px solid rgba(91, 52, 234, 0.2); padding: 6px 14px; border-radius: 999px; font-size: 0.8125rem; color: #5b34ea; font-weight: 700; margin-bottom: 18px; width: fit-content;">
-                        <span>ðŸš€</span> Successfully Logged In
+                        <span>🚀</span> Successfully Logged In
                     </div>
 
                     <h1 class="hero-title" style="margin-bottom: 16px; line-height: 1.15;">
@@ -2712,7 +2712,7 @@ function WelcomePage() {
                         <div class="mini-card mini-video" onclick="goToVideoEditors()" style="background: var(--bg-hover); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; display: flex; align-items: center; gap: 10px; cursor: pointer; transition: transform 0.2s var(--ease-spring), box-shadow 0.2s ease, border-color 0.2s ease;"
                            onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 20px -4px rgba(99,102,241,0.2)'; this.style.borderColor='var(--accent)';"
                            onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'; this.style.borderColor='var(--border)';">
-                            <span style="font-size: 1.3rem;">ðŸŽ¬</span>
+                            <span style="font-size: 1.3rem;">🎬</span>
                             <div style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.3;">
                                 <strong style="color: var(--text-primary); display: block;">Video Editors</strong>
                                 Reels, Shorts & Longform
@@ -2721,7 +2721,7 @@ function WelcomePage() {
                         <div class="mini-card mini-tutor" onclick="goToTutors()" style="background: var(--bg-hover); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; display: flex; align-items: center; gap: 10px; cursor: pointer; transition: transform 0.2s var(--ease-spring), box-shadow 0.2s ease, border-color 0.2s ease;"
                            onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 20px -4px rgba(99,102,241,0.2)'; this.style.borderColor='var(--accent)';"
                            onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'; this.style.borderColor='var(--border)';">
-                            <span style="font-size: 1.3rem;">ðŸ—£ï¸</span>
+                            <span style="font-size: 1.3rem;">🗣️</span>
                             <div style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.3;">
                                 <strong style="color: var(--text-primary); display: block;">English Coaches</strong>
                                 1-on-1 Fluency & Accent
@@ -2740,23 +2740,23 @@ function WelcomePage() {
 
                         <!-- Dotted curved arc with floating badges matching Moxie screenshot -->
                         <div class="welcome-floating-badge badge-top-left">
-                            <span class="badge-icon">ðŸ“…</span>
+                            <span class="badge-icon">📅</span>
                             <span class="badge-text">Bookings</span>
                         </div>
                         <div class="welcome-floating-badge badge-top-right">
-                            <span class="badge-icon">ðŸ¤</span>
+                            <span class="badge-icon">🤝</span>
                             <span class="badge-text">100% Escrow</span>
                         </div>
                         <div class="welcome-floating-badge badge-mid-left">
-                            <span class="badge-icon">ðŸ’¬</span>
+                            <span class="badge-icon">💬</span>
                             <span class="badge-text">Live Chat</span>
                         </div>
                         <div class="welcome-floating-badge badge-mid-right">
-                            <span class="badge-icon">â±ï¸</span>
+                            <span class="badge-icon">⏱️</span>
                             <span class="badge-text">24-48h Delivery</span>
                         </div>
                         <div class="welcome-floating-badge badge-bot-right">
-                            <span class="badge-icon">ðŸ’°</span>
+                            <span class="badge-icon">💰</span>
                             <span class="badge-text">Direct Payouts</span>
                         </div>
                     </div>
@@ -2767,11 +2767,11 @@ function WelcomePage() {
             <div class="welcome-trust-strip" style="margin-top: 52px; padding-top: 28px; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-around; flex-wrap: wrap; gap: 20px;">
                 <div style="display: flex; align-items: center; gap: 10px;">
                     <div style="display: flex; gap: 2px;">
-                        <span style="background: #00b67a; color: #fff; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; border-radius: 3px; font-weight: bold;">â˜…</span>
-                        <span style="background: #00b67a; color: #fff; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; border-radius: 3px; font-weight: bold;">â˜…</span>
-                        <span style="background: #00b67a; color: #fff; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; border-radius: 3px; font-weight: bold;">â˜…</span>
-                        <span style="background: #00b67a; color: #fff; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; border-radius: 3px; font-weight: bold;">â˜…</span>
-                        <span style="background: #00b67a; color: #fff; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; border-radius: 3px; font-weight: bold;">â˜…</span>
+                        <span style="background: #00b67a; color: #fff; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; border-radius: 3px; font-weight: bold;">★</span>
+                        <span style="background: #00b67a; color: #fff; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; border-radius: 3px; font-weight: bold;">★</span>
+                        <span style="background: #00b67a; color: #fff; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; border-radius: 3px; font-weight: bold;">★</span>
+                        <span style="background: #00b67a; color: #fff; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; border-radius: 3px; font-weight: bold;">★</span>
+                        <span style="background: #00b67a; color: #fff; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; border-radius: 3px; font-weight: bold;">★</span>
                     </div>
                     <div>
                         <strong style="color: var(--text-primary); font-size: 0.875rem; display: block;">4.9 / 5 Rating</strong>
@@ -2780,17 +2780,17 @@ function WelcomePage() {
                 </div>
 
                 <div style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--text-secondary);">
-                    <span style="color: #10b981; font-size: 1.1rem; font-weight: bold;">âœ“</span>
+                    <span style="color: #10b981; font-size: 1.1rem; font-weight: bold;">✓</span>
                     <span>100% Escrow Protection</span>
                 </div>
 
                 <div style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--text-secondary);">
-                    <span style="color: #6366f1; font-size: 1.1rem; font-weight: bold;">âœ“</span>
+                    <span style="color: #6366f1; font-size: 1.1rem; font-weight: bold;">✓</span>
                     <span>Verified Video Editors & Tutors</span>
                 </div>
 
                 <div style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--text-secondary);">
-                    <span style="color: #f59e0b; font-size: 1.1rem; font-weight: bold;">âœ“</span>
+                    <span style="color: #f59e0b; font-size: 1.1rem; font-weight: bold;">✓</span>
                     <span>Zero Upfront Risk</span>
                 </div>
             </div>
@@ -2874,23 +2874,23 @@ function Landing() {
 
                         <!-- Dotted curved arc with floating badges -->
                         <div class="welcome-floating-badge badge-top-left">
-                            <span class="badge-icon">ðŸ“…</span>
+                            <span class="badge-icon">📅</span>
                             <span class="badge-text">Bookings</span>
                         </div>
                         <div class="welcome-floating-badge badge-top-right">
-                            <span class="badge-icon">ðŸ¤</span>
+                            <span class="badge-icon">🤝</span>
                             <span class="badge-text">100% Escrow</span>
                         </div>
                         <div class="welcome-floating-badge badge-mid-left">
-                            <span class="badge-icon">ðŸ’¬</span>
+                            <span class="badge-icon">💬</span>
                             <span class="badge-text">Live Chat</span>
                         </div>
                         <div class="welcome-floating-badge badge-mid-right">
-                            <span class="badge-icon">â±ï¸</span>
+                            <span class="badge-icon">⏱️</span>
                             <span class="badge-text">24-48h Delivery</span>
                         </div>
                         <div class="welcome-floating-badge badge-bot-right">
-                            <span class="badge-icon">ðŸ’°</span>
+                            <span class="badge-icon">💰</span>
                             <span class="badge-text">Direct Payouts</span>
                         </div>
                     </div>
@@ -2902,24 +2902,24 @@ function Landing() {
                 <div class="hero-feature-card" onclick="goToVideoEditors()" style="cursor: pointer;"
                    onmouseover="this.style.transform='translateY(-4px)'; this.style.borderColor='#5b34ea';"
                    onmouseout="this.style.transform='translateY(0)'; this.style.borderColor='var(--border)';">
-                    <div class="hero-feature-icon">ðŸŽ¬</div>
+                    <div class="hero-feature-icon">🎬</div>
                     <h3 class="hero-feature-title">Vetted Video Editors</h3>
                     <p class="hero-feature-desc">Hire verified creators for YouTube, Reels, podcasts, and commercial color grading with interactive video showreels.</p>
                 </div>
                 <div class="hero-feature-card" onclick="goToTutors()" style="cursor: pointer;"
                    onmouseover="this.style.transform='translateY(-4px)'; this.style.borderColor='#5b34ea';"
                    onmouseout="this.style.transform='translateY(0)'; this.style.borderColor='var(--border)';">
-                    <div class="hero-feature-icon">ðŸ—£ï¸</div>
+                    <div class="hero-feature-icon">🗣️</div>
                     <h3 class="hero-feature-title">Spoken English Coaches</h3>
                     <p class="hero-feature-desc">Master fluency, accent neutralization, IELTS, and corporate presentation skills with 1-on-1 certified tutors.</p>
                 </div>
                 <div class="hero-feature-card">
-                    <div class="hero-feature-icon">ðŸ”’</div>
+                    <div class="hero-feature-icon">🔒</div>
                     <h3 class="hero-feature-title">100% Escrow Protection</h3>
                     <p class="hero-feature-desc">Your payment is locked safely in escrow and released to the creator only when you review and approve the final work.</p>
                 </div>
                 <div class="hero-feature-card">
-                    <div class="hero-feature-icon">âš¡</div>
+                    <div class="hero-feature-icon">⚡</div>
                     <h3 class="hero-feature-title">Fast 24-48h Delivery</h3>
                     <p class="hero-feature-desc">Clear packages, guaranteed revision rounds, and real-time chat with file previews directly in your browser.</p>
                 </div>
@@ -2954,7 +2954,7 @@ function getBookingDeadlineInfo(booking) {
     const status = (booking.status || '').toLowerCase();
     if (status === 'completed' || status === 'approved') {
         return {
-            text: `âœ… Delivered & Approved on Time`,
+            text: `✅ Delivered & Approved on Time`,
             subtext: `Completed on ${dateFormatted}`,
             badgeClass: 'badge-success',
             statusLabel: 'Completed',
@@ -2963,7 +2963,7 @@ function getBookingDeadlineInfo(booking) {
     }
     if (status === 'delivered' || status === 'pending_approval') {
         return {
-            text: `ðŸ“¦ Work Delivered! Awaiting Your Review`,
+            text: `📦 Work Delivered! Awaiting Your Review`,
             subtext: `Target Deadline was ${dateFormatted}`,
             badgeClass: 'badge-warning',
             statusLabel: 'Needs Review',
@@ -2972,7 +2972,7 @@ function getBookingDeadlineInfo(booking) {
     }
     if (status === 'pending_payment' || status === 'pending') {
         return {
-            text: `ðŸ’³ Awaiting Escrow Payment`,
+            text: `💳 Awaiting Escrow Payment`,
             subtext: `Est. Delivery: ${turnaroundHours}h after payment`,
             badgeClass: 'badge-muted',
             statusLabel: 'Unfunded',
@@ -2983,7 +2983,7 @@ function getBookingDeadlineInfo(booking) {
     // In Progress / Confirmed
     if (diffMs < 0) {
         return {
-            text: `âš ï¸ Past Estimated Deadline`,
+            text: `⚠️ Past Estimated Deadline`,
             subtext: `Was due ${dateFormatted} (~${Math.abs(daysLeft)}d ago)`,
             badgeClass: 'badge-danger',
             statusLabel: 'Overdue',
@@ -2991,7 +2991,7 @@ function getBookingDeadlineInfo(booking) {
         };
     } else if (hoursLeft <= 24) {
         return {
-            text: `ðŸ”¥ Due Today: ~${Math.max(1, hoursLeft)}h remaining`,
+            text: `🔥 Due Today: ~${Math.max(1, hoursLeft)}h remaining`,
             subtext: `Target Delivery: ${dateFormatted}`,
             badgeClass: 'badge-warning',
             statusLabel: 'Due Soon',
@@ -2999,7 +2999,7 @@ function getBookingDeadlineInfo(booking) {
         };
     } else {
         return {
-            text: `â° Due in ${daysLeft} days`,
+            text: `⏰ Due in ${daysLeft} days`,
             subtext: `Target Delivery: ${dateFormatted}`,
             badgeClass: 'badge-info',
             statusLabel: 'On Track',
@@ -3092,11 +3092,11 @@ function ProviderDashboard() {
             <!-- Clarification & Mode Substrip -->
             <div class="mode-bar-substrip">
                 <div style="display: flex; align-items: center; gap: 8px;">
-                    <span class="mode-badge-pill mode-badge-provider">ðŸ’¼ Provider Studio</span>
+                    <span class="mode-badge-pill mode-badge-provider">💼 Provider Studio</span>
                     <span>You are logged in as a <strong>Seller / Creator</strong>. Need to hire talent?</span>
                 </div>
                 <button type="button" class="btn-switch-mode" onclick="toggleUserMode()">
-                    ðŸ›ï¸ Switch to Buyer Mode
+                    🛍️ Switch to Buyer Mode
                 </button>
             </div>
 
@@ -3104,7 +3104,7 @@ function ProviderDashboard() {
                 <!-- 0% Commission Launch Promo Notice Card -->
                 <div class="card launch-zero-comm-card" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(6, 95, 70, 0.08)); border: 1.5px solid rgba(16, 185, 129, 0.35); padding: 16px 20px; border-radius: var(--radius); margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap;">
                     <div style="display: flex; align-items: center; gap: 14px;">
-                        <div style="font-size: 2.2rem; line-height: 1;">ðŸŽ‰</div>
+                        <div style="font-size: 2.2rem; line-height: 1;">🎉</div>
                         <div>
                             <div style="font-weight: 800; color: var(--success); font-size: 1.05rem; display: flex; align-items: center; gap: 8px;">
                                 <span>0% Commission Launch Plan Active (1 Month Free)</span>
@@ -3115,7 +3115,7 @@ function ProviderDashboard() {
                             </div>
                         </div>
                     </div>
-                    <button class="btn btn-secondary btn-sm" onclick="router('/packages')" style="font-weight: 700; border-color: rgba(16, 185, 129, 0.4);">Publish Service Packages â†’</button>
+                    <button class="btn btn-secondary btn-sm" onclick="router('/packages')" style="font-weight: 700; border-color: rgba(16, 185, 129, 0.4);">Publish Service Packages →</button>
                 </div>
 
                 <!-- New Creator Fast-Track 3-Step Setup Checklist -->
@@ -3123,7 +3123,7 @@ function ProviderDashboard() {
                     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 14px;">
                         <div>
                             <div style="font-size: 1.15rem; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
-                                <span>ðŸš€</span> Creator Fast-Track Setup Checklist
+                                <span>🚀</span> Creator Fast-Track Setup Checklist
                                 <span class="badge ${completedCount === 3 ? 'badge-success' : 'badge-primary'}" style="font-size: 0.72rem;">${completedCount}/3 Completed</span>
                             </div>
                             <div style="font-size: 0.8125rem; color: var(--text-secondary); margin-top: 2px;">
@@ -3144,7 +3144,7 @@ function ProviderDashboard() {
                             <div>
                                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                                     <span style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted);">STEP 1</span>
-                                    <span style="font-size: 1.1rem;">${hasProfile ? 'âœ…' : 'âšª'}</span>
+                                    <span style="font-size: 1.1rem;">${hasProfile ? '✅' : '⚪'}</span>
                                 </div>
                                 <div style="font-weight: 700; font-size: 0.92rem; color: var(--text-primary); margin-bottom: 4px;">Complete Profile &amp; Bio</div>
                                 <div style="font-size: 0.78rem; color: var(--text-secondary); line-height: 1.35; margin-bottom: 12px;">
@@ -3152,7 +3152,7 @@ function ProviderDashboard() {
                                 </div>
                             </div>
                             <button type="button" class="btn ${hasProfile ? 'btn-outline' : 'btn-primary'} btn-sm" onclick="openSettingsTab('profile')" style="width: 100%; font-size: 0.78rem; padding: 6px 10px;">
-                                ${hasProfile ? 'âœï¸ Edit Profile' : 'ðŸ‘‰ Complete Profile'}
+                                ${hasProfile ? '✏️ Edit Profile' : '👉 Complete Profile'}
                             </button>
                         </div>
 
@@ -3161,7 +3161,7 @@ function ProviderDashboard() {
                             <div>
                                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                                     <span style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted);">STEP 2</span>
-                                    <span style="font-size: 1.1rem;">${hasShowreel ? 'âœ…' : 'âšª'}</span>
+                                    <span style="font-size: 1.1rem;">${hasShowreel ? '✅' : '⚪'}</span>
                                 </div>
                                 <div style="font-weight: 700; font-size: 0.92rem; color: var(--text-primary); margin-bottom: 4px;">Upload 4K Showreel / Video</div>
                                 <div style="font-size: 0.78rem; color: var(--text-secondary); line-height: 1.35; margin-bottom: 12px;">
@@ -3169,7 +3169,7 @@ function ProviderDashboard() {
                                 </div>
                             </div>
                             <button type="button" class="btn ${hasShowreel ? 'btn-outline' : 'btn-primary'} btn-sm" onclick="openSettingsTab('portfolio')" style="width: 100%; font-size: 0.78rem; padding: 6px 10px;">
-                                ${hasShowreel ? 'ðŸ“ Manage Portfolio' : 'ðŸ“¤ Upload 4K Showreel'}
+                                ${hasShowreel ? '📁 Manage Portfolio' : '📤 Upload 4K Showreel'}
                             </button>
                         </div>
 
@@ -3178,7 +3178,7 @@ function ProviderDashboard() {
                             <div>
                                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                                     <span style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted);">STEP 3</span>
-                                    <span style="font-size: 1.1rem;">${hasPackages ? 'âœ…' : 'âšª'}</span>
+                                    <span style="font-size: 1.1rem;">${hasPackages ? '✅' : '⚪'}</span>
                                 </div>
                                 <div style="font-weight: 700; font-size: 0.92rem; color: var(--text-primary); margin-bottom: 4px;">Publish Service Package</div>
                                 <div style="font-size: 0.78rem; color: var(--text-secondary); line-height: 1.35; margin-bottom: 12px;">
@@ -3186,7 +3186,7 @@ function ProviderDashboard() {
                                 </div>
                             </div>
                             <button type="button" class="btn ${hasPackages ? 'btn-outline' : 'btn-primary'} btn-sm" onclick="${hasPackages ? "router('/packages')" : "router('/create-package')"}" style="width: 100%; font-size: 0.78rem; padding: 6px 10px;">
-                                ${hasPackages ? 'ðŸ“¦ View Packages' : 'âž• Create Package'}
+                                ${hasPackages ? '📦 View Packages' : '➕ Create Package'}
                             </button>
                         </div>
                     </div>
@@ -3206,14 +3206,14 @@ function ProviderDashboard() {
 
                 ${(pendingOrders.length === 0 && deliveredOrders.length === 0) ? `
                     <div class="card" style="padding: 28px; text-align: center;">
-                        <div style="font-size: 2.2rem; margin-bottom: 8px;">ðŸ“¬</div>
+                        <div style="font-size: 2.2rem; margin-bottom: 8px;">📬</div>
                         <h4 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 6px;">No Active Client Orders Right Now</h4>
                         <p style="color: var(--text-secondary); font-size: 0.85rem; max-width: 440px; margin: 0 auto 16px;">
                             Make sure your service packages are published and check incoming inquiries in your Messages inbox.
                         </p>
                         <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
                             <button class="btn btn-primary btn-sm" onclick="router('/create-package')">Create Package</button>
-                            <button class="btn btn-secondary btn-sm" onclick="router('/messages')">ðŸ’¬ Open Messages</button>
+                            <button class="btn btn-secondary btn-sm" onclick="router('/messages')">💬 Open Messages</button>
                         </div>
                     </div>
                 ` : `
@@ -3234,7 +3234,7 @@ function ProviderDashboard() {
                                     <div>${deadline.subtext}</div>
                                 </div>
                                 <div style="display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap;">
-                                    <button class="btn btn-secondary btn-sm" onclick="openPreBookingChat(${b.buyer_id}, '${(b.buyer_name || '').replace(/'/g, "\\'")}')" style="flex: 1;">ðŸ’¬ Chat</button>
+                                    <button class="btn btn-secondary btn-sm" onclick="openPreBookingChat(${b.buyer_id}, '${(b.buyer_name || '').replace(/'/g, "\\'")}')" style="flex: 1;">💬 Chat</button>
                                     <button class="btn btn-primary btn-sm" onclick="router('/bookings')" style="flex: 1;">Submit Work</button>
                                 </div>
                             </div>
@@ -3357,38 +3357,38 @@ function BuyerDashboard() {
 
         const categoryOptionsMap = {
             all: [
-                { label: 'Video Ads', query: 'video ads', filter: 'editors', icon: 'ðŸŽ¬' },
-                { label: 'Reels & TikTok', query: 'reel', filter: 'editors', icon: 'ðŸ“±' },
-                { label: 'English Fluency', query: 'speaking', filter: 'tutors', icon: 'ðŸ—£ï¸' },
-                { label: 'YouTube Videos', query: 'youtube', filter: 'editors', icon: 'ðŸŽ¥' },
-                { label: 'Video Scripts', query: 'script', filter: 'writers', icon: 'âœï¸' },
-                { label: '24h Express', query: '24', filter: 'express', icon: 'âš¡' }
+                { label: 'Video Ads', query: 'video ads', filter: 'editors', icon: '🎬' },
+                { label: 'Reels & TikTok', query: 'reel', filter: 'editors', icon: '📱' },
+                { label: 'English Fluency', query: 'speaking', filter: 'tutors', icon: '🗣️' },
+                { label: 'YouTube Videos', query: 'youtube', filter: 'editors', icon: '🎥' },
+                { label: 'Video Scripts', query: 'script', filter: 'writers', icon: '✍️' },
+                { label: '24h Express', query: '24', filter: 'express', icon: '⚡' }
             ],
             editors: [
-                { label: 'Video Ads', query: 'video ads', filter: 'editors', icon: 'ðŸŽ¬' },
-                { label: 'Reels & TikTok', query: 'reel', filter: 'editors', icon: 'ðŸ“±' },
-                { label: 'YouTube Longform', query: 'youtube', filter: 'editors', icon: 'ðŸŽ¥' },
-                { label: 'Gaming Montages', query: 'gaming', filter: 'editors', icon: 'ðŸŽ®' },
-                { label: 'Color Grading', query: 'color', filter: 'editors', icon: 'ðŸŽ¨' },
-                { label: '24h Rush Delivery', query: '24', filter: 'editors', icon: 'âš¡' }
+                { label: 'Video Ads', query: 'video ads', filter: 'editors', icon: '🎬' },
+                { label: 'Reels & TikTok', query: 'reel', filter: 'editors', icon: '📱' },
+                { label: 'YouTube Longform', query: 'youtube', filter: 'editors', icon: '🎥' },
+                { label: 'Gaming Montages', query: 'gaming', filter: 'editors', icon: '🎮' },
+                { label: 'Color Grading', query: 'color', filter: 'editors', icon: '🎨' },
+                { label: '24h Rush Delivery', query: '24', filter: 'editors', icon: '⚡' }
             ],
             tutors: [
-                { label: 'IELTS Speaking', query: 'ielts', filter: 'tutors', icon: 'ðŸ—£ï¸' },
-                { label: 'Accent Reduction', query: 'accent', filter: 'tutors', icon: 'ðŸŽ¯' },
-                { label: 'Business English', query: 'business', filter: 'tutors', icon: 'ðŸ’¼' },
-                { label: 'Daily Fluency', query: 'speaking', filter: 'tutors', icon: 'ðŸ’¬' },
-                { label: 'Trial Session', query: 'trial', filter: 'tutors', icon: 'âš¡' }
+                { label: 'IELTS Speaking', query: 'ielts', filter: 'tutors', icon: '🗣️' },
+                { label: 'Accent Reduction', query: 'accent', filter: 'tutors', icon: '🎯' },
+                { label: 'Business English', query: 'business', filter: 'tutors', icon: '💼' },
+                { label: 'Daily Fluency', query: 'speaking', filter: 'tutors', icon: '💬' },
+                { label: 'Trial Session', query: 'trial', filter: 'tutors', icon: '⚡' }
             ],
             writers: [
-                { label: 'Video Scripts', query: 'script', filter: 'writers', icon: 'âœï¸' },
-                { label: 'Ad Copywriting', query: 'copy', filter: 'writers', icon: 'ðŸ“ˆ' },
-                { label: 'SEO Blog Posts', query: 'seo', filter: 'writers', icon: 'ðŸ“' },
-                { label: 'Social Captions', query: 'caption', filter: 'writers', icon: 'ðŸ“±' }
+                { label: 'Video Scripts', query: 'script', filter: 'writers', icon: '✍️' },
+                { label: 'Ad Copywriting', query: 'copy', filter: 'writers', icon: '📈' },
+                { label: 'SEO Blog Posts', query: 'seo', filter: 'writers', icon: '📝' },
+                { label: 'Social Captions', query: 'caption', filter: 'writers', icon: '📱' }
             ],
             express: [
-                { label: '24h Video Edit', query: 'video', filter: 'express', icon: 'ðŸŽ¬' },
-                { label: 'Instant English Lesson', query: 'english', filter: 'express', icon: 'ðŸ—£ï¸' },
-                { label: 'Express Script', query: 'script', filter: 'express', icon: 'âœï¸' }
+                { label: '24h Video Edit', query: 'video', filter: 'express', icon: '🎬' },
+                { label: 'Instant English Lesson', query: 'english', filter: 'express', icon: '🗣️' },
+                { label: 'Express Script', query: 'script', filter: 'express', icon: '✍️' }
             ]
         };
 
@@ -3398,37 +3398,37 @@ function BuyerDashboard() {
 
         const categorySlidersData = {
             editors: {
-                badge: 'ðŸŽ¬ Video Editing Specialties',
+                badge: '🎬 Video Editing Specialties',
                 items: [
-                    { id: 'ads_social', label: 'Social Ads & Reels', sub: 'TikTok, Reels & UGC hooks', query: 'reel', icon: 'ðŸ“±' },
-                    { id: 'gaming', label: 'Gaming Streams & Edits', sub: 'Twitch highlights & stream cuts', query: 'gaming', icon: 'ðŸŽ®' },
-                    { id: 'youtube', label: 'YouTube Longform', sub: 'Retention edits & viral pacing', query: 'youtube', icon: 'ðŸ“º' },
-                    { id: 'animations', label: '2D & 3D Animations', sub: 'Character animation & 3D models', query: 'animation', icon: 'ðŸŽ¨' },
-                    { id: 'motion_graphics', label: 'Motion Graphics & VFX', sub: 'After Effects lower thirds & titles', query: 'motion', icon: 'âœ¨' },
-                    { id: 'music', label: 'Music & Cinematic', sub: 'Beat-sync VFX & color grading', query: 'music', icon: 'ðŸŽ¬' },
-                    { id: 'express', label: '24h Rush Delivery', sub: 'Same-day express turnaround', query: '24', icon: 'âš¡' }
+                    { id: 'ads_social', label: 'Social Ads & Reels', sub: 'TikTok, Reels & UGC hooks', query: 'reel', icon: '📱' },
+                    { id: 'gaming', label: 'Gaming Streams & Edits', sub: 'Twitch highlights & stream cuts', query: 'gaming', icon: '🎮' },
+                    { id: 'youtube', label: 'YouTube Longform', sub: 'Retention edits & viral pacing', query: 'youtube', icon: '📺' },
+                    { id: 'animations', label: '2D & 3D Animations', sub: 'Character animation & 3D models', query: 'animation', icon: '🎨' },
+                    { id: 'motion_graphics', label: 'Motion Graphics & VFX', sub: 'After Effects lower thirds & titles', query: 'motion', icon: '✨' },
+                    { id: 'music', label: 'Music & Cinematic', sub: 'Beat-sync VFX & color grading', query: 'music', icon: '🎬' },
+                    { id: 'express', label: '24h Rush Delivery', sub: 'Same-day express turnaround', query: '24', icon: '⚡' }
                 ]
             },
             tutors: {
-                badge: 'ðŸ—£ï¸ English Tutoring Specialties',
+                badge: '🗣️ English Tutoring Specialties',
                 items: [
-                    { id: 'ielts', label: 'IELTS & TOEFL Prep', sub: 'Band 7.5+ speaking & mock tests', query: 'ielts', icon: 'ðŸŽ¯' },
-                    { id: 'accent', label: 'Accent Reduction', sub: 'Neutral pronunciation & clarity', query: 'accent', icon: 'ðŸ—£ï¸' },
-                    { id: 'business', label: 'Business English', sub: 'Corporate emails, pitches & interviews', query: 'business', icon: 'ðŸ’¼' },
-                    { id: 'speaking', label: 'Daily Fluency', sub: 'Casual conversation & speaking confidence', query: 'speaking', icon: 'ðŸ’¬' },
-                    { id: 'interview', label: 'Interview Coaching', sub: 'Job & visa mock interviews', query: 'interview', icon: 'ðŸŽ¯' },
-                    { id: 'english', label: 'Cambridge Certified', sub: 'Structured grammar & spoken practice', query: 'english', icon: 'âš¡' }
+                    { id: 'ielts', label: 'IELTS & TOEFL Prep', sub: 'Band 7.5+ speaking & mock tests', query: 'ielts', icon: '🎯' },
+                    { id: 'accent', label: 'Accent Reduction', sub: 'Neutral pronunciation & clarity', query: 'accent', icon: '🗣️' },
+                    { id: 'business', label: 'Business English', sub: 'Corporate emails, pitches & interviews', query: 'business', icon: '💼' },
+                    { id: 'speaking', label: 'Daily Fluency', sub: 'Casual conversation & speaking confidence', query: 'speaking', icon: '💬' },
+                    { id: 'interview', label: 'Interview Coaching', sub: 'Job & visa mock interviews', query: 'interview', icon: '🎯' },
+                    { id: 'english', label: 'Cambridge Certified', sub: 'Structured grammar & spoken practice', query: 'english', icon: '⚡' }
                 ]
             },
             writers: {
-                badge: 'âœï¸ Scriptwriter & Copy Specialties',
+                badge: '✍️ Scriptwriter & Copy Specialties',
                 items: [
-                    { id: 'script', label: 'YouTube Video Scripts', sub: 'Retention storytelling, hooks & outlines', query: 'script', icon: 'ðŸ“º' },
-                    { id: 'copy', label: 'Social Ad Copy & UGC', sub: 'Converting hooks for TikTok & Meta ads', query: 'copy', icon: 'ðŸ“±' },
-                    { id: 'seo', label: 'SEO Blog Posts & Guides', sub: 'Keyword-ranked articles & pillar posts', query: 'seo', icon: 'ðŸ“°' },
-                    { id: 'social', label: 'Social Media Captions', sub: 'Carousel slides, X threads & posts', query: 'social', icon: 'ðŸ’¬' },
-                    { id: 'email', label: 'Email Newsletters', sub: 'High open-rate subject lines & sequences', query: 'email', icon: 'ðŸ“§' },
-                    { id: 'express', label: '24h Rush Scripts', sub: 'Urgent same-day turnaround copy', query: '24', icon: 'âš¡' }
+                    { id: 'script', label: 'YouTube Video Scripts', sub: 'Retention storytelling, hooks & outlines', query: 'script', icon: '📺' },
+                    { id: 'copy', label: 'Social Ad Copy & UGC', sub: 'Converting hooks for TikTok & Meta ads', query: 'copy', icon: '📱' },
+                    { id: 'seo', label: 'SEO Blog Posts & Guides', sub: 'Keyword-ranked articles & pillar posts', query: 'seo', icon: '📰' },
+                    { id: 'social', label: 'Social Media Captions', sub: 'Carousel slides, X threads & posts', query: 'social', icon: '💬' },
+                    { id: 'email', label: 'Email Newsletters', sub: 'High open-rate subject lines & sequences', query: 'email', icon: '📧' },
+                    { id: 'express', label: '24h Rush Scripts', sub: 'Urgent same-day turnaround copy', query: '24', icon: '⚡' }
                 ]
             }
         };
@@ -3486,13 +3486,13 @@ function BuyerDashboard() {
             <!-- Clarification & Mode Substrip -->
             <div class="mode-bar-substrip">
                 <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                    <span class="mode-badge-pill mode-badge-buyer">ðŸ›ï¸ Buyer Mode</span>
+                    <span class="mode-badge-pill mode-badge-buyer">🛍️ Buyer Mode</span>
                     <span style="font-size: 0.84rem; color: var(--text-secondary);">
                         Browse verified creators, chat before booking, and hire with 100% Escrow Protection.
                     </span>
                 </div>
                 <button type="button" class="btn-switch-mode" onclick="toggleUserMode()">
-                    ðŸ’¼ Switch to Provider Mode
+                    💼 Switch to Provider Mode
                 </button>
             </div>
 
@@ -3503,7 +3503,7 @@ function BuyerDashboard() {
                     <div class="card" style="margin-bottom: 24px; border-left: 4px solid var(--accent); padding: 18px;">
                         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 12px;">
                             <div>
-                                <strong style="font-size: 1rem; color: var(--text-primary);">âš¡ You have ${activePurchases.length} active order${activePurchases.length > 1 ? 's' : ''} in progress</strong>
+                                <strong style="font-size: 1rem; color: var(--text-primary);">⚡ You have ${activePurchases.length} active order${activePurchases.length > 1 ? 's' : ''} in progress</strong>
                                 <div style="font-size: 0.8125rem; color: var(--text-secondary);">Creators are currently preparing your deliverables.</div>
                             </div>
                             <button class="btn btn-secondary btn-sm" onclick="router('/bookings')">View All Orders</button>
@@ -3514,11 +3514,11 @@ function BuyerDashboard() {
                                 return `
                                 <div style="background: var(--bg-hover); padding: 12px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; gap: 8px;">
                                     <div>
-                                        <div style="font-weight: 700; font-size: 0.9rem;">Order #${b.id} â€¢ ${escapeHTML(b.provider_name || 'Creator')}</div>
+                                        <div style="font-weight: 700; font-size: 0.9rem;">Order #${b.id} • ${escapeHTML(b.provider_name || 'Creator')}</div>
                                         <div style="font-size: 0.78rem; color: var(--text-secondary);">${dl.text}</div>
                                     </div>
                                     <div style="display: flex; gap: 6px;">
-                                        <button class="btn btn-secondary btn-sm" style="padding: 4px 10px; font-size: 0.75rem;" onclick="openPreBookingChat(${b.provider_id}, '${escapeJs(b.provider_name || '')}')">ðŸ’¬ Chat</button>
+                                        <button class="btn btn-secondary btn-sm" style="padding: 4px 10px; font-size: 0.75rem;" onclick="openPreBookingChat(${b.provider_id}, '${escapeJs(b.provider_name || '')}')">💬 Chat</button>
                                         <button class="btn btn-primary btn-sm" style="padding: 4px 10px; font-size: 0.75rem;" onclick="router('/bookings')">Details</button>
                                     </div>
                                 </div>
@@ -3552,12 +3552,12 @@ function BuyerDashboard() {
                                     autocomplete="off"
                                 />
                                 ${searchQuery ? `
-                                    <button type="button" class="buyer-search-clear-btn" onclick="window.__clearBuyerSearch()" title="Clear search">âœ•</button>
+                                    <button type="button" class="buyer-search-clear-btn" onclick="window.__clearBuyerSearch()" title="Clear search">✕</button>
                                 ` : ''}
                             </div>
                             <button type="submit" class="btn btn-primary buyer-search-btn buyer-search-btn-blinking" title="Click to search or explore options">
                                 <span class="search-btn-beacon"></span>
-                                <span class="search-btn-icon-sparkle">âœ¨</span>
+                                <span class="search-btn-icon-sparkle">✨</span>
                                 <span>Search</span>
                             </button>
                         </form>
@@ -3593,11 +3593,11 @@ function BuyerDashboard() {
                         <div class="editor-slider-header">
                             <div style="display: flex; align-items: center; gap: 8px;">
                                 <span class="editor-slider-badge">${activeSliderConfig.badge}</span>
-                                <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 500;">ðŸ–±ï¸ Scroll with mouse wheel or drag to slide</span>
+                                <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 500;">🖱️ Scroll with mouse wheel or drag to slide</span>
                             </div>
                             <div class="editor-slider-arrows">
-                                <button type="button" class="slider-arrow-btn" onclick="const el=document.getElementById('category-popular-slider'); if(el) el.scrollBy({ left: -220, behavior: 'smooth' });" title="Slide Left">â€¹</button>
-                                <button type="button" class="slider-arrow-btn" onclick="const el=document.getElementById('category-popular-slider'); if(el) el.scrollBy({ left: 220, behavior: 'smooth' });" title="Slide Right">â€º</button>
+                                <button type="button" class="slider-arrow-btn" onclick="const el=document.getElementById('category-popular-slider'); if(el) el.scrollBy({ left: -220, behavior: 'smooth' });" title="Slide Left">‹</button>
+                                <button type="button" class="slider-arrow-btn" onclick="const el=document.getElementById('category-popular-slider'); if(el) el.scrollBy({ left: 220, behavior: 'smooth' });" title="Slide Right">›</button>
                             </div>
                         </div>
 
@@ -3627,7 +3627,7 @@ function BuyerDashboard() {
                                     >
                                         <div class="slide-card-top">
                                             <span class="slide-card-icon">${getTypeIconSvg(opt.id, opt.icon, 28)}</span>
-                                            <span class="slide-card-arrow">â†’</span>
+                                            <span class="slide-card-arrow">→</span>
                                         </div>
                                         <div class="slide-card-title">${opt.label}</div>
                                         <div class="slide-card-sub">${opt.sub}</div>
@@ -3643,12 +3643,12 @@ function BuyerDashboard() {
                 <!-- Talent Showcase Header -->
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 8px;">
                     <div class="section-title" style="margin: 0; font-size: 1.15rem; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
-                        <span>âœ¨</span> Available Talent &amp; Services (${totalItems})
+                        <span>✨</span> Available Talent &amp; Services (${totalItems})
                     </div>
                     <div style="display: flex; align-items: center; gap: 12px;">
-                        <span style="font-size: 0.8125rem; color: var(--text-muted); font-weight: 600;">ðŸ›¡ï¸ 100% Escrow Protected</span>
+                        <span style="font-size: 0.8125rem; color: var(--text-muted); font-weight: 600;">🛡️ 100% Escrow Protected</span>
                         <button class="btn btn-secondary btn-sm" onclick="router('/providers')" style="padding: 5px 12px; font-size: 0.78rem;">
-                            Browse Full Directory â†’
+                            Browse Full Directory →
                         </button>
                     </div>
                 </div>
@@ -3656,7 +3656,7 @@ function BuyerDashboard() {
                 <!-- Talent Showcase Grid or Empty State -->
                 ${totalItems === 0 ? `
                     <div class="card" style="padding: 40px 24px; text-align: center; border: 1.5px dashed var(--border); border-radius: var(--radius);">
-                        <div style="font-size: 2.8rem; margin-bottom: 12px;">ðŸ”</div>
+                        <div style="font-size: 2.8rem; margin-bottom: 12px;">🔍</div>
                         <h4 style="font-size: 1.15rem; font-weight: 800; margin-bottom: 6px; color: var(--text-primary);">No services matching your search</h4>
                         <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 20px; max-width: 440px; margin-left: auto; margin-right: auto;">
                             We couldn't find any creators matching "${escapeHTML(searchQuery)}". Try clearing your keywords or exploring our full talent directory.
@@ -3671,7 +3671,7 @@ function BuyerDashboard() {
                         <!-- 1. Render Specific Service Packages (if any) -->
                         ${filteredPackages.map(pkg => {
                             const isTutor = (pkg.niche && pkg.niche.includes('tutor')) || (pkg.title && pkg.title.toLowerCase().includes('english'));
-                            const nicheBadge = isTutor ? 'ðŸ—£ï¸ English Tutor' : 'ðŸŽ¬ Video Editing';
+                            const nicheBadge = isTutor ? '🗣️ English Tutor' : '🎬 Video Editing';
                             const providerName = pkg.provider_name || 'Verified Creator';
                             const initial = providerName.charAt(0).toUpperCase();
 
@@ -3680,7 +3680,7 @@ function BuyerDashboard() {
                                 <!-- 16:9 Thumbnail -->
                                 <div class="fiverr-gig-thumb-wrap" onclick="openFiverrPortfolioModal(${pkg.provider_id})">
                                     <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:white; font-size:2.5rem; background: linear-gradient(135deg, #1e1b4b, #312e81);">
-                                        ${isTutor ? 'ðŸ—£ï¸' : 'ðŸŽ¬'}
+                                        ${isTutor ? '🗣️' : '🎬'}
                                     </div>
                                     <span class="fiverr-gig-badge">${nicheBadge}</span>
                                 </div>
@@ -3693,7 +3693,7 @@ function BuyerDashboard() {
                                             <div class="fiverr-gig-avatar">${initial}</div>
                                             <div style="overflow: hidden; flex: 1;">
                                                 <div class="fiverr-gig-creator-name" title="${escapeHTML(providerName)}">${escapeHTML(providerName)}</div>
-                                                <div style="font-size:0.63rem; color: var(--success); font-weight: 600;">ðŸŸ¢ Online now</div>
+                                                <div style="font-size:0.63rem; color: var(--success); font-weight: 600;">🟢 Online now</div>
                                             </div>
                                             <span class="fiverr-gig-level-badge">${nicheBadge.split(' ')[0]}</span>
                                         </div>
@@ -3703,10 +3703,10 @@ function BuyerDashboard() {
 
                                         <!-- Rating -->
                                         <div class="fiverr-gig-rating-row">
-                                            <span class="fiverr-gig-star">â˜…</span>
+                                            <span class="fiverr-gig-star">★</span>
                                             <span class="fiverr-gig-rating-val">${pkg.rating ? pkg.rating.toFixed(1) : '5.0'}</span>
                                             <span class="fiverr-gig-reviews">(${pkg.total_reviews || 0})</span>
-                                            <span style="color: var(--text-muted); margin: 0 3px;">Â·</span>
+                                            <span style="color: var(--text-muted); margin: 0 3px;">·</span>
                                             <span style="color: var(--accent); font-weight: 600; font-size: 0.65rem;">100% Escrow</span>
                                         </div>
 
@@ -3721,13 +3721,13 @@ function BuyerDashboard() {
                                     <div class="fiverr-gig-footer">
                                         <div class="fiverr-gig-price-display">
                                             <span class="fiverr-gig-price-label">Starting at</span>
-                                            <span class="fiverr-gig-price-val">â‚¹${(pkg.price || 0).toLocaleString()}</span>
+                                            <span class="fiverr-gig-price-val">₹${(pkg.price || 0).toLocaleString()}</span>
                                         </div>
                                         <div style="display: flex; gap: 6px; align-items: center;">
-                                            <span class="fiverr-gig-delivery">âš¡ ${escapeHTML(pkg.turnaround || '24h')}</span>
+                                            <span class="fiverr-gig-delivery">⚡ ${escapeHTML(pkg.turnaround || '24h')}</span>
                                             <div style="display: flex; gap: 6px;">
                                                 <button class="btn btn-outline btn-sm" style="flex: 0 0 auto; padding: 5px 10px; font-weight: 700; font-size: 0.7rem;" onclick="event.stopPropagation(); openPreBookingChat(${pkg.provider_id}, '${escapeJs(providerName)}')">
-                                                    ðŸ’¬ Chat
+                                                    💬 Chat
                                                 </button>
                                                 <button class="btn btn-primary btn-sm" style="flex: 0 0 auto; padding: 5px 12px; font-weight: 700; font-size: 0.7rem;" onclick="event.stopPropagation(); selectProvider(${pkg.provider_id}, ${pkg.id})">
                                                     Order
@@ -3744,7 +3744,7 @@ function BuyerDashboard() {
                         ${filteredProviders.map(pr => {
                             const isTutor = pr.niche === 'tutors';
                             const isWriter = pr.niche === 'writers';
-                            const nicheBadge = isTutor ? 'ðŸ—£ï¸ English Tutor' : (isWriter ? 'âœï¸ Copywriter' : 'ðŸŽ¬ Video Editing');
+                            const nicheBadge = isTutor ? '🗣️ English Tutor' : (isWriter ? '✍️ Copywriter' : '🎬 Video Editing');
                             const initial = (pr.name || 'C').charAt(0).toUpperCase();
                             const startPrice = pr.starting_price || (isTutor ? 799 : (isWriter ? 1199 : 1499));
                             const turnaround = pr.response_time || '24 hours';
@@ -3761,9 +3761,9 @@ function BuyerDashboard() {
                                             <div>
                                                 <div style="font-weight: 700; font-size: 0.92rem; color: var(--text-primary); display: flex; align-items: center; gap: 4px;">
                                                     ${escapeHTML(pr.name)}
-                                                    <span title="Verified Talent" style="color: var(--accent); font-size: 0.8rem;">âœ“</span>
+                                                    <span title="Verified Talent" style="color: var(--accent); font-size: 0.8rem;">✓</span>
                                                 </div>
-                                                <div style="font-size: 0.72rem; color: var(--success); font-weight: 600;">ðŸŸ¢ Online now</div>
+                                                <div style="font-size: 0.72rem; color: var(--success); font-weight: 600;">🟢 Online now</div>
                                             </div>
                                         </div>
                                         <span class="badge badge-info" style="font-size: 0.7rem; padding: 4px 8px;">${nicheBadge}</span>
@@ -3775,19 +3775,19 @@ function BuyerDashboard() {
                                     </p>
 
                                     <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 10px;">
-                                        <span>âš¡ ${escapeHTML(turnaround)} turnaround</span>
-                                        <span style="color: var(--warning); font-weight: 700;">â˜… 5.0 (Verified)</span>
+                                        <span>⚡ ${escapeHTML(turnaround)} turnaround</span>
+                                        <span style="color: var(--warning); font-weight: 700;">★ 5.0 (Verified)</span>
                                     </div>
                                 </div>
 
                                 <div class="card-footer" style="background: var(--bg-hover); padding: 12px 16px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; gap: 8px;">
                                     <div>
                                         <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Starting at</div>
-                                        <div style="font-size: 1.25rem; font-weight: 800; color: var(--accent);">â‚¹${startPrice.toLocaleString()}</div>
+                                        <div style="font-size: 1.25rem; font-weight: 800; color: var(--accent);">₹${startPrice.toLocaleString()}</div>
                                     </div>
                                     <div style="display: flex; gap: 6px;">
                                         <button class="btn btn-secondary btn-sm" onclick="openPreBookingChat(${pr.id}, '${escapeJs(pr.name)}')" title="Message creator before ordering" style="padding: 6px 12px; font-weight: 700;">
-                                            ðŸ’¬ Chat
+                                            💬 Chat
                                         </button>
                                         <button class="btn btn-primary btn-sm" onclick="selectProvider(${pr.id})" style="padding: 6px 14px; font-weight: 700;">
                                             Hire Talent
@@ -3892,7 +3892,7 @@ function providerWelcomeCard(profile) {
                     </span>
                 </div>
                 <div style="font-size: 0.8125rem; color: var(--text-secondary); margin-top: 3px;">
-                    Creator &amp; Provider Command Center â€¢ 100% Escrow Protected â€¢ groovehub.com/@${currentUser?.username || 'creator'}
+                    Creator &amp; Provider Command Center • 100% Escrow Protected • groovehub.com/@${currentUser?.username || 'creator'}
                 </div>
             </div>
             <span class="badge badge-success" style="font-weight: 700; padding: 6px 12px; font-size: 0.8rem;">PROVIDER</span>
@@ -3905,27 +3905,27 @@ function providerWelcomeCard(profile) {
             </div>
             <div style="background: var(--bg-hover); padding: 16px; border-radius: var(--radius-sm); border: 1px solid var(--border);">
                 <div style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 6px;">Earnings (This Month)</div>
-                <div style="font-size: 1.85rem; font-weight: 800; color: var(--success); line-height: 1;">â‚¹${(profile?.monthly_earnings || 0).toLocaleString()}</div>
+                <div style="font-size: 1.85rem; font-weight: 800; color: var(--success); line-height: 1;">₹${(profile?.monthly_earnings || 0).toLocaleString()}</div>
                 <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 4px;">Net provider payout</div>
             </div>
             <div style="grid-column: span 2; background: var(--bg-hover); padding: 16px; border-radius: var(--radius-sm); border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                 <div>
                     <div style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 4px;">Rating &amp; Reputation</div>
                     <div style="font-size: 1.4rem; font-weight: 800; color: var(--warning); display: flex; align-items: center; gap: 6px;">
-                        <span>â­</span>
+                        <span>⭐</span>
                         <span>${profile?.rating ? Number(profile.rating).toFixed(1) : '5.0'}</span>
                         <span style="font-size: 0.8125rem; font-weight: 500; color: var(--text-secondary); margin-left: 4px;">(${profile?.review_count || 0} reviews)</span>
                     </div>
                 </div>
                 <div style="font-size: 0.8125rem; color: var(--text-secondary); text-align: right;">
-                    Guaranteed 80% Payout â€¢ Direct Bank Transfer
+                    Guaranteed 80% Payout • Direct Bank Transfer
                 </div>
             </div>
         </div>
         <div class="card-footer" style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px;">
-            <button class="btn btn-primary" onclick="setSettingsTab('portfolio'); router('/settings');" style="flex: 1; min-width: 150px;">ðŸ“ Upload Portfolios</button>
+            <button class="btn btn-primary" onclick="setSettingsTab('portfolio'); router('/settings');" style="flex: 1; min-width: 150px;">📁 Upload Portfolios</button>
             <button class="btn btn-secondary" onclick="router('/packages')" style="flex: 1; min-width: 140px;">Manage Packages</button>
-            <button class="btn btn-secondary" onclick="router('/payments')" style="flex: 1; min-width: 140px;">ðŸ’³ Earnings &amp; Payouts</button>
+            <button class="btn btn-secondary" onclick="router('/payments')" style="flex: 1; min-width: 140px;">💳 Earnings &amp; Payouts</button>
             <button class="btn btn-secondary" onclick="router('/profile')" style="flex: 1; min-width: 120px;">Edit Profile</button>
         </div>
     </div>`;
@@ -3942,7 +3942,7 @@ function buyerWelcomeCard(recentBookings = []) {
         <!-- Escrow Protection & Safe Communication Notice -->
         <div style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(16, 185, 129, 0.08) 100%); border: 1px solid rgba(99, 102, 241, 0.25); border-radius: 14px; padding: 18px 22px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
             <div style="display: flex; align-items: center; gap: 14px; max-width: 720px;">
-                <div style="width: 44px; height: 44px; border-radius: 12px; background: #6366f1; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; flex-shrink: 0; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);">ðŸ›¡ï¸</div>
+                <div style="width: 44px; height: 44px; border-radius: 12px; background: #6366f1; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; flex-shrink: 0; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);">🛡️</div>
                 <div>
                     <div style="font-weight: 800; font-size: 1.05rem; color: var(--text-primary); margin-bottom: 3px;">
                         100% Escrow Protection & Direct In-App Chat Active
@@ -3954,33 +3954,33 @@ function buyerWelcomeCard(recentBookings = []) {
             </div>
             <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
                 <button class="btn btn-primary" onclick="router('/')">+ Hire Video Editor / Coach</button>
-                <button class="btn btn-secondary" onclick="router('/payments')">ðŸ’³ Escrow Vault</button>
+                <button class="btn btn-secondary" onclick="router('/payments')">💳 Escrow Vault</button>
             </div>
         </div>
 
         <!-- 4-Metric Command Center Bar -->
         <div class="grid grid-4" style="margin-bottom: 24px;">
             <div class="card" style="padding: 18px; border-left: 4px solid var(--accent);">
-                <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">ðŸ“¦ Total Bookings</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">📦 Total Bookings</div>
                 <div style="font-size: 1.75rem; font-weight: 800; color: var(--text-primary); margin-top: 4px;">${list.length}</div>
                 <div style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 2px;">Projects ordered</div>
             </div>
 
             <div class="card" style="padding: 18px; border-left: 4px solid #3b82f6;">
-                <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">âš¡ In Progress</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">⚡ In Progress</div>
                 <div style="font-size: 1.75rem; font-weight: 800; color: #3b82f6; margin-top: 4px;">${activeCount}</div>
                 <div style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 2px;">Creators editing now</div>
             </div>
 
             <div class="card" style="padding: 18px; border-left: 4px solid #f59e0b;">
-                <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">â³ Needs Approval</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">⏳ Needs Approval</div>
                 <div style="font-size: 1.75rem; font-weight: 800; color: #f59e0b; margin-top: 4px;">${deliveredCount}</div>
                 <div style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 2px;">Ready for your review</div>
             </div>
 
             <div class="card" style="padding: 18px; border-left: 4px solid #10b981;">
-                <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">ðŸ›¡ï¸ Held in Escrow</div>
-                <div style="font-size: 1.75rem; font-weight: 800; color: #10b981; margin-top: 4px;">â‚¹${escrowFunds.toLocaleString()}</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">🛡️ Held in Escrow</div>
+                <div style="font-size: 1.75rem; font-weight: 800; color: #10b981; margin-top: 4px;">₹${escrowFunds.toLocaleString()}</div>
                 <div style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 2px;">Protected money-back</div>
             </div>
         </div>
@@ -4031,8 +4031,8 @@ function providerSection(profile, recentPackages) {
                         <span class="badge ${pkg.status === 'approved' ? 'badge-success' : 'badge-warning'}">${pkg.status}</span>
                     </div>
                     <div class="card-body">
-                        <div class="price" style="color: var(--accent); font-weight: 800; font-size: 1.45rem; margin-bottom: 4px;">â‚¹${pkg.price.toLocaleString()}</div>
-                        <div class="price-range" style="color: var(--text-secondary); font-size: 0.8125rem;">${pkg.turnaround || '24 hours'} â€¢ ${pkg.revision_limit || 1} revision${(pkg.revision_limit || 1) > 1 ? 's' : ''}</div>
+                        <div class="price" style="color: var(--accent); font-weight: 800; font-size: 1.45rem; margin-bottom: 4px;">₹${pkg.price.toLocaleString()}</div>
+                        <div class="price-range" style="color: var(--text-secondary); font-size: 0.8125rem;">${pkg.turnaround || '24 hours'} • ${pkg.revision_limit || 1} revision${(pkg.revision_limit || 1) > 1 ? 's' : ''}</div>
                     </div>
                     <div class="card-footer" style="margin-top: 14px; padding-top: 12px;">
                         <button class="btn btn-secondary btn-sm" onclick="router('/packages')" style="width: 100%;">View All</button>
@@ -4074,10 +4074,10 @@ function buyerSection(recentBookings) {
                                 <div>
                                     <div style="font-weight: 800; font-size: 1rem; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
                                         <span>Booking #${booking.id}</span>
-                                        <span style="font-size: 0.75rem; font-weight: normal; color: var(--text-muted);">â€¢ ${new Date(booking.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
+                                        <span style="font-size: 0.75rem; font-weight: normal; color: var(--text-muted);">• ${new Date(booking.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
                                     </div>
                                     <div style="font-size: 0.8125rem; color: var(--accent); font-weight: 600; margin-top: 3px;">
-                                        ðŸ‘¤ ${providerName}
+                                        👤 ${providerName}
                                     </div>
                                 </div>
                                 <span class="badge ${getBookingBadge(booking.status)}">${booking.status.replace('_', ' ')}</span>
@@ -4085,7 +4085,7 @@ function buyerSection(recentBookings) {
 
                             <!-- Package Title -->
                             <div style="font-weight: 700; font-size: 0.9375rem; color: var(--text-primary); margin-bottom: 8px;">
-                                ðŸ“¦ ${pkgTitle}
+                                📦 ${pkgTitle}
                             </div>
 
                             <!-- PROMINENT DEADLINE COUNTDOWN -->
@@ -4106,14 +4106,14 @@ function buyerSection(recentBookings) {
                             <!-- Escrow & Price info -->
                             <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 8px; margin-bottom: 14px;">
                                 <span style="font-size: 0.78rem; color: var(--text-secondary); display: flex; align-items: center; gap: 5px;">
-                                    <span>ðŸ”’</span> 100% In Escrow
+                                    <span>🔒</span> 100% In Escrow
                                 </span>
-                                <span style="font-weight: 800; font-size: 1rem; color: #10b981;">â‚¹${booking.total_amount.toLocaleString()}</span>
+                                <span style="font-weight: 800; font-size: 1rem; color: #10b981;">₹${booking.total_amount.toLocaleString()}</span>
                             </div>
 
                             ${booking.delivery_file_link ? `
                                 <div style="padding: 10px 12px; background: rgba(99, 102, 241, 0.08); border: 1px solid var(--accent); border-radius: 8px; margin-bottom: 12px;">
-                                    <div style="font-size: 0.75rem; font-weight: 700; color: var(--accent); margin-bottom: 4px;">ðŸ“‚ Delivered Files:</div>
+                                    <div style="font-size: 0.75rem; font-weight: 700; color: var(--accent); margin-bottom: 4px;">📂 Delivered Files:</div>
                                     <a href="${sanitizeUrl(booking.delivery_file_link)}" target="_blank" rel="noopener noreferrer" style="color: var(--accent); font-size: 0.8125rem; font-weight: 600; text-decoration: underline; word-break: break-all;">
                                         ${escapeHTML(booking.delivery_file_link)}
                                     </a>
@@ -4123,23 +4123,23 @@ function buyerSection(recentBookings) {
                             <!-- Action Buttons -->
                             <div style="display: flex; flex-direction: column; gap: 8px;">
                                 <button class="btn btn-secondary btn-sm" onclick="openBookingChat(${booking.id}, '${providerName}')" style="font-weight: 600;">
-                                    ðŸ’¬ Chat with ${providerName}
+                                    💬 Chat with ${providerName}
                                 </button>
 
                                 ${(booking.status === 'delivered' || booking.status === 'pending_approval') ? `
                                     <div style="display: flex; gap: 8px;">
                                         <button class="btn btn-success btn-sm" style="flex: 1; font-weight: 700;" onclick="approveBooking(${booking.id})">
-                                            âœ… Approve & Release
+                                            ✅ Approve & Release
                                         </button>
                                         <button class="btn btn-danger btn-sm" style="flex: 1;" onclick="disputeBooking(${booking.id})">
-                                            âš ï¸ Revision / Dispute
+                                            ⚠️ Revision / Dispute
                                         </button>
                                     </div>
                                 ` : ''}
 
                                 ${(booking.status === 'pending_payment' || booking.status === 'pending') ? `
                                     <button class="btn btn-primary btn-sm" onclick="PaymentsPortal.payPendingOrder(${booking.id}, ${booking.total_amount})">
-                                        ðŸ’³ Secure Payment in Escrow
+                                        💳 Secure Payment in Escrow
                                     </button>
                                 ` : ''}
                             </div>
@@ -4216,7 +4216,7 @@ function NotFound() {
         ${renderAppHeader(window.location.pathname)}
         <div class="main" style="padding: 40px 16px;">
             <div class="card" style="max-width: 480px; margin: 0 auto; text-align: center; padding: 36px 24px; box-shadow: var(--shadow-md);">
-                <div style="font-size: 3rem; margin-bottom: 12px;">ðŸ”</div>
+                <div style="font-size: 3rem; margin-bottom: 12px;">🔍</div>
                 <h3 style="font-size: 1.4rem; font-weight: 800; color: var(--text-primary); margin-bottom: 8px;">Page Not Found</h3>
                 <p style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 24px;">The page you are looking for doesn't exist or may have been moved.</p>
                 <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
@@ -4306,7 +4306,7 @@ function Settings() {
             });
             localStorage.setItem('current_user', JSON.stringify(currentUser));
             if (currentUser && currentUser.is_verified === false) {
-                showToast('Email changed â€” please verify your new address before your next sign-in.', 'info');
+                showToast('Email changed — please verify your new address before your next sign-in.', 'info');
                 try { sessionStorage.removeItem('pending_verification'); } catch (_) {}
                 redirected = true;
                 router('/verify-email' + (currentUser.email ? `?email=${encodeURIComponent(currentUser.email)}` : ''));
@@ -4378,7 +4378,7 @@ function Settings() {
                         else typeSelect.value = 'video';
                     }
 
-                    if (statusText) statusText.textContent = 'âœ… Upload complete!';
+                    if (statusText) statusText.textContent = '✅ Upload complete!';
                     if (progressBar) progressBar.style.width = '100%';
                     if (progressPct) progressPct.textContent = '100%';
                     showToast('Media uploaded successfully! Click "Add to My Showcase" below.', 'success');
@@ -4392,13 +4392,13 @@ function Settings() {
                     errText = errRes.detail || errText;
                 } catch (_) {}
                 showToast(errText, 'error');
-                if (statusText) statusText.textContent = 'âŒ Upload failed';
+                if (statusText) statusText.textContent = '❌ Upload failed';
             }
         };
 
         xhr.onerror = () => {
             showToast('Network error while uploading 4K file', 'error');
-            if (statusText) statusText.textContent = 'âŒ Network error';
+            if (statusText) statusText.textContent = '❌ Network error';
         };
 
         xhr.send(formData);
@@ -4631,7 +4631,7 @@ function Settings() {
         return el`<div>
             ${renderAppHeader('/settings')}
             <div class="main">
-                <!-- Profile Avatar Card â€” shown for all users -->
+                <!-- Profile Avatar Card — shown for all users -->
                 <div style="margin-bottom: 20px;">
                     <div style="display: flex; align-items: center; gap: 16px; padding: 16px 20px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow);">
                         <div style="position: relative; flex-shrink: 0;">
@@ -4646,18 +4646,18 @@ function Settings() {
                                 ${currentUser?.username ? `<span style="font-size:0.75rem;color:var(--text-muted);">@${escapeHTML(currentUser.username)}</span>` : ''}
                             </div>
                             <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px; display: flex; align-items: center; gap: 6px;">
-                                <span>ðŸ“§ ${currentUser?.email || 'â€”'}</span>
-                                ${currentUser?.phone ? `<span>ðŸ“± ${currentUser.phone}</span>` : ''}
+                                <span>📧 ${currentUser?.email || '—'}</span>
+                                ${currentUser?.phone ? `<span>📱 ${currentUser.phone}</span>` : ''}
                             </div>
                             <div style="margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap;">
                                 <button class="btn btn-outline btn-sm" onclick="openProfileIconPicker()" style="font-weight: 600;">
-                                    ðŸ–¼ï¸ Change Profile Photo
+                                    🖼️ Change Profile Photo
                                 </button>
                                 <button class="btn btn-primary btn-sm" onclick="router('/profile')" style="font-weight: 600;">
-                                    âœï¸ Edit Profile
+                                    ✏️ Edit Profile
                                 </button>
-                                ${currentUser?.user_type === 'PROVIDER' ? `<button class="btn btn-secondary btn-sm" onclick="router('/packages')" style="font-weight: 600;">ðŸ“¦ Manage Packages</button>` : ''}
-                                ${currentUser?.user_type !== 'ADMIN' ? `<button class="btn btn-secondary btn-sm" onclick="toggleUserMode()" style="font-weight: 600;">${currentUser?.user_type === 'PROVIDER' ? 'ðŸ›ï¸ Switch to Buyer' : 'ðŸ’¼ Switch to Provider'}</button>` : ''}
+                                ${currentUser?.user_type === 'PROVIDER' ? `<button class="btn btn-secondary btn-sm" onclick="router('/packages')" style="font-weight: 600;">📦 Manage Packages</button>` : ''}
+                                ${currentUser?.user_type !== 'ADMIN' ? `<button class="btn btn-secondary btn-sm" onclick="toggleUserMode()" style="font-weight: 600;">${currentUser?.user_type === 'PROVIDER' ? '🛍️ Switch to Buyer' : '💼 Switch to Provider'}</button>` : ''}
                             </div>
                         </div>
                     </div>
@@ -4674,31 +4674,31 @@ function Settings() {
                 <!-- Settings Tabs -->
                 <div class="tabs" style="margin-bottom: 20px; overflow-x: auto; white-space: nowrap;">
                     <button type="button" class="tab ${activeSettingsTab === 'account' ? 'active' : ''}" onclick="setSettingsTab('account')">
-                        ðŸ‘¤ Account
+                        👤 Account
                     </button>
                     ${isProvider ? `
                         <button type="button" class="tab ${activeSettingsTab === 'portfolio' ? 'active' : ''}" onclick="setSettingsTab('portfolio')">
-                            ðŸ“ Portfolio &amp; Uploads (${portfolioItems.length})
+                            📁 Portfolio &amp; Uploads (${portfolioItems.length})
                         </button>
                         <button type="button" class="tab ${activeSettingsTab === 'profile' ? 'active' : ''}" onclick="setSettingsTab('profile')">
-                            ðŸŽ¨ Specialty &amp; Skills
+                            🎨 Specialty &amp; Skills
                         </button>
                     ` : `
                         <button type="button" class="tab ${activeSettingsTab === 'bio' ? 'active' : ''}" onclick="setSettingsTab('bio')">
-                            ðŸ“ About Me
+                            📝 About Me
                         </button>
                     `}
                     <button type="button" class="tab ${activeSettingsTab === 'bank' ? 'active' : ''}" onclick="setSettingsTab('bank')">
-                        ðŸ¦ Bank &amp; Payouts
+                        🏦 Bank &amp; Payouts
                     </button>
                     <button type="button" class="tab ${activeSettingsTab === 'security' ? 'active' : ''}" onclick="setSettingsTab('security')">
-                        ðŸ”’ Security
+                        🔒 Security
                     </button>
                     <button type="button" class="tab ${activeSettingsTab === 'commission' ? 'active' : ''}" onclick="setSettingsTab('commission')">
-                        ðŸ’° Commission &amp; Escrow
+                        💰 Commission &amp; Escrow
                     </button>
                     <button type="button" class="tab ${activeSettingsTab === 'preferences' ? 'active' : ''}" onclick="setSettingsTab('preferences')">
-                        ðŸŒ™ Display &amp; Theme
+                        🌙 Display &amp; Theme
                     </button>
                 </div>
 
@@ -4751,7 +4751,7 @@ function Settings() {
                         <form onsubmit="handleBioSave(event)">
                             <div class="form-group">
                                 <label class="form-label">Your Bio</label>
-                                <textarea class="form-textarea" id="setting-bio" rows="5" placeholder="Tell buyers and providers about yourself â€” what you're looking for, your preferences, your work style..." style="resize: vertical;">${profile?.bio || ''}</textarea>
+                                <textarea class="form-textarea" id="setting-bio" rows="5" placeholder="Tell buyers and providers about yourself — what you're looking for, your preferences, your work style..." style="resize: vertical;">${profile?.bio || ''}</textarea>
                                 <small style="color: var(--text-muted); font-size: 0.75rem; margin-top: 4px; display: block;">
                                     This bio is visible to providers when you book services. Share what you're looking for, your communication style, and any preferences.
                                 </small>
@@ -4773,7 +4773,7 @@ function Settings() {
                             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
                                 <div>
                                     <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--text-primary); margin-bottom: 4px; display: flex; align-items: center; gap: 8px;">
-                                        <span>ðŸŽ¨</span> Public Portfolio Showcase &amp; Work Uploads
+                                        <span>🎨</span> Public Portfolio Showcase &amp; Work Uploads
                                     </h3>
                                     <p style="font-size: 0.8125rem; color: var(--text-secondary); margin: 0; line-height: 1.45;">
                                         Upload your video showreels, client proof, IELTS teaching samples, or copywriting deliverables. Buyers see these when browsing your profile.
@@ -4781,7 +4781,7 @@ function Settings() {
                                 </div>
                                 <div style="display: flex; gap: 10px; align-items: center;">
                                     <button type="button" class="btn btn-secondary btn-sm" onclick="openFiverrPortfolioModal(${currentUser.id}, '${escapeHTML(currentUser.name)}')">
-                                        ðŸ‘ï¸ Preview Public Seller Profile
+                                        👁️ Preview Public Seller Profile
                                     </button>
                                 </div>
                             </div>
@@ -4791,7 +4791,7 @@ function Settings() {
                         <div class="card" style="padding: 24px;">
                             <div class="card-header" style="margin-bottom: 16px;">
                                 <div class="card-title" style="font-size: 1rem; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
-                                    <span>âž•</span> Add New Work Sample / Showcase Item
+                                    <span>➕</span> Add New Work Sample / Showcase Item
                                 </div>
                                 <span class="badge badge-info">1GB 4K Video Allowance</span>
                             </div>
@@ -4799,7 +4799,7 @@ function Settings() {
                             <!-- Direct 4K File Upload Dropzone -->
                             <div class="portfolio-upload-dropzone" style="border: 2px dashed var(--border); border-radius: 12px; padding: 22px; text-align: center; background: var(--bg-hover); cursor: pointer; margin-bottom: 18px; transition: all 0.2s ease;" onclick="document.getElementById('port-file-input').click()">
                                 <input type="file" id="port-file-input" style="display:none;" accept="video/*,image/*,audio/*" onchange="if(this.files[0]) handlePortfolioFileUpload(this.files[0])" />
-                                <div style="font-size: 2.2rem; margin-bottom: 6px;">ðŸ“¤</div>
+                                <div style="font-size: 2.2rem; margin-bottom: 6px;">📤</div>
                                 <div style="font-weight: 800; font-size: 0.98rem; color: var(--text-primary); margin-bottom: 4px;">Click to Upload 4K Video Reel / Image from Device</div>
                                 <div style="font-size: 0.8rem; color: var(--text-muted);">Supports MP4, MOV, MKV, WebM, PNG, JPG (up to 1GB 4K allowance with high-speed streaming)</div>
                                 <div id="port-upload-progress-wrap" style="display: none; margin-top: 14px; text-align: left; background: var(--bg-card); padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border);">
@@ -4823,10 +4823,10 @@ function Settings() {
                                     <div class="form-group">
                                         <label class="form-label">Media Type</label>
                                         <select class="form-select" id="port-media-type">
-                                            <option value="video">ðŸŽ¬ Video (4K Upload / YouTube / Reel)</option>
-                                            <option value="image">ðŸ–¼ï¸ Image (Thumbnails, Graphics, Designs)</option>
-                                            <option value="audio">ðŸŽ™ï¸ Audio (Podcast, Voiceover, Accent Clinic)</option>
-                                            <option value="link">ðŸ”— Link / Case Study (Notion, Drive, Medium)</option>
+                                            <option value="video">🎬 Video (4K Upload / YouTube / Reel)</option>
+                                            <option value="image">🖼️ Image (Thumbnails, Graphics, Designs)</option>
+                                            <option value="audio">🎙️ Audio (Podcast, Voiceover, Accent Clinic)</option>
+                                            <option value="link">🔗 Link / Case Study (Notion, Drive, Medium)</option>
                                         </select>
                                     </div>
                                     <div class="form-group">
@@ -4847,7 +4847,7 @@ function Settings() {
 
                                 <div style="display: flex; justify-content: flex-end; margin-top: 14px;">
                                     <button type="submit" class="btn btn-primary" style="padding: 10px 24px; font-weight: 700;">
-                                        âž• Add to My Showcase
+                                        ➕ Add to My Showcase
                                     </button>
                                 </div>
                             </form>
@@ -4857,13 +4857,13 @@ function Settings() {
                         <div class="card" style="padding: 24px;">
                             <div class="card-header" style="margin-bottom: 16px;">
                                 <div class="card-title" style="font-size: 1rem; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
-                                    <span>ðŸ“</span> Live Projects on Your Profile (${portfolioItems.length})
+                                    <span>📁</span> Live Projects on Your Profile (${portfolioItems.length})
                                 </div>
                             </div>
 
                             ${portfolioItems.length === 0 ? `
                                 <div style="text-align: center; padding: 40px 20px; border: 1.5px dashed var(--border); border-radius: var(--radius);">
-                                    <div style="font-size: 2.5rem; margin-bottom: 10px;">ðŸŽ¨</div>
+                                    <div style="font-size: 2.5rem; margin-bottom: 10px;">🎨</div>
                                     <h4 style="font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">No showcase projects added yet</h4>
                                     <p style="font-size: 0.8125rem; color: var(--text-secondary); max-width: 440px; margin: 0 auto 16px;">
                                         Creators who upload at least 2 video reels or work samples receive <strong>4x more client bookings</strong>. Add your first sample above!
@@ -4888,7 +4888,7 @@ function Settings() {
                                                     </div>
                                                 ` : `
                                                     <div style="height: 90px; display: flex; align-items: center; justify-content: center; background: var(--bg-card); border-radius: 8px; margin-bottom: 10px; font-size: 2rem;">
-                                                        ${item.media_type === 'video' ? 'ðŸŽ¬' : item.media_type === 'image' ? 'ðŸ–¼ï¸' : item.media_type === 'audio' ? 'ðŸŽ™ï¸' : 'ðŸ”—'}
+                                                        ${item.media_type === 'video' ? '🎬' : item.media_type === 'image' ? '🖼️' : item.media_type === 'audio' ? '🎙️' : '🔗'}
                                                     </div>
                                                 `}
                                                 <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 6px;">
@@ -4901,10 +4901,10 @@ function Settings() {
                                             </div>
                                             <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding-top: 8px; margin-top: 8px;">
                                                 <a href="${escapeHTML(item.media_url)}" target="_blank" rel="noopener noreferrer" style="font-size: 0.75rem; color: var(--accent); font-weight: 600; text-decoration: none;">
-                                                    Open / Download â†—
+                                                    Open / Download ↗
                                                 </a>
                                                 <button type="button" class="btn btn-secondary btn-sm" onclick="handleDeletePortfolioItem(${item.id})" style="color: var(--danger); border-color: rgba(239, 68, 68, 0.3); padding: 3px 8px; font-size: 0.72rem;">
-                                                    ðŸ—‘ï¸ Delete
+                                                    🗑️ Delete
                                                 </button>
                                             </div>
                                         </div>
@@ -4932,10 +4932,10 @@ function Settings() {
                                 <div class="form-group">
                                     <label class="form-label">Primary Category / Niche</label>
                                     <select class="form-select" id="setting-niche">
-                                        <option value="editors_animators" ${profile?.niche === 'editors_animators' ? 'selected' : ''}>ðŸŽ¬ Video Editors &amp; Animators</option>
-                                        <option value="tutors" ${profile?.niche === 'tutors' ? 'selected' : ''}>ðŸ—£ï¸ English Tutors &amp; Coaches</option>
-                                        <option value="writers" ${profile?.niche === 'writers' ? 'selected' : ''}>âœï¸ Writers &amp; Copywriters</option>
-                                        <option value="social_media" ${profile?.niche === 'social_media' ? 'selected' : ''}>ðŸ“± Social Media Managers</option>
+                                        <option value="editors_animators" ${profile?.niche === 'editors_animators' ? 'selected' : ''}>🎬 Video Editors &amp; Animators</option>
+                                        <option value="tutors" ${profile?.niche === 'tutors' ? 'selected' : ''}>🗣️ English Tutors &amp; Coaches</option>
+                                        <option value="writers" ${profile?.niche === 'writers' ? 'selected' : ''}>✍️ Writers &amp; Copywriters</option>
+                                        <option value="social_media" ${profile?.niche === 'social_media' ? 'selected' : ''}>📱 Social Media Managers</option>
                                     </select>
                                 </div>
 
@@ -4953,10 +4953,10 @@ function Settings() {
                                     
                                     <div style="margin-top: 8px;">
                                         <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600; margin-bottom: 6px;">
-                                            âš¡ Quick Add Popular Skills (Click to add):
+                                            ⚡ Quick Add Popular Skills (Click to add):
                                         </div>
                                         <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-                                            ${['ðŸŽ¬ Video Editing', 'ðŸŽ¨ Color Grading', 'âœ¨ Motion Graphics', 'ðŸ“± Reels & Shorts', 'ðŸ”Š Sound Design', 'ðŸŽžï¸ 4K Editing', 'ðŸ—£ï¸ Spoken English', 'âœï¸ Scriptwriting'].map(tag => `
+                                            ${['🎬 Video Editing', '🎨 Color Grading', '✨ Motion Graphics', '📱 Reels & Shorts', '🔊 Sound Design', '🎞️ 4K Editing', '🗣️ Spoken English', '✍️ Scriptwriting'].map(tag => `
                                                 <button type="button" class="btn btn-secondary btn-sm" onclick="window.__addSkillTag('${tag.replace(/^[^\w\s]+\s*/, '')}')" style="padding: 3px 8px; font-size: 0.72rem; border-radius: 999px;">
                                                     + ${tag}
                                                 </button>
@@ -4997,7 +4997,7 @@ function Settings() {
 
                                 <div style="display: flex; justify-content: flex-end; margin-top: 18px;">
                                     <button type="submit" class="btn btn-primary" style="padding: 10px 24px; font-weight: 700;">
-                                        ðŸ’¾ Save Profile &amp; Specialty
+                                        💾 Save Profile &amp; Specialty
                                     </button>
                                 </div>
                             </form>
@@ -5006,17 +5006,17 @@ function Settings() {
                         <!-- Live Profile Card Preview -->
                         <div class="card" style="padding: 18px; border: 1.5px dashed var(--border); background: var(--bg-hover);">
                             <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
-                                <span>ðŸ‘ï¸</span> Public Marketplace Profile Preview
+                                <span>👁️</span> Public Marketplace Profile Preview
                             </div>
                             <div style="display: flex; gap: 14px; align-items: flex-start;">
                                 <div>${renderProfileAvatar(48)}</div>
                                 <div style="flex: 1; min-width: 0;">
                                     <div style="font-weight: 800; font-size: 1.05rem; color: var(--text-primary); display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
                                         <span>${escapeHTML(currentUser?.name || 'Your Name')}</span>
-                                        <span class="badge badge-primary" style="font-size: 0.68rem;">â˜… ${(profile?.rating || 5.0).toFixed(1)}</span>
+                                        <span class="badge badge-primary" style="font-size: 0.68rem;">★ ${(profile?.rating || 5.0).toFixed(1)}</span>
                                     </div>
                                     <div style="font-size: 0.78rem; color: var(--accent); font-weight: 700; margin-top: 2px;">
-                                        ${profile?.niche === 'tutors' ? 'ðŸ—£ï¸ English Tutor & Coach' : (profile?.niche === 'writers' ? 'âœï¸ Copywriter & Scriptwriter' : 'ðŸŽ¬ Video Editor & Animator')}
+                                        ${profile?.niche === 'tutors' ? '🗣️ English Tutor & Coach' : (profile?.niche === 'writers' ? '✍️ Copywriter & Scriptwriter' : '🎬 Video Editor & Animator')}
                                     </div>
                                     <div style="font-size: 0.8125rem; color: var(--text-secondary); line-height: 1.4; margin-top: 6px;">
                                         ${escapeHTML(profile?.bio || 'No bio provided yet. Add your headline above.')}
@@ -5062,14 +5062,14 @@ function Settings() {
                 ${activeSettingsTab === 'bank' ? `
                     <div class="card" style="max-width: 580px;">
                         <div class="card-header">
-                            <div class="card-title">${isAdmin ? 'ðŸ¦ Bank Account' : 'ðŸ¦ Provider Payout Account (80% Earnings)'}</div>
+                            <div class="card-title">${isAdmin ? '🏦 Bank Account' : '🏦 Provider Payout Account (80% Earnings)'}</div>
                             <span class="badge ${isAdmin ? 'badge-danger' : 'badge-success'}">${isAdmin ? 'Full Payout' : '80% Provider Payout'}</span>
                         </div>
                         <div class="card-body">
                             <div style="background: rgba(99, 102, 241, 0.08); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 16px; margin-bottom: 16px; font-size: 0.8125rem; color: var(--text-secondary);">
                                 ${isAdmin
-                    ? 'ðŸ“Œ <strong>Payment Routing:</strong> Funds are held securely in escrow until you approve delivery.'
-                    : 'ðŸ“Œ <strong>Direct Payout Routing:</strong> 80% of project funds are released to this bank account upon client approval.'}
+                    ? '📌 <strong>Payment Routing:</strong> Funds are held securely in escrow until you approve delivery.'
+                    : '📌 <strong>Direct Payout Routing:</strong> 80% of project funds are released to this bank account upon client approval.'}
                             </div>
                             <form onsubmit="handleBankSave(event)">
                                 <div class="form-group">
@@ -5100,7 +5100,7 @@ function Settings() {
                                 ${isAdmin ? `
                                     <div class="divider" style="margin: 20px 0;"></div>
                                     <h4 style="font-size: 0.9375rem; font-weight: 700; margin-bottom: 12px; color: var(--text-primary);">
-                                        âš¡ Live Payment Gateway & OAuth Credentials
+                                        ⚡ Live Payment Gateway & OAuth Credentials
                                     </h4>
                                     <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 14px;">
                                         Enter your production or sandbox keys below. If left blank, the platform automatically runs in secure sandbox mode.
@@ -5170,7 +5170,7 @@ function Settings() {
                                     <p style="font-size: 0.75rem; color: var(--text-muted); margin: 0;">Switch between light and dark mode</p>
                                 </div>
                                 <button type="button" class="btn btn-secondary btn-sm" onclick="toggleTheme()" style="width: auto;">
-                                    ${currentTheme === 'dark' ? 'â˜€ï¸ Switch to Light' : 'ðŸŒ™ Switch to Dark'}
+                                    ${currentTheme === 'dark' ? '☀️ Switch to Light' : '🌙 Switch to Dark'}
                                 </button>
                             </div>
                             <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0;">
@@ -5227,7 +5227,7 @@ function MyPackages() {
         <div class="main">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                 <div class="section-title" style="margin: 0;">My Packages</div>
-                <button class="btn btn-secondary btn-sm" onclick="router('/')">â† Back to Dashboard</button>
+                <button class="btn btn-secondary btn-sm" onclick="router('/')">← Back to Dashboard</button>
             </div>
             <div class="flex items-center justify-between mb-4">
                 <span style="color: var(--text-secondary); font-size: 0.875rem;">${packages.length} package${packages.length !== 1 ? 's' : ''}</span>
@@ -5255,8 +5255,8 @@ function MyPackages() {
                                 <span class="badge ${pkg.status === 'approved' ? 'badge-success' : pkg.status === 'pending' ? 'badge-warning' : 'badge-danger'}">${pkg.status}</span>
                             </div>
                             <div class="card-body">
-                                <div class="price">â‚¹${pkg.price.toLocaleString()}</div>
-                                <div class="price-range">${pkg.package_type.replace('_', ' ')} â€¢ ${pkg.turnaround}</div>
+                                <div class="price">₹${pkg.price.toLocaleString()}</div>
+                                <div class="price-range">${pkg.package_type.replace('_', ' ')} • ${pkg.turnaround}</div>
                                 <div class="divider"></div>
                                 <div style="font-size: 0.8125rem; color: var(--text-secondary);">${pkg.scope || 'No description'}</div>
                             </div>
@@ -5366,13 +5366,13 @@ function CreatePackage() {
                             <label class="form-label">Package Type</label>
                             <div class="tabs" style="margin-top: 4px;">
                                 <button type="button" class="tab ${selectedType === 'per_deliverable' ? 'active' : ''}" onclick="selectPackageType('per_deliverable')">
-                                    ðŸ“¦ Per Deliverable
+                                    📦 Per Deliverable
                                 </button>
                                 <button type="button" class="tab ${selectedType === 'monthly' ? 'active' : ''}" onclick="selectPackageType('monthly')">
-                                    ðŸ“… Monthly Retainer
+                                    📅 Monthly Retainer
                                 </button>
                                 <button type="button" class="tab ${selectedType === 'quarterly' ? 'active' : ''}" onclick="selectPackageType('quarterly')">
-                                    ðŸ“† Quarterly
+                                    📆 Quarterly
                                 </button>
                             </div>
                         </div>
@@ -5382,7 +5382,7 @@ function CreatePackage() {
                         </div>
                         <div class="form-row">
                             <div class="form-group">
-                                <label class="form-label">Price (â‚¹)</label>
+                                <label class="form-label">Price (₹)</label>
                                 <input type="number" class="form-input" id="pkg-price" placeholder="2500" value="${editData?.price || ''}" required>
                             </div>
                             <div class="form-group">
@@ -5524,7 +5524,7 @@ function BookingsList() {
 
                         ${booking.package ? `
                             <div style="font-size: 0.875rem; font-weight: 600; color: var(--text-primary); margin-bottom: 6px;">
-                                ðŸ“¦ ${booking.package.title}
+                                📦 ${booking.package.title}
                             </div>
                             <div style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 8px;">
                                 ${booking.package.scope || 'Standard service scope'}
@@ -5533,31 +5533,31 @@ function BookingsList() {
 
                         <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: var(--bg-hover); border-radius: var(--radius-sm); margin-bottom: 12px;">
                             <span style="font-size: 0.8125rem; color: var(--text-secondary);">Total Value</span>
-                            <span style="font-weight: 700; font-size: 1rem; color: var(--accent);">â‚¹${booking.total_amount.toLocaleString()}</span>
+                            <span style="font-weight: 700; font-size: 1rem; color: var(--accent);">₹${booking.total_amount.toLocaleString()}</span>
                         </div>
 
                         ${isTalent ? `
                             <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 8px;">
-                                Platform Fee: â‚¹0 â€¢ Full Payout: <strong style="color: var(--success);">â‚¹${payout.toLocaleString()}</strong>
+                                Platform Fee: ₹0 • Full Payout: <strong style="color: var(--success);">₹${payout.toLocaleString()}</strong>
                             </div>
                         ` : ''}
 
                         ${booking.delivery_file_link ? `
                             <div style="margin-top: 10px; padding: 12px; background: rgba(108, 92, 231, 0.08); border: 1px solid var(--border); border-radius: var(--radius-sm);">
                                 <div style="font-size: 0.78rem; font-weight: 700; color: var(--accent); margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between;">
-                                    <span>ðŸ“‚ Project Delivery</span>
+                                    <span>📂 Project Delivery</span>
                                     ${booking.delivery_file_link.match(/\.(mp4|mov|webm|mkv)$/i) || booking.delivery_file_link.startsWith('/static/') ? `<span class="badge badge-success" style="font-size:0.65rem;">4K Deliverable</span>` : ''}
                                 </div>
                                 ${booking.delivery_file_link.match(/\.(mp4|mov|webm|mkv)$/i) || (booking.delivery_file_link.startsWith('/static/') && !booking.delivery_file_link.endsWith('.zip') && !booking.delivery_file_link.endsWith('.pdf')) ? `
                                     <video src="${sanitizeUrl(booking.delivery_file_link)}" controls preload="metadata" style="width: 100%; border-radius: 8px; max-height: 200px; background: #000; margin-bottom: 8px; display: block;"></video>
                                     <div style="display: flex; gap: 8px;">
                                         <a href="${sanitizeUrl(booking.delivery_file_link)}" download target="_blank" class="btn btn-outline btn-sm" style="flex: 1; text-align: center; font-size: 0.75rem; text-decoration: none;">
-                                            ðŸ“¥ Download 4K Original
+                                            📥 Download 4K Original
                                         </a>
                                     </div>
                                 ` : `
                                     <a href="${sanitizeUrl(booking.delivery_file_link)}" target="_blank" rel="noopener noreferrer" style="color: var(--accent); font-size: 0.8125rem; word-break: break-all; text-decoration: underline; font-weight: 600;">
-                                        ðŸ”— ${escapeHTML(booking.delivery_file_link)}
+                                        🔗 ${escapeHTML(booking.delivery_file_link)}
                                     </a>
                                 `}
                             </div>
@@ -5566,58 +5566,58 @@ function BookingsList() {
                         <!-- Action Buttons -->
                         <div style="margin-top: 14px; display: flex; flex-direction: column; gap: 8px;">
                             <button class="btn btn-secondary btn-sm" onclick="openBookingChat(${booking.id}, '${isClient ? 'Editor / Provider' : 'Client / Buyer'}')">
-                                ðŸ’¬ Project Chat & Messages
+                                💬 Project Chat & Messages
                             </button>
 
                             ${isTalent && booking.status === 'confirmed' ? `
                                 <button class="btn btn-primary btn-sm" onclick="startProject(${booking.id})">
-                                    â–¶ï¸ Start Working on Project
+                                    ▶️ Start Working on Project
                                 </button>
                             ` : ''}
 
                             ${isTalent && booking.status === 'in_progress' ? `
                                 <button class="btn btn-primary btn-sm" onclick="openDeliverWorkModal(${booking.id})">
-                                    ðŸš€ Deliver Completed Work (4K / Link)
+                                    🚀 Deliver Completed Work (4K / Link)
                                 </button>
                             ` : ''}
 
                             ${isTalent && booking.status === 'delivered' ? `
                                 <div style="font-size: 0.8125rem; color: var(--text-secondary); text-align: center; padding: 4px;">
-                                    â³ Waiting for buyer approval & payment release
+                                    ⏳ Waiting for buyer approval & payment release
                                 </div>
                             ` : ''}
 
                             ${isClient && (booking.status === 'delivered' || booking.status === 'pending_approval') ? `
                                 <div style="display: flex; gap: 8px;">
                                     <button class="btn btn-success btn-sm" style="flex: 1;" onclick="approveBooking(${booking.id})">
-                                        âœ… Approve & Release
+                                        ✅ Approve & Release
                                     </button>
                                     <button class="btn btn-danger btn-sm" style="flex: 1;" onclick="disputeBooking(${booking.id})">
-                                        âš ï¸ Dispute
+                                        ⚠️ Dispute
                                     </button>
                                 </div>
                             ` : ''}
 
                             ${isClient && (booking.status === 'approved' || booking.status === 'completed') ? `
                                 <button class="btn btn-secondary btn-sm" onclick="openReviewModal(${booking.id})">
-                                    â­ Leave Review & Rating
+                                    ⭐ Leave Review & Rating
                                 </button>
                             ` : ''}
 
                             ${isClient && (booking.status === 'pending_payment' || booking.status === 'pending') ? `
                                 <div style="display: flex; gap: 8px;">
                                     <button class="btn btn-primary btn-sm" style="flex: 1;" onclick="PaymentsPortal.payPendingOrder(${booking.id}, ${booking.total_amount})">
-                                        ðŸ’³ Pay & Secure in Escrow
+                                        💳 Pay & Secure in Escrow
                                     </button>
                                     <button class="btn btn-secondary btn-sm" onclick="cancelPendingBooking(${booking.id})">
-                                        âœ• Cancel
+                                        ✕ Cancel
                                     </button>
                                 </div>
                             ` : ''}
 
                             ${booking.status === 'disputed' ? `
                                 <div style="font-size: 0.75rem; color: var(--danger); background: rgba(225, 112, 85, 0.1); padding: 8px; border-radius: var(--radius-sm); text-align: center;">
-                                    âš ï¸ Dispute opened. Marketplace admin is reviewing.
+                                    ⚠️ Dispute opened. Marketplace admin is reviewing.
                                 </div>
                             ` : ''}
                         </div>
@@ -5700,7 +5700,7 @@ function BookingsList() {
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
                     <div>
                         <h3 style="margin: 0; font-size: 1.15rem; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
-                            <span>ðŸš€</span> Deliver Work for Order #${id}
+                            <span>🚀</span> Deliver Work for Order #${id}
                         </h3>
                         <div style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 2px;">
                             Upload final 4K video (up to 1GB) or attach project link.
@@ -5712,7 +5712,7 @@ function BookingsList() {
                 <!-- Direct 4K Delivery File Upload Dropzone -->
                 <div class="delivery-upload-zone" style="border: 2px dashed var(--border); border-radius: 12px; padding: 20px; text-align: center; background: var(--bg-hover); cursor: pointer; margin-bottom: 16px;" onclick="document.getElementById('delivery-file-input').click()">
                     <input type="file" id="delivery-file-input" style="display:none;" accept="video/*,application/zip,image/*,application/pdf" onchange="handleDeliveryFileUpload(this.files[0])" />
-                    <div style="font-size: 2rem; margin-bottom: 4px;">ðŸ“¦</div>
+                    <div style="font-size: 2rem; margin-bottom: 4px;">📦</div>
                     <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-primary);">Click to Attach 4K Export / Project Files</div>
                     <div style="font-size: 0.76rem; color: var(--text-muted);">Direct streaming up to 1GB (MP4, MOV, MKV, ZIP, PDF)</div>
                     <div id="delivery-upload-progress" style="display: none; margin-top: 12px; text-align: left; background: var(--bg-card); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border);">
@@ -5739,7 +5739,7 @@ function BookingsList() {
                 <div style="display: flex; gap: 10px; justify-content: flex-end;">
                     <button type="button" class="btn btn-secondary" onclick="document.getElementById('deliver-work-modal-root').remove()">Cancel</button>
                     <button type="button" class="btn btn-primary" id="btn-submit-delivery" onclick="submitWorkDelivery(${id})" style="padding: 10px 22px; font-weight: 700;">
-                        ðŸš€ Complete &amp; Deliver Work
+                        🚀 Complete &amp; Deliver Work
                     </button>
                 </div>
             </div>
@@ -5796,7 +5796,7 @@ function BookingsList() {
                     const res = JSON.parse(xhr.responseText);
                     const linkInput = document.getElementById('delivery-link-input');
                     if (linkInput) linkInput.value = res.url;
-                    if (status) status.textContent = 'âœ… 4K File Attached!';
+                    if (status) status.textContent = '✅ 4K File Attached!';
                     if (bar) bar.style.width = '100%';
                     if (pct) pct.textContent = '100%';
                     showToast('4K File uploaded successfully!', 'success');
@@ -5805,14 +5805,14 @@ function BookingsList() {
                 }
             } else {
                 showToast('Upload failed', 'error');
-                if (status) status.textContent = 'âŒ Upload failed';
+                if (status) status.textContent = '❌ Upload failed';
             }
         };
 
         xhr.onerror = () => {
             if (submitBtn) submitBtn.disabled = false;
             showToast('Network error during upload', 'error');
-            if (status) status.textContent = 'âŒ Network error';
+            if (status) status.textContent = '❌ Network error';
         };
 
         xhr.send(formData);
@@ -5844,7 +5844,7 @@ function BookingsList() {
                     await apiFetch(`/bookings/${id}/messages`, {
                         method: 'POST',
                         body: JSON.stringify({
-                            content: `ðŸš€ **Order Delivered:**\n${notes}\n\nDeliverable: ${link}`
+                            content: `🚀 **Order Delivered:**\n${notes}\n\nDeliverable: ${link}`
                         })
                     });
                 } catch (_) {}
@@ -6006,7 +6006,7 @@ function CreateBooking() {
                                     razorpay_signature: response.razorpay_signature || ''
                                 })
                             });
-                            showToast(`ðŸŽ‰ Payment of â‚¹${selectedPkg.price.toLocaleString()} secured in Escrow! Provider notified.`, 'success');
+                            showToast(`🎉 Payment of ₹${selectedPkg.price.toLocaleString()} secured in Escrow! Provider notified.`, 'success');
                             sessionStorage.removeItem('selected_provider_id');
                             sessionStorage.removeItem('selected_package_id');
                             router('/bookings');
@@ -6052,17 +6052,17 @@ function CreateBooking() {
                         <h3 style="font-size: 1.15rem; font-weight: 700;">Secure Escrow Checkout</h3>
                         <span style="font-size: 0.75rem; color: var(--text-muted);">100% Buyer Protection Guarantee</span>
                     </div>
-                    <button id="close-checkout-modal" style="background:transparent; border:none; color:var(--text-muted); font-size:1.2rem; cursor:pointer;">âœ•</button>
+                    <button id="close-checkout-modal" style="background:transparent; border:none; color:var(--text-muted); font-size:1.2rem; cursor:pointer;">✕</button>
                 </div>
                 <div class="card-body" style="padding-top: 16px;">
                     <div style="background: var(--bg-hover); padding: 14px; border-radius: var(--radius-sm); margin-bottom: 16px;">
                         <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
                             <span style="font-size: 0.875rem; color: var(--text-secondary);">${selectedPkg.title}</span>
-                            <span style="font-weight: 700; color: var(--text-primary);">â‚¹${selectedPkg.price.toLocaleString()}</span>
+                            <span style="font-weight: 700; color: var(--text-primary);">₹${selectedPkg.price.toLocaleString()}</span>
                         </div>
                         <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px;">
                             <span>Platform Fee (1 Month Launch Special)</span>
-                            <span style="color: var(--success); font-weight: 700;">â‚¹0 (FREE - 100% to Creator)</span>
+                            <span style="color: var(--success); font-weight: 700;">₹0 (FREE - 100% to Creator)</span>
                         </div>
                         <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted);">
                             <span>Escrow Protection & Secure Milestone</span>
@@ -6071,7 +6071,7 @@ function CreateBooking() {
                         <div class="divider" style="margin: 10px 0;"></div>
                         <div style="display: flex; justify-content: space-between; font-weight: 800; font-size: 1.1rem; color: var(--accent);">
                             <span>Total Payable:</span>
-                            <span>â‚¹${selectedPkg.price.toLocaleString()}</span>
+                            <span>₹${selectedPkg.price.toLocaleString()}</span>
                         </div>
                     </div>
 
@@ -6079,8 +6079,8 @@ function CreateBooking() {
                         Select payment method (Simulated Sandbox Gateway):
                     </p>
                     <div class="tabs" style="margin-bottom: 16px;">
-                        <button type="button" class="tab active" id="tab-upi">âš¡ UPI (GPay / PhonePe / Paytm)</button>
-                        <button type="button" class="tab" id="tab-card">ðŸ’³ Cards / NetBanking</button>
+                        <button type="button" class="tab active" id="tab-upi">⚡ UPI (GPay / PhonePe / Paytm)</button>
+                        <button type="button" class="tab" id="tab-card">💳 Cards / NetBanking</button>
                     </div>
 
                     <div id="upi-section">
@@ -6092,7 +6092,7 @@ function CreateBooking() {
 
                     <div style="display: flex; gap: 10px; margin-top: 20px;">
                         <button type="button" class="btn btn-primary" id="confirm-escrow-pay" style="flex: 1; padding: 12px;">
-                            ðŸ”’ Pay â‚¹${selectedPkg.price.toLocaleString()} & Lock in Escrow
+                            🔒 Pay ₹${selectedPkg.price.toLocaleString()} & Lock in Escrow
                         </button>
                         <button type="button" class="btn btn-secondary" id="cancel-checkout-btn" style="width: auto;">
                             Cancel
@@ -6121,7 +6121,7 @@ function CreateBooking() {
                         razorpay_signature: 'simulated_signature'
                     })
                 });
-                showToast(`ðŸŽ‰ Payment of â‚¹${selectedPkg.price.toLocaleString()} secured in Escrow!`, 'success');
+                showToast(`🎉 Payment of ₹${selectedPkg.price.toLocaleString()} secured in Escrow!`, 'success');
                 sessionStorage.removeItem('selected_provider_id');
                 sessionStorage.removeItem('selected_package_id');
                 router('/bookings');
@@ -6167,7 +6167,7 @@ function CreateBooking() {
                                 <option value="">Choose a package...</option>
                                 ${packages.map(p => `
                                     <option value="${p.id}" data-provider="${p.provider_id}">
-                                        ${p.title} â€” â‚¹${p.price.toLocaleString()} (${p.turnaround})
+                                        ${p.title} — ₹${p.price.toLocaleString()} (${p.turnaround})
                                     </option>
                                 `).join('')}
                             </select>
@@ -6175,7 +6175,7 @@ function CreateBooking() {
                         <div class="form-group" id="total-amount" style="display: none; background: var(--bg-hover); padding: 12px 16px; border-radius: var(--radius-sm);">
                             <div style="display: flex; justify-content: space-between; align-items: center;">
                                 <span class="form-label" style="margin: 0;">Total Amount (Escrow)</span>
-                                <div style="font-size: 1.25rem; font-weight: 700; color: var(--accent);">â‚¹<span id="amount-display">0</span></div>
+                                <div style="font-size: 1.25rem; font-weight: 700; color: var(--accent);">₹<span id="amount-display">0</span></div>
                             </div>
                             <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">
                                 Payment held securely in escrow until you approve delivery
@@ -6225,7 +6225,7 @@ function CreateBooking() {
         if (!provId) {
             pkgSelect.innerHTML = '<option value="">Choose a package...</option>' + packages.map(p => `
                 <option value="${p.id}" data-provider="${p.provider_id}">
-                    ${p.title} â€” â‚¹${p.price.toLocaleString()} (${p.turnaround})
+                    ${p.title} — ₹${p.price.toLocaleString()} (${p.turnaround})
                 </option>
             `).join('');
             return;
@@ -6233,7 +6233,7 @@ function CreateBooking() {
         const filtered = packages.filter(p => p.provider_id === parseInt(provId));
         pkgSelect.innerHTML = '<option value="">Choose a package...</option>' + filtered.map(p => `
             <option value="${p.id}" data-provider="${p.provider_id}">
-                ${p.title} â€” â‚¹${p.price.toLocaleString()} (${p.turnaround})
+                ${p.title} — ₹${p.price.toLocaleString()} (${p.turnaround})
             </option>
         `).join('');
         window.updateProviderForPackage();
@@ -6297,10 +6297,10 @@ function PaymentsPortal() {
         const refundedList = payments.filter(p => p.status === 'refunded' || p.status === 'disputed');
 
         // Financial Metrics based on role
-        let stat1 = { label: 'Total Volume', value: 'â‚¹0', subtext: '0 transactions', icon: 'ðŸ’³' };
-        let stat2 = { label: 'In Escrow', value: 'â‚¹0', subtext: 'Protected funds', icon: 'ðŸ”’' };
-        let stat3 = { label: 'Released', value: 'â‚¹0', subtext: 'Direct to bank', icon: 'ðŸ¦' };
-        let stat4 = { label: 'Total Transactions', value: '0', subtext: 'Orders processed', icon: 'ðŸ“¦' };
+        let stat1 = { label: 'Total Volume', value: '₹0', subtext: '0 transactions', icon: '💳' };
+        let stat2 = { label: 'In Escrow', value: '₹0', subtext: 'Protected funds', icon: '🔒' };
+        let stat3 = { label: 'Released', value: '₹0', subtext: 'Direct to bank', icon: '🏦' };
+        let stat4 = { label: 'Total Transactions', value: '0', subtext: 'Orders processed', icon: '📦' };
 
         if (isAdmin) {
             const gmv = payments.reduce((acc, p) => acc + (p.amount || 0), 0);
@@ -6308,29 +6308,29 @@ function PaymentsPortal() {
             const payouts = payments.reduce((acc, p) => acc + (p.provider_payout || 0), 0);
             const inEscrow = heldList.reduce((acc, p) => acc + (p.amount || 0), 0);
 
-            stat1 = { label: 'Gross Merchandise Value', value: `â‚¹${gmv.toLocaleString()}`, subtext: `${payments.length} total orders`, icon: 'ðŸŒ' };
-            stat2 = { label: 'Platform Revenue (20%)', value: `â‚¹${comm.toLocaleString()}`, subtext: 'Earned marketplace commission', icon: 'ðŸ¦' };
-            stat3 = { label: '80% Provider Payouts', value: `â‚¹${payouts.toLocaleString()}`, subtext: `${releasedList.length} released orders`, icon: 'ðŸ’¸' };
-            stat4 = { label: 'Active Escrow Vault', value: `â‚¹${inEscrow.toLocaleString()}`, subtext: `${heldList.length} orders in escrow`, icon: 'ðŸ”’' };
+            stat1 = { label: 'Gross Merchandise Value', value: `₹${gmv.toLocaleString()}`, subtext: `${payments.length} total orders`, icon: '🌐' };
+            stat2 = { label: 'Platform Revenue (20%)', value: `₹${comm.toLocaleString()}`, subtext: 'Earned marketplace commission', icon: '🏦' };
+            stat3 = { label: '80% Provider Payouts', value: `₹${payouts.toLocaleString()}`, subtext: `${releasedList.length} released orders`, icon: '💸' };
+            stat4 = { label: 'Active Escrow Vault', value: `₹${inEscrow.toLocaleString()}`, subtext: `${heldList.length} orders in escrow`, icon: '🔒' };
         } else if (isProvider) {
             const netEarnings = releasedList.reduce((acc, p) => acc + (p.provider_payout || 0), 0);
             const escrowEarnings = heldList.reduce((acc, p) => acc + (p.provider_payout || 0), 0);
             const platformFee = payments.reduce((acc, p) => acc + (p.platform_commission || 0), 0);
 
-            stat1 = { label: 'Net Earnings (80%)', value: `â‚¹${netEarnings.toLocaleString()}`, subtext: 'Released to your bank', icon: 'ðŸ’°' };
-            stat2 = { label: 'Pending in Escrow', value: `â‚¹${escrowEarnings.toLocaleString()}`, subtext: 'Locked until client approval', icon: 'â³' };
-            stat3 = { label: 'Platform Fee (20%)', value: `â‚¹${platformFee.toLocaleString()}`, subtext: '20% platform escrow fee', icon: 'ðŸ·ï¸' };
-            stat4 = { label: 'Completed Orders', value: releasedList.length.toString(), subtext: `${heldList.length} ongoing in escrow`, icon: 'âœ…' };
+            stat1 = { label: 'Net Earnings (80%)', value: `₹${netEarnings.toLocaleString()}`, subtext: 'Released to your bank', icon: '💰' };
+            stat2 = { label: 'Pending in Escrow', value: `₹${escrowEarnings.toLocaleString()}`, subtext: 'Locked until client approval', icon: '⏳' };
+            stat3 = { label: 'Platform Fee (20%)', value: `₹${platformFee.toLocaleString()}`, subtext: '20% platform escrow fee', icon: '🏷️' };
+            stat4 = { label: 'Completed Orders', value: releasedList.length.toString(), subtext: `${heldList.length} ongoing in escrow`, icon: '✅' };
         } else {
             // Buyer
             const totalSpent = payments.reduce((acc, p) => acc + (p.amount || 0), 0);
             const inEscrow = heldList.reduce((acc, p) => acc + (p.amount || 0), 0);
             const pendingAmount = pendingList.reduce((acc, p) => acc + (p.amount || 0), 0);
 
-            stat1 = { label: 'Total Paid', value: `â‚¹${totalSpent.toLocaleString()}`, subtext: `${payments.length} total bookings`, icon: 'ðŸ’³' };
-            stat2 = { label: 'Protected in Escrow', value: `â‚¹${inEscrow.toLocaleString()}`, subtext: '100% safe until delivery', icon: 'ðŸ›¡ï¸' };
-            stat3 = { label: 'Completed Orders', value: releasedList.length.toString(), subtext: 'Approved & released', icon: 'ðŸŽ‰' };
-            stat4 = { label: 'Pending Checkout', value: `â‚¹${pendingAmount.toLocaleString()}`, subtext: `${pendingList.length} orders awaiting payment`, icon: 'â³' };
+            stat1 = { label: 'Total Paid', value: `₹${totalSpent.toLocaleString()}`, subtext: `${payments.length} total bookings`, icon: '💳' };
+            stat2 = { label: 'Protected in Escrow', value: `₹${inEscrow.toLocaleString()}`, subtext: '100% safe until delivery', icon: '🛡️' };
+            stat3 = { label: 'Completed Orders', value: releasedList.length.toString(), subtext: 'Approved & released', icon: '🎉' };
+            stat4 = { label: 'Pending Checkout', value: `₹${pendingAmount.toLocaleString()}`, subtext: `${pendingList.length} orders awaiting payment`, icon: '⏳' };
         }
 
         // Filter and Search
@@ -6370,7 +6370,7 @@ function PaymentsPortal() {
                         <span><-- Back to Dashboard</span>
                     </button>
                     <button class="fiverr-back-btn" onclick="router('/')" style="opacity: 0.85;">
-                        <span>ðŸŒŸ Browse Talent</span>
+                        <span>🌟 Browse Talent</span>
                     </button>
                 </div>
 
@@ -6378,13 +6378,13 @@ function PaymentsPortal() {
                 <div class="payments-header" style="margin-top: 14px;">
                     <div class="payments-title-group">
                         <h1>
-                            <span>ðŸ’³ Payments & Escrow Hub</span>
+                            <span>💳 Payments & Escrow Hub</span>
                         </h1>
-                        <p>100% Escrow Protection Guarantee â€¢ 80% Provider Payout â€¢ 20% Platform Fee</p>
+                        <p>100% Escrow Protection Guarantee • 80% Provider Payout • 20% Platform Fee</p>
                     </div>
                     <div style="display: flex; gap: 8px; align-items: center;">
-                        <span class="badge badge-success" style="font-size: 0.8rem; padding: 6px 12px;">ðŸ›¡ï¸ Bank-Grade Escrow Vault</span>
-                        <button class="btn btn-secondary btn-sm" onclick="PaymentsPortal.refresh()">ðŸ”„ Refresh</button>
+                        <span class="badge badge-success" style="font-size: 0.8rem; padding: 6px 12px;">🛡️ Bank-Grade Escrow Vault</span>
+                        <button class="btn btn-secondary btn-sm" onclick="PaymentsPortal.refresh()">🔄 Refresh</button>
                     </div>
                 </div>
 
@@ -6392,9 +6392,9 @@ function PaymentsPortal() {
                 <div class="escrow-guarantee-banner">
                     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
                         <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-primary); display: flex; align-items: center; gap: 6px;">
-                            <span style="font-size: 1.2rem;">ðŸ”’</span> How Escrow & 80/20 Revenue Split Works
+                            <span style="font-size: 1.2rem;">🔒</span> How Escrow & 80/20 Revenue Split Works
                         </div>
-                        <span style="font-size: 0.75rem; color: var(--text-muted);">Zero Risk for Buyers â€¢ Guaranteed Payout for Creators</span>
+                        <span style="font-size: 0.75rem; color: var(--text-muted);">Zero Risk for Buyers • Guaranteed Payout for Creators</span>
                     </div>
                     <div class="escrow-steps-grid">
                         <div class="escrow-step-item">
@@ -6464,17 +6464,17 @@ function PaymentsPortal() {
                             All (${payments.length})
                         </button>
                         <button class="payment-tab-btn ${activeFilter === 'held' ? 'active' : ''}" onclick="PaymentsPortal.setFilter('held')">
-                            ðŸ”’ In Escrow (${heldList.length})
+                            🔒 In Escrow (${heldList.length})
                         </button>
                         <button class="payment-tab-btn ${activeFilter === 'released' ? 'active' : ''}" onclick="PaymentsPortal.setFilter('released')">
-                            âœ… Released (${releasedList.length})
+                            ✅ Released (${releasedList.length})
                         </button>
                         <button class="payment-tab-btn ${activeFilter === 'pending' ? 'active' : ''}" onclick="PaymentsPortal.setFilter('pending')">
-                            â³ Pending (${pendingList.length})
+                            ⏳ Pending (${pendingList.length})
                         </button>
                         ${refundedList.length > 0 ? `
                         <button class="payment-tab-btn ${activeFilter === 'refunded' ? 'active' : ''}" onclick="PaymentsPortal.setFilter('refunded')">
-                            â†©ï¸ Refunded (${refundedList.length})
+                            ↩️ Refunded (${refundedList.length})
                         </button>` : ''}
                     </div>
 
@@ -6491,7 +6491,7 @@ function PaymentsPortal() {
                             autocomplete="off"
                         />
                         ${searchQuery ? `
-                            <button type="button" onclick="PaymentsPortal.setSearch('')" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 0.95rem; line-height: 1; padding: 2px;" title="Clear search">âœ•</button>
+                            <button type="button" onclick="PaymentsPortal.setSearch('')" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 0.95rem; line-height: 1; padding: 2px;" title="Clear search">✕</button>
                         ` : ''}
                     </div>
                 </div>
@@ -6500,7 +6500,7 @@ function PaymentsPortal() {
                 ${filtered.length === 0 ? `
                     <div class="card" style="padding: 40px 20px; text-align: center;">
                         <div class="empty-state">
-                            <div style="font-size: 2.5rem; margin-bottom: 12px;">ðŸ’³</div>
+                            <div style="font-size: 2.5rem; margin-bottom: 12px;">💳</div>
                             <h3 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 8px;">No transactions found</h3>
                             <p style="color: var(--text-secondary); max-width: 420px; margin: 0 auto 18px; font-size: 0.875rem;">
                                 ${isProvider
@@ -6528,16 +6528,16 @@ function PaymentsPortal() {
         const isRefunded = p.status === 'refunded' || p.status === 'disputed';
 
         let badgeClass = 'badge-escrow-held';
-        let badgeText = 'ðŸ”’ Held in Escrow';
+        let badgeText = '🔒 Held in Escrow';
         if (isReleased) {
             badgeClass = 'badge-escrow-released';
-            badgeText = 'âœ… Released to Bank';
+            badgeText = '✅ Released to Bank';
         } else if (isPending) {
             badgeClass = 'badge-escrow-pending';
-            badgeText = 'â³ Pending Payment';
+            badgeText = '⏳ Pending Payment';
         } else if (isRefunded) {
             badgeClass = 'badge-escrow-refunded';
-            badgeText = 'â†©ï¸ Refunded';
+            badgeText = '↩️ Refunded';
         }
 
         const txnCode = p.gateway_txn_id || `TXN-${String(p.id).padStart(6, '0')}`;
@@ -6555,7 +6555,7 @@ function PaymentsPortal() {
                 <div class="txn-id-date">
                     <span class="txn-code">${txnCode}</span>
                     <span class="txn-date">${dateStr}</span>
-                    <span style="font-size: 0.75rem; color: var(--text-muted);">â€¢ Booking #${p.booking_id}</span>
+                    <span style="font-size: 0.75rem; color: var(--text-muted);">• Booking #${p.booking_id}</span>
                 </div>
                 <div>
                     <span class="${badgeClass}">${badgeText}</span>
@@ -6564,7 +6564,7 @@ function PaymentsPortal() {
 
             <div class="txn-body-grid">
                 <div class="txn-service-info">
-                    <h4>ðŸ“¦ ${p.package_title || 'Service Booking'}</h4>
+                    <h4>📦 ${p.package_title || 'Service Booking'}</h4>
                     <p>Protected by 100% Escrow Guarantee</p>
                 </div>
 
@@ -6574,34 +6574,34 @@ function PaymentsPortal() {
                 </div>
 
                 <div class="txn-financial-breakdown">
-                    <div class="txn-amount-total">â‚¹${p.amount.toLocaleString()}</div>
+                    <div class="txn-amount-total">₹${p.amount.toLocaleString()}</div>
                     <div class="txn-split-details">
-                        Provider 80%: <strong>â‚¹${(p.provider_payout || (p.amount * 0.8)).toLocaleString()}</strong><br>
-                        Platform Fee: <strong>â‚¹0</strong>
+                        Provider 80%: <strong>₹${(p.provider_payout || (p.amount * 0.8)).toLocaleString()}</strong><br>
+                        Platform Fee: <strong>₹0</strong>
                     </div>
                 </div>
             </div>
 
             <div class="txn-actions-row">
                 <button class="btn btn-secondary btn-sm" onclick="PaymentsPortal.showInvoice(${p.id})">
-                    ðŸ“„ View Tax Invoice & Escrow Receipt
+                    📄 View Tax Invoice & Escrow Receipt
                 </button>
                 <button class="btn btn-secondary btn-sm" onclick="openBookingChat(${p.booking_id}, '${isBuyer ? (p.provider_name || 'Provider') : (p.buyer_name || 'Client')}')">
-                    ðŸ’¬ Project Chat
+                    💬 Project Chat
                 </button>
 
                 ${isHeld && isBuyer && (p.booking_status === 'delivered' || p.booking_status === 'pending_approval') ? `
                     <button class="btn btn-success btn-sm" onclick="PaymentsPortal.approveAndRelease(${p.booking_id})">
-                        âœ… Approve & Release 80% Payout
+                        ✅ Approve & Release 80% Payout
                     </button>
                 ` : ''}
 
                 ${isPending && isBuyer ? `
                     <button class="btn btn-primary btn-sm" onclick="PaymentsPortal.payPendingOrder(${p.booking_id}, ${p.amount})">
-                        ðŸ’³ Pay Now & Secure in Escrow
+                        💳 Pay Now & Secure in Escrow
                     </button>
                     <button class="btn btn-secondary btn-sm" onclick="PaymentsPortal.cancelPending(${p.booking_id})">
-                        âœ• Cancel
+                        ✕ Cancel
                     </button>
                 ` : ''}
             </div>
@@ -6658,7 +6658,7 @@ function PaymentsPortal() {
         showLoading();
         try {
             await apiFetch(`/bookings/${bookingId}/approve`, { method: 'POST' });
-            showToast('ðŸŽ‰ Delivery approved! Full payment released to provider.', 'success');
+            showToast('🎉 Delivery approved! Full payment released to provider.', 'success');
             loadPayments();
         } catch (e) {
             showToast(e.message, 'error');
@@ -6707,7 +6707,7 @@ function PaymentsPortal() {
                                     razorpay_signature: response.razorpay_signature || ''
                                 })
                             });
-                            showToast(`ðŸŽ‰ Payment of â‚¹${amount.toLocaleString()} secured in Escrow!`, 'success');
+                            showToast(`🎉 Payment of ₹${amount.toLocaleString()} secured in Escrow!`, 'success');
                             loadPayments();
                         } catch (err) {
                             showToast('Payment verification failed: ' + err.message, 'error');
@@ -6737,13 +6737,13 @@ function PaymentsPortal() {
         const isReleased = p.status === 'released';
         const isPending = p.status === 'pending';
 
-        let statusText = 'ðŸ”’ HELD IN ESCROW';
+        let statusText = '🔒 HELD IN ESCROW';
         let statusColor = '#6c5ce7';
         if (isReleased) {
-            statusText = 'âœ… RELEASED TO BANK';
+            statusText = '✅ RELEASED TO BANK';
             statusColor = '#00b894';
         } else if (isPending) {
-            statusText = 'â³ PENDING PAYMENT';
+            statusText = '⏳ PENDING PAYMENT';
             statusColor = '#e17055';
         }
 
@@ -6760,9 +6760,9 @@ function PaymentsPortal() {
             <div class="invoice-modal-card">
                 <div class="invoice-modal-header">
                     <div style="font-weight: 700; font-size: 1rem; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
-                        <span>ðŸ“„ Official Tax Invoice & Escrow Receipt</span>
+                        <span>📄 Official Tax Invoice & Escrow Receipt</span>
                     </div>
-                    <button id="close-invoice-modal-btn" style="background: transparent; border: none; font-size: 1.25rem; color: var(--text-muted); cursor: pointer;">âœ•</button>
+                    <button id="close-invoice-modal-btn" style="background: transparent; border: none; font-size: 1.25rem; color: var(--text-muted); cursor: pointer;">✕</button>
                 </div>
 
                 <div class="invoice-modal-body">
@@ -6814,29 +6814,29 @@ function PaymentsPortal() {
                                 <tr>
                                     <td>
                                         <strong>${p.package_title || 'Creative Service Package'}</strong><br>
-                                        <span style="font-size: 0.75rem; color: #636e72;">Booking #${p.booking_id} â€¢ 100% Escrow Protection</span>
+                                        <span style="font-size: 0.75rem; color: #636e72;">Booking #${p.booking_id} • 100% Escrow Protection</span>
                                     </td>
-                                    <td style="text-align: right; font-weight: 600;">â‚¹${p.amount.toLocaleString()}</td>
+                                    <td style="text-align: right; font-weight: 600;">₹${p.amount.toLocaleString()}</td>
                                 </tr>
                                 <tr>
                                     <td style="font-size: 0.8rem; color: #636e72; padding-left: 20px;">
-                                        â†³ Provider Earnings (80% Direct Payout)
+                                        ↳ Provider Earnings (80% Direct Payout)
                                     </td>
                                     <td style="text-align: right; font-size: 0.8rem; color: #636e72;">
-                                        â‚¹${(p.provider_payout || (p.amount * 0.8)).toLocaleString()}
+                                        ₹${(p.provider_payout || (p.amount * 0.8)).toLocaleString()}
                                     </td>
                                 </tr>
                                 <tr>
                                     <td style="font-size: 0.8rem; color: #636e72; padding-left: 20px;">
-                                        â†³ Platform Fee (â‚¹0)
+                                        ↳ Platform Fee (₹0)
                                     </td>
                                     <td style="text-align: right; font-size: 0.8rem; color: #636e72;">
-                                        â‚¹0
+                                        ₹0
                                     </td>
                                 </tr>
                                 <tr class="total-row">
                                     <td>Total Amount Paid</td>
-                                    <td style="text-align: right;">â‚¹${p.amount.toLocaleString()}</td>
+                                    <td style="text-align: right;">₹${p.amount.toLocaleString()}</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -6856,7 +6856,7 @@ function PaymentsPortal() {
 
                 <div class="invoice-modal-footer">
                     <button class="btn btn-secondary" id="print-invoice-btn">
-                        ðŸ–¨ï¸ Print / Save as PDF
+                        🖨️ Print / Save as PDF
                     </button>
                     <button class="btn btn-primary" id="dismiss-invoice-btn">
                         Done
@@ -6903,48 +6903,48 @@ const fiverrCategoryConfigs = {
         selectTypeLabel: 'Select video type',
         searchPlaceholder: 'Search video editing, shorts, YouTube, Premiere Pro, motion design...',
         types: [
-            { id: '', label: 'All Video Types', icon: 'âœ¨' },
-            { id: 'youtube', label: 'YouTube & Long-form', icon: 'ðŸ“º', keywords: ['youtube', 'long-form', 'vlog', 'retention', 'mrbeast', 'podcast', 'documentary', 'shorts'] },
-            { id: 'ads_social', label: 'Social Ads & Reels', icon: 'ðŸ“±', keywords: ['ads', 'social', 'tiktok', 'reels', 'shorts', 'meta', 'instagram', 'ad', 'ugc', 'hook'] },
-            { id: 'gaming', label: 'Gaming & Stream Edits', icon: 'ðŸŽ®', keywords: ['gaming', 'twitch', 'montage', 'meme', 'stream', 'gameplay', 'valorant', 'gta', 'esports', 'minecraft', 'highlight'] },
-            { id: 'animations', label: '2D/3D Animations', icon: 'ðŸŽ¨', keywords: ['animation', '2d', '3d', 'character', 'whiteboard', 'explainer', 'blender', 'animated'] },
-            { id: 'motion_graphics', label: 'Motion Graphics & VFX', icon: 'âœ¨', keywords: ['motion graphics', 'motion', 'vfx', 'after effects', 'intro', 'titles', 'visual effects'] },
-            { id: 'music', label: 'Music Videos & Cinematic', icon: 'ðŸŽ¬', keywords: ['music', 'rap', 'beat-sync', 'trippy', 'vfx', 'cinematic', 'band', 'song', 'hip-hop'] },
-            { id: 'corporate', label: 'Corporate & Commercials', icon: 'ðŸ¢', keywords: ['corporate', 'b2b', 'commercial', 'brand', 'presentation', 'business', 'event', 'promo'] }
+            { id: '', label: 'All Video Types', icon: '✨' },
+            { id: 'youtube', label: 'YouTube & Long-form', icon: '📺', keywords: ['youtube', 'long-form', 'vlog', 'retention', 'mrbeast', 'podcast', 'documentary', 'shorts'] },
+            { id: 'ads_social', label: 'Social Ads & Reels', icon: '📱', keywords: ['ads', 'social', 'tiktok', 'reels', 'shorts', 'meta', 'instagram', 'ad', 'ugc', 'hook'] },
+            { id: 'gaming', label: 'Gaming & Stream Edits', icon: '🎮', keywords: ['gaming', 'twitch', 'montage', 'meme', 'stream', 'gameplay', 'valorant', 'gta', 'esports', 'minecraft', 'highlight'] },
+            { id: 'animations', label: '2D/3D Animations', icon: '🎨', keywords: ['animation', '2d', '3d', 'character', 'whiteboard', 'explainer', 'blender', 'animated'] },
+            { id: 'motion_graphics', label: 'Motion Graphics & VFX', icon: '✨', keywords: ['motion graphics', 'motion', 'vfx', 'after effects', 'intro', 'titles', 'visual effects'] },
+            { id: 'music', label: 'Music Videos & Cinematic', icon: '🎬', keywords: ['music', 'rap', 'beat-sync', 'trippy', 'vfx', 'cinematic', 'band', 'song', 'hip-hop'] },
+            { id: 'corporate', label: 'Corporate & Commercials', icon: '🏢', keywords: ['corporate', 'b2b', 'commercial', 'brand', 'presentation', 'business', 'event', 'promo'] }
         ],
         serviceOptions: [
             { id: '', label: 'All Styles & Services' },
-            { id: 'youtube_cuts', label: 'ðŸ“º YouTube Long-form & Retention Cuts', match: ['youtube', 'long-form', 'vlog', 'podcast', 'retention'] },
-            { id: 'social_ads_reels', label: 'ðŸ“± Social Ads, Reels & TikTok Hooks', match: ['ad', 'social', 'reel', 'short', 'tiktok', 'ugc', 'meta'] },
-            { id: 'gaming_montages', label: 'ðŸŽ® Gaming Montages & Stream Highlights', match: ['gaming', 'gameplay', 'montage', 'stream', 'twitch', 'esports'] },
-            { id: '2d_3d_animation', label: 'ðŸŽ¨ 2D & 3D Character Animation', match: ['animation', '2d', '3d', 'animated', 'character', 'explainer'] },
-            { id: 'motion_vfx', label: 'âœ¨ Motion Graphics, Intros & VFX', match: ['motion', 'after effects', 'vfx', 'visual effects', 'graphics'] },
-            { id: 'color_grading', label: 'ðŸŒˆ Color Grading & Cinematic LUTs', match: ['color', 'grade', 'lut', 'davinci', 'cinematic'] },
-            { id: 'sound_design', label: 'ðŸ”Š Sound Design & SFX Audio Mixing', match: ['sound', 'audio', 'sfx', 'mix', 'voiceover', 'music'] },
-            { id: 'corporate_promo', label: 'ðŸ¢ Corporate Commercials & Promos', match: ['corporate', 'commercial', 'brand', 'b2b', 'promo'] }
+            { id: 'youtube_cuts', label: '📺 YouTube Long-form & Retention Cuts', match: ['youtube', 'long-form', 'vlog', 'podcast', 'retention'] },
+            { id: 'social_ads_reels', label: '📱 Social Ads, Reels & TikTok Hooks', match: ['ad', 'social', 'reel', 'short', 'tiktok', 'ugc', 'meta'] },
+            { id: 'gaming_montages', label: '🎮 Gaming Montages & Stream Highlights', match: ['gaming', 'gameplay', 'montage', 'stream', 'twitch', 'esports'] },
+            { id: '2d_3d_animation', label: '🎨 2D & 3D Character Animation', match: ['animation', '2d', '3d', 'animated', 'character', 'explainer'] },
+            { id: 'motion_vfx', label: '✨ Motion Graphics, Intros & VFX', match: ['motion', 'after effects', 'vfx', 'visual effects', 'graphics'] },
+            { id: 'color_grading', label: '🌈 Color Grading & Cinematic LUTs', match: ['color', 'grade', 'lut', 'davinci', 'cinematic'] },
+            { id: 'sound_design', label: '🔊 Sound Design & SFX Audio Mixing', match: ['sound', 'audio', 'sfx', 'mix', 'voiceover', 'music'] },
+            { id: 'corporate_promo', label: '🏢 Corporate Commercials & Promos', match: ['corporate', 'commercial', 'brand', 'b2b', 'promo'] }
         ],
         sellerDetails: [
             { id: '', label: 'Any Seller' },
-            { id: 'top_rated', label: 'â­ Top Rated (4.9+)' },
-            { id: 'level_2', label: 'ðŸ’Ž Level 2 (30+ Orders)' },
-            { id: 'pro_verified', label: 'ðŸ‘‘ Pro Verified' },
-            { id: 'fast_turnaround', label: 'âš¡ 24h Turnaround' }
+            { id: 'top_rated', label: '⭐ Top Rated (4.9+)' },
+            { id: 'level_2', label: '💎 Level 2 (30+ Orders)' },
+            { id: 'pro_verified', label: '👑 Pro Verified' },
+            { id: 'fast_turnaround', label: '⚡ 24h Turnaround' }
         ],
         budgets: [
             { id: '', label: 'Any Budget' },
-            { id: 'under2000', label: 'Under â‚¹2,000' },
-            { id: '2000to5000', label: 'â‚¹2,000 - â‚¹5,000' },
-            { id: 'above5000', label: 'â‚¹5,000+' }
+            { id: 'under2000', label: 'Under ₹2,000' },
+            { id: '2000to5000', label: '₹2,000 - ₹5,000' },
+            { id: 'above5000', label: '₹5,000+' }
         ],
         deliveryTimes: [
             { id: '', label: 'Any Delivery Time' },
-            { id: '24h', label: 'âš¡ 24 Hours' },
-            { id: '3d', label: 'â±ï¸ Up to 3 Days' },
-            { id: '7d', label: 'ðŸ“… Up to 7 Days' }
+            { id: '24h', label: '⚡ 24 Hours' },
+            { id: '3d', label: '⏱️ Up to 3 Days' },
+            { id: '7d', label: '📅 Up to 7 Days' }
         ],
         defaultBadge: 'PRO VIDEO EDITING',
         primaryBtnText: 'Book Talent',
-        secondaryBtnText: 'ðŸŽ¨ Showreel',
+        secondaryBtnText: '🎨 Showreel',
         showreelLabel: 'Featured Video Editing Reel',
         unitLabel: 'project'
     },
@@ -6957,13 +6957,13 @@ const fiverrCategoryConfigs = {
         selectTypeLabel: 'Select lesson type',
         searchPlaceholder: 'Search IELTS, conversational English, business fluency, accent training...',
         types: [
-            { id: '', label: 'All Lesson Types', icon: 'âœ¨' },
-            { id: 'conversational', label: 'Conversational English', icon: 'ðŸ—£ï¸', keywords: ['conversational', 'fluency', 'speaking', 'small talk', 'vocabulary'] },
-            { id: 'ielts_toefl', label: 'IELTS & TOEFL Prep', icon: 'ðŸŽ“', keywords: ['ielts', 'toefl', 'exam', 'band', 'cambridge', 'test'] },
-            { id: 'business_english', label: 'Business English', icon: 'ðŸ’¼', keywords: ['business', 'executive', 'presentation', 'corporate', 'meeting', 'negotiation'] },
-            { id: 'interview_prep', label: 'Interview Coaching', icon: 'ðŸŽ¯', keywords: ['interview', 'mock', 'star', 'faang', 'behavioral', 'q&a'] },
-            { id: 'kids_english', label: 'English for Kids', icon: 'ðŸ‘¶', keywords: ['kids', 'children', 'phonics', 'storytelling', 'beginner', 'games'] },
-            { id: 'accent_training', label: 'Accent Neutralization', icon: 'ðŸŽ™ï¸', keywords: ['accent', 'neutralization', 'pronunciation', 'intonation', 'speech', 'vowel'] }
+            { id: '', label: 'All Lesson Types', icon: '✨' },
+            { id: 'conversational', label: 'Conversational English', icon: '🗣️', keywords: ['conversational', 'fluency', 'speaking', 'small talk', 'vocabulary'] },
+            { id: 'ielts_toefl', label: 'IELTS & TOEFL Prep', icon: '🎓', keywords: ['ielts', 'toefl', 'exam', 'band', 'cambridge', 'test'] },
+            { id: 'business_english', label: 'Business English', icon: '💼', keywords: ['business', 'executive', 'presentation', 'corporate', 'meeting', 'negotiation'] },
+            { id: 'interview_prep', label: 'Interview Coaching', icon: '🎯', keywords: ['interview', 'mock', 'star', 'faang', 'behavioral', 'q&a'] },
+            { id: 'kids_english', label: 'English for Kids', icon: '👶', keywords: ['kids', 'children', 'phonics', 'storytelling', 'beginner', 'games'] },
+            { id: 'accent_training', label: 'Accent Neutralization', icon: '🎙️', keywords: ['accent', 'neutralization', 'pronunciation', 'intonation', 'speech', 'vowel'] }
         ],
         serviceOptions: [
             { id: '', label: 'All Lessons' },
@@ -6976,17 +6976,17 @@ const fiverrCategoryConfigs = {
         sellerDetails: [],
         budgets: [
             { id: '', label: 'Any Budget' },
-            { id: 'under1000', label: 'Under â‚¹1,000 / session' },
-            { id: '1000to2000', label: 'â‚¹1,000 - â‚¹2,000 / session' },
-            { id: 'above2000', label: 'â‚¹2,000+ / session' }
+            { id: 'under1000', label: 'Under ₹1,000 / session' },
+            { id: '1000to2000', label: '₹1,000 - ₹2,000 / session' },
+            { id: 'above2000', label: '₹2,000+ / session' }
         ],
         deliveryTimes: [
             { id: '', label: 'Any Availability' },
-            { id: 'flexible', label: 'ðŸ—“ï¸ Flexible Schedule' }
+            { id: 'flexible', label: '🗓️ Flexible Schedule' }
         ],
         defaultBadge: 'CERTIFIED ENGLISH COACH',
         primaryBtnText: 'Book Lesson',
-        secondaryBtnText: 'ðŸŽ§ Sample Class',
+        secondaryBtnText: '🎧 Sample Class',
         showreelLabel: 'Live Class Recording Sample',
         unitLabel: 'session'
     },
@@ -6999,13 +6999,13 @@ const fiverrCategoryConfigs = {
         selectTypeLabel: 'Select writing type',
         searchPlaceholder: 'Search SEO articles, website copywriting, email sequences, video scripts...',
         types: [
-            { id: '', label: 'All Writing Types', icon: 'âœ¨' },
-            { id: 'seo_articles', label: 'SEO Blog Posts & Articles', icon: 'ðŸ“', keywords: ['seo', 'blog', 'article', 'surfer', 'keyword', 'ranking'] },
-            { id: 'landing_copy', label: 'Website Copy & Landing Pages', icon: 'ðŸš€', keywords: ['website', 'landing page', 'copy', 'hero', 'conversion', 'saas', 'sales'] },
-            { id: 'social_copy', label: 'Social Media & Ad Copy', icon: 'ðŸ“±', keywords: ['social', 'ad', 'linkedin', 'twitter', 'meta', 'viral', 'hook', 'facebook'] },
-            { id: 'email_copy', label: 'Email Marketing & Newsletters', icon: 'ðŸ“§', keywords: ['email', 'newsletter', 'sequence', 'outreach', 'klaviyo', 'drip'] },
-            { id: 'video_scripts', label: 'YouTube & Video Scripts', icon: 'ðŸŽ¬', keywords: ['script', 'youtube', 'storytelling', 'retention', 'video script', 'b-roll'] },
-            { id: 'tech_creative', label: 'Creative & Technical Writing', icon: 'ðŸ“–', keywords: ['technical', 'whitepaper', 'case study', 'ebook', 'research', 'report'] }
+            { id: '', label: 'All Writing Types', icon: '✨' },
+            { id: 'seo_articles', label: 'SEO Blog Posts & Articles', icon: '📝', keywords: ['seo', 'blog', 'article', 'surfer', 'keyword', 'ranking'] },
+            { id: 'landing_copy', label: 'Website Copy & Landing Pages', icon: '🚀', keywords: ['website', 'landing page', 'copy', 'hero', 'conversion', 'saas', 'sales'] },
+            { id: 'social_copy', label: 'Social Media & Ad Copy', icon: '📱', keywords: ['social', 'ad', 'linkedin', 'twitter', 'meta', 'viral', 'hook', 'facebook'] },
+            { id: 'email_copy', label: 'Email Marketing & Newsletters', icon: '📧', keywords: ['email', 'newsletter', 'sequence', 'outreach', 'klaviyo', 'drip'] },
+            { id: 'video_scripts', label: 'YouTube & Video Scripts', icon: '🎬', keywords: ['script', 'youtube', 'storytelling', 'retention', 'video script', 'b-roll'] },
+            { id: 'tech_creative', label: 'Creative & Technical Writing', icon: '📖', keywords: ['technical', 'whitepaper', 'case study', 'ebook', 'research', 'report'] }
         ],
         serviceOptions: [
             { id: '', label: 'All Writing Formats' },
@@ -7019,19 +7019,19 @@ const fiverrCategoryConfigs = {
         sellerDetails: [],
         budgets: [
             { id: '', label: 'Any Budget' },
-            { id: 'under1500', label: 'Under â‚¹1,500' },
-            { id: '1500to3500', label: 'â‚¹1,500 - â‚¹3,500' },
-            { id: 'above3500', label: 'â‚¹3,500+' }
+            { id: 'under1500', label: 'Under ₹1,500' },
+            { id: '1500to3500', label: '₹1,500 - ₹3,500' },
+            { id: 'above3500', label: '₹3,500+' }
         ],
         deliveryTimes: [
             { id: '', label: 'Any Delivery Time' },
-            { id: '24h', label: 'âš¡ 24 Hours' },
-            { id: '3d', label: 'â±ï¸ Up to 3 Days' },
-            { id: '7d', label: 'ðŸ“… Up to 7 Days' }
+            { id: '24h', label: '⚡ 24 Hours' },
+            { id: '3d', label: '⏱️ Up to 3 Days' },
+            { id: '7d', label: '📅 Up to 7 Days' }
         ],
         defaultBadge: 'PRO VERIFIED COPYWRITER',
         primaryBtnText: 'Hire Writer',
-        secondaryBtnText: 'ðŸ“„ Read Sample',
+        secondaryBtnText: '📄 Read Sample',
         showreelLabel: 'Published Writing Portfolio & Case Studies',
         unitLabel: 'deliverable'
     }
@@ -7206,11 +7206,11 @@ function ProvidersList() {
         const btn = event?.currentTarget || document.querySelector(`#fav-btn-${providerId}`);
         if (btn) {
             btn.classList.toggle('active', !isFav);
-            btn.innerHTML = !isFav ? 'â¤ï¸' : 'ðŸ¤';
+            btn.innerHTML = !isFav ? '❤️' : '🤍';
             btn.style.transform = 'scale(1.25)';
             setTimeout(() => { btn.style.transform = 'scale(1)'; }, 180);
         }
-        showToast(!isFav ? 'Saved to your Saved Gigs â¤ï¸' : 'Removed from Saved Gigs', 'info');
+        showToast(!isFav ? 'Saved to your Saved Gigs ❤️' : 'Removed from Saved Gigs', 'info');
     };
 
     window.openFiverrEscrowModal = () => {
@@ -7229,7 +7229,7 @@ function ProvidersList() {
                         </button>
                         <div>
                             <div style="display: flex; align-items: center; gap: 8px;">
-                                <span style="font-size: 1.4rem;">ðŸ›¡ï¸</span>
+                                <span style="font-size: 1.4rem;">🛡️</span>
                                 <h3 style="margin: 0; font-size: 1.15rem; font-weight: 800; color: var(--text-primary);">How Escrow Protection Works</h3>
                             </div>
                             <p style="margin: 4px 0 0 0; font-size: 0.8125rem; color: var(--text-secondary);">100% Risk-Free freelance services for clients & talent</p>
@@ -7303,7 +7303,7 @@ function ProvidersList() {
                         </button>
                         <div>
                             <h3 style="margin: 0; font-size: 1.15rem; font-weight: 800; color: var(--text-primary);">${name}'s Showcase</h3>
-                            <div style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 2px;">â˜… ${(provider?.rating || 5.0).toFixed(1)} (${provider?.total_bookings || 20} orders) â€¢ 100% Escrow Protected</div>
+                            <div style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 2px;">★ ${(provider?.rating || 5.0).toFixed(1)} (${provider?.total_bookings || 20} orders) • 100% Escrow Protected</div>
                         </div>
                     </div>
                     <button class="modal-close" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--text-muted);">&times;</button>
@@ -7313,7 +7313,7 @@ function ProvidersList() {
                     <img src="${thumb}" style="position: absolute; top:0; left:0; width:100%; height:100%; object-fit: cover;" alt="${name}">
                     <div style="position: absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background: rgba(0,0,0,0.45); color:white; text-align:center; padding:16px;">
                         <div style="width: 56px; height: 56px; border-radius: 50%; background: rgba(255,255,255,0.95); color: #0f172a; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-bottom: 10px; box-shadow: 0 4px 16px rgba(0,0,0,0.4); padding-left: 4px;">
-                            â–¶
+                            ▶
                         </div>
                         <div style="font-weight: 700; font-size: 1.05rem;">${items[0]?.title || cfg.showreelLabel}</div>
                         <div style="font-size: 0.8125rem; opacity: 0.85; max-width: 460px; margin-top: 4px;">${items[0]?.description || 'Verified showcase deliverable with 100% escrow protection and quality assurance.'}</div>
@@ -7323,17 +7323,17 @@ function ProvidersList() {
                 <div style="background: var(--bg-hover); padding: 12px 16px; border-radius: 10px; margin-bottom: 18px; display: flex; justify-content: space-between; align-items: center;">
                     <div>
                         <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Starting Package</div>
-                        <div style="font-weight: 800; color: var(--accent); font-size: 1.15rem;">â‚¹${(provider?.starting_price || 999).toLocaleString()}</div>
+                        <div style="font-weight: 800; color: var(--accent); font-size: 1.15rem;">₹${(provider?.starting_price || 999).toLocaleString()}</div>
                     </div>
                     <div style="text-align: right;">
                         <div style="font-size: 0.75rem; color: var(--text-muted);">Standard Turnaround</div>
-                        <div style="font-weight: 700; color: var(--text-primary); font-size: 0.875rem;">âš¡ ${provider?.packages?.[0]?.turnaround || '24 hours'}</div>
+                        <div style="font-weight: 700; color: var(--text-primary); font-size: 0.875rem;">⚡ ${provider?.packages?.[0]?.turnaround || '24 hours'}</div>
                     </div>
                 </div>
 
                 <div style="display: flex; gap: 10px;">
                     <button class="btn btn-outline" onclick="this.closest('.fiverr-escrow-modal').remove(); openPreBookingChat(${providerId}, '${name.replace(/'/g, "\\'")}')" style="flex: 1; min-height: 46px; font-weight: 700; border-color: var(--accent); color: var(--accent); display: flex; align-items: center; justify-content: center; gap: 6px;">
-                        ðŸ’¬ Chat with ${name}
+                        💬 Chat with ${name}
                     </button>
                     <button class="btn btn-primary" onclick="this.closest('.fiverr-escrow-modal').remove(); selectProvider(${providerId})" style="flex: 1.5; font-weight: 700; min-height: 46px;">
                         ${cfg.primaryBtnText}
@@ -7540,13 +7540,13 @@ function ProvidersList() {
     function getGigBadge(provider, cfg) {
         const text = `${(provider.skills || []).join(' ')} ${(provider.packages || []).map(p => p.title).join(' ')}`.toLowerCase();
 
-        if (text.includes('animation') || text.includes('2d') || text.includes('3d') || text.includes('blender') || text.includes('character')) return 'ðŸŽ¨ 2D/3D ANIMATION MASTER';
-        if (text.includes('gaming') || text.includes('twitch') || text.includes('montage') || text.includes('gameplay')) return 'ðŸŽ® GAMING & STREAM EDITS';
-        if (text.includes('tiktok') || text.includes('reels') || text.includes('ads & social') || text.includes('ugc') || text.includes('hook')) return 'ðŸ“± VIRAL REELS & SOCIAL ADS';
-        if (text.includes('youtube') || text.includes('long-form') || text.includes('retention') || text.includes('podcast')) return 'ðŸ“º YOUTUBE & LONG-FORM PRO';
-        if (text.includes('corporate') || text.includes('b2b') || text.includes('commercial')) return 'ðŸ¢ CORPORATE & B2B PROMO';
-        if (text.includes('travel')) return 'âœˆï¸ CINEMATIC 4K TRAVEL';
-        if (text.includes('music')) return 'ðŸŽ¬ MUSIC & TRIPPY VFX';
+        if (text.includes('animation') || text.includes('2d') || text.includes('3d') || text.includes('blender') || text.includes('character')) return '🎨 2D/3D ANIMATION MASTER';
+        if (text.includes('gaming') || text.includes('twitch') || text.includes('montage') || text.includes('gameplay')) return '🎮 GAMING & STREAM EDITS';
+        if (text.includes('tiktok') || text.includes('reels') || text.includes('ads & social') || text.includes('ugc') || text.includes('hook')) return '📱 VIRAL REELS & SOCIAL ADS';
+        if (text.includes('youtube') || text.includes('long-form') || text.includes('retention') || text.includes('podcast')) return '📺 YOUTUBE & LONG-FORM PRO';
+        if (text.includes('corporate') || text.includes('b2b') || text.includes('commercial')) return '🏢 CORPORATE & B2B PROMO';
+        if (text.includes('travel')) return '✈️ CINEMATIC 4K TRAVEL';
+        if (text.includes('music')) return '🎬 MUSIC & TRIPPY VFX';
 
         if (text.includes('conversational')) return '1-ON-1 FLUENCY COACH';
         if (text.includes('ielts') || text.includes('toefl')) return 'IELTS BAND 8+ MASTER';
@@ -7663,15 +7663,15 @@ function ProvidersList() {
         }[provider.niche] || (cfg?.primaryBtnText || 'Book Talent');
 
         const secondaryText = {
-            'tutors': 'ðŸŽ§ Sample Class',
-            'writers': 'ðŸ“„ Read Sample',
-            'editors_animators': 'ðŸŽ¨ Showreel'
-        }[provider.niche] || (cfg?.secondaryBtnText || 'ðŸŽ¨ Showcase');
+            'tutors': '🎧 Sample Class',
+            'writers': '📄 Read Sample',
+            'editors_animators': '🎨 Showreel'
+        }[provider.niche] || (cfg?.secondaryBtnText || '🎨 Showcase');
 
         const nicheTag = {
-            'editors_animators': 'ðŸŽ¬ Video',
-            'tutors': 'ðŸ—£ï¸ Tutor',
-            'writers': 'âœï¸ Writer'
+            'editors_animators': '🎬 Video',
+            'tutors': '🗣️ Tutor',
+            'writers': '✍️ Writer'
         }[provider.niche] || '';
 
         return `
@@ -7686,10 +7686,10 @@ function ProvidersList() {
                     onclick="toggleFiverrFavorite(${provider.id}, event)"
                     title="Save to favorites"
                 >
-                    ${isFav ? 'â¤ï¸' : 'ðŸ¤'}
+                    ${isFav ? '❤️' : '🤍'}
                 </button>
                 <div class="fiverr-gig-play-hint">
-                    <div class="fiverr-gig-play-btn">â–¶</div>
+                    <div class="fiverr-gig-play-btn">▶</div>
                 </div>
             </div>
 
@@ -7703,7 +7703,7 @@ function ProvidersList() {
                         </div>
                         <div style="overflow: hidden; flex: 1;">
                             <div class="fiverr-gig-creator-name">${escapeHTML(provider.name || 'Provider')}</div>
-                            <div style="font-size: 0.6875rem; color: var(--success); font-weight: 600;">ðŸŸ¢ Online now</div>
+                            <div style="font-size: 0.6875rem; color: var(--success); font-weight: 600;">🟢 Online now</div>
                         </div>
                         <div style="display: flex; gap: 4px; align-items: center;">
                             ${nicheTag ? `<span style="font-size: 0.65rem; font-weight: 700; padding: 2px 6px; border-radius: 4px; background: rgba(99, 102, 241, 0.1); color: var(--accent); border: 1px solid rgba(99, 102, 241, 0.2);">${nicheTag}</span>` : ''}
@@ -7718,10 +7718,10 @@ function ProvidersList() {
 
                     <!-- Rating Row -->
                     <div class="fiverr-gig-rating-row">
-                        <span class="fiverr-gig-star">â˜…</span>
+                        <span class="fiverr-gig-star">★</span>
                         <span class="fiverr-gig-rating-val">${(provider.rating || 5.0).toFixed(1)}</span>
                         <span class="fiverr-gig-reviews">(${provider.review_count || 24})</span>
-                        <span style="color: var(--text-muted); margin: 0 4px;">â€¢</span>
+                        <span style="color: var(--text-muted); margin: 0 4px;">•</span>
                         <span style="color: var(--accent); font-weight: 600; font-size: 0.75rem;">100% Escrow</span>
                     </div>
 
@@ -7738,17 +7738,17 @@ function ProvidersList() {
                     <div class="fiverr-gig-footer">
                         <div>
                             <div class="fiverr-gig-price-label">Starting at</div>
-                            <div class="fiverr-gig-price-val">â‚¹${startPrice.toLocaleString()}</div>
+                            <div class="fiverr-gig-price-val">₹${startPrice.toLocaleString()}</div>
                         </div>
                         <div style="text-align: right;">
-                            <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">âš¡ ${escapeHTML(turnaround)}</span>
+                            <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">⚡ ${escapeHTML(turnaround)}</span>
                         </div>
                     </div>
 
                     <!-- Action Buttons: Chat & Order -->
                     <div class="fiverr-gig-actions" style="display: flex; gap: 6px; margin-top: 10px;">
                         <button class="btn btn-outline btn-sm" style="flex: 1; font-weight: 700; border-color: var(--accent); color: var(--accent); display: flex; align-items: center; justify-content: center; gap: 4px;" onclick="event.stopPropagation(); openPreBookingChat(${provider.id})" title="Chat with ${escapeHTML(provider.name || 'Provider')} before booking">
-                            ðŸ’¬ Chat
+                            💬 Chat
                         </button>
                         <button class="btn btn-primary btn-sm" style="flex: 1.4; font-weight: 700;" onclick="selectProvider(${provider.id}, ${mainPkg ? mainPkg.id : 'null'})">
                             ${primaryText}
@@ -7866,7 +7866,7 @@ function ProvidersList() {
                                 <line x1="19" y1="12" x2="5" y2="12"></line>
                                 <polyline points="12 19 5 12 12 5"></polyline>
                             </svg>
-                            <span>â† All Categories</span>
+                            <span>← All Categories</span>
                         </button>
                     </div>
                 ` : ''}
@@ -7894,17 +7894,17 @@ function ProvidersList() {
                                 autocomplete="off"
                             />
                             ${providerSearchState.q ? `
-                                <button type="button" class="buyer-search-clear-btn" onclick="window.__clearProviderSearch()" title="Clear search">âœ•</button>
+                                <button type="button" class="buyer-search-clear-btn" onclick="window.__clearProviderSearch()" title="Clear search">✕</button>
                             ` : ''}
                         </div>
                         <button type="submit" class="btn btn-primary buyer-search-btn buyer-search-btn-blinking" title="Click to search talent">
                             <span class="search-btn-beacon"></span>
-                            <span class="search-btn-icon-sparkle">âœ¨</span>
+                            <span class="search-btn-icon-sparkle">✨</span>
                             <span>Search</span>
                         </button>
                         ${hasActiveFilters ? `
                             <button type="button" class="btn btn-secondary" onclick="clearProviderFilters()" style="height: 44px; width: auto; padding: 0 14px; font-weight: 600;" title="Reset filters">
-                                âœ• Clear
+                                ✕ Clear
                             </button>
                         ` : ''}
                     </form>
@@ -7933,8 +7933,8 @@ function ProvidersList() {
                         <div class="fiverr-type-header">
                             <h2 class="fiverr-type-title">${activeCfg.selectTypeLabel}</h2>
                             <div class="fiverr-scroll-arrows">
-                                <button class="fiverr-scroll-btn" onclick="scrollFiverrTypes(-240)" title="Scroll left">â€¹</button>
-                                <button class="fiverr-scroll-btn" onclick="scrollFiverrTypes(240)" title="Scroll right">â€º</button>
+                                <button class="fiverr-scroll-btn" onclick="scrollFiverrTypes(-240)" title="Scroll left">‹</button>
+                                <button class="fiverr-scroll-btn" onclick="scrollFiverrTypes(240)" title="Scroll right">›</button>
                             </div>
                         </div>
                         <div class="fiverr-type-scroll" id="fiverr-type-scroll">
@@ -7977,7 +7977,7 @@ function ProvidersList() {
                                 <div class="fiverr-filter-menu" id="menu-seller-details">
                                     <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 8px; margin-bottom: 8px; border-bottom: 1px solid var(--border);">
                                         <span style="font-weight: 700; font-size: 0.82rem; color: var(--text-primary);">Seller Details</span>
-                                        <button type="button" class="modal-back-btn" onclick="document.querySelectorAll('.fiverr-filter-menu.open').forEach(m => m.classList.remove('open'))">âœ• Close</button>
+                                        <button type="button" class="modal-back-btn" onclick="document.querySelectorAll('.fiverr-filter-menu.open').forEach(m => m.classList.remove('open'))">✕ Close</button>
                                     </div>
                                     ${activeCfg.sellerDetails.map(sd => `
                                         <div class="fiverr-filter-option ${providerSearchState.sellerDetail === sd.id ? 'selected' : ''}" onclick="setFiverrFilter('sellerDetail', '${sd.id}')">
@@ -7997,7 +7997,7 @@ function ProvidersList() {
                                 <div class="fiverr-filter-menu" id="menu-budget">
                                     <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 8px; margin-bottom: 8px; border-bottom: 1px solid var(--border);">
                                         <span style="font-weight: 700; font-size: 0.82rem; color: var(--text-primary);">Budget</span>
-                                        <button type="button" class="modal-back-btn" onclick="document.querySelectorAll('.fiverr-filter-menu.open').forEach(m => m.classList.remove('open'))">âœ• Close</button>
+                                        <button type="button" class="modal-back-btn" onclick="document.querySelectorAll('.fiverr-filter-menu.open').forEach(m => m.classList.remove('open'))">✕ Close</button>
                                     </div>
                                     ${activeCfg.budgets.map(b => `
                                         <div class="fiverr-filter-option ${providerSearchState.budget === b.id ? 'selected' : ''}" onclick="setFiverrFilter('budget', '${b.id}')">
@@ -8016,7 +8016,7 @@ function ProvidersList() {
                                 <div class="fiverr-filter-menu" id="menu-delivery-time">
                                     <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 8px; margin-bottom: 8px; border-bottom: 1px solid var(--border);">
                                         <span style="font-weight: 700; font-size: 0.82rem; color: var(--text-primary);">${providerSearchState.niche === 'tutors' ? 'Schedule' : 'Delivery time'}</span>
-                                        <button type="button" class="modal-back-btn" onclick="document.querySelectorAll('.fiverr-filter-menu.open').forEach(m => m.classList.remove('open'))">âœ• Close</button>
+                                        <button type="button" class="modal-back-btn" onclick="document.querySelectorAll('.fiverr-filter-menu.open').forEach(m => m.classList.remove('open'))">✕ Close</button>
                                     </div>
                                     ${activeCfg.deliveryTimes.map(dt => `
                                         <div class="fiverr-filter-option ${providerSearchState.deliveryTime === dt.id ? 'selected' : ''}" onclick="setFiverrFilter('deliveryTime', '${dt.id}')">
@@ -8028,7 +8028,7 @@ function ProvidersList() {
 
                             ${hasActiveFilters ? `
                                 <button class="btn btn-secondary btn-sm" onclick="clearProviderFilters()" style="padding: 7px 12px; font-size: 0.78125rem;">
-                                    âœ• Reset
+                                    ✕ Reset
                                 </button>
                             ` : ''}
                         </div>
@@ -8060,43 +8060,43 @@ function ProvidersList() {
                             ${activeSubTypeObj ? `
                                 <button class="fiverr-active-filter-chip" onclick="setFiverrSubType('')" title="Remove filter">
                                     <span>Type: ${activeSubTypeObj.label}</span>
-                                    <span class="chip-x">âœ•</span>
+                                    <span class="chip-x">✕</span>
                                 </button>
                             ` : ''}
                             ${activeServiceOptionLabel ? `
                                 <button class="fiverr-active-filter-chip" onclick="setFiverrFilter('serviceOption', '')" title="Remove filter">
                                     <span>Service: ${activeServiceOptionLabel}</span>
-                                    <span class="chip-x">âœ•</span>
+                                    <span class="chip-x">✕</span>
                                 </button>
                             ` : ''}
                             ${activeSellerDetailLabel && providerSearchState.niche !== 'tutors' && providerSearchState.niche !== 'writers' ? `
                                 <button class="fiverr-active-filter-chip" onclick="setFiverrFilter('sellerDetail', '')" title="Remove filter">
                                     <span>Seller: ${activeSellerDetailLabel}</span>
-                                    <span class="chip-x">âœ•</span>
+                                    <span class="chip-x">✕</span>
                                 </button>
                             ` : ''}
                             ${activeBudgetLabel ? `
                                 <button class="fiverr-active-filter-chip" onclick="setFiverrFilter('budget', '')" title="Remove filter">
                                     <span>Budget: ${activeBudgetLabel}</span>
-                                    <span class="chip-x">âœ•</span>
+                                    <span class="chip-x">✕</span>
                                 </button>
                             ` : ''}
                             ${activeDeliveryLabel ? `
                                 <button class="fiverr-active-filter-chip" onclick="setFiverrFilter('deliveryTime', '')" title="Remove filter">
                                     <span>${providerSearchState.niche === 'tutors' ? 'Schedule' : 'Delivery'}: ${activeDeliveryLabel}</span>
-                                    <span class="chip-x">âœ•</span>
+                                    <span class="chip-x">✕</span>
                                 </button>
                             ` : ''}
                             ${providerSearchState.proOnly ? `
                                 <button class="fiverr-active-filter-chip" onclick="toggleFiverrProOnly(false)" title="Remove filter">
                                     <span>Pro Only</span>
-                                    <span class="chip-x">âœ•</span>
+                                    <span class="chip-x">✕</span>
                                 </button>
                             ` : ''}
                             ${providerSearchState.onlineOnly ? `
                                 <button class="fiverr-active-filter-chip" onclick="toggleFiverrOnlineOnly(false)" title="Remove filter">
                                     <span>Online Now</span>
-                                    <span class="chip-x">âœ•</span>
+                                    <span class="chip-x">✕</span>
                                 </button>
                             ` : ''}
                             <button class="fiverr-clear-all-btn" onclick="clearProviderFilters()">
@@ -8108,7 +8108,7 @@ function ProvidersList() {
                     <!-- Results Count & Sorting Row -->
                     <div class="fiverr-results-bar">
                         <div class="fiverr-results-count">
-                            ${displayedProviders.length} results <span style="font-weight: 400; color: var(--text-muted); margin-left: 6px;">â€¢ Showing verified talent</span>
+                            ${displayedProviders.length} results <span style="font-weight: 400; color: var(--text-muted); margin-left: 6px;">• Showing verified talent</span>
                         </div>
                         <div style="display: flex; align-items: center; gap: 8px;">
                             <span style="font-size: 0.8125rem; color: var(--text-secondary);">Sort by:</span>
@@ -8153,8 +8153,8 @@ function ProvidersList() {
 
                 ${!loading && displayedProviders.length === 0 ? `
                     <div class="card" style="padding: 48px 24px; text-align: center; max-width: 600px; margin: 32px auto; border: 1.5px dashed var(--border); box-shadow: var(--shadow);">
-                        <div style="font-size: 3rem; margin-bottom: 14px;">âœ¨</div>
-                        <h3 style="font-size: 1.35rem; font-weight: 800; margin-bottom: 8px; color: var(--text-primary);">Fresh Marketplace â€” Join as a Creator</h3>
+                        <div style="font-size: 3rem; margin-bottom: 14px;">✨</div>
+                        <h3 style="font-size: 1.35rem; font-weight: 800; margin-bottom: 8px; color: var(--text-primary);">Fresh Marketplace — Join as a Creator</h3>
                         <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 24px; line-height: 1.5; max-width: 460px; margin-left: auto; margin-right: auto;">
                             Are you a Video Editor, Motion Designer, or English Coach? Be among the first verified creators to offer services with 100% Escrow protected payouts.
                         </p>
@@ -8171,7 +8171,7 @@ function ProvidersList() {
                 ${!loading && !isClassified && displayedProviders.length > 0 ? `
                     <div class="fiverr-results-bar">
                         <div class="fiverr-results-count">
-                            ${displayedProviders.length} verified talents <span style="font-weight: 400; color: var(--text-muted); margin-left: 6px;">â€¢ Showing visual portfolios &amp; work showcases</span>
+                            ${displayedProviders.length} verified talents <span style="font-weight: 400; color: var(--text-muted); margin-left: 6px;">• Showing visual portfolios &amp; work showcases</span>
                         </div>
                         <div style="display: flex; align-items: center; gap: 8px;">
                             <span style="font-size: 0.8125rem; color: var(--text-secondary);">Sort by:</span>
@@ -8228,7 +8228,7 @@ function AdminDashboard() {
                 <div style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(99, 102, 241, 0.08) 100%); border: 1.5px solid rgba(239, 68, 68, 0.35); border-radius: var(--radius-md); padding: 22px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
                     <div style="display: flex; align-items: center; gap: 14px;">
                         <div style="width: 48px; height: 48px; border-radius: 14px; background: #ef4444; color: white; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; flex-shrink: 0; box-shadow: 0 4px 14px rgba(239, 68, 68, 0.35);">
-                            ðŸ›¡ï¸
+                            🛡️
                         </div>
                         <div>
                             <div style="font-size: 1.25rem; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
@@ -8236,13 +8236,13 @@ function AdminDashboard() {
                                 <span class="mode-badge-pill mode-badge-admin">Exclusive Admin Access</span>
                             </div>
                             <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 3px;">
-                                Signed in as <strong>${currentUser?.email || 'rahura2026@gmail.com'}</strong> â€¢ Complete oversight of chats, escrow, orders & talent.
+                                Signed in as <strong>${currentUser?.email || 'rahura2026@gmail.com'}</strong> • Complete oversight of chats, escrow, orders & talent.
                             </div>
                         </div>
                     </div>
                     <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                        <button class="btn btn-secondary btn-sm" onclick="router('/admin/chats')">ðŸ’¬ Inspect Chats</button>
-                        <button class="btn btn-primary btn-sm" onclick="router('/payments')">ðŸ’³ Escrow & Revenue</button>
+                        <button class="btn btn-secondary btn-sm" onclick="router('/admin/chats')">💬 Inspect Chats</button>
+                        <button class="btn btn-primary btn-sm" onclick="router('/payments')">💳 Escrow & Revenue</button>
                     </div>
                 </div>
 
@@ -8267,7 +8267,7 @@ function AdminDashboard() {
                         </div>
                         <div class="card" style="border-left: 4px solid #10b981; padding: 20px;">
                             <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Platform Revenue</div>
-                            <div style="font-size: 2rem; font-weight: 800; color: #10b981; margin-top: 4px;">â‚¹${(stats.total_commissions || 0).toLocaleString()}</div>
+                            <div style="font-size: 2rem; font-weight: 800; color: #10b981; margin-top: 4px;">₹${(stats.total_commissions || 0).toLocaleString()}</div>
                             <div style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 2px;">20% commissions</div>
                         </div>
                     </div>
@@ -8276,7 +8276,7 @@ function AdminDashboard() {
                     <div class="grid grid-2">
                         <button class="card" onclick="router('/admin/chats')" style="cursor: pointer; text-align: left; border-color: rgba(99, 102, 241, 0.4);">
                             <div class="card-header" style="margin-bottom: 6px;">
-                                <div class="card-title" style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary);">ðŸ’¬ Chats & Safety Guard</div>
+                                <div class="card-title" style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary);">💬 Chats & Safety Guard</div>
                                 <span class="badge badge-primary">Moderation</span>
                             </div>
                             <div class="card-body" style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;">
@@ -8285,7 +8285,7 @@ function AdminDashboard() {
                         </button>
                         <button class="card" onclick="router('/admin/providers')" style="cursor: pointer; text-align: left;">
                             <div class="card-header" style="margin-bottom: 6px;">
-                                <div class="card-title" style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary);">ðŸ‘¥ Provider Management</div>
+                                <div class="card-title" style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary);">👥 Provider Management</div>
                                 <span class="badge badge-info">${stats.total_providers || 0} Providers</span>
                             </div>
                             <div class="card-body" style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;">
@@ -8294,7 +8294,7 @@ function AdminDashboard() {
                         </button>
                         <button class="card" onclick="router('/admin/bookings')" style="cursor: pointer; text-align: left;">
                             <div class="card-header" style="margin-bottom: 6px;">
-                                <div class="card-title" style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary);">ðŸ“‹ All Bookings & Escrow Monitor</div>
+                                <div class="card-title" style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary);">📋 All Bookings & Escrow Monitor</div>
                                 <span class="badge badge-info">${stats.total_bookings || 0} Orders</span>
                             </div>
                             <div class="card-body" style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;">
@@ -8303,7 +8303,7 @@ function AdminDashboard() {
                         </button>
                         <button class="card" onclick="router('/admin/disputes')" style="cursor: pointer; text-align: left;">
                             <div class="card-header" style="margin-bottom: 6px;">
-                                <div class="card-title" style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary);">âš–ï¸ Dispute Resolution Center</div>
+                                <div class="card-title" style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary);">⚖️ Dispute Resolution Center</div>
                                 <span class="badge badge-danger">Arbitration</span>
                             </div>
                             <div class="card-body" style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;">
@@ -8312,7 +8312,7 @@ function AdminDashboard() {
                         </button>
                         <button class="card" onclick="router('/payments')" style="cursor: pointer; text-align: left;">
                             <div class="card-header" style="margin-bottom: 6px;">
-                                <div class="card-title" style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary);">ðŸ’³ Escrow Vault & Financials</div>
+                                <div class="card-title" style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary);">💳 Escrow Vault & Financials</div>
                                 <span class="badge badge-success">Audit</span>
                             </div>
                             <div class="card-body" style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;">
@@ -8321,7 +8321,7 @@ function AdminDashboard() {
                         </button>
                         <button class="card" onclick="router('/admin/niches')" style="cursor: pointer; text-align: left;">
                             <div class="card-header" style="margin-bottom: 6px;">
-                                <div class="card-title" style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary);">ðŸ—‚ï¸ Niches & Service Categories</div>
+                                <div class="card-title" style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary);">🗂️ Niches & Service Categories</div>
                                 <span class="badge badge-info">${stats.active_niches || 0} Active</span>
                             </div>
                             <div class="card-body" style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;">
@@ -8590,7 +8590,7 @@ function AdminProviders() {
                                             <div style="font-size: 0.75rem; color: var(--text-muted);">${escapeHTML(p.email || '-')}</div>
                                         </td>
                                         <td><span class="badge badge-info">${escapeHTML(p.niche || p.service_area || 'General')}</span></td>
-                                        <td>${p.rating > 0 ? `${p.rating} â­` : 'New'}</td>
+                                        <td>${p.rating > 0 ? `${p.rating} ⭐` : 'New'}</td>
                                         <td>${p.total_bookings}</td>
                                         <td>
                                             <span class="badge ${!blocked && p.is_active ? 'badge-success' : 'badge-danger'}">
@@ -8720,9 +8720,9 @@ function AdminBookings() {
                                         <td>#${b.id}</td>
                                         <td>Buyer #${b.buyer_id}</td>
                                         <td>Provider #${b.provider_id}</td>
-                                        <td><strong>â‚¹${b.total_amount.toLocaleString()}</strong></td>
-                                        <td style="color: var(--success); font-weight: 600;">â‚¹${fee.toLocaleString()}</td>
-                                        <td>â‚¹${payout.toLocaleString()}</td>
+                                        <td><strong>₹${b.total_amount.toLocaleString()}</strong></td>
+                                        <td style="color: var(--success); font-weight: 600;">₹${fee.toLocaleString()}</td>
+                                        <td>₹${payout.toLocaleString()}</td>
                                         <td><span class="badge ${getBookingBadge(b.status)}">${escapeHTML(String(b.status || 'unknown').replace('_', ' '))}</span></td>
                                         <td>${new Date(b.created_at).toLocaleDateString()}</td>
                                         <td>
@@ -8810,7 +8810,7 @@ function AdminDisputes() {
                                     <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
                                         <div>
                                             <div style="font-weight: 700; font-size: 1rem;">Dispute #${d.id}</div>
-                                            <div style="font-size: 0.75rem; color: var(--text-muted);">Booking #${d.booking_id} â€¢ ${new Date(d.created_at).toLocaleDateString()}</div>
+                                            <div style="font-size: 0.75rem; color: var(--text-muted);">Booking #${d.booking_id} • ${new Date(d.created_at).toLocaleDateString()}</div>
                                         </div>
                                         <span class="badge ${d.status === 'open' ? 'badge-danger' : 'badge-success'}">${d.status}</span>
                                     </div>
@@ -8837,7 +8837,7 @@ function AdminDisputes() {
                                         </div>
                                     ` : `
                                         <div style="font-size: 0.75rem; color: var(--success); text-align: center; margin-top: 8px;">
-                                            âœ“ Resolved by Admin
+                                            ✓ Resolved by Admin
                                         </div>
                                     `}
                                 </div>
@@ -8871,16 +8871,16 @@ function PrivacyPolicy() {
 
                     <h3 style="color: var(--text-primary); margin-top: 12px;">1. Information We Collect</h3>
                     <p>We collect information necessary to connect creators with video editors and tutors, including:
-                        <br>â€¢ <strong>Account Details:</strong> Full name, verified mobile phone number, and email address.
-                        <br>â€¢ <strong>Provider Profiles:</strong> Skills, portfolio links, service areas, and package pricing.
-                        <br>â€¢ <strong>Transaction & Escrow Data:</strong> Booking milestones, delivery files, and escrow payment statuses.
+                        <br>• <strong>Account Details:</strong> Full name, verified mobile phone number, and email address.
+                        <br>• <strong>Provider Profiles:</strong> Skills, portfolio links, service areas, and package pricing.
+                        <br>• <strong>Transaction & Escrow Data:</strong> Booking milestones, delivery files, and escrow payment statuses.
                     </p>
 
                     <h3 style="color: var(--text-primary); margin-top: 12px;">2. How We Use Your Information</h3>
                     <p>Your information is used strictly to:
-                        <br>â€¢ Match creators with suitable video editors and English coaches.
-                        <br>â€¢ Facilitate 100% escrow payment protection and release full payouts upon buyer approval.
-                        <br>â€¢ Prevent fraud, resolve disputes, and maintain platform integrity.
+                        <br>• Match creators with suitable video editors and English coaches.
+                        <br>• Facilitate 100% escrow payment protection and release full payouts upon buyer approval.
+                        <br>• Prevent fraud, resolve disputes, and maintain platform integrity.
                     </p>
 
                     <h3 style="color: var(--text-primary); margin-top: 12px;">3. Data Security & Payment Protection</h3>
@@ -8921,9 +8921,9 @@ function TermsOfService() {
                     <p>Groove Hub provides a connection platform connecting content creators ("Buyers") with freelance video editors, animators, and English tutors ("Providers").</p>
 
                     <h3 style="color: var(--text-primary); margin-top: 12px;">2. Platform Commission & Escrow</h3>
-                    <p>â€¢ The platform charges <strong>no commission</strong> on any bookings.
-                        <br>â€¢ When a booking is placed, funds are held securely in escrow.
-                        <br>â€¢ Upon buyer approval, 100% is released to the provider's payout account.
+                    <p>• The platform charges <strong>no commission</strong> on any bookings.
+                        <br>• When a booking is placed, funds are held securely in escrow.
+                        <br>• Upon buyer approval, 100% is released to the provider's payout account.
                     </p>
 
                     <h3 style="color: var(--text-primary); margin-top: 12px;">3. Disputes & Resolutions</h3>
@@ -8949,7 +8949,7 @@ window.handleForgotPasswordSubmit = async (e) => {
     if (errBox) errBox.innerHTML = '';
     if (successBox) successBox.style.display = 'none';
     if (!email) {
-        if (errBox) errBox.innerHTML = '<div style="background: rgba(239,68,68,0.12); border:1px solid #ef4444; color:#ef4444; padding:10px 14px; border-radius:8px; margin-bottom:14px; font-size:0.85rem;">âš ï¸ Please enter your email or phone number.</div>';
+        if (errBox) errBox.innerHTML = '<div style="background: rgba(239,68,68,0.12); border:1px solid #ef4444; color:#ef4444; padding:10px 14px; border-radius:8px; margin-bottom:14px; font-size:0.85rem;">⚠️ Please enter your email or phone number.</div>';
         return;
     }
     if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Sending...'; }
@@ -8975,11 +8975,11 @@ window.handleForgotPasswordSubmit = async (e) => {
             const sc = document.getElementById('forgot-success-container');
             if (sc) sc.style.display = 'block';
         } else {
-            if (errBox) errBox.innerHTML = `<div style="background: rgba(16,185,129,0.12); border:1px solid #10b981; color:#10b981; padding:10px 14px; border-radius:8px; margin-bottom:14px; font-size:0.85rem;">âœ“ ${escapeHTML(msg || 'If an account exists, a reset link has been sent.')}</div>`;
+            if (errBox) errBox.innerHTML = `<div style="background: rgba(16,185,129,0.12); border:1px solid #10b981; color:#10b981; padding:10px 14px; border-radius:8px; margin-bottom:14px; font-size:0.85rem;">✓ ${escapeHTML(msg || 'If an account exists, a reset link has been sent.')}</div>`;
         }
         if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Send Reset Link'; }
     } catch (err) {
-        if (errBox) errBox.innerHTML = `<div style="background: rgba(239,68,68,0.12); border:1px solid #ef4444; color:#ef4444; padding:10px 14px; border-radius:8px; margin-bottom:14px; font-size:0.85rem;">âš ï¸ ${escapeHTML(err.message || 'Failed to send reset link.')}</div>`;
+        if (errBox) errBox.innerHTML = `<div style="background: rgba(239,68,68,0.12); border:1px solid #ef4444; color:#ef4444; padding:10px 14px; border-radius:8px; margin-bottom:14px; font-size:0.85rem;">⚠️ ${escapeHTML(err.message || 'Failed to send reset link.')}</div>`;
         if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Send Reset Link'; }
     }
 };
@@ -9011,14 +9011,14 @@ function ForgotPassword() {
 					</form>
 					<div id="forgot-success-container" style="margin-top: 16px; display: none;">
 					    <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid #10b981; border-radius: 8px; padding: 14px; font-size: 0.85rem; color: #10b981;">
-					        <div style="font-weight: 700; margin-bottom: 8px;">âœ… Reset link sent!</div>
+					        <div style="font-weight: 700; margin-bottom: 8px;">✅ Reset link sent!</div>
 					        <div style="color: var(--text-secondary); margin-bottom: 10px;">Use the token below to reset your password:</div>
 					        <code id="reset-token-display" style="display: block; background: var(--bg-hover); padding: 8px 12px; border-radius: 6px; font-size: 0.8rem; word-break: break-all; border: 1px dashed var(--border);"></code>
-					        <div style="margin-top: 10px;"><a id="reset-token-link" href="/reset-password" onclick="event.preventDefault(); router('/reset-password')" style="color: var(--accent); font-weight: 600;">Go to Reset Password â†’</a></div>
+					        <div style="margin-top: 10px;"><a id="reset-token-link" href="/reset-password" onclick="event.preventDefault(); router('/reset-password')" style="color: var(--accent); font-weight: 600;">Go to Reset Password →</a></div>
 					    </div>
 					</div>
 					<div style="margin-top: 20px; text-align: center;">
-					    <button class="btn btn-secondary" onclick="router('/login')" style="font-size: 0.85rem;">â† Back to Sign In</button>
+					    <button class="btn btn-secondary" onclick="router('/login')" style="font-size: 0.85rem;">← Back to Sign In</button>
 					</div>
 				</div>
 			</div>
@@ -9036,19 +9036,19 @@ function ResetPasswordPage() {
         const submitBtn = e.target.querySelector('button[type="submit"]');
         if (errBox) errBox.innerHTML = '';
         if (!token) {
-            if (errBox) errBox.innerHTML = '<div style="background: rgba(239,68,68,0.12); border:1px solid #ef4444; color:#ef4444; padding:10px 14px; border-radius:8px; font-size:0.85rem;">âš ï¸ Reset token is missing. Please enter your reset token or request a new one.</div>';
+            if (errBox) errBox.innerHTML = '<div style="background: rgba(239,68,68,0.12); border:1px solid #ef4444; color:#ef4444; padding:10px 14px; border-radius:8px; font-size:0.85rem;">⚠️ Reset token is missing. Please enter your reset token or request a new one.</div>';
             return;
         }
         if (!newPw || !confirmPw) {
-            if (errBox) errBox.innerHTML = '<div style="background: rgba(239,68,68,0.12); border:1px solid #ef4444; color:#ef4444; padding:10px 14px; border-radius:8px; font-size:0.85rem;">âš ï¸ Please fill in both password fields.</div>';
+            if (errBox) errBox.innerHTML = '<div style="background: rgba(239,68,68,0.12); border:1px solid #ef4444; color:#ef4444; padding:10px 14px; border-radius:8px; font-size:0.85rem;">⚠️ Please fill in both password fields.</div>';
             return;
         }
         if (newPw !== confirmPw) {
-            if (errBox) errBox.innerHTML = '<div style="background: rgba(239,68,68,0.12); border:1px solid #ef4444; color:#ef4444; padding:10px 14px; border-radius:8px; font-size:0.85rem;">âš ï¸ Passwords do not match.</div>';
+            if (errBox) errBox.innerHTML = '<div style="background: rgba(239,68,68,0.12); border:1px solid #ef4444; color:#ef4444; padding:10px 14px; border-radius:8px; font-size:0.85rem;">⚠️ Passwords do not match.</div>';
             return;
         }
         if (newPw.length < 6) {
-            if (errBox) errBox.innerHTML = '<div style="background: rgba(239,68,68,0.12); border:1px solid #ef4444; color:#ef4444; padding:10px 14px; border-radius:8px; font-size:0.85rem;">âš ï¸ Password must be at least 6 characters.</div>';
+            if (errBox) errBox.innerHTML = '<div style="background: rgba(239,68,68,0.12); border:1px solid #ef4444; color:#ef4444; padding:10px 14px; border-radius:8px; font-size:0.85rem;">⚠️ Password must be at least 6 characters.</div>';
             return;
         }
         if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Resetting...'; }
@@ -9057,11 +9057,11 @@ function ResetPasswordPage() {
                 method: 'POST',
                 body: JSON.stringify({ token, new_password: newPw })
             });
-            if (errBox) errBox.innerHTML = `<div style="background: rgba(16,185,129,0.12); border:1px solid #10b981; color:#10b981; padding:10px 14px; border-radius:8px; font-size:0.85rem;">âœ“ ${escapeHTML(res.message || 'Password reset successfully! Redirecting...')}</div>`;
+            if (errBox) errBox.innerHTML = `<div style="background: rgba(16,185,129,0.12); border:1px solid #10b981; color:#10b981; padding:10px 14px; border-radius:8px; font-size:0.85rem;">✓ ${escapeHTML(res.message || 'Password reset successfully! Redirecting...')}</div>`;
             if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Reset Password'; }
             setTimeout(() => router('/login'), 1500);
         } catch (err) {
-            if (errBox) errBox.innerHTML = `<div style="background: rgba(239,68,68,0.12); border:1px solid #ef4444; color:#ef4444; padding:10px 14px; border-radius:8px; font-size:0.85rem;">âš ï¸ ${escapeHTML(err.message || 'Failed to reset password.')}</div>`;
+            if (errBox) errBox.innerHTML = `<div style="background: rgba(239,68,68,0.12); border:1px solid #ef4444; color:#ef4444; padding:10px 14px; border-radius:8px; font-size:0.85rem;">⚠️ ${escapeHTML(err.message || 'Failed to reset password.')}</div>`;
             if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Reset Password'; }
         }
     };
@@ -9101,7 +9101,7 @@ function ResetPasswordPage() {
                         <button type="submit" class="btn btn-primary" style="width: 100%; padding: 13px; font-weight: 700; margin-top: 12px;">Reset Password</button>
                     </form>
                     <div style="margin-top: 20px; text-align: center;">
-                        <button class="btn btn-secondary" onclick="router('/login')" style="font-size: 0.85rem;">â† Back to Sign In</button>
+                        <button class="btn btn-secondary" onclick="router('/login')" style="font-size: 0.85rem;">← Back to Sign In</button>
                     </div>
                 </div>
             </div>
@@ -9123,7 +9123,7 @@ function VerifyEmailPage() {
         const btn = document.getElementById('verify-email-btn');
         if (errBox) errBox.innerHTML = '';
         if (!token) {
-            if (errBox) errBox.innerHTML = '<div style="background: rgba(239,68,68,0.12); border:1px solid #ef4444; color:#ef4444; padding:10px 14px; border-radius:8px; font-size:0.85rem;">âš ï¸ Please enter your verification code.</div>';
+            if (errBox) errBox.innerHTML = '<div style="background: rgba(239,68,68,0.12); border:1px solid #ef4444; color:#ef4444; padding:10px 14px; border-radius:8px; font-size:0.85rem;">⚠️ Please enter your verification code.</div>';
             return;
         }
         if (btn) { btn.disabled = true; btn.textContent = 'Verifying...'; }
@@ -9137,7 +9137,7 @@ function VerifyEmailPage() {
             showToast('Email verified! Welcome to Groove Hub.', 'success');
             router(currentUser?.user_type === 'ADMIN' ? '/admin' : '/');
         } catch (err) {
-            if (errBox) errBox.innerHTML = `<div style="background: rgba(239,68,68,0.12); border:1px solid #ef4444; color:#ef4444; padding:10px 14px; border-radius:8px; font-size:0.85rem;">âš ï¸ ${escapeHTML(err.message || 'Verification failed.')}</div>`;
+            if (errBox) errBox.innerHTML = `<div style="background: rgba(239,68,68,0.12); border:1px solid #ef4444; color:#ef4444; padding:10px 14px; border-radius:8px; font-size:0.85rem;">⚠️ ${escapeHTML(err.message || 'Verification failed.')}</div>`;
             if (btn) { btn.disabled = false; btn.textContent = 'Verify Email'; }
         }
     };
@@ -9146,7 +9146,7 @@ function VerifyEmailPage() {
         const email = (document.getElementById('verify-email')?.value || '').trim();
         const errBox = document.getElementById('verify-error-container');
         if (!email) {
-            if (errBox) errBox.innerHTML = '<div style="background: rgba(239,68,68,0.12); border:1px solid #ef4444; color:#ef4444; padding:10px 14px; border-radius:8px; font-size:0.85rem;">âš ï¸ Enter your email first.</div>';
+            if (errBox) errBox.innerHTML = '<div style="background: rgba(239,68,68,0.12); border:1px solid #ef4444; color:#ef4444; padding:10px 14px; border-radius:8px; font-size:0.85rem;">⚠️ Enter your email first.</div>';
             return;
         }
         try {
@@ -9156,7 +9156,7 @@ function VerifyEmailPage() {
             }
             showToast(res.message || 'Verification code sent.', 'success');
         } catch (err) {
-            if (errBox) errBox.innerHTML = `<div style="background: rgba(239,68,68,0.12); border:1px solid #ef4444; color:#ef4444; padding:10px 14px; border-radius:8px; font-size:0.85rem;">âš ï¸ ${escapeHTML(err.message || 'Could not resend code.')}</div>`;
+            if (errBox) errBox.innerHTML = `<div style="background: rgba(239,68,68,0.12); border:1px solid #ef4444; color:#ef4444; padding:10px 14px; border-radius:8px; font-size:0.85rem;">⚠️ ${escapeHTML(err.message || 'Could not resend code.')}</div>`;
         }
     };
 
@@ -9190,7 +9190,7 @@ function VerifyEmailPage() {
 						Didn't get a code? <button onclick="handleResendVerification()" style="background:none;border:none;color:var(--accent);font-weight:700;cursor:pointer;padding:0;">Resend code</button>
 					</div>
 					<div style="margin-top: 16px;">
-						<button class="btn btn-secondary" onclick="router('/login')" style="font-size: 0.85rem;">â† Back to Sign In</button>
+						<button class="btn btn-secondary" onclick="router('/login')" style="font-size: 0.85rem;">← Back to Sign In</button>
 					</div>
 				</div>
 			</div>
@@ -9243,13 +9243,13 @@ window.openBookingChat = async (bookingId, partyName = 'Collaborator') => {
         <div class="modal" style="max-width: 550px; height: 600px; display: flex; flex-direction: column;">
             <div class="modal-header">
                 <div>
-                    <h2 style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary);">ðŸ’¬ Project Chat - Booking #${bookingId}</h2>
+                    <h2 style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary);">💬 Project Chat - Booking #${bookingId}</h2>
                     <div style="font-size: 0.75rem; color: var(--text-muted);">Collaborating with ${escapeHTML(partyName || 'Collaborator')}</div>
                 </div>
-                <button class="modal-close" onclick="closeBookingChat()">âœ•</button>
+                <button class="modal-close" onclick="closeBookingChat()">✕</button>
             </div>
             <div style="background: rgba(99, 102, 241, 0.08); border-bottom: 1px solid var(--border); padding: 8px 14px; font-size: 0.75rem; color: var(--text-secondary); display: flex; align-items: center; gap: 8px;">
-                <span>ðŸ›¡ï¸</span>
+                <span>🛡️</span>
                 <span><strong>Escrow Protection Active:</strong> Never send personal payments or UPI outside Groove Hub. Funds remain safely protected until you approve the work.</span>
             </div>
             <div class="chat-messages" id="chat-messages-container">
@@ -9308,13 +9308,13 @@ async function loadChatMessages(bookingId, showSpinner = true) {
                         const safeFileUrl = validateUrl(msg.file_url);
                         return safeFileUrl ? `
                         <a href="${escapeHTML(safeFileUrl)}" target="_blank" rel="noopener noreferrer" class="chat-file-link">
-                            ðŸ“Ž ${escapeHTML(safeFileUrl)}
+                            📎 ${escapeHTML(safeFileUrl)}
                         </a>
                     ` : '';
                     })() : ''}
                     <div class="chat-bubble-meta">
                         <span>${timeStr}</span>
-                        ${isMe ? `<span>${msg.is_read ? 'âœ“âœ“ Read' : 'âœ“ Sent'}</span>` : ''}
+                        ${isMe ? `<span>${msg.is_read ? '✓✓ Read' : '✓ Sent'}</span>` : ''}
                     </div>
                 </div>
             `;
@@ -9364,10 +9364,10 @@ window.viewProviderPortfolio = async (providerId, providerName = 'Provider') => 
         <div class="modal" style="max-width: 750px; max-height: 85vh; display: flex; flex-direction: column;">
             <div class="modal-header">
                 <div>
-                    <h2 style="font-size: 1.15rem; font-weight: 700; color: var(--text-primary);">ðŸŽ¨ ${providerName}'s Work & Portfolio</h2>
+                    <h2 style="font-size: 1.15rem; font-weight: 700; color: var(--text-primary);">🎨 ${providerName}'s Work & Portfolio</h2>
                     <div style="font-size: 0.75rem; color: var(--text-muted);">Verified projects, sample reels, and deliverables</div>
                 </div>
-                <button class="modal-close" onclick="document.getElementById('portfolio-modal-root').remove()">âœ•</button>
+                <button class="modal-close" onclick="document.getElementById('portfolio-modal-root').remove()">✕</button>
             </div>
             <div class="modal-body" id="portfolio-modal-body" style="overflow-y: auto;">
                 <div class="loading"><div class="spinner"></div></div>
@@ -9402,9 +9402,9 @@ window.viewProviderPortfolio = async (providerId, providerName = 'Provider') => 
 
         const tabContent = `
             <div style="display: flex; gap: 4px; margin-bottom: 16px; flex-wrap: wrap;">
-                <button class="tab-btn active" data-tab="portfolio" onclick="switchProviderTab(this, '${providerId}')">ðŸ“ Portfolio (${items.length})</button>
-                <button class="tab-btn ${reviews.length === 0 ? 'inactive' : ''}" data-tab="reviews" onclick="switchProviderTab(this, '${providerId}')" ${reviews.length === 0 ? 'disabled' : ''}>â­ Reviews (${reviews.length})</button>
-                <button class="tab-btn ${bookings.length === 0 ? 'inactive' : ''}" data-tab="orders" onclick="switchProviderTab(this, '${providerId}')" ${bookings.length === 0 ? 'disabled' : ''}>ðŸ“‹ Orders (${bookings.length})</button>
+                <button class="tab-btn active" data-tab="portfolio" onclick="switchProviderTab(this, '${providerId}')">📁 Portfolio (${items.length})</button>
+                <button class="tab-btn ${reviews.length === 0 ? 'inactive' : ''}" data-tab="reviews" onclick="switchProviderTab(this, '${providerId}')" ${reviews.length === 0 ? 'disabled' : ''}>⭐ Reviews (${reviews.length})</button>
+                <button class="tab-btn ${bookings.length === 0 ? 'inactive' : ''}" data-tab="orders" onclick="switchProviderTab(this, '${providerId}')" ${bookings.length === 0 ? 'disabled' : ''}>📋 Orders (${bookings.length})</button>
             </div>
             <div id="provider-tab-portfolio-${providerId}">
                 <div class="portfolio-grid">
@@ -9420,7 +9420,7 @@ window.viewProviderPortfolio = async (providerId, providerName = 'Provider') => 
             } else {
                 mediaHtml = `
                                 <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--bg-hover);">
-                                    <span style="font-size: 2rem;">ðŸ”—</span>
+                                    <span style="font-size: 2rem;">🔗</span>
                                     <a href="${sanitizeUrl(url)}" target="_blank" rel="noopener noreferrer" style="font-size: 0.8rem; color: var(--accent); margin-top: 6px;">Open Sample</a>
                                 </div>
                             `;
@@ -9434,7 +9434,7 @@ window.viewProviderPortfolio = async (providerId, providerName = 'Provider') => 
                                 <div class="portfolio-info">
                                     <div class="portfolio-title">${escapeHTML(item.title || '')}</div>
                                     <div class="portfolio-desc">${escapeHTML(item.description || '')}</div>
-                                    <a href="${sanitizeUrl(url)}" target="_blank" rel="noopener noreferrer" style="font-size: 0.75rem; color: var(--accent); display: inline-block; margin-top: 6px;">View Original â†—</a>
+                                    <a href="${sanitizeUrl(url)}" target="_blank" rel="noopener noreferrer" style="font-size: 0.75rem; color: var(--accent); display: inline-block; margin-top: 6px;">View Original ↗</a>
                                 </div>
                             </div>
                         `;
@@ -9448,10 +9448,10 @@ window.viewProviderPortfolio = async (providerId, providerName = 'Provider') => 
                         <div class="card" style="padding: 16px;">
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                                 <div style="font-weight: 700; font-size: 0.9rem;">${escapeHTML(r.reviewer_name || 'Anonymous')}</div>
-                                <div style="color: var(--warning);">${'â˜…'.repeat(r.rating || 5)}${'â˜†'.repeat((5 - (r.rating || 5)))}</div>
+                                <div style="color: var(--warning);">${'★'.repeat(r.rating || 5)}${'☆'.repeat((5 - (r.rating || 5)))}</div>
                             </div>
                             <div style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 4px;">${escapeHTML(r.comment || 'No comment')}</div>
-                            <div style="font-size: 0.7rem; color: var(--text-muted);">Booking #${r.booking_id} Â· ${new Date(r.created_at || Date.now()).toLocaleDateString()}</div>
+                            <div style="font-size: 0.7rem; color: var(--text-muted);">Booking #${r.booking_id} · ${new Date(r.created_at || Date.now()).toLocaleDateString()}</div>
                         </div>
                     `).join('')}
                 </div>
@@ -9468,13 +9468,13 @@ window.viewProviderPortfolio = async (providerId, providerName = 'Provider') => 
                                     <div style="font-size: 0.8rem; color: var(--text-secondary);">${escapeHTML(b.title || 'Project')}</div>
                                 </div>
                                 <div style="text-align: right;">
-                                    <div style="font-weight: 700; color: var(--success); font-size: 0.95rem;">â‚¹${(b.total_amount || 0).toLocaleString()}</div>
+                                    <div style="font-weight: 700; color: var(--success); font-size: 0.95rem;">₹${(b.total_amount || 0).toLocaleString()}</div>
                                     <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px; text-transform: capitalize;">${escapeHTML(b.status || 'unknown')}</div>
                                 </div>
                             </div>
                             <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 6px;">
                                 Booked: ${new Date(b.created_at || Date.now()).toLocaleDateString()}
-                                ${b.payment_status ? ` Â· Payment: ${escapeHTML(b.payment_status)}` : ''}
+                                ${b.payment_status ? ` · Payment: ${escapeHTML(b.payment_status)}` : ''}
                             </div>
                         </div>
                     `).join('')}
@@ -9486,14 +9486,14 @@ window.viewProviderPortfolio = async (providerId, providerName = 'Provider') => 
         body.innerHTML = `
             <div style="position: sticky; top: 0; background: var(--bg-primary); z-index: 5; padding-bottom: 4px; border-bottom: 1px solid var(--border); margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
                 <div style="display: flex; align-items: center; gap: 12px;">
-                    <div style="width: 36px; height: 36px; border-radius: 50%; background: var(--accent); color: white; display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0;">ðŸ‘¤</div>
+                    <div style="width: 36px; height: 36px; border-radius: 50%; background: var(--accent); color: white; display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0;">👤</div>
                     <div>
                         <div style="font-weight: 700; font-size: 0.95rem;">${escapeHTML(providerName || 'Provider')}</div>
-                        <div style="font-size: 0.7rem; color: var(--text-muted);">${reviews.reduce((s, r) => s + (r.rating || 0), 0) / (reviews.length || 1) > 0 ? (reviews.reduce((s, r) => s + (r.rating || 0), 0) / reviews.length).toFixed(1) + ' â­' : 'No reviews yet'} Â· ${reviews.length} reviews</div>
+                        <div style="font-size: 0.7rem; color: var(--text-muted);">${reviews.reduce((s, r) => s + (r.rating || 0), 0) / (reviews.length || 1) > 0 ? (reviews.reduce((s, r) => s + (r.rating || 0), 0) / reviews.length).toFixed(1) + ' ⭐' : 'No reviews yet'} · ${reviews.length} reviews</div>
                     </div>
                 </div>
                 <button class="btn btn-primary btn-sm" onclick="window.openInAppChat(${providerId})" style="gap: 4px;">
-                    ðŸ’¬ Message
+                    💬 Message
                 </button>
             </div>
             ${tabContent}
@@ -9517,7 +9517,7 @@ window.startChatWithProvider = async (providerId) => {
         <div class="modal" style="max-width: 520px; max-height: 85vh; display: flex; flex-direction: column;">
             <!-- Chat Header (Telegram-style) -->
             <div style="padding: 12px 16px; border-bottom: 1px solid var(--border); background: var(--bg-primary); display: flex; align-items: center; gap: 10px; flex-shrink: 0;">
-                <button onclick="document.getElementById('chat-modal-root').remove()" style="background: none; border: none; font-size: 1.3rem; cursor: pointer; color: var(--text-primary); padding: 2px 6px; display: flex; align-items: center; flex-shrink: 0;">â†</button>
+                <button onclick="document.getElementById('chat-modal-root').remove()" style="background: none; border: none; font-size: 1.3rem; cursor: pointer; color: var(--text-primary); padding: 2px 6px; display: flex; align-items: center; flex-shrink: 0;">←</button>
                 <div class="inbox-item-avatar" style="width: 38px; height: 38px; font-size: 0.95rem; flex-shrink: 0; position: relative;">
                     ${initial}
                     <div class="online-dot"></div>
@@ -9528,11 +9528,11 @@ window.startChatWithProvider = async (providerId) => {
                         <span style="font-size: 0.65rem; padding: 1px 6px; border-radius: 4px; background: rgba(16, 185, 129, 0.1); color: var(--success); font-weight: 700; white-space: nowrap;">last seen recently</span>
                     </div>
                     <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 1px;">
-                        100% Escrow Protected â€¢ Instant In-App Chat
+                        100% Escrow Protected • Instant In-App Chat
                     </div>
                 </div>
                 <button class="btn btn-primary btn-sm" onclick="selectProvider(${providerId})" style="font-weight: 700; display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
-                    <span>ðŸ“¦</span> View Packages / Hire
+                    <span>📦</span> View Packages / Hire
                 </button>
             </div>
 
@@ -9600,14 +9600,14 @@ window.startChatWithProvider = async (providerId) => {
                                 <div class="inbox-msg-text">${escapeHTML(m.content || m.message || '')}</div>
                             </div>
                         </div>
-                        <div class="inbox-msg-timestamp" style="font-size:0.6rem;opacity:0.6;">${timeStr}${isMe ? (m.is_read ? ' âœ“âœ“' : ' âœ“') : ''}</div>
+                        <div class="inbox-msg-timestamp" style="font-size:0.6rem;opacity:0.6;">${timeStr}${isMe ? (m.is_read ? ' ✓✓' : ' ✓') : ''}</div>
                     </div>
                 </div>`;
             });
             chatMessages.innerHTML = html;
         } else {
             chatMessages.innerHTML = `<div style="margin: auto; text-align: center; padding: 24px; color: var(--text-muted); max-width: 380px;">
-                <div style="font-size: 2.2rem; margin-bottom: 8px;">ðŸ‘‹</div>
+                <div style="font-size: 2.2rem; margin-bottom: 8px;">👋</div>
                 <div style="font-weight: 700; color: var(--text-primary); margin-bottom: 4px;">Say hi to ${escapeHTML(providerName)}!</div>
                 <p style="font-size: 0.8125rem; line-height: 1.45;">Discuss project requirements, turnaround times, or revision expectations. When you're ready, click <strong>"View Packages / Hire"</strong> at the top to place your order with 100% Escrow Protection.</p>
             </div>`;
@@ -9645,7 +9645,7 @@ window.sendChatMessage = async (e) => {
                 <div class="inbox-msg-text">${escapeHTML(content)}</div>
             </div>
         </div>
-        <div class="inbox-msg-timestamp" style="font-size:0.6rem;opacity:0.6;">just now âœ“</div>
+        <div class="inbox-msg-timestamp" style="font-size:0.6rem;opacity:0.6;">just now ✓</div>
     </div>`;
     chatMessages.appendChild(ourMsg);
     chatMessages.scrollTop = chatMessages.scrollHeight;
@@ -9672,10 +9672,10 @@ window.OpenInbox = async () => {
         <div class="modal" style="max-width: 680px; max-height: 85vh; display: flex; flex-direction: column;">
             <div class="modal-header">
                 <div>
-                    <h2 style="font-size: 1.15rem; font-weight: 700; color: var(--text-primary);">ðŸ“¬ Message Inbox</h2>
+                    <h2 style="font-size: 1.15rem; font-weight: 700; color: var(--text-primary);">📬 Message Inbox</h2>
                     <div style="font-size: 0.75rem; color: var(--text-muted);">All your conversations in one place</div>
                 </div>
-                <button class="modal-close" onclick="document.getElementById('inbox-modal-root').remove()">âœ•</button>
+                <button class="modal-close" onclick="document.getElementById('inbox-modal-root').remove()">✕</button>
             </div>
             <div class="modal-body" id="inbox-body" style="overflow-y: auto; padding: 16px;">
                 <div class="loading"><div class="spinner"></div></div>
@@ -9692,7 +9692,7 @@ window.OpenInbox = async () => {
 
         if (conversations.length === 0) {
             body.innerHTML = `<div style="text-align: center; padding: 40px 20px; color: var(--text-muted);">
-                <div style="font-size: 2.5rem; margin-bottom: 12px;">ðŸ’¬</div>
+                <div style="font-size: 2.5rem; margin-bottom: 12px;">💬</div>
                 <h3 style="font-weight: 700; margin-bottom: 8px;">No conversations yet</h3>
                 <p style="font-size: 0.875rem;">Start a Quick Chat with a provider to begin messaging.</p>
             </div>`;
@@ -9703,7 +9703,7 @@ window.OpenInbox = async () => {
             ${conversations.map(c => `
                 <div class="card" style="padding: 14px 16px; cursor: pointer;" onclick="resumeChat(${c.provider_id}, '${c.provider_name.replace(/'/g, "\\'")}')">
                     <div style="display: flex; align-items: center; gap: 12px;">
-                        <div style="width: 40px; height: 40px; border-radius: 50%; background: var(--accent); color: white; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0;">ðŸ‘¤</div>
+                        <div style="width: 40px; height: 40px; border-radius: 50%; background: var(--accent); color: white; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0;">👤</div>
                         <div style="flex: 1;">
                             <div style="font-weight: 700; font-size: 0.9rem;">${c.provider_name}</div>
                             <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">
@@ -9711,7 +9711,7 @@ window.OpenInbox = async () => {
                                 ${c.last_message ? c.last_message.substring(0, 50) + (c.last_message.length > 50 ? '...' : '') : 'No messages yet'}
                             </div>
                         </div>
-                        <div style="font-size: 0.7rem; color: var(--text-muted); flex-shrink: 0;">${c.last_message_at ? new Date(c.last_message_at).toLocaleDateString() : 'â€”'}</div>
+                        <div style="font-size: 0.7rem; color: var(--text-muted); flex-shrink: 0;">${c.last_message_at ? new Date(c.last_message_at).toLocaleDateString() : '—'}</div>
                     </div>
                 </div>
             `).join('')}
@@ -9761,18 +9761,18 @@ window.openReviewModal = (bookingId) => {
     modalRoot.innerHTML = `
         <div class="modal" style="max-width: 480px;">
             <div class="modal-header">
-                <h2 style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary);">â­ Leave a Review</h2>
-                <button class="modal-close" onclick="document.getElementById('review-modal-root').remove()">âœ•</button>
+                <h2 style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary);">⭐ Leave a Review</h2>
+                <button class="modal-close" onclick="document.getElementById('review-modal-root').remove()">✕</button>
             </div>
             <form onsubmit="handleReviewSubmit(event, ${bookingId})" style="padding: 20px;">
                 <div class="form-group" style="text-align: center; margin-bottom: 20px;">
                     <label class="form-label" style="margin-bottom: 8px;">Your Rating</label>
                     <div class="star-rating" id="review-stars">
-                        <span data-star="1" class="active">â˜…</span>
-                        <span data-star="2" class="active">â˜…</span>
-                        <span data-star="3" class="active">â˜…</span>
-                        <span data-star="4" class="active">â˜…</span>
-                        <span data-star="5" class="active">â˜…</span>
+                        <span data-star="1" class="active">★</span>
+                        <span data-star="2" class="active">★</span>
+                        <span data-star="3" class="active">★</span>
+                        <span data-star="4" class="active">★</span>
+                        <span data-star="5" class="active">★</span>
                     </div>
                 </div>
                 <div class="form-group">
@@ -9842,9 +9842,9 @@ function GrooveChat() {
 
     // Show the chat button + panel
     const container = el`<div style="position: fixed; bottom: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; align-items: flex-end; gap: 8px;">
-        <button id="groove-chat-toggle" onclick="GrooveChat.toggle()" style="width: 52px; height: 52px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #a855f7); color: white; border: none; cursor: pointer; box-shadow: 0 4px 20px rgba(99,102,241,0.4); display: flex; align-items: center; justify-content: center; font-size: 1.4rem; transition: transform 0.15s ease, opacity 0.2s ease; z-index: 10000;">ðŸ’¬</button>
+        <button id="groove-chat-toggle" onclick="GrooveChat.toggle()" style="width: 52px; height: 52px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #a855f7); color: white; border: none; cursor: pointer; box-shadow: 0 4px 20px rgba(99,102,241,0.4); display: flex; align-items: center; justify-content: center; font-size: 1.4rem; transition: transform 0.15s ease, opacity 0.2s ease; z-index: 10000;">💬</button>
         <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 4px 10px; margin-top: 8px; white-space: nowrap; font-size: 0.7rem; color: var(--text-secondary); box-shadow: 0 4px 12px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 6px;">
-            <span>ðŸ¤–</span> Groove Â· Ask me anything
+            <span>🤖</span> Groove · Ask me anything
         </div>
     </div>`;
 
@@ -9863,7 +9863,7 @@ function GrooveChat() {
         // Header
         const header = document.createElement('div');
         header.style.cssText = 'padding: 14px 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(168,85,247,0.08));';
-        header.innerHTML = '<div style="display: flex; align-items: center; gap: 8px;"><span style="font-size: 1.2rem;">ðŸ¤–</span><span style="font-weight: 700; font-size: 0.95rem; color: var(--text-primary);">Groove Chat</span></div><button onclick="GrooveChat.hide()" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 1.2rem; padding: 0; line-height: 1;">âœ•</button>';
+        header.innerHTML = '<div style="display: flex; align-items: center; gap: 8px;"><span style="font-size: 1.2rem;">🤖</span><span style="font-weight: 700; font-size: 0.95rem; color: var(--text-primary);">Groove Chat</span></div><button onclick="GrooveChat.hide()" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 1.2rem; padding: 0; line-height: 1;">✕</button>';
         chatBox.appendChild(header);
 
         // Messages area
@@ -9885,13 +9885,13 @@ function GrooveChat() {
         const sendBtn = document.createElement('button');
         sendBtn.id = 'groove-send';
         sendBtn.style.cssText = 'width: 40px; height: 40px; border-radius: 12px; background: linear-gradient(135deg, #6366f1, #a855f7); color: white; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; transition: transform 0.15s ease, opacity 0.2s ease; flex-shrink: 0;';
-        sendBtn.innerHTML = 'âž¤';
+        sendBtn.innerHTML = '➤';
         sendBtn.onclick = () => GrooveChat.send();
         inputRow.appendChild(sendBtn);
         chatBox.appendChild(inputRow);
 
         document.body.appendChild(chatBox);
-        addBotMessage('ðŸ‘‹ Hey there! I\'m Groove, your Groove Hub assistant. Ask me anything â€” try "I need a video editor right now" or "Find me an English tutor"!');
+        addBotMessage('👋 Hey there! I\'m Groove, your Groove Hub assistant. Ask me anything — try "I need a video editor right now" or "Find me an English tutor"!');
         textarea.focus();
     }
 
@@ -9907,7 +9907,7 @@ function GrooveChat() {
         const div = document.createElement('div');
         div.style.cssText = 'display: flex; gap: 8px; align-self: flex-start; animation: fadeIn 0.2s ease;';
         const safeText = escapeHTML(text || '').replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-        div.innerHTML = `<div style="width: 28px; height: 28px; border-radius: 50%; background: var(--bg-hover); display: flex; align-items: center; justify-content: center; font-size: 0.75rem; color: var(--text-secondary); flex-shrink: 0;">ðŸ¤–</div><div style="background: var(--bg-card); color: var(--text-primary); padding: 8px 12px; border-radius: 12px; border-bottom-left-radius: 4px; font-size: 0.825rem; line-height: 1.4; word-break: break-word; box-shadow: 0 1px 4px rgba(0,0,0,0.06); max-width: 90%;">${safeText}</div>`;
+        div.innerHTML = `<div style="width: 28px; height: 28px; border-radius: 50%; background: var(--bg-hover); display: flex; align-items: center; justify-content: center; font-size: 0.75rem; color: var(--text-secondary); flex-shrink: 0;">🤖</div><div style="background: var(--bg-card); color: var(--text-primary); padding: 8px 12px; border-radius: 12px; border-bottom-left-radius: 4px; font-size: 0.825rem; line-height: 1.4; word-break: break-word; box-shadow: 0 1px 4px rgba(0,0,0,0.06); max-width: 90%;">${safeText}</div>`;
         area.appendChild(div);
         area.scrollTop = area.scrollHeight;
     }
@@ -9919,7 +9919,7 @@ function GrooveChat() {
         const div = document.createElement('div');
         div.style.cssText = 'display: flex; gap: 8px; align-self: flex-end; flex-direction: row-reverse; animation: fadeIn 0.2s ease;';
         const safeText = escapeHTML(text || '').replace(/\n/g, '<br>');
-        div.innerHTML = `<div style="width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #a855f7); display: flex; align-items: center; justify-content: center; font-size: 0.75rem; color: white; flex-shrink: 0;">ðŸ‘¤</div><div style="background: linear-gradient(135deg, #6366f1, #a855f7); color: white; padding: 8px 12px; border-radius: 12px; border-bottom-right-radius: 4px; font-size: 0.825rem; line-height: 1.4; word-break: break-word; box-shadow: 0 2px 8px rgba(99,102,241,0.3); max-width: 90%;">${safeText}</div>`;
+        div.innerHTML = `<div style="width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #a855f7); display: flex; align-items: center; justify-content: center; font-size: 0.75rem; color: white; flex-shrink: 0;">👤</div><div style="background: linear-gradient(135deg, #6366f1, #a855f7); color: white; padding: 8px 12px; border-radius: 12px; border-bottom-right-radius: 4px; font-size: 0.825rem; line-height: 1.4; word-break: break-word; box-shadow: 0 2px 8px rgba(99,102,241,0.3); max-width: 90%;">${safeText}</div>`;
         area.appendChild(div);
         area.scrollTop = area.scrollHeight;
     }
@@ -9930,7 +9930,7 @@ function GrooveChat() {
         if (!area) return;
         const div = document.createElement('div');
         div.style.cssText = 'display: flex; gap: 8px; align-self: flex-start; animation: fadeIn 0.2s ease;';
-        div.innerHTML = `<div style="width: 28px; height: 28px; border-radius: 50%; background: var(--bg-hover); display: flex; align-items: center; justify-content: center; font-size: 0.75rem; color: var(--text-muted); flex-shrink: 0;">ðŸ¤–</div><div style="background: var(--bg-card); padding: 10px 14px; border-radius: 12px; border-bottom-left-radius: 4px; display: flex; gap: 4px; box-shadow: 0 1px 4px rgba(0,0,0,0.06);"><div style="width: 6px; height: 6px; border-radius: 50%; background: var(--text-muted); animation: bounce 1.4s ease-in-out infinite; animation-delay: 0s;"></div><div style="width: 6px; height: 6px; border-radius: 50%; background: var(--text-muted); animation: bounce 1.4s ease-in-out infinite; animation-delay: 0.2s;"></div><div style="width: 6px; height: 6px; border-radius: 50%; background: var(--text-muted); animation: bounce 1.4s ease-in-out infinite; animation-delay: 0.4s;"></div></div>`;
+        div.innerHTML = `<div style="width: 28px; height: 28px; border-radius: 50%; background: var(--bg-hover); display: flex; align-items: center; justify-content: center; font-size: 0.75rem; color: var(--text-muted); flex-shrink: 0;">🤖</div><div style="background: var(--bg-card); padding: 10px 14px; border-radius: 12px; border-bottom-left-radius: 4px; display: flex; gap: 4px; box-shadow: 0 1px 4px rgba(0,0,0,0.06);"><div style="width: 6px; height: 6px; border-radius: 50%; background: var(--text-muted); animation: bounce 1.4s ease-in-out infinite; animation-delay: 0s;"></div><div style="width: 6px; height: 6px; border-radius: 50%; background: var(--text-muted); animation: bounce 1.4s ease-in-out infinite; animation-delay: 0.2s;"></div><div style="width: 6px; height: 6px; border-radius: 50%; background: var(--text-muted); animation: bounce 1.4s ease-in-out infinite; animation-delay: 0.4s;"></div></div>`;
         area.appendChild(div);
         area.scrollTop = area.scrollHeight;
     }
@@ -9982,7 +9982,7 @@ function GrooveChat() {
         let intent = 'unknown';
         let action = null;
 
-        // Video editor â€” urgent/right away
+        // Video editor — urgent/right away
         if (lower.includes('video') && (lower.includes('right away') || lower.includes('now') || lower.includes('immediate') || lower.includes('fast') || lower.includes('urgent'))) {
             intent = 'find_video_editor_urgent';
         }
@@ -10042,32 +10042,32 @@ function GrooveChat() {
         }
 
         const replies = {
-            greeting: { text: 'ðŸ‘‹ Hey there! Welcome to Groove Hub. What can I help you with today? Try asking for a "video editor" or "English tutor"!' },
-            find_video_editor_urgent: { text: 'ðŸŽ¬ Here are active video editors available RIGHT NOW:\n\n' },
-            find_video_editor: { text: 'ðŸŽ¬ I can help you find video editors! Try these:\n\nâ€¢ Browse all editors: click "Browse Talent" below\nâ€¢ Create a booking: click "Create Booking" below\n\nWant me to take you to the marketplace?' },
-            find_english_tutor: { text: 'ðŸ—£ï¸ I can help you find English tutors! Try these:\n\nâ€¢ Browse tutors: click "Browse Talent" below\nâ€¢ Create a booking: click "Create Booking" below\n\nLooking for IELTS prep, spoken English, or business English?' },
-            find_writer: { text: 'âœï¸ I can help you find writers! Try these:\n\nâ€¢ Browse writers: click "Browse Talent" below\nâ€¢ Create a booking: click "Create Booking" below\n\nNeed content writing, copywriting, or creative writing?' },
-            edit_profile: { text: 'ðŸ‘¤ I\'ll take you to your profile page where you can edit your details, bio, and settings.' },
-            show_help: { text: 'ðŸ¤– I\'m Groove, your Groove Hub assistant! Here\'s what I can help with:\n\nðŸŽ¬ **Video Editors** â€” "I need a video editor right now"\nðŸ—£ï¸ **English Tutors** â€” "I want an English coach"\nâœï¸ **Writers** â€” "I need someone to write content"\nðŸ“¦ **Create Package** â€” "I want to create a service"\nðŸ“‹ **Create Booking** â€” "I want to book someone"\nðŸ’³ **Payments** â€” "Where\'s my money" or "payment status"\nðŸ‘¤ **Edit Profile** â€” "change my profile"\nðŸ”§ **Admin Panel** â€” "admin" (admins only)\n\nJust type what you need!' },
-            payment_status: { text: 'ðŸ’³ I\'ll take you to your payments dashboard where you can see your escrow balance, pending payments, and transaction history.' },
-            create_booking: { text: 'ðŸ“‹ I\'ll take you to the booking page where you can select a provider and package to get started!' },
-            create_package: { text: 'ðŸ“¦ I\'ll take you to the package creation page where you can define your service offerings for buyers!' },
-            admin_panel: { text: 'ðŸ”§ I\'ll take you to the admin panel where you can manage providers, bookings, disputes, and platform settings.' },
-            browse: { text: 'ðŸ” I\'ll take you to the marketplace where you can browse all available talent. Try filtering by category!' },
-            unknown: { text: 'ðŸ¤” I didn\'t quite catch that. Can you rephrase? Try saying something like:\n\nâ€¢ "I need a video editor right now"\nâ€¢ "Find me an English tutor"\nâ€¢ "I want to hire a writer"\nâ€¢ "Where\'s my payment"\nâ€¢ "Take me to admin"\n\nOr just tell me what you\'re looking for in your own words!' }
+            greeting: { text: '👋 Hey there! Welcome to Groove Hub. What can I help you with today? Try asking for a "video editor" or "English tutor"!' },
+            find_video_editor_urgent: { text: '🎬 Here are active video editors available RIGHT NOW:\n\n' },
+            find_video_editor: { text: '🎬 I can help you find video editors! Try these:\n\n• Browse all editors: click "Browse Talent" below\n• Create a booking: click "Create Booking" below\n\nWant me to take you to the marketplace?' },
+            find_english_tutor: { text: '🗣️ I can help you find English tutors! Try these:\n\n• Browse tutors: click "Browse Talent" below\n• Create a booking: click "Create Booking" below\n\nLooking for IELTS prep, spoken English, or business English?' },
+            find_writer: { text: '✍️ I can help you find writers! Try these:\n\n• Browse writers: click "Browse Talent" below\n• Create a booking: click "Create Booking" below\n\nNeed content writing, copywriting, or creative writing?' },
+            edit_profile: { text: '👤 I\'ll take you to your profile page where you can edit your details, bio, and settings.' },
+            show_help: { text: '🤖 I\'m Groove, your Groove Hub assistant! Here\'s what I can help with:\n\n🎬 **Video Editors** — "I need a video editor right now"\n🗣️ **English Tutors** — "I want an English coach"\n✍️ **Writers** — "I need someone to write content"\n📦 **Create Package** — "I want to create a service"\n📋 **Create Booking** — "I want to book someone"\n💳 **Payments** — "Where\'s my money" or "payment status"\n👤 **Edit Profile** — "change my profile"\n🔧 **Admin Panel** — "admin" (admins only)\n\nJust type what you need!' },
+            payment_status: { text: '💳 I\'ll take you to your payments dashboard where you can see your escrow balance, pending payments, and transaction history.' },
+            create_booking: { text: '📋 I\'ll take you to the booking page where you can select a provider and package to get started!' },
+            create_package: { text: '📦 I\'ll take you to the package creation page where you can define your service offerings for buyers!' },
+            admin_panel: { text: '🔧 I\'ll take you to the admin panel where you can manage providers, bookings, disputes, and platform settings.' },
+            browse: { text: '🔍 I\'ll take you to the marketplace where you can browse all available talent. Try filtering by category!' },
+            unknown: { text: '🤔 I didn\'t quite catch that. Can you rephrase? Try saying something like:\n\n• "I need a video editor right now"\n• "Find me an English tutor"\n• "I want to hire a writer"\n• "Where\'s my payment"\n• "Take me to admin"\n\nOr just tell me what you\'re looking for in your own words!' }
         };
 
         const reply = replies[intent] || replies.unknown;
         if (intent === 'find_video_editor_urgent' || intent === 'find_video_editor') {
-            reply.text += '\nðŸ‘‰ Click "Browse Talent" below to see all available providers!';
+            reply.text += '\n👉 Click "Browse Talent" below to see all available providers!';
             reply.action = '/providers';
         }
         if (intent === 'find_english_tutor') {
-            reply.text += '\nðŸ‘‰ Click "Browse Talent" below to see all available tutors!';
+            reply.text += '\n👉 Click "Browse Talent" below to see all available tutors!';
             reply.action = '/providers';
         }
         if (intent === 'find_writer') {
-            reply.text += '\nðŸ‘‰ Click "Browse Talent" below to see all available writers!';
+            reply.text += '\n👉 Click "Browse Talent" below to see all available writers!';
             reply.action = '/providers';
         }
         return reply;
@@ -10259,7 +10259,7 @@ function MessagesInbox() {
                 if (!videoUrl) throw new Error('Invalid upload response');
 
                 const inputEl = document.getElementById('inbox-message-input');
-                const note = (inputEl && inputEl.value && inputEl.value.trim()) ? inputEl.value.trim() : 'ðŸ“¹ Video sent';
+                const note = (inputEl && inputEl.value && inputEl.value.trim()) ? inputEl.value.trim() : '📹 Video sent';
                 if (inputEl) inputEl.value = '';
 
                 await sendMessage(note, videoUrl);
@@ -10278,17 +10278,17 @@ function MessagesInbox() {
         let masked = text.replace(/(?<!\w)(\+?\d[\s\-\.]?){7,}\d(?!\w)/g, (m) => {
             const digits = m.replace(/\D/g, '');
             if (digits.length >= 10) {
-                return 'ðŸ“ž [contact hidden - ' + digits.length + ' digits]';
+                return '📞 [contact hidden - ' + digits.length + ' digits]';
             }
             return m;
         });
         // Mask @usernames (Instagram/Facebook style)
         masked = masked.replace(/(@[a-zA-Z0-9_]{2,30})(?!\w)/g, (m) => {
-            return '[ðŸ”— ' + m.slice(0, 2) + 'â€¦' + m.slice(-2) + ']';
+            return '[🔗 ' + m.slice(0, 2) + '…' + m.slice(-2) + ']';
         });
         // Mask instagram.com / facebook.com URLs
-        masked = masked.replace(/https?:\/\/(?:www\.)?(instagram\.com|facebook\.com)\/@?[a-zA-Z0-9_.+-]+/gi, '[ðŸ”— social link hidden]');
-        masked = masked.replace(/(?<!\w)(instagram\.com|facebook\.com)\/@?[a-zA-Z0-9_.+-]+/gi, '[ðŸ”— social link hidden]');
+        masked = masked.replace(/https?:\/\/(?:www\.)?(instagram\.com|facebook\.com)\/@?[a-zA-Z0-9_.+-]+/gi, '[🔗 social link hidden]');
+        masked = masked.replace(/(?<!\w)(instagram\.com|facebook\.com)\/@?[a-zA-Z0-9_.+-]+/gi, '[🔗 social link hidden]');
         return masked;
     };
 
@@ -10327,8 +10327,8 @@ function MessagesInbox() {
             ${renderAppHeader('/messages')}
             <div class="main inbox-main-page">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                    <div class="section-title" style="margin: 0;">ðŸ’¬ Direct Messages</div>
-                    <button class="btn btn-secondary btn-sm" onclick="router('/')">â† Back to Dashboard</button>
+                    <div class="section-title" style="margin: 0;">💬 Direct Messages</div>
+                    <button class="btn btn-secondary btn-sm" onclick="router('/')">← Back to Dashboard</button>
                 </div>
                 <div class="inbox-wrapper">
                 <div class="inbox-container ${activeUserId ? 'show-chat' : ''}">
@@ -10336,7 +10336,7 @@ function MessagesInbox() {
                     <div class="inbox-sidebar">
                         <div class="inbox-sidebar-header">
                             <h3 style="margin: 0; font-size: 1.1rem; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
-                                <span>ðŸ’¬</span> Direct Messages
+                                <span>💬</span> Direct Messages
                             </h3>
                             <span class="badge badge-info" style="font-size: 0.72rem;">Escrow Protected</span>
                         </div>
@@ -10388,7 +10388,7 @@ function MessagesInbox() {
         if (filtered.length === 0) {
             return `
                 <div style="padding: 36px 20px; text-align: center; color: var(--text-muted); flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-                    <div style="font-size: 2.5rem; margin-bottom: 10px;">ðŸ’¬</div>
+                    <div style="font-size: 2.5rem; margin-bottom: 10px;">💬</div>
                     <div style="font-weight: 700; color: var(--text-primary); margin-bottom: 6px; font-size: 1rem;">No messages yet</div>
                     <p style="font-size: 0.8rem; line-height: 1.4; margin-bottom: 14px; text-align: center;">Browse verified video editors and english tutors to start talking directly.</p>
                     <button class="btn btn-primary btn-sm" onclick="router('/')">Browse Talent</button>
@@ -10433,7 +10433,7 @@ function MessagesInbox() {
             return `
                 <div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; text-align: center; color: var(--text-muted);">
                     <div style="width: 64px; height: 64px; border-radius: 50%; background: rgba(99, 102, 241, 0.1); color: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 2rem; margin-bottom: 14px;">
-                        ðŸ’¬
+                        💬
                     </div>
                     <h3 style="margin: 0 0 6px 0; color: var(--text-primary); font-weight: 800;">Your Groove Hub Inbox</h3>
                     <p style="font-size: 0.85rem; max-width: 380px; line-height: 1.45; margin: 0 0 18px 0;">Select a conversation on the left, or browse talent to talk with creators before placing your order.</p>
@@ -10451,7 +10451,7 @@ function MessagesInbox() {
             <div class="inbox-chat-header">
                 <div style="display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1;">
                     <button class="inbox-mobile-back-btn" onclick="window.__inboxMobileBackToList()" style="display: none; background: none; border: none; font-size: 1.3rem; cursor: pointer; color: var(--text-primary); padding: 4px; line-height: 1;">
-                        â†
+                        ←
                     </button>
                     <div style="display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1; cursor: pointer;" onclick="openFiverrPortfolioModal(${activeUserId}, '${escapeJs(safeActiveName)}')" title="Tap to view provider profile & showcase">
                         <div class="inbox-item-avatar" style="width: 38px; height: 38px; font-size: 0.95rem; flex-shrink: 0;">
@@ -10464,7 +10464,7 @@ function MessagesInbox() {
                                 <span style="font-size: 0.62rem; padding: 1px 5px; border-radius: 4px; background: rgba(16, 185, 129, 0.1); color: var(--success); font-weight: 700; white-space: nowrap; flex-shrink: 0;">online</span>
                             </div>
                             <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                                ðŸ‘¤ Tap to view profile & showcase
+                                👤 Tap to view profile & showcase
                             </div>
                         </div>
                     </div>
@@ -10472,10 +10472,10 @@ function MessagesInbox() {
 
                 <div style="flex-shrink: 0; margin-left: 8px; display: flex; align-items: center; gap: 6px;">
                     <button class="btn btn-secondary btn-sm" onclick="openFiverrPortfolioModal(${activeUserId}, '${escapeJs(safeActiveName)}')" style="font-weight: 700; font-size: 0.75rem; padding: 6px 10px; display: flex; align-items: center; gap: 4px;" title="View Creator Profile">
-                        <span>ðŸ‘¤ Profile</span>
+                        <span>👤 Profile</span>
                     </button>
                     ${isProviderChat
-                        ? `<button class="btn btn-primary btn-sm" onclick="selectProvider(${activeUserId})" style="font-weight: 700; font-size: 0.75rem; padding: 6px 10px; display: flex; align-items: center; gap: 4px;"><span>ðŸ“¦ Hire</span></button>`
+                        ? `<button class="btn btn-primary btn-sm" onclick="selectProvider(${activeUserId})" style="font-weight: 700; font-size: 0.75rem; padding: 6px 10px; display: flex; align-items: center; gap: 4px;"><span>📦 Hire</span></button>`
                         : ''}
                 </div>
             </div>
@@ -10488,7 +10488,7 @@ function MessagesInbox() {
             <!-- Bottom Input Bar (Telegram-style: auto-resize, Enter=send, Shift+Enter=newline) -->
             <div class="inbox-chat-input-bar">
                 <button class="inbox-attach-btn" onclick="window.__inboxUploadVideo()" title="Send video from gallery" style="background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--text-secondary);padding:4px;line-height:1;">
-                    ðŸ“Ž
+                    📎
                 </button>
                 <textarea
                     id="inbox-message-input"
@@ -10499,7 +10499,7 @@ function MessagesInbox() {
                     onkeydown="if(event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); window.__inboxSendMessage(this.value); }"
                 ></textarea>
                 <button class="inbox-send-btn" onclick="window.__inboxSendMessage(document.getElementById('inbox-message-input')?.value)" title="Send Message">
-                    âž¤
+                    ➤
                 </button>
             </div>
         `;
@@ -10513,7 +10513,7 @@ function MessagesInbox() {
         if (messages.length === 0) {
             return `
                 <div style="margin: auto; text-align: center; padding: 24px; color: var(--text-muted); max-width: 420px;">
-                    <div style="font-size: 2.2rem; margin-bottom: 8px;">ðŸ‘‹</div>
+                    <div style="font-size: 2.2rem; margin-bottom: 8px;">👋</div>
                     <div style="font-weight: 700; color: var(--text-primary); margin-bottom: 4px;">Say hi to ${escapeHTML(activeUserName || 'this creator')}!</div>
                     <p style="font-size: 0.8125rem; line-height: 1.45;">Discuss project requirements, turnaround times, or revision expectations. When you're ready, click <strong>"View Packages / Hire"</strong> at the top to place your order with 100% Escrow Protection.</p>
                 </div>
@@ -10552,8 +10552,8 @@ function MessagesInbox() {
                     <div class="inbox-msg-video-wrap" style="margin-top: 8px; border-radius: 10px; overflow: hidden; max-width: 320px; background: #000; box-shadow: 0 4px 14px rgba(0,0,0,0.25);">
                         <video controls playsinline preload="metadata" src="${cleanUrl}" style="width: 100%; max-height: 240px; display: block; border-radius: 10px; background: #000;"></video>
                         <div style="padding: 4px 8px; font-size: 0.72rem; display: flex; justify-content: space-between; align-items: center; background: rgba(15, 23, 42, 0.85); color: #fff;">
-                            <span style="font-weight: 600;">ðŸ“¹ Video Deliverable</span>
-                            <a href="${cleanUrl}" download target="_blank" rel="noopener" style="color: #60a5fa; text-decoration: none; font-weight: 700;">Download â¬‡</a>
+                            <span style="font-weight: 600;">📹 Video Deliverable</span>
+                            <a href="${cleanUrl}" download target="_blank" rel="noopener" style="color: #60a5fa; text-decoration: none; font-weight: 700;">Download ⬇</a>
                         </div>
                     </div>
                 `;
@@ -10568,7 +10568,7 @@ function MessagesInbox() {
                 return `
                     <div class="inbox-msg-attachment" style="margin-top: 6px;">
                         <a href="${cleanUrl}" download target="_blank" rel="noopener noreferrer" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 8px; background: rgba(99, 102, 241, 0.1); color: var(--accent); text-decoration: none; font-size: 0.8rem; font-weight: 700; border: 1px solid rgba(99, 102, 241, 0.2);">
-                            <span>ðŸ“Ž</span> ${escapeHTML(fileName)}
+                            <span>📎</span> ${escapeHTML(fileName)}
                         </a>
                     </div>
                 `;
@@ -10595,14 +10595,14 @@ function MessagesInbox() {
                             <div class="inbox-msg-bubble">
                                 <div class="inbox-msg-bubble-content">
                                     <div style="display: flex; align-items: center; gap: 6px; font-weight: 700; margin-bottom: 4px;">
-                                        <span>ðŸ›‘ Message Blocked by Safety Guard</span>
+                                        <span>🛑 Message Blocked by Safety Guard</span>
                                     </div>
                                     <div style="text-decoration: line-through; opacity: 0.7;">${escapeHTML(m.message)}</div>
                                     <div style="font-size: 0.75rem; margin-top: 4px; font-weight: 600;">
                                         Reason: ${escapeHTML(m.flag_reason || 'Personal contact sharing policy violation')}
                                     </div>
                                 </div>
-                                <div class="inbox-msg-timestamp" style="color: #ef4444;">Blocked â€¢ Not delivered</div>
+                                <div class="inbox-msg-timestamp" style="color: #ef4444;">Blocked • Not delivered</div>
                             </div>
                         </div>
                     </div>
@@ -10616,13 +10616,13 @@ function MessagesInbox() {
                     <div class="inbox-msg-bubble-wrap">
                         <div class="inbox-msg-bubble">
                             <div class="inbox-msg-bubble-content">
-                                ${m.message && m.message !== 'ðŸ“¹ Video sent' ? `<div class="inbox-msg-text">${escapeHTML(m.message)}</div>` : (!m.file_url ? `<div class="inbox-msg-text">${escapeHTML(m.message)}</div>` : '')}
+                                ${m.message && m.message !== '📹 Video sent' ? `<div class="inbox-msg-text">${escapeHTML(m.message)}</div>` : (!m.file_url ? `<div class="inbox-msg-text">${escapeHTML(m.message)}</div>` : '')}
                                 ${renderAttachmentHTML(m.file_url)}
                             </div>
                         </div>
                         <div class="inbox-msg-timestamp">
                             ${timeStr}
-                            ${isMe ? (m.is_read ? '<span class="tg-ticks tg-ticks-read">âœ“âœ“</span>' : '<span class="tg-ticks">âœ“</span>') : ''}
+                            ${isMe ? (m.is_read ? '<span class="tg-ticks tg-ticks-read">✓✓</span>' : '<span class="tg-ticks">✓</span>') : ''}
                         </div>
                     </div>
                 </div>
@@ -10786,18 +10786,18 @@ function AdminChatsView() {
                                     <div style="display: flex; gap: 6px; font-size: 0.75rem; align-items: center;">
                                         <strong>${m.sender_name}</strong>
                                         <span style="color: var(--text-muted);">${m.created_at ? new Date(m.created_at).toLocaleString() : ''}</span>
-                                        ${isMasked ? '<span style="color: #f59e0b; font-weight: 700; font-size: 0.65rem;">ðŸ”’ Masked</span>' : ''}
-                                        ${isDeleted ? '<span style="color: #ef4444; font-weight: 700; font-size: 0.65rem;">ðŸ—‘ï¸ Deleted</span>' : ''}
+                                        ${isMasked ? '<span style="color: #f59e0b; font-weight: 700; font-size: 0.65rem;">🔒 Masked</span>' : ''}
+                                        ${isDeleted ? '<span style="color: #ef4444; font-weight: 700; font-size: 0.65rem;">🗑️ Deleted</span>' : ''}
                                     </div>
                                     <div style="display: flex; gap: 4px;">
-                                        ${!isDeleted ? `<button class="btn btn-sm btn-outline" style="padding:2px 8px;font-size:0.7rem;" onclick="window.__adminMaskMessage(${m.id})" title="${isMasked ? 'Unmask' : 'Mask'} this message">${isMasked ? 'ðŸ”“ Unmask' : 'ðŸ”’ Mask'}</button>` : ''}
-                                        ${!isDeleted ? `<button class="btn btn-sm btn-danger" style="padding:2px 8px;font-size:0.7rem;" onclick="window.__adminDeleteMessage(${m.id})" title="Delete this message">ðŸ—‘ï¸ Delete</button>` : ''}
+                                        ${!isDeleted ? `<button class="btn btn-sm btn-outline" style="padding:2px 8px;font-size:0.7rem;" onclick="window.__adminMaskMessage(${m.id})" title="${isMasked ? 'Unmask' : 'Mask'} this message">${isMasked ? '🔓 Unmask' : '🔒 Mask'}</button>` : ''}
+                                        ${!isDeleted ? `<button class="btn btn-sm btn-danger" style="padding:2px 8px;font-size:0.7rem;" onclick="window.__adminDeleteMessage(${m.id})" title="Delete this message">🗑️ Delete</button>` : ''}
                                     </div>
                                 </div>
                                 <div class="admin-msg-text" style="font-size: 0.875rem; color: var(--text-primary); word-break: break-word; ${isMasked ? 'color: var(--text-muted); font-style: italic;' : ''}">
                                     ${isMasked ? '[message hidden by admin]' : escapeHTML(m.message)}
                                 </div>
-                                ${isFlagged ? `<div style="font-size: 0.75rem; color: #ef4444; font-weight: 700; margin-top: 4px;">ðŸ›‘ Flagged Violation: ${m.flag_reason || 'Contact exchange attempt'}</div>` : ''}
+                                ${isFlagged ? `<div style="font-size: 0.75rem; color: #ef4444; font-weight: 700; margin-top: 4px;">🛑 Flagged Violation: ${m.flag_reason || 'Contact exchange attempt'}</div>` : ''}
                             </div>
                         `;
                     }).join('')}
@@ -10807,7 +10807,7 @@ function AdminChatsView() {
                     <div style="display: flex; gap: 8px;">
                         ${u1.is_blocked ? `<button class="btn btn-sm btn-danger" onclick="window.__adminUnblockUser(${u1.id}, '${u1.name}'); this.closest('.fiverr-escrow-modal').remove();">Unblock ${u1.name}</button>` : ''}
                         ${u2.is_blocked ? `<button class="btn btn-sm btn-danger" onclick="window.__adminUnblockUser(${u2.id}, '${u2.name}'); this.closest('.fiverr-escrow-modal').remove();">Unblock ${u2.name}</button>` : ''}
-                        <button class="btn btn-sm btn-primary" style="background:#ef4444;border-color:#ef4444;" onclick="window.__adminDeleteConversation(${u1.id}, ${u2.id}); this.closest('.fiverr-escrow-modal').remove();" title="Delete entire conversation">ðŸ—‘ï¸ Delete Conversation</button>
+                        <button class="btn btn-sm btn-primary" style="background:#ef4444;border-color:#ef4444;" onclick="window.__adminDeleteConversation(${u1.id}, ${u2.id}); this.closest('.fiverr-escrow-modal').remove();" title="Delete entire conversation">🗑️ Delete Conversation</button>
                     </div>
                     <button class="btn btn-secondary" onclick="this.closest('.fiverr-escrow-modal').remove()">Close</button>
                 </div>
@@ -10824,10 +10824,10 @@ function AdminChatsView() {
             <div class="main">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                     <div>
-                        <div class="section-title" style="margin: 0;">ðŸ’¬ Platform Chats & Safety Moderation</div>
+                        <div class="section-title" style="margin: 0;">💬 Platform Chats & Safety Moderation</div>
                         <p style="color: var(--text-secondary); font-size: 0.85rem; margin: 4px 0 0 0;">Inspect user conversations, investigate anti-disintermediation violations, and unblock reinstated users.</p>
                     </div>
-                    <button class="btn btn-secondary btn-sm" onclick="router('/admin')">â† Back to Admin</button>
+                    <button class="btn btn-secondary btn-sm" onclick="router('/admin')">← Back to Admin</button>
                 </div>
 
                 <!-- Tabs -->
@@ -10836,7 +10836,7 @@ function AdminChatsView() {
                         All Conversations (${chats.length})
                     </button>
                     <button class="tab-btn ${activeTab === 'flagged' ? 'active' : ''}" onclick="window.__setAdminChatTab('flagged')">
-                        âš ï¸ Flagged Violations (${flaggedMessages.length})
+                        ⚠️ Flagged Violations (${flaggedMessages.length})
                     </button>
                 </div>
 
@@ -10892,7 +10892,7 @@ function AdminChatsView() {
                                         ${c.total_messages} msgs
                                     </td>
                                     <td style="padding: 12px 16px;">
-                                        ${hasViolation ? `<span class="badge badge-danger" style="font-size: 0.72rem;">âš ï¸ ${c.flagged_count} Flagged</span>` : '<span class="badge badge-success" style="font-size: 0.72rem;">âœ“ Clean</span>'}
+                                        ${hasViolation ? `<span class="badge badge-danger" style="font-size: 0.72rem;">⚠️ ${c.flagged_count} Flagged</span>` : '<span class="badge badge-success" style="font-size: 0.72rem;">✓ Clean</span>'}
                                     </td>
                                     <td style="padding: 12px 16px; color: var(--text-muted); font-size: 0.78rem;">
                                         ${formatRelativeTime(c.latest_message_at)}
@@ -10917,7 +10917,7 @@ function AdminChatsView() {
 
     function renderFlaggedViolationsTable() {
         if (flaggedMessages.length === 0) {
-            return '<div class="card" style="padding: 30px; text-align: center; color: var(--text-muted);">ðŸŽ‰ Zero flagged violations! All platform chats are complying with platform safety rules.</div>';
+            return '<div class="card" style="padding: 30px; text-align: center; color: var(--text-muted);">🎉 Zero flagged violations! All platform chats are complying with platform safety rules.</div>';
         }
 
         return `
@@ -10952,7 +10952,7 @@ function AdminChatsView() {
                                     </span>
                                 </td>
                                 <td style="padding: 12px 16px; color: #ef4444; font-weight: 700;">
-                                    ðŸ›‘ ${escapeHTML(m.flag_reason || '')}
+                                    🛑 ${escapeHTML(m.flag_reason || '')}
                                 </td>
                                 <td style="padding: 12px 16px;">
                                     ${m.sender.is_blocked ? '<span class="badge badge-danger">BLOCKED</span>' : '<span class="badge badge-warning">WARNED</span>'}
@@ -10963,9 +10963,9 @@ function AdminChatsView() {
                                             Re-instate / Unblock
                                         </button>
                                     ` : `
-                                        <span style="color: var(--text-muted); font-size: 0.75rem;">Strike 1 â€” warn</span>
+                                        <span style="color: var(--text-muted); font-size: 0.75rem;">Strike 1 — warn</span>
                                     `}
-                                    <button class="btn btn-sm btn-danger" style="padding:2px 8px;font-size:0.7rem;margin-left:4px;" onclick="window.__adminDeleteMessage(${m.message_id})" title="Delete this flagged message">ðŸ—‘ï¸</button>
+                                    <button class="btn btn-sm btn-danger" style="padding:2px 8px;font-size:0.7rem;margin-left:4px;" onclick="window.__adminDeleteMessage(${m.message_id})" title="Delete this flagged message">🗑️</button>
                                 </td>
                             </tr>
                         `;}).join('')}
