@@ -389,8 +389,13 @@ function renderProfileMenu() {
                     <span class="profile-menu-item-icon">🖼️</span>
                     <span>Change Profile Icon</span>
                 </button>
-                <button class="profile-menu-item" onclick="window.__closeProfileMenu(); router('/profile');">
+                <button class="profile-menu-item" onclick="window.__closeProfileMenu(); openBitmojiStudioModal();">
                     <span class="profile-menu-item-icon">🎨</span>
+                    <span>Create Bitmoji Avatar</span>
+                    <span class="profile-menu-item-badge" style="background: linear-gradient(135deg, #a855f7, #ec4899); color: white;">NEW</span>
+                </button>
+                <button class="profile-menu-item" onclick="window.__closeProfileMenu(); router('/profile');">
+                    <span class="profile-menu-item-icon">👁️</span>
                     <span>Public Profile Preview</span>
                 </button>
             </div>
@@ -4535,9 +4540,12 @@ function Settings() {
                             </div>
                             <div style="margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap;">
                                 <button class="btn btn-outline btn-sm" onclick="openProfileIconPicker()" style="font-weight: 600;">
-                                    🖼️ Change Profile Photo
+                                    🖼️ Photo
                                 </button>
-                                <button class="btn btn-primary btn-sm" onclick="router('/profile')" style="font-weight: 600;">
+                                <button class="btn btn-primary btn-sm" onclick="openBitmojiStudioModal()" style="background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%); font-weight: 700;">
+                                    🎨 Bitmoji Studio
+                                </button>
+                                <button class="btn btn-secondary btn-sm" onclick="router('/profile')" style="font-weight: 600;">
                                     ✏️ Edit Profile
                                 </button>
                                 ${currentUser?.user_type === 'PROVIDER' ? `<button class="btn btn-secondary btn-sm" onclick="router('/packages')" style="font-weight: 600;">📦 Manage Packages</button>` : ''}
@@ -4663,9 +4671,12 @@ function Settings() {
                                         Upload your video showreels, client proof, IELTS teaching samples, or copywriting deliverables. Buyers see these when browsing your profile.
                                     </p>
                                 </div>
-                                <div style="display: flex; gap: 10px; align-items: center;">
+                                <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                                    <button type="button" class="btn btn-primary btn-sm" onclick="openBitmojiStudioModal()" style="background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%); font-weight: 700; font-size: 0.8rem;">
+                                        🎨 Create Bitmoji Avatar &amp; Card
+                                    </button>
                                     <button type="button" class="btn btn-secondary btn-sm" onclick="openFiverrPortfolioModal(${currentUser.id}, '${escapeHTML(currentUser.name)}')">
-                                        👁️ Preview Public Seller Profile
+                                        👁️ Preview Profile
                                     </button>
                                 </div>
                             </div>
@@ -10862,3 +10873,410 @@ function AdminChatsView() {
     loadData();
     return renderAdminChatsView();
 }
+
+// ==========================================================================
+// INSTANT BITMOJI & CREATOR PORTFOLIO AVATAR STUDIO
+// ==========================================================================
+function generateBitmojiSVG(state = {}, userName = 'Creator', userInitial = 'C') {
+    const role = state.avatarStyle || 'editor';
+    const theme = state.theme || 'violet';
+    const accessory = state.accessory || 'shades';
+    const bgTexture = state.bgTexture || 'gradient';
+    const tagline = (state.tagline || 'VERIFIED PRO CREATOR').toUpperCase();
+
+    const themeGradients = {
+        violet: ['#6366f1', '#a855f7'],
+        emerald: ['#10b981', '#059669'],
+        gold: ['#f59e0b', '#d97706'],
+        cyber: ['#06b6d4', '#3b82f6'],
+        magenta: ['#ec4899', '#8b5cf6']
+    };
+    const [c1, c2] = themeGradients[theme] || themeGradients.violet;
+
+    const roleIcons = {
+        editor: '🎬',
+        tutor: '🗣️',
+        writer: '✍️',
+        producer: '🎧',
+        director: '🚀'
+    };
+    const roleIcon = roleIcons[role] || '🎬';
+
+    const jacketColors = {
+        editor: '#1e1b4b',
+        tutor: '#064e3b',
+        writer: '#1e293b',
+        producer: '#311042',
+        director: '#4c1d95'
+    };
+    const jacketColor = jacketColors[role] || '#1e1b4b';
+
+    let accessorySVG = '';
+    if (accessory === 'shades') {
+        accessorySVG = `
+            <g transform="translate(145, 160)">
+                <path d="M 10 12 Q 35 4 60 12 L 58 28 Q 35 34 12 28 Z" fill="#0f172a" stroke="#cbd5e1" stroke-width="2.5" />
+                <path d="M 60 12 Q 85 4 110 12 L 108 28 Q 85 34 62 28 Z" fill="#0f172a" stroke="#cbd5e1" stroke-width="2.5" />
+                <line x1="58" y1="14" x2="62" y2="14" stroke="#cbd5e1" stroke-width="3" />
+                <path d="M 18 14 L 38 24" stroke="rgba(255,255,255,0.4)" stroke-width="2" stroke-linecap="round" />
+                <path d="M 68 14 L 88 24" stroke="rgba(255,255,255,0.4)" stroke-width="2" stroke-linecap="round" />
+            </g>
+        `;
+    } else if (accessory === 'specs') {
+        accessorySVG = `
+            <g transform="translate(145, 158)">
+                <circle cx="35" cy="20" r="20" fill="rgba(224,242,254,0.3)" stroke="#38bdf8" stroke-width="3" />
+                <circle cx="85" cy="20" r="20" fill="rgba(224,242,254,0.3)" stroke="#38bdf8" stroke-width="3" />
+                <line x1="55" y1="20" x2="65" y2="20" stroke="#38bdf8" stroke-width="3.5" />
+            </g>
+        `;
+    } else if (accessory === 'headset') {
+        accessorySVG = `
+            <g transform="translate(130, 115)">
+                <path d="M 15 60 A 55 55 0 0 1 125 60" fill="none" stroke="#f1f5f9" stroke-width="8" stroke-linecap="round" />
+                <rect x="5" y="45" width="22" height="42" rx="10" fill="${c1}" stroke="#ffffff" stroke-width="2" />
+                <rect x="113" y="45" width="22" height="42" rx="10" fill="${c1}" stroke="#ffffff" stroke-width="2" />
+                <circle cx="16" cy="66" r="5" fill="#38bdf8" />
+                <circle cx="124" cy="66" r="5" fill="#38bdf8" />
+            </g>
+        `;
+    } else if (accessory === 'cap') {
+        accessorySVG = `
+            <g transform="translate(135, 102)">
+                <path d="M 10 45 Q 65 5 120 45 Z" fill="${c1}" stroke="#ffffff" stroke-width="2" />
+                <path d="M 2 45 Q 65 38 138 42" fill="none" stroke="#1e293b" stroke-width="7" stroke-linecap="round" />
+                <circle cx="65" cy="18" r="4" fill="#ffffff" />
+            </g>
+        `;
+    } else if (accessory === 'crown') {
+        accessorySVG = `
+            <g transform="translate(138, 90)">
+                <polygon points="10,40 25,10 45,30 65,5 85,30 105,10 120,40" fill="#f59e0b" stroke="#ffffff" stroke-width="2" />
+                <circle cx="25" cy="10" r="3" fill="#ffffff" />
+                <circle cx="65" cy="5" r="4" fill="#ffffff" />
+                <circle cx="105" cy="10" r="3" fill="#ffffff" />
+            </g>
+        `;
+    } else if (accessory === 'sparkles') {
+        accessorySVG = `
+            <g transform="translate(120, 95)" fill="#f59e0b">
+                <path d="M 20 10 L 23 20 L 33 23 L 23 26 L 20 36 L 17 26 L 7 23 L 17 20 Z" />
+                <path d="M 140 30 L 142 36 L 148 38 L 142 40 L 140 46 L 138 40 L 132 38 L 138 36 Z" fill="#38bdf8" />
+                <path d="M 130 110 L 132 116 L 138 118 L 132 120 L 130 126 L 128 120 L 122 118 L 128 116 Z" fill="#a855f7" />
+            </g>
+        `;
+    }
+
+    let patternSVG = '';
+    if (bgTexture === 'film') {
+        patternSVG = `
+            <g fill="rgba(255,255,255,0.18)">
+                <rect x="12" y="30" width="10" height="14" rx="2" />
+                <rect x="12" y="70" width="10" height="14" rx="2" />
+                <rect x="12" y="110" width="10" height="14" rx="2" />
+                <rect x="12" y="150" width="10" height="14" rx="2" />
+                <rect x="12" y="190" width="10" height="14" rx="2" />
+                <rect x="378" y="30" width="10" height="14" rx="2" />
+                <rect x="378" y="70" width="10" height="14" rx="2" />
+                <rect x="378" y="110" width="10" height="14" rx="2" />
+                <rect x="378" y="150" width="10" height="14" rx="2" />
+                <rect x="378" y="190" width="10" height="14" rx="2" />
+            </g>
+        `;
+    } else if (bgTexture === 'dots') {
+        patternSVG = `
+            <g fill="rgba(255,255,255,0.2)">
+                <circle cx="40" cy="50" r="3" /><circle cx="70" cy="50" r="3" /><circle cx="100" cy="50" r="3" />
+                <circle cx="40" cy="80" r="3" /><circle cx="70" cy="80" r="3" /><circle cx="100" cy="80" r="3" />
+                <circle cx="300" cy="50" r="3" /><circle cx="330" cy="50" r="3" /><circle cx="360" cy="50" r="3" />
+                <circle cx="300" cy="80" r="3" /><circle cx="330" cy="80" r="3" /><circle cx="360" cy="80" r="3" />
+            </g>
+        `;
+    } else if (bgTexture === 'waves') {
+        patternSVG = `
+            <path d="M 0 100 Q 100 60 200 100 T 400 100" stroke="rgba(255,255,255,0.18)" stroke-width="4" fill="none" />
+            <path d="M 0 130 Q 100 90 200 130 T 400 130" stroke="rgba(255,255,255,0.12)" stroke-width="3" fill="none" />
+        `;
+    }
+
+    return `
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="100%" height="100%" style="border-radius: 24px;">
+        <defs>
+            <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="${c1}" />
+                <stop offset="100%" stop-color="${c2}" />
+            </linearGradient>
+            <linearGradient id="jacketGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stop-color="${jacketColor}" />
+                <stop offset="100%" stop-color="#0f172a" />
+            </linearGradient>
+            <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+                <feDropShadow dx="0" dy="8" stdDeviation="6" flood-opacity="0.3" />
+            </filter>
+        </defs>
+
+        <rect width="400" height="400" rx="24" fill="url(#bgGrad)" />
+        ${patternSVG}
+
+        <circle cx="200" cy="180" r="130" fill="rgba(255,255,255,0.12)" />
+
+        <g transform="translate(20, 24)">
+            <rect width="180" height="28" rx="14" fill="rgba(0,0,0,0.35)" stroke="rgba(255,255,255,0.25)" stroke-width="1" />
+            <circle cx="16" cy="14" r="5" fill="#10b981" />
+            <text x="30" y="18" fill="#ffffff" font-family="'Outfit', sans-serif" font-size="11" font-weight="700" letter-spacing="0.5">GROOVE HUB VERIFIED</text>
+        </g>
+
+        <g transform="translate(340, 24)">
+            <circle cx="18" cy="14" r="16" fill="rgba(255,255,255,0.25)" stroke="rgba(255,255,255,0.4)" stroke-width="1.5" />
+            <text x="10" y="20" font-size="16">${roleIcon}</text>
+        </g>
+
+        <g filter="url(#shadow)">
+            <path d="M 100 340 Q 200 250 300 340 L 320 400 L 80 400 Z" fill="url(#jacketGrad)" stroke="#ffffff" stroke-width="1.5" />
+            <polygon points="200,285 175,340 225,340" fill="#ffffff" opacity="0.9" />
+            <polygon points="200,295 188,340 212,340" fill="${c1}" />
+
+            <rect x="182" y="225" width="36" height="50" rx="12" fill="#fbcfe8" />
+
+            <ellipse cx="200" cy="185" rx="55" ry="60" fill="#fde047" stroke="#eab308" stroke-width="2" />
+            <circle cx="143" cy="185" r="10" fill="#fde047" />
+            <circle cx="257" cy="185" r="10" fill="#fde047" />
+
+            <ellipse cx="178" cy="175" rx="6" ry="8" fill="#0f172a" />
+            <ellipse cx="222" cy="175" rx="6" ry="8" fill="#0f172a" />
+            <circle cx="180" cy="173" r="2.5" fill="#ffffff" />
+            <circle cx="224" cy="173" r="2.5" fill="#ffffff" />
+            <path d="M 168 160 Q 178 154 188 160" stroke="#0f172a" stroke-width="3" fill="none" stroke-linecap="round" />
+            <path d="M 212 160 Q 222 154 232 160" stroke="#0f172a" stroke-width="3" fill="none" stroke-linecap="round" />
+
+            <path d="M 182 205 Q 200 222 218 205" stroke="#0f172a" stroke-width="3.5" fill="none" stroke-linecap="round" />
+            <circle cx="162" cy="192" r="7" fill="rgba(244,63,94,0.3)" />
+            <circle cx="238" cy="192" r="7" fill="rgba(244,63,94,0.3)" />
+
+            <path d="M 142 165 C 140 110, 260 110, 258 165 C 240 130, 160 130, 142 165 Z" fill="#1e293b" />
+        </g>
+
+        ${accessorySVG}
+
+        <g transform="translate(30, 335)" filter="url(#shadow)">
+            <rect width="340" height="44" rx="22" fill="rgba(15,23,42,0.8)" stroke="rgba(255,255,255,0.35)" stroke-width="1.5" />
+            <text x="170" y="27" fill="#ffffff" font-family="'Outfit', sans-serif" font-size="12" font-weight="800" text-anchor="middle" letter-spacing="1">
+                ${escapeHTML(tagline)}
+            </text>
+        </g>
+    </svg>
+    `;
+}
+
+window.openBitmojiStudioModal = () => {
+    const existing = document.getElementById('bitmoji-modal-root');
+    if (existing) existing.remove();
+
+    const user = currentUser || {};
+    window.__bitmojiState = {
+        avatarStyle: 'editor',
+        theme: 'violet',
+        accessory: 'shades',
+        bgTexture: 'gradient',
+        tagline: '4K VIDEO & REELS EDITOR'
+    };
+
+    const modalRoot = document.createElement('div');
+    modalRoot.id = 'bitmoji-modal-root';
+    modalRoot.className = 'modal-backdrop';
+    modalRoot.style.cssText = 'position: fixed; inset: 0; background: rgba(0,0,0,0.65); backdrop-filter: blur(6px); display: flex; align-items: center; justify-content: center; z-index: 10000; padding: 16px;';
+
+    const renderModalBody = () => {
+        const svgHTML = generateBitmojiSVG(window.__bitmojiState, user.name || 'Creator', (user.name || 'C').charAt(0));
+        return `
+            <div class="modal-card" style="max-width: 820px; width: 100%; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; border-radius: 20px; background: var(--bg-card); border: 1px solid var(--border); box-shadow: var(--shadow-lg);">
+                <div class="modal-header" style="padding: 16px 22px; background: var(--bg-hover); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 1.4rem;">🎨</span>
+                        <div>
+                            <h3 style="margin: 0; font-size: 1.1rem; font-weight: 800; color: var(--text-primary);">Bitmoji &amp; Avatar Studio</h3>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">Customize your instant creator avatar and portfolio card</div>
+                        </div>
+                    </div>
+                    <button class="modal-close" onclick="document.getElementById('bitmoji-modal-root').remove()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-muted);">&times;</button>
+                </div>
+
+                <div class="modal-body" style="padding: 22px; overflow-y: auto; display: flex; flex-wrap: wrap; gap: 24px; justify-content: center;">
+                    <!-- Left: Live Preview Panel -->
+                    <div style="display: flex; flex-direction: column; align-items: center; gap: 14px; width: 280px; flex-shrink: 0;">
+                        <div id="bitmoji-live-preview-box" style="width: 280px; height: 280px; border-radius: 20px; overflow: hidden; border: 2px solid var(--border); box-shadow: 0 8px 24px rgba(0,0,0,0.15);">
+                            ${svgHTML}
+                        </div>
+                        <div style="font-size: 0.78rem; font-weight: 700; color: var(--accent); display: flex; align-items: center; gap: 6px;">
+                            <span>✨</span> Instant Live Preview
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 10px; width: 100%;">
+                            <button class="btn btn-primary" onclick="window.__saveBitmojiAsAvatar()" style="font-weight: 700; padding: 12px 14px; font-size: 0.85rem; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: none;">
+                                ✨ Set as Profile Avatar
+                            </button>
+                            <button class="btn btn-secondary" onclick="window.__saveBitmojiToPortfolio()" style="font-weight: 700; padding: 12px 14px; font-size: 0.85rem;">
+                                📂 Add to Portfolio Showcase
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Right: Customizer Controls -->
+                    <div style="display: flex; flex-direction: column; gap: 16px; flex: 1; min-width: 280px;">
+                        <!-- Role Vibe -->
+                        <div>
+                            <label style="font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 8px;">1. Creator Style &amp; Role</label>
+                            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                                ${[
+                                    { id: 'editor', label: '🎬 Video Editor', defaultTag: '4K VIDEO & REELS EDITOR' },
+                                    { id: 'tutor', label: '🗣️ English Coach', defaultTag: 'CONVERSATIONAL ENGLISH COACH' },
+                                    { id: 'writer', label: '✍️ Copywriter', defaultTag: 'DIRECT-RESPONSE COPYWRITER' },
+                                    { id: 'producer', label: '🎧 Audio Pro', defaultTag: 'MIXING & SOUND ENGINEER' },
+                                    { id: 'director', label: '🚀 Motion Lead', defaultTag: 'MOTION GRAPHICS & VFX LEAD' }
+                                ].map(r => `
+                                    <button type="button" class="tab-btn ${window.__bitmojiState.avatarStyle === r.id ? 'active' : ''}" onclick="window.__setBitmojiProp('avatarStyle', '${r.id}', '${r.defaultTag}')" style="font-size: 0.78rem; padding: 6px 12px;">
+                                        ${r.label}
+                                    </button>
+                                `).join('')}
+                            </div>
+                        </div>
+
+                        <!-- Theme Colors -->
+                        <div>
+                            <label style="font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 8px;">2. Theme Tint</label>
+                            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                ${[
+                                    { id: 'violet', name: 'Neon Violet', color: '#6366f1' },
+                                    { id: 'emerald', name: 'Emerald Green', color: '#10b981' },
+                                    { id: 'gold', name: 'Sunset Gold', color: '#f59e0b' },
+                                    { id: 'cyber', name: 'Cyber Blue', color: '#06b6d4' },
+                                    { id: 'magenta', name: 'Magenta Pop', color: '#ec4899' }
+                                ].map(t => `
+                                    <button type="button" onclick="window.__setBitmojiProp('theme', '${t.id}')" style="display: flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 8px; border: 1.5px solid ${window.__bitmojiState.theme === t.id ? t.color : 'var(--border)'}; background: var(--bg-card); cursor: pointer; font-size: 0.75rem; font-weight: 600;">
+                                        <span style="width: 14px; height: 14px; border-radius: 50%; background: ${t.color}; display: inline-block;"></span>
+                                        ${t.name}
+                                    </button>
+                                `).join('')}
+                            </div>
+                        </div>
+
+                        <!-- Accessory -->
+                        <div>
+                            <label style="font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 8px;">3. Accessory &amp; Vibe</label>
+                            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                                ${[
+                                    { id: 'shades', label: '🕶️ Cool Shades' },
+                                    { id: 'specs', label: '👓 Creator Specs' },
+                                    { id: 'headset', label: '🎧 DJ Headset' },
+                                    { id: 'cap', label: '🧢 Snapback Cap' },
+                                    { id: 'crown', label: '👑 Pro Crown' },
+                                    { id: 'sparkles', label: '✨ Star Sparkles' }
+                                ].map(a => `
+                                    <button type="button" class="tab-btn ${window.__bitmojiState.accessory === a.id ? 'active' : ''}" onclick="window.__setBitmojiProp('accessory', '${a.id}')" style="font-size: 0.78rem; padding: 6px 12px;">
+                                        ${a.label}
+                                    </button>
+                                `).join('')}
+                            </div>
+                        </div>
+
+                        <!-- Background Pattern -->
+                        <div>
+                            <label style="font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 8px;">4. Background Texture</label>
+                            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                                ${[
+                                    { id: 'gradient', label: '🌌 Studio Glow' },
+                                    { id: 'film', label: '🎞️ Film Strip' },
+                                    { id: 'dots', label: '🟣 Geometric Dots' },
+                                    { id: 'waves', label: '🌊 Motion Waves' }
+                                ].map(b => `
+                                    <button type="button" class="tab-btn ${window.__bitmojiState.bgTexture === b.id ? 'active' : ''}" onclick="window.__setBitmojiProp('bgTexture', '${b.id}')" style="font-size: 0.78rem; padding: 6px 12px;">
+                                        ${b.label}
+                                    </button>
+                                `).join('')}
+                            </div>
+                        </div>
+
+                        <!-- Tagline Input -->
+                        <div>
+                            <label style="font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 6px;">5. Tagline / Skill Badge</label>
+                            <input type="text" id="bitmoji-tagline-input" value="${escapeHTML(window.__bitmojiState.tagline)}" oninput="window.__setBitmojiProp('tagline', this.value)" placeholder="e.g. 4K VIDEO & REELS EDITOR" style="width: 100%; padding: 10px 14px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg-primary); color: var(--text-primary); font-weight: 700; font-size: 0.85rem;" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    };
+
+    modalRoot.innerHTML = renderModalBody();
+    document.body.appendChild(modalRoot);
+
+    window.__setBitmojiProp = (key, val, defaultTag = null) => {
+        window.__bitmojiState[key] = val;
+        if (defaultTag && key === 'avatarStyle') {
+            window.__bitmojiState.tagline = defaultTag;
+        }
+        const modal = document.getElementById('bitmoji-modal-root');
+        if (modal) {
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = renderModalBody();
+            const newCard = tempDiv.querySelector('.modal-card');
+            const currentCard = modal.querySelector('.modal-card');
+            if (newCard && currentCard) {
+                currentCard.replaceWith(newCard);
+            }
+        }
+    };
+
+    window.__saveBitmojiAsAvatar = async () => {
+        try {
+            const svgStr = generateBitmojiSVG(window.__bitmojiState, user.name || 'Creator', (user.name || 'C').charAt(0));
+            const dataUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgStr);
+
+            await apiFetch('/auth/me', {
+                method: 'PATCH',
+                body: JSON.stringify({ profile_image: dataUrl })
+            });
+
+            if (currentUser) {
+                currentUser.profile_image = dataUrl;
+            }
+            showToast('✨ Bitmoji Avatar saved as your profile photo!', 'success');
+            document.getElementById('bitmoji-modal-root')?.remove();
+
+            const avatarWrapper = document.querySelector('.profile-dropdown-wrapper');
+            if (avatarWrapper) {
+                avatarWrapper.innerHTML = `${renderProfileAvatar(34)}${renderProfileMenu()}`;
+            }
+        } catch (err) {
+            showToast(err.message || 'Failed to update avatar photo', 'error');
+        }
+    };
+
+    window.__saveBitmojiToPortfolio = async () => {
+        try {
+            const svgStr = generateBitmojiSVG(window.__bitmojiState, user.name || 'Creator', (user.name || 'C').charAt(0));
+            const dataUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgStr);
+
+            const newItem = await apiFetch('/profile/portfolio', {
+                method: 'POST',
+                body: JSON.stringify({
+                    title: `${user.name || 'Creator'}'s Bitmoji Card`,
+                    description: `${window.__bitmojiState.tagline || 'Verified Creator Card'} • Verified Portfolio Item`,
+                    media_url: dataUrl,
+                    media_type: 'image',
+                    thumbnail_url: dataUrl
+                })
+            });
+
+            if (typeof portfolioItems !== 'undefined') {
+                portfolioItems.unshift(newItem);
+            }
+            showToast('📂 Bitmoji Card added to your public portfolio showcase!', 'success');
+            document.getElementById('bitmoji-modal-root')?.remove();
+            if (typeof router === 'function' && window.location.hash.includes('settings')) {
+                setSettingsTab('portfolio');
+            }
+        } catch (err) {
+            showToast(err.message || 'Failed to add Bitmoji card to portfolio', 'error');
+        }
+    };
+};
