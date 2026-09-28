@@ -3021,8 +3021,7 @@ function BuyerDashboard() {
                                     </div>
                                 </div>
                                 `;
-                            }).join('');
-                            })()}
+                            }).join('')}
                         </div>
                     </div>
                 ` : ''}
@@ -3116,23 +3115,24 @@ function BuyerDashboard() {
                                     }
                                 }
                                 return sItems.map((opt, idx) => {
-                                const isSelected = searchQuery.toLowerCase() === opt.query.toLowerCase();
-                                return `
-                                <div 
-                                    class="editor-slide-card ${isSelected ? 'active' : ''}" 
-                                    onclick="${isSelected ? `window.__clearBuyerSearch()` : `window.__applyPopularTag('${escapeJs(opt.query)}', '${escapeJs(activeFilter)}')`}"
-                                    style="animation-delay: ${(idx * 0.04).toFixed(2)}s;"
-                                    title="Filter by ${opt.label}"
-                                >
-                                    <div class="slide-card-top">
-                                        <span class="slide-card-icon">${getTypeIconSvg(opt.id, opt.icon, 28)}</span>
-                                        <span class="slide-card-arrow">→</span>
+                                    const isSelected = searchQuery.toLowerCase() === opt.query.toLowerCase();
+                                    return `
+                                    <div 
+                                        class="editor-slide-card ${isSelected ? 'active' : ''}" 
+                                        onclick="${isSelected ? `window.__clearBuyerSearch()` : `window.__applyPopularTag('${escapeJs(opt.query)}', '${escapeJs(activeFilter)}')`}"
+                                        style="animation-delay: ${(idx * 0.04).toFixed(2)}s;"
+                                        title="Filter by ${opt.label}"
+                                    >
+                                        <div class="slide-card-top">
+                                            <span class="slide-card-icon">${getTypeIconSvg(opt.id, opt.icon, 28)}</span>
+                                            <span class="slide-card-arrow">→</span>
+                                        </div>
+                                        <div class="slide-card-title">${opt.label}</div>
+                                        <div class="slide-card-sub">${opt.sub}</div>
                                     </div>
-                                    <div class="slide-card-title">${opt.label}</div>
-                                    <div class="slide-card-sub">${opt.sub}</div>
-                                </div>
-                                `;
-                            }).join('')}
+                                    `;
+                                }).join('');
+                            })()}
                         </div>
                     </div>
                     ` : ''}
