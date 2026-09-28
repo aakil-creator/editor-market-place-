@@ -2492,8 +2492,9 @@ async def upload_chat_video(
         if ext not in ALLOWED_VIDEO_EXTENSIONS:
             raise HTTPException(status_code=400, detail="Only video files (mp4, mov, avi, mkv, webm) are allowed")
     
-    if video.size and video.size > 50 * 1024 * 1024:
-        raise HTTPException(status_code=400, detail="Video file too large (max 50MB)")
+    MAX_VIDEO_SIZE = 1024 * 1024 * 1024  # 1 GB allowance for 4K / UHD video
+    if video.size and video.size > MAX_VIDEO_SIZE:
+        raise HTTPException(status_code=400, detail="Video file too large (max 1GB)")
     
     # Generate unique filename
     ext = os.path.splitext(video.filename or '')[1].lower()
@@ -2502,10 +2503,20 @@ async def upload_chat_video(
     safe_name = f"{uuid.uuid4().hex}{ext}"
     file_path = os.path.join(CHAT_UPLOAD_DIR, safe_name)
     
-    # Save file
-    content = await video.read()
+    # Save file in 4MB chunks for efficient memory streaming of large 4K files
+    total_size = 0
     with open(file_path, 'wb') as f:
-        f.write(content)
+        while chunk := await video.read(4 * 1024 * 1024):
+            total_size += len(chunk)
+            if total_size > MAX_VIDEO_SIZE:
+                f.close()
+                if os.path.exists(file_path):
+                    try:
+                        os.remove(file_path)
+                    except Exception:
+                        pass
+                raise HTTPException(status_code=400, detail="Video file too large (max 1GB)")
+            f.write(chunk)
     
     # Return public URL
     url = f"/static/chat_uploads/{safe_name}"

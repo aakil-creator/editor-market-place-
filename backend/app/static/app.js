@@ -9231,8 +9231,8 @@ function MessagesInbox() {
         input.onchange = async (e) => {
             const file = e.target.files[0];
             if (!file) return;
-            if (file.size > 50 * 1024 * 1024) {
-                showToast('Video too large (max 50MB)', 'error');
+            if (file.size > 1024 * 1024 * 1024) {
+                showToast('Video too large (max 1GB)', 'error');
                 return;
             }
             showToast('Uploading video...', 'info');
