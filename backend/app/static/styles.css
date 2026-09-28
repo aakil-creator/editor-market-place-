@@ -831,8 +831,12 @@ a.card:hover {
     padding-top: 16px;
     border-top: 1px solid var(--border);
     display: flex;
+    flex-wrap: wrap;
     justify-content: space-between;
     align-items: center;
+    gap: 8px;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 [data-theme="dark"] .card-footer {
@@ -7004,8 +7008,11 @@ textarea::placeholder,
     /* Keep marketplace CTAs inside the card on phones. */
     .fiverr-gig-content > div,
     .fiverr-gig-footer,
-    .fiverr-gig-actions {
+    .fiverr-gig-actions,
+    .card-footer {
         min-width: 0 !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
     }
 
     .fiverr-gig-actions {
@@ -7018,11 +7025,28 @@ textarea::placeholder,
     .fiverr-gig-actions > .btn {
         width: 100% !important;
         min-width: 0 !important;
-        padding-left: 8px !important;
-        padding-right: 8px !important;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
+        padding-left: 6px !important;
+        padding-right: 6px !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
+
+    @media (max-width: 420px) {
+        .fiverr-gig-actions {
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 8px !important;
+        }
+        .card-footer {
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 10px !important;
+        }
+        .card-footer > div {
+            width: 100% !important;
+        }
     }
 
     .fiverr-gig-thumb-wrap {

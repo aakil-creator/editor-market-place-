@@ -3607,13 +3607,13 @@ function BuyerDashboard() {
                                             <span class="fiverr-gig-price-label">Starting at</span>
                                             <span class="fiverr-gig-price-val">₹${(pkg.price || 0).toLocaleString()}</span>
                                         </div>
-                                        <div style="display: flex; gap: 6px; align-items: center;">
+                                        <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap; min-width: 0;">
                                             <span class="fiverr-gig-delivery">⚡ ${escapeHTML(pkg.turnaround || '24h')}</span>
-                                            <div style="display: flex; gap: 6px;">
-                                                <button class="btn btn-outline btn-sm" style="flex: 0 0 auto; padding: 5px 10px; font-weight: 700; font-size: 0.7rem;" onclick="event.stopPropagation(); openPreBookingChat(${pkg.provider_id}, '${escapeJs(providerName)}')">
+                                            <div style="display: flex; gap: 6px; flex: 1 1 auto; min-width: 0; justify-content: flex-end;">
+                                                <button class="btn btn-outline btn-sm" style="flex: 1 1 auto; min-width: 0; padding: 5px 8px; font-weight: 700; font-size: 0.7rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" onclick="event.stopPropagation(); openPreBookingChat(${pkg.provider_id}, '${escapeJs(providerName)}')">
                                                     💬 Chat
                                                 </button>
-                                                <button class="btn btn-primary btn-sm" style="flex: 0 0 auto; padding: 5px 12px; font-weight: 700; font-size: 0.7rem;" onclick="event.stopPropagation(); selectProvider(${pkg.provider_id}, ${pkg.id})">
+                                                <button class="btn btn-primary btn-sm" style="flex: 1 1 auto; min-width: 0; padding: 5px 10px; font-weight: 700; font-size: 0.7rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" onclick="event.stopPropagation(); selectProvider(${pkg.provider_id}, ${pkg.id})">
                                                     Order
                                                 </button>
                                             </div>
@@ -3664,16 +3664,16 @@ function BuyerDashboard() {
                                     </div>
                                 </div>
 
-                                <div class="card-footer" style="background: var(--bg-hover); padding: 12px 16px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; gap: 8px;">
-                                    <div>
+                                <div class="card-footer" style="background: var(--bg-hover); padding: 12px 16px; border-top: 1px solid var(--border); display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; max-width: 100%; box-sizing: border-box;">
+                                    <div style="flex: 1 1 auto; min-width: 80px;">
                                         <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Starting at</div>
                                         <div style="font-size: 1.25rem; font-weight: 800; color: var(--accent);">₹${startPrice.toLocaleString()}</div>
                                     </div>
-                                    <div style="display: flex; gap: 6px;">
-                                        <button class="btn btn-secondary btn-sm" onclick="openPreBookingChat(${pr.id}, '${escapeJs(pr.name)}')" title="Message creator before ordering" style="padding: 6px 12px; font-weight: 700;">
+                                    <div style="display: flex; gap: 6px; flex: 1 1 auto; justify-content: flex-end; min-width: 0;">
+                                        <button class="btn btn-secondary btn-sm" onclick="openPreBookingChat(${pr.id}, '${escapeJs(pr.name)}')" title="Message creator before ordering" style="padding: 6px 10px; font-weight: 700; flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                                             💬 Chat
                                         </button>
-                                        <button class="btn btn-primary btn-sm" onclick="selectProvider(${pr.id})" style="padding: 6px 14px; font-weight: 700;">
+                                        <button class="btn btn-primary btn-sm" onclick="selectProvider(${pr.id})" style="padding: 6px 12px; font-weight: 700; flex: 1.2 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                                             Hire Talent
                                         </button>
                                     </div>
@@ -7630,11 +7630,11 @@ function ProvidersList() {
                     </div>
 
                     <!-- Action Buttons: Chat & Order -->
-                    <div class="fiverr-gig-actions" style="display: flex; gap: 6px; margin-top: 10px;">
-                        <button class="btn btn-outline btn-sm" style="flex: 1; font-weight: 700; border-color: var(--accent); color: var(--accent); display: flex; align-items: center; justify-content: center; gap: 4px;" onclick="event.stopPropagation(); openPreBookingChat(${provider.id})" title="Chat with ${escapeHTML(provider.name || 'Provider')} before booking">
+                    <div class="fiverr-gig-actions" style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; width: 100%; min-width: 0; box-sizing: border-box;">
+                        <button class="btn btn-outline btn-sm" style="flex: 1 1 0; min-width: 0; max-width: 100%; font-weight: 700; border-color: var(--accent); color: var(--accent); display: flex; align-items: center; justify-content: center; gap: 4px; padding: 6px 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" onclick="event.stopPropagation(); openPreBookingChat(${provider.id})" title="Chat with ${escapeHTML(provider.name || 'Provider')} before booking">
                             💬 Chat
                         </button>
-                        <button class="btn btn-primary btn-sm" style="flex: 1.4; font-weight: 700;" onclick="selectProvider(${provider.id}, ${mainPkg ? mainPkg.id : 'null'})">
+                        <button class="btn btn-primary btn-sm" style="flex: 1.4 1 0; min-width: 0; max-width: 100%; font-weight: 700; padding: 6px 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" onclick="selectProvider(${provider.id}, ${mainPkg ? mainPkg.id : 'null'})">
                             ${primaryText}
                         </button>
                     </div>
