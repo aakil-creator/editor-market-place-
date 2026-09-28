@@ -1075,6 +1075,13 @@ window.updateUnreadCountBadge = updateUnreadCountBadge;
 setInterval(updateUnreadCountBadge, 12000);
 setTimeout(updateUnreadCountBadge, 2000);
 
+// Universal History & Mobile Back-Button Management
+if (!history.state) {
+    try {
+        history.replaceState({ path: window.location.pathname }, '', window.location.pathname);
+    } catch (_) {}
+}
+
 // Router
 function router(path, pushState = true) {
     // 1. If admin is logged in, enforce exclusive Admin Console experience (no buyer/provider interference)
@@ -1122,7 +1129,7 @@ function router(path, pushState = true) {
     };
 
     const component = routes[path] || NotFound;
-    if (pushState && window.location.pathname !== path) {
+    if (pushState && (window.location.pathname !== path || !history.state)) {
         history.pushState({ path: path }, '', path);
     }
     render(component);
@@ -1130,33 +1137,99 @@ function router(path, pushState = true) {
 }
 window.router = router;
 
+// Universal Modal MutationObserver to seamlessly handle phone physical/swipe back buttons
+const modalSelector = '.fiverr-escrow-modal, #deliver-work-modal-root, #portfolio-modal-root, #security-suspended-modal, .modal-backdrop, .modal-overlay, #profile-icon-picker, #groove-chat-modal, #social-login-modal, #inbox-modal-root, #chat-modal-root, #review-modal-root';
+
+let isPoppingModalState = false;
+
+if (!window.__modalObserverInitialized) {
+    window.__modalObserverInitialized = true;
+    const modalObserver = new MutationObserver((mutations) => {
+        for (const mutation of mutations) {
+            for (const node of mutation.addedNodes) {
+                if (node.nodeType === 1) {
+                    const targetModal = (node.matches && node.matches(modalSelector)) ? node : (node.querySelector ? node.querySelector(modalSelector) : null);
+                    if (targetModal && !targetModal.dataset.historyAttached) {
+                        targetModal.dataset.historyAttached = 'true';
+                        try {
+                            history.pushState({ isModal: true, modalId: targetModal.id || 'modal', path: window.location.pathname }, '', window.location.href);
+                        } catch (_) {}
+                    }
+                }
+            }
+            for (const node of mutation.removedNodes) {
+                if (node.nodeType === 1) {
+                    const targetModal = (node.matches && node.matches(modalSelector)) ? node : (node.querySelector ? node.querySelector(modalSelector) : null);
+                    if (targetModal && targetModal.dataset.historyAttached === 'true' && !isPoppingModalState && !targetModal.dataset.closedByPopstate) {
+                        try {
+                            history.back();
+                        } catch (_) {}
+                    }
+                }
+            }
+        }
+    });
+    modalObserver.observe(document.body, { childList: true, subtree: true });
+}
+
 // Handle phone physical/swipe back button & browser back/forward buttons
 window.addEventListener('popstate', (e) => {
-    // 1. Close open modals / overlays first
-    const openModals = document.querySelectorAll('.fiverr-escrow-modal, #deliver-work-modal-root, #portfolio-modal-root, #security-suspended-modal, .modal-backdrop, #social-login-modal');
-    if (openModals && openModals.length > 0) {
-        openModals.forEach(m => m.remove());
-        return;
-    }
+    isPoppingModalState = true;
+    try {
+        // 1. Close open profile menu if open
+        const profileDropdown = document.getElementById('profile-menu-dropdown');
+        if (profileDropdown && profileDropdown.style.display !== 'none') {
+            profileDropdown.style.display = 'none';
+            return;
+        }
 
-    // 2. Close profile dropdown if open
-    const profileDropdown = document.getElementById('profile-menu-dropdown');
-    if (profileDropdown && profileDropdown.style.display !== 'none') {
-        profileDropdown.style.display = 'none';
-        return;
-    }
+        // 2. Close open modals / overlays first
+        const openModals = document.querySelectorAll(modalSelector);
+        if (openModals && openModals.length > 0) {
+            const topModal = openModals[openModals.length - 1];
+            topModal.dataset.closedByPopstate = 'true';
+            topModal.remove();
+            return;
+        }
 
-    // 3. If in ProvidersList and viewing a specific category, back returns to all categories
-    if ((window.location.pathname === '/providers' || window.location.pathname === '/explore') && providerSearchState?.niche) {
-        providerSearchState.niche = '';
-        providerSearchState.subType = '';
-        router('/providers', false);
-        return;
-    }
+        // 3. If in Messages on mobile and viewing active chat conversation, back returns to conversations list
+        const inboxContainer = document.querySelector('.inbox-container.show-chat');
+        if (inboxContainer) {
+            inboxContainer.classList.remove('show-chat');
+            window.__selectedChatUserId = null;
+            return;
+        }
 
-    // 4. Render the current route for the new URL
-    const currentPath = window.location.pathname || '/';
-    router(currentPath, false);
+        // 4. If in ProvidersList and viewing a specific category or subType, back returns to all categories
+        if ((window.location.pathname === '/providers' || window.location.pathname === '/explore' || window.location.pathname === '/talent') && (providerSearchState?.niche || providerSearchState?.subType)) {
+            providerSearchState.niche = '';
+            providerSearchState.subType = '';
+            providerSearchState.serviceOption = '';
+            providerSearchState.sellerDetail = '';
+            providerSearchState.budget = '';
+            providerSearchState.deliveryTime = '';
+            if (typeof window.setProviderNiche === 'function') {
+                window.setProviderNiche('');
+            } else {
+                router('/providers', false);
+            }
+            return;
+        }
+
+        // 5. If on Dashboard and a category filter is active, back returns to 'all'
+        if (window.location.pathname === '/' && typeof window.__activeBuyerFilter !== 'undefined' && window.__activeBuyerFilter !== 'all') {
+            if (typeof window.__setBuyerFilter === 'function') {
+                window.__setBuyerFilter('all');
+                return;
+            }
+        }
+
+        // 6. Otherwise, render the current route for the new URL
+        const currentPath = (e.state && e.state.path) || window.location.pathname || '/';
+        router(currentPath, false);
+    } finally {
+        setTimeout(() => { isPoppingModalState = false; }, 60);
+    }
 });
 
 function wireForms(root) {
@@ -3427,6 +3500,7 @@ function BuyerDashboard() {
 
     window.__setBuyerFilter = (filter) => {
         activeFilter = filter;
+        window.__activeBuyerFilter = filter;
         mount(renderMarketplace());
         setTimeout(() => window.__updatePlaceholderVisibility(), 30);
     };
@@ -9777,7 +9851,12 @@ function MessagesInbox() {
         window.__selectedChatUserName = otherName;
 
         const container = document.querySelector('.inbox-container');
-        if (container) container.classList.add('show-chat');
+        if (container) {
+            container.classList.add('show-chat');
+            try {
+                history.pushState({ path: '/messages', isChat: true, userId: otherId }, '', '/messages');
+            } catch (_) {}
+        }
 
         document.querySelectorAll('.inbox-item').forEach(item => {
             item.classList.toggle('active', item.dataset.userId == otherId);
@@ -9789,6 +9868,7 @@ function MessagesInbox() {
     window.__inboxMobileBackToList = () => {
         const container = document.querySelector('.inbox-container');
         if (container) container.classList.remove('show-chat');
+        window.__selectedChatUserId = null;
     };
 
     function renderInbox() {
