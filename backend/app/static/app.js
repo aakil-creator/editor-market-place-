@@ -2634,6 +2634,12 @@ function ProviderDashboard() {
         const pendingOrders = clientOrders.filter(b => b.status === 'in_progress' || b.status === 'confirmed');
         const deliveredOrders = clientOrders.filter(b => b.status === 'delivered' || b.status === 'pending_approval');
 
+        const hasProfile = Boolean((profile?.bio && profile.bio.trim()) || (profile?.specialization && profile.specialization.trim()) || (currentUser?.profile_image));
+        const hasShowreel = Boolean((profile?.portfolio_items && profile.portfolio_items.length > 0) || (profile?.portfolio_count > 0));
+        const hasPackages = recentPackages.length > 0;
+        const completedCount = (hasProfile ? 1 : 0) + (hasShowreel ? 1 : 0) + (hasPackages ? 1 : 0);
+        const progressPercent = Math.round((completedCount / 3) * 100);
+
         return el`<div>
             ${renderAppHeader('/')}
             
@@ -2649,35 +2655,76 @@ function ProviderDashboard() {
             </div>
 
             <div class="main">
-                <!-- Creator Guidance Card -->
-                <div class="clarification-guide-card">
-                    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+                <!-- New Creator Fast-Track 3-Step Setup Checklist -->
+                <div class="card" style="padding: 22px 24px; margin-bottom: 24px; border: 1.5px solid rgba(99, 102, 241, 0.35); background: linear-gradient(135deg, rgba(99, 102, 241, 0.06) 0%, rgba(16, 185, 129, 0.06) 100%); border-radius: var(--radius);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 14px;">
                         <div>
                             <div style="font-size: 1.15rem; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
-                                <span>🚀</span> Provider & Creator Studio Guide
+                                <span>🚀</span> Creator Fast-Track Setup Checklist
+                                <span class="badge ${completedCount === 3 ? 'badge-success' : 'badge-primary'}" style="font-size: 0.72rem;">${completedCount}/3 Completed</span>
                             </div>
-                            <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 2px;">
-                                Fulfill client projects safely, get 5-star ratings, and receive direct 80% bank payouts.
+                            <div style="font-size: 0.8125rem; color: var(--text-secondary); margin-top: 2px;">
+                                Complete these 3 quick steps to start appearing in search results and receiving client orders.
                             </div>
                         </div>
-                        <button class="btn btn-primary btn-sm" onclick="router('/create-package')">+ New Package</button>
+                        <div style="min-width: 140px; text-align: right;">
+                            <div style="font-size: 0.78rem; font-weight: 700; color: var(--accent); margin-bottom: 4px;">${progressPercent}% Ready</div>
+                            <div style="width: 100%; height: 8px; background: var(--border); border-radius: 999px; overflow: hidden;">
+                                <div style="width: ${progressPercent}%; height: 100%; background: linear-gradient(90deg, #6366f1, #10b981); transition: width 0.3s ease;"></div>
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="clarification-steps-grid">
-                        <div class="clarification-step-item">
-                            <span class="clarification-step-num">1</span>
-                            <strong style="color: var(--text-primary); font-size: 0.9rem;">Set Up Packages</strong>
-                            <span style="font-size: 0.8rem; color: var(--text-secondary);">List editing tiers or coaching sessions with clear turnaround and revisions.</span>
+                    <div class="grid grid-3" style="gap: 14px;">
+                        <!-- Step 1: Profile -->
+                        <div class="card" style="padding: 14px; background: var(--bg-card); border: 1px solid ${hasProfile ? 'rgba(16, 185, 129, 0.4)' : 'var(--border)'}; border-radius: var(--radius-sm); display: flex; flex-direction: column; justify-content: space-between;">
+                            <div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                                    <span style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted);">STEP 1</span>
+                                    <span style="font-size: 1.1rem;">${hasProfile ? '✅' : '⚪'}</span>
+                                </div>
+                                <div style="font-weight: 700; font-size: 0.92rem; color: var(--text-primary); margin-bottom: 4px;">Complete Profile &amp; Bio</div>
+                                <div style="font-size: 0.78rem; color: var(--text-secondary); line-height: 1.35; margin-bottom: 12px;">
+                                    Add your editor headline, bio, skills, and rates so clients know your expertise.
+                                </div>
+                            </div>
+                            <button type="button" class="btn ${hasProfile ? 'btn-outline' : 'btn-primary'} btn-sm" onclick="openSettingsTab('profile')" style="width: 100%; font-size: 0.78rem; padding: 6px 10px;">
+                                ${hasProfile ? '✏️ Edit Profile' : '👉 Complete Profile'}
+                            </button>
                         </div>
-                        <div class="clarification-step-item">
-                            <span class="clarification-step-num">2</span>
-                            <strong style="color: var(--text-primary); font-size: 0.9rem;">Chat with Inquiring Clients</strong>
-                            <span style="font-size: 0.8rem; color: var(--text-secondary);">Reply fast to incoming pre-booking chats. Keep chat on Grove Hub to maintain escrow protection.</span>
+
+                        <!-- Step 2: Showreel / Portfolio -->
+                        <div class="card" style="padding: 14px; background: var(--bg-card); border: 1px solid ${hasShowreel ? 'rgba(16, 185, 129, 0.4)' : 'var(--border)'}; border-radius: var(--radius-sm); display: flex; flex-direction: column; justify-content: space-between;">
+                            <div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                                    <span style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted);">STEP 2</span>
+                                    <span style="font-size: 1.1rem;">${hasShowreel ? '✅' : '⚪'}</span>
+                                </div>
+                                <div style="font-weight: 700; font-size: 0.92rem; color: var(--text-primary); margin-bottom: 4px;">Upload 4K Showreel / Video</div>
+                                <div style="font-size: 0.78rem; color: var(--text-secondary); line-height: 1.35; margin-bottom: 12px;">
+                                    Upload your first 4K video reel (up to 1GB) or portfolio samples to attract high-paying buyers.
+                                </div>
+                            </div>
+                            <button type="button" class="btn ${hasShowreel ? 'btn-outline' : 'btn-primary'} btn-sm" onclick="openSettingsTab('portfolio')" style="width: 100%; font-size: 0.78rem; padding: 6px 10px;">
+                                ${hasShowreel ? '📁 Manage Portfolio' : '📤 Upload 4K Showreel'}
+                            </button>
                         </div>
-                        <div class="clarification-step-item">
-                            <span class="clarification-step-num">3</span>
-                            <strong style="color: var(--text-primary); font-size: 0.9rem;">Deliver & Get 80% Payout</strong>
-                            <span style="font-size: 0.8rem; color: var(--text-secondary);">Submit final links/files on platform. Client approves, triggering guaranteed bank release.</span>
+
+                        <!-- Step 3: Packages -->
+                        <div class="card" style="padding: 14px; background: var(--bg-card); border: 1px solid ${hasPackages ? 'rgba(16, 185, 129, 0.4)' : 'var(--border)'}; border-radius: var(--radius-sm); display: flex; flex-direction: column; justify-content: space-between;">
+                            <div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                                    <span style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted);">STEP 3</span>
+                                    <span style="font-size: 1.1rem;">${hasPackages ? '✅' : '⚪'}</span>
+                                </div>
+                                <div style="font-weight: 700; font-size: 0.92rem; color: var(--text-primary); margin-bottom: 4px;">Publish Service Package</div>
+                                <div style="font-size: 0.78rem; color: var(--text-secondary); line-height: 1.35; margin-bottom: 12px;">
+                                    Create your fixed-price package (e.g. Reels, Longform, Color Grading) with turn-around time.
+                                </div>
+                            </div>
+                            <button type="button" class="btn ${hasPackages ? 'btn-outline' : 'btn-primary'} btn-sm" onclick="${hasPackages ? "router('/packages')" : "router('/create-package')"}" style="width: 100%; font-size: 0.78rem; padding: 6px 10px;">
+                                ${hasPackages ? '📦 View Packages' : '➕ Create Package'}
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -3797,6 +3844,89 @@ function Settings() {
         }
     };
 
+    window.handlePortfolioFileUpload = (file) => {
+        if (!file) return;
+        const MAX_SIZE = 1024 * 1024 * 1024; // 1 GB
+        if (file.size > MAX_SIZE) {
+            showToast('File is too large (max 1GB allowance)', 'error');
+            return;
+        }
+
+        const progressWrap = document.getElementById('port-upload-progress-wrap');
+        const progressBar = document.getElementById('port-upload-bar');
+        const progressPct = document.getElementById('port-upload-pct');
+        const statusText = document.getElementById('port-upload-status-text');
+
+        if (progressWrap) progressWrap.style.display = 'block';
+        if (progressBar) progressBar.style.width = '0%';
+        if (progressPct) progressPct.textContent = '0%';
+        if (statusText) statusText.textContent = `Uploading ${file.name} (${(file.size / (1024 * 1024)).toFixed(1)} MB)...`;
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', '/api/upload', true);
+
+        const token = currentToken || localStorage.getItem('access_token');
+        if (token) {
+            xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+        }
+
+        xhr.upload.onprogress = (e) => {
+            if (e.lengthComputable) {
+                const percent = Math.round((e.loaded / e.total) * 100);
+                if (progressBar) progressBar.style.width = `${percent}%`;
+                if (progressPct) progressPct.textContent = `${percent}%`;
+                if (statusText) statusText.textContent = `Uploading: ${(e.loaded / (1024 * 1024)).toFixed(1)} MB / ${(e.total / (1024 * 1024)).toFixed(1)} MB (${percent}%)`;
+            }
+        };
+
+        xhr.onload = () => {
+            if (xhr.status === 200) {
+                try {
+                    const res = JSON.parse(xhr.responseText);
+                    const urlInput = document.getElementById('port-media-url');
+                    const titleInput = document.getElementById('port-title');
+                    const typeSelect = document.getElementById('port-media-type');
+
+                    if (urlInput) urlInput.value = res.url;
+                    if (titleInput && !titleInput.value.trim()) {
+                        const cleanName = file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
+                        titleInput.value = cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
+                    }
+                    if (typeSelect) {
+                        if (file.type.startsWith('image/')) typeSelect.value = 'image';
+                        else if (file.type.startsWith('audio/')) typeSelect.value = 'audio';
+                        else typeSelect.value = 'video';
+                    }
+
+                    if (statusText) statusText.textContent = '✅ Upload complete!';
+                    if (progressBar) progressBar.style.width = '100%';
+                    if (progressPct) progressPct.textContent = '100%';
+                    showToast('Media uploaded successfully! Click "Add to My Showcase" below.', 'success');
+                } catch (e) {
+                    showToast('Failed to parse upload response', 'error');
+                }
+            } else {
+                let errText = 'Upload failed';
+                try {
+                    const errRes = JSON.parse(xhr.responseText);
+                    errText = errRes.detail || errText;
+                } catch (_) {}
+                showToast(errText, 'error');
+                if (statusText) statusText.textContent = '❌ Upload failed';
+            }
+        };
+
+        xhr.onerror = () => {
+            showToast('Network error while uploading 4K file', 'error');
+            if (statusText) statusText.textContent = '❌ Network error';
+        };
+
+        xhr.send(formData);
+    };
+
     window.handleAddPortfolioItem = async (e) => {
         e.preventDefault();
         try {
@@ -4176,8 +4306,26 @@ function Settings() {
                                 <div class="card-title" style="font-size: 1rem; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
                                     <span>➕</span> Add New Work Sample / Showcase Item
                                 </div>
-                                <span class="badge badge-info">Instant Live</span>
+                                <span class="badge badge-info">1GB 4K Video Allowance</span>
                             </div>
+
+                            <!-- Direct 4K File Upload Dropzone -->
+                            <div class="portfolio-upload-dropzone" style="border: 2px dashed var(--border); border-radius: 12px; padding: 22px; text-align: center; background: var(--bg-hover); cursor: pointer; margin-bottom: 18px; transition: all 0.2s ease;" onclick="document.getElementById('port-file-input').click()">
+                                <input type="file" id="port-file-input" style="display:none;" accept="video/*,image/*,audio/*" onchange="if(this.files[0]) handlePortfolioFileUpload(this.files[0])" />
+                                <div style="font-size: 2.2rem; margin-bottom: 6px;">📤</div>
+                                <div style="font-weight: 800; font-size: 0.98rem; color: var(--text-primary); margin-bottom: 4px;">Click to Upload 4K Video Reel / Image from Device</div>
+                                <div style="font-size: 0.8rem; color: var(--text-muted);">Supports MP4, MOV, MKV, WebM, PNG, JPG (up to 1GB 4K allowance with high-speed streaming)</div>
+                                <div id="port-upload-progress-wrap" style="display: none; margin-top: 14px; text-align: left; background: var(--bg-card); padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border);">
+                                    <div style="display: flex; justify-content: space-between; font-size: 0.78rem; font-weight: 700; margin-bottom: 6px;">
+                                        <span id="port-upload-status-text" style="color: var(--text-primary);">Uploading 4K file...</span>
+                                        <span id="port-upload-pct" style="color: var(--accent);">0%</span>
+                                    </div>
+                                    <div style="width: 100%; height: 7px; background: var(--border); border-radius: 999px; overflow: hidden;">
+                                        <div id="port-upload-bar" style="width: 0%; height: 100%; background: var(--accent); transition: width 0.15s ease;"></div>
+                                    </div>
+                                </div>
+                            </div>
+
                             <form onsubmit="handleAddPortfolioItem(event)">
                                 <div class="form-group">
                                     <label class="form-label">Project Title <span style="color: var(--danger);">*</span></label>
@@ -4188,21 +4336,21 @@ function Settings() {
                                     <div class="form-group">
                                         <label class="form-label">Media Type</label>
                                         <select class="form-select" id="port-media-type">
-                                            <option value="video">🎬 Video (YouTube / Vimeo / Reel)</option>
+                                            <option value="video">🎬 Video (4K Upload / YouTube / Reel)</option>
                                             <option value="image">🖼️ Image (Thumbnails, Graphics, Designs)</option>
                                             <option value="audio">🎙️ Audio (Podcast, Voiceover, Accent Clinic)</option>
                                             <option value="link">🔗 Link / Case Study (Notion, Drive, Medium)</option>
                                         </select>
                                     </div>
                                     <div class="form-group">
-                                        <label class="form-label">Media URL / Embed Link <span style="color: var(--danger);">*</span></label>
-                                        <input type="url" class="form-input" id="port-media-url" placeholder="https://youtube.com/watch?v=... or https://images.unsplash.com/..." required>
+                                        <label class="form-label">Media URL / File Link <span style="color: var(--danger);">*</span></label>
+                                        <input type="text" class="form-input" id="port-media-url" placeholder="Uploaded file path or https://youtube.com/watch?v=..." required>
                                     </div>
                                 </div>
 
                                 <div class="form-group">
                                     <label class="form-label">Cover / Thumbnail Image URL <span style="color: var(--text-muted); font-size: 0.75rem;">(Optional - for card preview)</span></label>
-                                    <input type="url" class="form-input" id="port-thumb-url" placeholder="https://images.unsplash.com/... (optional)">
+                                    <input type="text" class="form-input" id="port-thumb-url" placeholder="https://images.unsplash.com/... or leave blank for auto">
                                 </div>
 
                                 <div class="form-group">
@@ -4239,7 +4387,11 @@ function Settings() {
                                     ${portfolioItems.map(item => `
                                         <div class="card" style="padding: 14px; background: var(--bg-hover); border: 1px solid var(--border); border-radius: var(--radius-sm); display: flex; flex-direction: column; justify-content: space-between;">
                                             <div>
-                                                ${item.media_type === 'video' && item.media_url && item.media_url.includes('youtube') ? `
+                                                ${item.media_type === 'video' && item.media_url && (item.media_url.endsWith('.mp4') || item.media_url.endsWith('.mov') || item.media_url.endsWith('.webm') || item.media_url.startsWith('/static/')) ? `
+                                                    <div style="border-radius: 8px; overflow: hidden; margin-bottom: 10px; background: #000;">
+                                                        <video src="${item.media_url}" controls preload="metadata" style="width: 100%; max-height: 180px; display: block;"></video>
+                                                    </div>
+                                                ` : item.media_type === 'video' && item.media_url && item.media_url.includes('youtube') ? `
                                                     <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 8px; margin-bottom: 10px; background: #000;">
                                                         <iframe src="${item.media_url.replace('watch?v=', 'embed/').split('&')[0]}" style="position: absolute; top:0; left: 0; width: 100%; height: 100%; border: 0;" allowfullscreen></iframe>
                                                     </div>
@@ -4262,7 +4414,7 @@ function Settings() {
                                             </div>
                                             <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding-top: 8px; margin-top: 8px;">
                                                 <a href="${escapeHTML(item.media_url)}" target="_blank" rel="noopener noreferrer" style="font-size: 0.75rem; color: var(--accent); font-weight: 600; text-decoration: none;">
-                                                    Open Link ↗
+                                                    Open / Download ↗
                                                 </a>
                                                 <button type="button" class="btn btn-secondary btn-sm" onclick="handleDeletePortfolioItem(${item.id})" style="color: var(--danger); border-color: rgba(239, 68, 68, 0.3); padding: 3px 8px; font-size: 0.72rem;">
                                                     🗑️ Delete
@@ -4843,11 +4995,23 @@ function BookingsList() {
                         ` : ''}
 
                         ${booking.delivery_file_link ? `
-                            <div style="margin-top: 10px; padding: 10px 12px; background: rgba(108, 92, 231, 0.08); border: 1px solid var(--border); border-radius: var(--radius-sm);">
-                                <div style="font-size: 0.75rem; font-weight: 600; color: var(--accent); margin-bottom: 4px;">📂 Project Delivery</div>
-                                <a href="${booking.delivery_file_link}" target="_blank" rel="noopener noreferrer" style="color: var(--accent); font-size: 0.8125rem; word-break: break-all; text-decoration: underline;">
-                                    ${booking.delivery_file_link}
-                                </a>
+                            <div style="margin-top: 10px; padding: 12px; background: rgba(108, 92, 231, 0.08); border: 1px solid var(--border); border-radius: var(--radius-sm);">
+                                <div style="font-size: 0.78rem; font-weight: 700; color: var(--accent); margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between;">
+                                    <span>📂 Project Delivery</span>
+                                    ${booking.delivery_file_link.match(/\.(mp4|mov|webm|mkv)$/i) || booking.delivery_file_link.startsWith('/static/') ? `<span class="badge badge-success" style="font-size:0.65rem;">4K Deliverable</span>` : ''}
+                                </div>
+                                ${booking.delivery_file_link.match(/\.(mp4|mov|webm|mkv)$/i) || (booking.delivery_file_link.startsWith('/static/') && !booking.delivery_file_link.endsWith('.zip') && !booking.delivery_file_link.endsWith('.pdf')) ? `
+                                    <video src="${booking.delivery_file_link}" controls preload="metadata" style="width: 100%; border-radius: 8px; max-height: 200px; background: #000; margin-bottom: 8px; display: block;"></video>
+                                    <div style="display: flex; gap: 8px;">
+                                        <a href="${booking.delivery_file_link}" download target="_blank" class="btn btn-outline btn-sm" style="flex: 1; text-align: center; font-size: 0.75rem; text-decoration: none;">
+                                            📥 Download 4K Original
+                                        </a>
+                                    </div>
+                                ` : `
+                                    <a href="${booking.delivery_file_link}" target="_blank" rel="noopener noreferrer" style="color: var(--accent); font-size: 0.8125rem; word-break: break-all; text-decoration: underline; font-weight: 600;">
+                                        🔗 ${booking.delivery_file_link}
+                                    </a>
+                                `}
                             </div>
                         ` : ''}
 
@@ -4864,8 +5028,8 @@ function BookingsList() {
                             ` : ''}
 
                             ${isTalent && booking.status === 'in_progress' ? `
-                                <button class="btn btn-primary btn-sm" onclick="markDelivered(${booking.id})">
-                                    🚀 Submit Delivery Link
+                                <button class="btn btn-primary btn-sm" onclick="openDeliverWorkModal(${booking.id})">
+                                    🚀 Deliver Completed Work (4K / Link)
                                 </button>
                             ` : ''}
 
@@ -4976,22 +5140,181 @@ function BookingsList() {
         }
     };
 
-    window.markDelivered = async (id) => {
-        const link = prompt('Enter your delivery link (Google Drive, Dropbox, YouTube, Loom, etc.):');
-        if (!link) return;
+    window.openDeliverWorkModal = (id) => {
+        const existing = document.getElementById('deliver-work-modal-root');
+        if (existing) existing.remove();
+
+        const modalRoot = document.createElement('div');
+        modalRoot.id = 'deliver-work-modal-root';
+        modalRoot.className = 'fiverr-escrow-modal';
+        modalRoot.innerHTML = `
+            <div class="fiverr-escrow-card" style="max-width: 560px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <div>
+                        <h3 style="margin: 0; font-size: 1.15rem; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+                            <span>🚀</span> Deliver Work for Order #${id}
+                        </h3>
+                        <div style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 2px;">
+                            Upload final 4K video (up to 1GB) or attach project link.
+                        </div>
+                    </div>
+                    <button class="modal-close" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--text-muted);">&times;</button>
+                </div>
+
+                <!-- Direct 4K Delivery File Upload Dropzone -->
+                <div class="delivery-upload-zone" style="border: 2px dashed var(--border); border-radius: 12px; padding: 20px; text-align: center; background: var(--bg-hover); cursor: pointer; margin-bottom: 16px;" onclick="document.getElementById('delivery-file-input').click()">
+                    <input type="file" id="delivery-file-input" style="display:none;" accept="video/*,application/zip,image/*,application/pdf" onchange="handleDeliveryFileUpload(this.files[0])" />
+                    <div style="font-size: 2rem; margin-bottom: 4px;">📦</div>
+                    <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-primary);">Click to Attach 4K Export / Project Files</div>
+                    <div style="font-size: 0.76rem; color: var(--text-muted);">Direct streaming up to 1GB (MP4, MOV, MKV, ZIP, PDF)</div>
+                    <div id="delivery-upload-progress" style="display: none; margin-top: 12px; text-align: left; background: var(--bg-card); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border);">
+                        <div style="display: flex; justify-content: space-between; font-size: 0.75rem; font-weight: 700; margin-bottom: 4px;">
+                            <span id="delivery-upload-status">Uploading...</span>
+                            <span id="delivery-upload-pct">0%</span>
+                        </div>
+                        <div style="width: 100%; height: 6px; background: var(--border); border-radius: 999px; overflow: hidden;">
+                            <div id="delivery-upload-bar" style="width: 0%; height: 100%; background: var(--accent); transition: width 0.15s ease;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 14px;">
+                    <label class="form-label" style="font-weight: 700; font-size: 0.85rem;">Delivery Link / File URL <span style="color: var(--danger);">*</span></label>
+                    <input type="text" class="form-input" id="delivery-link-input" placeholder="Uploaded file path or Google Drive / Frame.io / Dropbox link" required style="font-size: 0.875rem;">
+                </div>
+
+                <div class="form-group" style="margin-bottom: 18px;">
+                    <label class="form-label" style="font-weight: 700; font-size: 0.85rem;">Delivery Notes / Client Instructions</label>
+                    <textarea class="form-textarea" id="delivery-notes-input" rows="3" placeholder="Describe the finished deliverables or revision notes for the client..." style="font-size: 0.85rem;"></textarea>
+                </div>
+
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('deliver-work-modal-root').remove()">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="btn-submit-delivery" onclick="submitWorkDelivery(${id})" style="padding: 10px 22px; font-weight: 700;">
+                        🚀 Complete &amp; Deliver Work
+                    </button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modalRoot);
+        modalRoot.querySelector('.modal-close').onclick = () => modalRoot.remove();
+        modalRoot.onclick = (e) => { if (e.target === modalRoot) modalRoot.remove(); };
+    };
+
+    window.handleDeliveryFileUpload = (file) => {
+        if (!file) return;
+        const MAX_SIZE = 1024 * 1024 * 1024; // 1GB
+        if (file.size > MAX_SIZE) {
+            showToast('File exceeds 1GB limit', 'error');
+            return;
+        }
+
+        const wrap = document.getElementById('delivery-upload-progress');
+        const bar = document.getElementById('delivery-upload-bar');
+        const pct = document.getElementById('delivery-upload-pct');
+        const status = document.getElementById('delivery-upload-status');
+        const submitBtn = document.getElementById('btn-submit-delivery');
+
+        if (wrap) wrap.style.display = 'block';
+        if (bar) bar.style.width = '0%';
+        if (pct) pct.textContent = '0%';
+        if (status) status.textContent = `Uploading ${file.name} (${(file.size / (1024 * 1024)).toFixed(1)} MB)...`;
+        if (submitBtn) submitBtn.disabled = true;
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', '/api/upload', true);
+
+        const token = currentToken || localStorage.getItem('access_token');
+        if (token) {
+            xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+        }
+
+        xhr.upload.onprogress = (e) => {
+            if (e.lengthComputable) {
+                const percent = Math.round((e.loaded / e.total) * 100);
+                if (bar) bar.style.width = `${percent}%`;
+                if (pct) pct.textContent = `${percent}%`;
+                if (status) status.textContent = `Uploading: ${(e.loaded / (1024 * 1024)).toFixed(1)} MB / ${(e.total / (1024 * 1024)).toFixed(1)} MB (${percent}%)`;
+            }
+        };
+
+        xhr.onload = () => {
+            if (submitBtn) submitBtn.disabled = false;
+            if (xhr.status === 200) {
+                try {
+                    const res = JSON.parse(xhr.responseText);
+                    const linkInput = document.getElementById('delivery-link-input');
+                    if (linkInput) linkInput.value = res.url;
+                    if (status) status.textContent = '✅ 4K File Attached!';
+                    if (bar) bar.style.width = '100%';
+                    if (pct) pct.textContent = '100%';
+                    showToast('4K File uploaded successfully!', 'success');
+                } catch (_) {
+                    showToast('Failed to parse upload response', 'error');
+                }
+            } else {
+                showToast('Upload failed', 'error');
+                if (status) status.textContent = '❌ Upload failed';
+            }
+        };
+
+        xhr.onerror = () => {
+            if (submitBtn) submitBtn.disabled = false;
+            showToast('Network error during upload', 'error');
+            if (status) status.textContent = '❌ Network error';
+        };
+
+        xhr.send(formData);
+    };
+
+    window.submitWorkDelivery = async (id) => {
+        const linkInput = document.getElementById('delivery-link-input');
+        const notesInput = document.getElementById('delivery-notes-input');
+        const link = linkInput ? linkInput.value.trim() : '';
+        const notes = notesInput ? notesInput.value.trim() : '';
+
+        if (!link) {
+            showToast('Please attach a file or provide a delivery link', 'error');
+            return;
+        }
+
         showLoading();
         try {
             await apiFetch(`/bookings/${id}/delivery`, {
                 method: 'PATCH',
-                body: JSON.stringify({ delivery_file_link: link })
+                body: JSON.stringify({
+                    delivery_file_link: link,
+                    delivery_file_url: link
+                })
             });
-            showToast('Delivery submitted successfully!', 'success');
+
+            if (notes) {
+                try {
+                    await apiFetch(`/bookings/${id}/messages`, {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            content: `🚀 **Order Delivered:**\n${notes}\n\nDeliverable: ${link}`
+                        })
+                    });
+                } catch (_) {}
+            }
+
+            const modal = document.getElementById('deliver-work-modal-root');
+            if (modal) modal.remove();
+
+            showToast('Order delivered successfully! Client has been notified.', 'success');
             loadBookings();
         } catch (e) {
-            showToast(e.message, 'error');
-            loadBookings();
+            showToast(e.message || 'Delivery submission failed', 'error');
+        } finally {
+            hideLoading();
         }
     };
+
+    window.markDelivered = window.openDeliverWorkModal;
 
     window.leaveReview = async (id) => {
         const ratingStr = prompt('Rate provider (1 to 5 stars):', '5');

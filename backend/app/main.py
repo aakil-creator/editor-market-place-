@@ -2463,64 +2463,84 @@ def handle_moderation_violation(db, sender: User, receiver_id: int, booking_id, 
     )
 
 
-# ============== CHAT VIDEO UPLOAD ==============
+# ============== UNIVERSAL MEDIA & 4K VIDEO UPLOAD ==============
 
-ALLOWED_VIDEO_TYPES = {
+ALLOWED_MEDIA_TYPES = {
     'video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/x-matroska',
-    'video/webm', 'video/mpeg', 'video/ogg'
+    'video/webm', 'video/mpeg', 'video/ogg', 'video/3gpp',
+    'image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml',
+    'audio/mpeg', 'audio/wav', 'audio/mp4', 'audio/ogg', 'audio/aac',
+    'application/zip', 'application/x-zip-compressed', 'application/x-rar-compressed', 'application/x-7z-compressed', 'application/octet-stream'
 }
-ALLOWED_VIDEO_EXTENSIONS = {'.mp4', '.mov', '.avi', '.mkv', '.webm', '.mpeg', '.mpg', '.3gp'}
+ALLOWED_MEDIA_EXTENSIONS = {
+    '.mp4', '.mov', '.avi', '.mkv', '.webm', '.mpeg', '.mpg', '.3gp',
+    '.jpg', '.jpeg', '.png', '.webp', '.gif', '.svg',
+    '.mp3', '.wav', '.m4a', '.aac', '.ogg',
+    '.zip', '.rar', '.7z', '.pdf'
+}
 
 @api_app.post("/messages/upload")
-async def upload_chat_video(
-    video: UploadFile = File(...),
+@api_app.post("/upload")
+async def upload_media_file(
+    file: Optional[UploadFile] = File(None),
+    video: Optional[UploadFile] = File(None),
     current_user: User = Depends(get_current_user),
 ):
-    """Upload a video file to be attached to a chat message."""
-    if not video.content_type:
-        # Guess from filename if content_type is missing
-        ext = os.path.splitext(video.filename or '')[1].lower()
-        video.content_type = {
-            '.mp4': 'video/mp4', '.mov': 'video/quicktime', '.avi': 'video/x-msvideo',
-            '.mkv': 'video/x-matroska', '.webm': 'video/webm', '.mpeg': 'video/mpeg',
-            '.mpg': 'video/mpeg', '.3gp': 'video/3gpp'
-        }.get(ext, 'application/octet-stream')
-    
-    if video.content_type not in ALLOWED_VIDEO_TYPES:
-        # Also check extension as fallback
-        ext = os.path.splitext(video.filename or '')[1].lower()
-        if ext not in ALLOWED_VIDEO_EXTENSIONS:
-            raise HTTPException(status_code=400, detail="Only video files (mp4, mov, avi, mkv, webm) are allowed")
-    
-    MAX_VIDEO_SIZE = 1024 * 1024 * 1024  # 1 GB allowance for 4K / UHD video
-    if video.size and video.size > MAX_VIDEO_SIZE:
-        raise HTTPException(status_code=400, detail="Video file too large (max 1GB)")
-    
-    # Generate unique filename
-    ext = os.path.splitext(video.filename or '')[1].lower()
+    """Upload a 4K video, image, audio, or deliverable archive up to 1GB."""
+    target_file = file or video
+    if not target_file:
+        raise HTTPException(status_code=400, detail="No file provided")
+
+    ext = os.path.splitext(target_file.filename or '')[1].lower()
     if not ext:
         ext = '.mp4'
+
+    content_type = target_file.content_type
+    if not content_type or content_type == 'application/octet-stream':
+        mime_map = {
+            '.mp4': 'video/mp4', '.mov': 'video/quicktime', '.avi': 'video/x-msvideo',
+            '.mkv': 'video/x-matroska', '.webm': 'video/webm', '.mpeg': 'video/mpeg',
+            '.mpg': 'video/mpeg', '.3gp': 'video/3gpp',
+            '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png',
+            '.webp': 'image/webp', '.gif': 'image/gif',
+            '.mp3': 'audio/mpeg', '.wav': 'audio/wav', '.m4a': 'audio/mp4',
+            '.zip': 'application/zip', '.pdf': 'application/pdf'
+        }
+        content_type = mime_map.get(ext, 'application/octet-stream')
+
+    if ext not in ALLOWED_MEDIA_EXTENSIONS and content_type not in ALLOWED_MEDIA_TYPES:
+        raise HTTPException(status_code=400, detail=f"File extension '{ext}' is not allowed. Supported formats: 4K video (mp4, mov, avi, mkv, webm), images (jpg, png, webp), audio (mp3, wav), and archives (zip).")
+
+    MAX_FILE_SIZE = 1024 * 1024 * 1024  # 1 GB allowance for 4K video & project deliverables
+    if target_file.size and target_file.size > MAX_FILE_SIZE:
+        raise HTTPException(status_code=400, detail="File too large (max 1GB allowance)")
+
     safe_name = f"{uuid.uuid4().hex}{ext}"
     file_path = os.path.join(CHAT_UPLOAD_DIR, safe_name)
-    
+
     # Save file in 4MB chunks for efficient memory streaming of large 4K files
     total_size = 0
     with open(file_path, 'wb') as f:
-        while chunk := await video.read(4 * 1024 * 1024):
+        while chunk := await target_file.read(4 * 1024 * 1024):
             total_size += len(chunk)
-            if total_size > MAX_VIDEO_SIZE:
+            if total_size > MAX_FILE_SIZE:
                 f.close()
                 if os.path.exists(file_path):
                     try:
                         os.remove(file_path)
                     except Exception:
                         pass
-                raise HTTPException(status_code=400, detail="Video file too large (max 1GB)")
+                raise HTTPException(status_code=400, detail="File too large (max 1GB allowance)")
             f.write(chunk)
-    
-    # Return public URL
+
     url = f"/static/chat_uploads/{safe_name}"
-    return {"url": url, "filename": safe_name}
+    return {
+        "url": url,
+        "filename": safe_name,
+        "original_name": target_file.filename,
+        "content_type": content_type,
+        "size": total_size
+    }
 
 
 @api_app.post("/bookings/{booking_id}/messages", response_model=MessageResponse)
