@@ -4298,13 +4298,43 @@ button:active, .btn:active, .nav-btn:active, .payment-tab-btn:active, .tab:activ
         gap: 16px !important;
     }
 
-    /* Gig action buttons touch height */
+    /* Gig action buttons touch height and phone-safe sizing */
+    .fiverr-gig-actions {
+        display: flex !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        gap: 8px !important;
+        overflow: hidden !important;
+    }
+
     .fiverr-gig-actions .btn {
+        flex: 1 1 0 !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
         min-height: 46px !important;
+        padding-left: 8px !important;
+        padding-right: 8px !important;
         font-size: 0.875rem !important;
+        white-space: normal !important;
+        overflow-wrap: anywhere !important;
+        text-align: center !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
+    }
+
+    @media (max-width: 480px) {
+        .fiverr-gig-actions {
+            flex-direction: column !important;
+            align-items: stretch !important;
+        }
+
+        .fiverr-gig-actions .btn {
+            flex: 1 1 auto !important;
+            width: 100% !important;
+            min-height: 44px !important;
+        }
     }
 
     /* Filter dropdowns horizontal touch bar */
