@@ -1076,7 +1076,7 @@ setInterval(updateUnreadCountBadge, 12000);
 setTimeout(updateUnreadCountBadge, 2000);
 
 // Router
-function router(path) {
+function router(path, pushState = true) {
     // 1. If admin is logged in, enforce exclusive Admin Console experience (no buyer/provider interference)
     if (currentToken && currentUser?.user_type === 'ADMIN') {
         const buyerProviderOnlyRoutes = ['/', '/welcome', '/providers', '/create-package', '/create-booking', '/packages'];
@@ -1122,10 +1122,42 @@ function router(path) {
     };
 
     const component = routes[path] || NotFound;
-    if (window.location.pathname !== path) history.pushState({}, '', path);
+    if (pushState && window.location.pathname !== path) {
+        history.pushState({ path: path }, '', path);
+    }
     render(component);
+    try { window.scrollTo({ top: 0, behavior: 'instant' }); } catch (_) { window.scrollTo(0, 0); }
 }
 window.router = router;
+
+// Handle phone physical/swipe back button & browser back/forward buttons
+window.addEventListener('popstate', (e) => {
+    // 1. Close open modals / overlays first
+    const openModals = document.querySelectorAll('.fiverr-escrow-modal, #deliver-work-modal-root, #portfolio-modal-root, #security-suspended-modal, .modal-backdrop, #social-login-modal');
+    if (openModals && openModals.length > 0) {
+        openModals.forEach(m => m.remove());
+        return;
+    }
+
+    // 2. Close profile dropdown if open
+    const profileDropdown = document.getElementById('profile-menu-dropdown');
+    if (profileDropdown && profileDropdown.style.display !== 'none') {
+        profileDropdown.style.display = 'none';
+        return;
+    }
+
+    // 3. If in ProvidersList and viewing a specific category, back returns to all categories
+    if ((window.location.pathname === '/providers' || window.location.pathname === '/explore') && providerSearchState?.niche) {
+        providerSearchState.niche = '';
+        providerSearchState.subType = '';
+        router('/providers', false);
+        return;
+    }
+
+    // 4. Render the current route for the new URL
+    const currentPath = window.location.pathname || '/';
+    router(currentPath, false);
+});
 
 function wireForms(root) {
     const form = root?.querySelector?.('form');
