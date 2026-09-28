@@ -81,6 +81,21 @@ async function apiFetch(endpoint, options = {}) {
     try { data = text ? JSON.parse(text) : {}; } catch (_) { data = { detail: text }; }
 
     if (!response.ok) {
+        if (response.status === 401 && data.detail && (
+            data.detail.toLowerCase().includes('user not found') ||
+            data.detail.toLowerCase().includes('could not validate') ||
+            data.detail.toLowerCase().includes('not authenticated') ||
+            data.detail.toLowerCase().includes('token')
+        )) {
+            currentToken = null;
+            currentUser = null;
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('current_user');
+            if (typeof renderAppHeader === 'function') {
+                const header = document.querySelector('.header');
+                if (header) header.replaceWith(renderAppHeader());
+            }
+        }
         if (response.status === 403 && data.detail && (
             data.detail.toLowerCase().includes('suspended') ||
             data.detail.toLowerCase().includes('security alert') ||
