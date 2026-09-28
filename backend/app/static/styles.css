@@ -7001,6 +7001,30 @@ textarea::placeholder,
         border-radius: 14px !important;
     }
 
+    /* Keep marketplace CTAs inside the card on phones. */
+    .fiverr-gig-content > div,
+    .fiverr-gig-footer,
+    .fiverr-gig-actions {
+        min-width: 0 !important;
+    }
+
+    .fiverr-gig-actions {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) !important;
+        width: 100% !important;
+        gap: 6px !important;
+    }
+
+    .fiverr-gig-actions > .btn {
+        width: 100% !important;
+        min-width: 0 !important;
+        padding-left: 8px !important;
+        padding-right: 8px !important;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
     .fiverr-gig-thumb-wrap {
         border-radius: 14px 14px 0 0 !important;
     }
