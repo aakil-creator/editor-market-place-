@@ -1333,9 +1333,9 @@ function router(path, pushState = true) {
     const routes = {
         '/': (currentToken ? Dashboard : Landing),
         '/dashboard': (currentToken ? Dashboard : Login),
-        '/providers': (currentToken ? ProvidersList : Landing),
-        '/explore': (currentToken ? ProvidersList : Landing),
-        '/talent': (currentToken ? ProvidersList : Landing),
+        '/providers': ProvidersList,
+        '/explore': ProvidersList,
+        '/talent': ProvidersList,
         '/welcome': (currentToken ? (currentUser?.user_type === 'ADMIN' ? AdminDashboard : WelcomePage) : Login),
         '/login': Login,
         '/register': Register,
@@ -1362,9 +1362,15 @@ function router(path, pushState = true) {
         '/logout': LogoutPage,
     };
 
+    const protectedPaths = ['/dashboard', '/messages', '/bookings', '/payments', '/create-booking', '/create-package', '/admin', '/admin/providers', '/admin/bookings', '/admin/disputes', '/admin/chats', '/admin/niches', '/groove-chat'];
+    let targetPath = path;
+    if (!currentToken && protectedPaths.includes(path)) {
+        targetPath = '/login';
+    }
+
     const component = routes[path] || NotFound;
-    if (pushState && (window.location.pathname !== path || !history.state)) {
-        history.pushState({ path: path }, '', path);
+    if (pushState && (window.location.pathname !== targetPath || !history.state)) {
+        history.pushState({ path: targetPath }, '', targetPath);
     }
     render(component);
     try { window.scrollTo({ top: 0, behavior: 'instant' }); } catch (_) { window.scrollTo(0, 0); }
@@ -1394,7 +1400,7 @@ if (!window.__modalObserverInitialized) {
             for (const node of mutation.removedNodes) {
                 if (node.nodeType === 1) {
                     const targetModal = (node.matches && node.matches(modalSelector)) ? node : (node.querySelector ? node.querySelector(modalSelector) : null);
-                    if (targetModal && targetModal.dataset.historyAttached === 'true' && !isPoppingModalState && !targetModal.dataset.closedByPopstate) {
+                    if (targetModal && targetModal.dataset.historyAttached === 'true' && !isPoppingModalState && !targetModal.dataset.closedByPopstate && !targetModal.dataset.skipHistoryBack) {
                         try {
                             history.back();
                         } catch (_) {}
@@ -1658,11 +1664,11 @@ function AuthPortal(initialTab = 'login') {
                         </svg>
                         <span id="label-google-btn">Continue with Google</span>
                     </button>
-                    <button type="button" class="btn-social btn-apple" id="btn-auth-apple" style="margin: 0;">
+                    <button type="button" class="btn-social btn-apple" id="btn-auth-apple" style="margin: 0; opacity: 0.7;" title="Apple sign-in is coming soon">
                         <svg width="18" height="18" viewBox="0 0 170 170" fill="currentColor">
                             <path d="M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.19-2.12-9.97-3.17-14.34-3.17-4.58 0-9.49 1.05-14.74 3.17-5.26 2.13-9.5 3.24-12.74 3.35-4.35.13-9.16-1.9-14.42-6.08-3.7-3.05-7.6-7.79-11.7-14.24-6.3-9.91-11.25-20.98-14.85-33.2-3.6-12.22-5.4-23.77-5.4-34.65 0-14.73 3.65-26.96 10.96-36.68 7.3-9.73 16.48-14.71 27.53-14.96 4.9.12 10.37 1.33 16.4 3.63 6.03 2.3 9.94 3.52 11.73 3.66 2.01-.27 6.02-1.57 12.03-3.9 6.01-2.33 11.37-3.4 16.07-3.21 11.19.74 20.37 4.96 27.55 12.65-9.87 5.99-14.67 14.36-14.41 25.1.26 8.35 3.38 15.35 9.36 21 5.98 5.66 13.06 8.89 21.23 9.69-2.26 6.8-4.99 13.79-8.19 20.97zM119.22 31.84c0-7.23 2.61-13.9 7.82-20.02 5.22-6.12 11.59-9.86 19.11-11.22.13 1.06.2 2.06.2 3 0 7.34-2.73 14.19-8.18 20.55-5.46 6.36-11.96 10.09-19.51 11.19-.27-1.19-.44-2.36-.44-3.5z"/>
                         </svg>
-                        <span id="label-apple-btn">Continue with Apple</span>
+                        <span id="label-apple-btn">Continue with Apple <small style="opacity: 0.75; font-size: 0.72rem;">(Coming Soon)</small></span>
                     </button>
                 </div>
 
@@ -1673,12 +1679,12 @@ function AuthPortal(initialTab = 'login') {
                     <div id="login-error-container"></div>
                     <form id="login-form" onsubmit="return false;">
                         <div class="form-group">
-                            <label class="form-label">Phone Number or Email</label>
+                            <label for="login-phone" class="form-label">Phone Number or Email</label>
                             <input type="text" class="form-input" id="login-phone" placeholder="Phone number or email address" required autocomplete="username">
                         </div>
                         <div class="form-group">
                             <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <label class="form-label" style="margin: 0;">Password</label>
+                                <label for="login-password" class="form-label" style="margin: 0;">Password</label>
                                 <button type="button" id="toggle-login-password" style="background: none; border: none; font-size: 0.75rem; color: var(--accent); cursor: pointer; padding: 0;">Show</button>
                             </div>
                             <input type="password" class="form-input" id="login-password" placeholder="Enter password" required autocomplete="current-password" style="margin-top: 6px;">
@@ -1701,7 +1707,7 @@ function AuthPortal(initialTab = 'login') {
                         <!-- OTP Login Panel -->
                         <div id="otp-login-section" style="display: none; margin-top: 10px;">
                             <div class="form-group">
-                                <label class="form-label">Phone Number</label>
+                                <label for="otp-phone" class="form-label">Phone Number</label>
                                 <input type="tel" class="form-input" id="otp-phone" placeholder="+91 98765 43210" autocomplete="tel">
                             </div>
                             <button type="button" id="otp-send-btn" class="btn btn-outline" style="width: 100%; padding: 12px; font-weight: 700;" onclick="window.__sendOtp()">
@@ -1712,7 +1718,7 @@ function AuthPortal(initialTab = 'login') {
                             <!-- OTP Verification (shown after sending) -->
                             <div id="otp-verify-section" style="display: none; margin-top: 12px;">
                                 <div class="form-group">
-                                    <label class="form-label">Enter OTP Code</label>
+                                    <label for="otp-code" class="form-label">Enter OTP Code</label>
                                     <input type="text" class="form-input" id="otp-code" placeholder="6 digits" maxlength="6" inputmode="numeric" style="text-align: center; font-size: 1.2rem; letter-spacing: 8px;">
                                 </div>
                                 <button type="button" id="otp-verify-btn" class="btn btn-primary" style="width: 100%; padding: 13px; font-weight: 700; font-size: 1rem; justify-content: center;" onclick="window.__verifyOtp()">
@@ -1737,11 +1743,11 @@ function AuthPortal(initialTab = 'login') {
                     <div id="reg-error-container"></div>
                     <form id="register-form" onsubmit="return false;">
                         <div class="form-group">
-                            <label class="form-label">Full Name</label>
+                            <label for="reg-name" class="form-label">Full Name</label>
                             <input type="text" class="form-input" id="reg-name" placeholder="John Doe" required autocomplete="name">
                         </div>
                         <div class="form-group">
-                            <label class="form-label" style="display:flex;align-items:center;gap:6px;">Username <span style="color:var(--danger);font-size:0.75rem;">*required</span></label>
+                            <label for="reg-username" class="form-label" style="display:flex;align-items:center;gap:6px;">Username <span style="color:var(--danger);font-size:0.75rem;">*required</span></label>
                             <div style="position:relative;">
                                 <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:0.9rem;pointer-events:none;">@</span>
                                 <input type="text" class="form-input" id="reg-username" placeholder="your_unique_username" required autocomplete="username" style="padding-left:26px;" maxlength="30">
@@ -1750,17 +1756,17 @@ function AuthPortal(initialTab = 'login') {
                         </div>
                         <div class="form-row">
                             <div class="form-group">
-                                <label class="form-label">Phone Number</label>
+                                <label for="reg-phone" class="form-label">Phone Number</label>
                                 <input type="tel" class="form-input" id="reg-phone" placeholder="Your phone number" required autocomplete="tel">
                             </div>
                             <div class="form-group">
-                                <label class="form-label">Email Address</label>
+                                <label for="reg-email" class="form-label">Email Address</label>
                                 <input type="email" class="form-input" id="reg-email" placeholder="name@example.com" required autocomplete="email">
                             </div>
                         </div>
                         <div class="form-group">
                             <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <label class="form-label" style="margin: 0;">Password</label>
+                                <label for="reg-password" class="form-label" style="margin: 0;">Password</label>
                                 <button type="button" id="toggle-reg-password" style="background: none; border: none; font-size: 0.75rem; color: var(--accent); cursor: pointer; padding: 0;">Show</button>
                             </div>
                             <input type="password" class="form-input" id="reg-password" placeholder="Create strong password" required autocomplete="new-password" style="margin-top: 6px;">
@@ -2516,16 +2522,19 @@ function startJourney(preselectedRole = 'BUYER') {
     provCard.onclick = () => updateSelection('PROVIDER');
 
     proceedBtn.onclick = () => {
+        overlay.dataset.skipHistoryBack = 'true';
         close();
         router('/register');
     };
 
     overlay.querySelector('#journey-google-btn').onclick = () => {
+        overlay.dataset.skipHistoryBack = 'true';
         close();
         handleSocialLogin('google', chosenRole);
     };
 
     overlay.querySelector('#journey-apple-btn').onclick = () => {
+        overlay.dataset.skipHistoryBack = 'true';
         close();
         handleSocialLogin('apple', chosenRole);
     };
@@ -2764,7 +2773,7 @@ function Landing() {
                             Start your journey
                         </button>
                         <div class="hero-cta-secondary">
-                            or <span class="hero-link-action" onclick="router('/');">Explore marketplace</span>
+                            or <span class="hero-link-action" onclick="router('/providers');">Explore marketplace</span>
                         </div>
                     </div>
                     <div class="hero-microcopy">
@@ -4118,11 +4127,18 @@ function adminSection() {
 }
 
 function NotFound() {
-    return el`<div class="main">
-        <div class="empty-state">
-            <h3>Page not found</h3>
-            <p>The page you're looking for doesn't exist.</p>
-            <button class="btn btn-primary" onclick="router('/')">Go Home</button>
+    return el`<div>
+        ${renderAppHeader(window.location.pathname)}
+        <div class="main" style="padding: 40px 16px;">
+            <div class="card" style="max-width: 480px; margin: 0 auto; text-align: center; padding: 36px 24px; box-shadow: var(--shadow-md);">
+                <div style="font-size: 3rem; margin-bottom: 12px;">🔍</div>
+                <h3 style="font-size: 1.4rem; font-weight: 800; color: var(--text-primary); margin-bottom: 8px;">Page Not Found</h3>
+                <p style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 24px;">The page you are looking for doesn't exist or may have been moved.</p>
+                <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                    <button class="btn btn-primary" onclick="router('/')">Return Home</button>
+                    <button class="btn btn-secondary" onclick="router('/providers')">Browse Talent</button>
+                </div>
+            </div>
         </div>
     </div>`;
 }
@@ -8910,7 +8926,7 @@ function ForgotPassword() {
 					<div id="forgot-error-container"></div>
 					<form id="forgot-form" onsubmit="handleForgotPasswordSubmit(event)">
 					    <div class="form-group">
-					        <label class="form-label">Email or Phone</label>
+					        <label for="forgot-email" class="form-label">Email or Phone</label>
 					        <input type="text" class="form-input" id="forgot-email" placeholder="Your email or phone number" required autocomplete="email">
 					    </div>
 					    <button type="submit" class="btn btn-primary" style="width: 100%; padding: 13px; font-weight: 700; margin-top: 12px;">Send Reset Link</button>
@@ -9208,11 +9224,11 @@ async function loadChatMessages(bookingId, showSpinner = true) {
             const timeStr = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             return `
                 <div class="chat-bubble ${isMe ? 'chat-bubble-sent' : 'chat-bubble-received'}">
-                    <div style="font-weight: 600; font-size: 0.75rem; margin-bottom: 2px;">${isMe ? 'You' : msg.sender_name}</div>
-                    <div>${msg.message}</div>
+                    <div style="font-weight: 600; font-size: 0.75rem; margin-bottom: 2px;">${isMe ? 'You' : escapeHTML(msg.sender_name || 'User')}</div>
+                    <div>${escapeHTML(msg.message || '')}</div>
                     ${msg.file_url ? `
-                        <a href="${msg.file_url}" target="_blank" rel="noopener noreferrer" class="chat-file-link">
-                            📎 ${msg.file_url}
+                        <a href="${escapeHTML(msg.file_url)}" target="_blank" rel="noopener noreferrer" class="chat-file-link">
+                            📎 ${escapeHTML(msg.file_url)}
                         </a>
                     ` : ''}
                     <div class="chat-bubble-meta">
@@ -9318,12 +9334,12 @@ window.viewProviderPortfolio = async (providerId, providerName = 'Provider') => 
                 const videoId = url.includes('youtu.be/') ? url.split('youtu.be/')[1].split('?')[0] : url.split('v=')[1]?.split('&')[0];
                 mediaHtml = `<iframe src="https://www.youtube.com/embed/${videoId}" allowfullscreen></iframe>`;
             } else if (url.match(/\.(jpeg|jpg|gif|png|webp)($|\?)/i) || item.thumbnail_url) {
-                mediaHtml = `<img src="${item.thumbnail_url || url}" alt="${item.title}" />`;
+                mediaHtml = `<img src="${escapeHTML(item.thumbnail_url || url)}" alt="${escapeHTML(item.title || '')}" />`;
             } else {
                 mediaHtml = `
                                 <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--bg-hover);">
                                     <span style="font-size: 2rem;">🔗</span>
-                                    <a href="${url}" target="_blank" rel="noopener noreferrer" style="font-size: 0.8rem; color: var(--accent); margin-top: 6px;">Open Sample</a>
+                                    <a href="${escapeHTML(url)}" target="_blank" rel="noopener noreferrer" style="font-size: 0.8rem; color: var(--accent); margin-top: 6px;">Open Sample</a>
                                 </div>
                             `;
             }
@@ -9334,9 +9350,9 @@ window.viewProviderPortfolio = async (providerId, providerName = 'Provider') => 
                                     ${mediaHtml}
                                 </div>
                                 <div class="portfolio-info">
-                                    <div class="portfolio-title">${item.title}</div>
-                                    <div class="portfolio-desc">${item.description || ''}</div>
-                                    <a href="${url}" target="_blank" rel="noopener noreferrer" style="font-size: 0.75rem; color: var(--accent); display: inline-block; margin-top: 6px;">View Original ↗</a>
+                                    <div class="portfolio-title">${escapeHTML(item.title || '')}</div>
+                                    <div class="portfolio-desc">${escapeHTML(item.description || '')}</div>
+                                    <a href="${escapeHTML(url)}" target="_blank" rel="noopener noreferrer" style="font-size: 0.75rem; color: var(--accent); display: inline-block; margin-top: 6px;">View Original ↗</a>
                                 </div>
                             </div>
                         `;

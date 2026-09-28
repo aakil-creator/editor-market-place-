@@ -542,6 +542,15 @@ api_app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next):
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "SAMEORIGIN"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+    return response
+
 # Register routers on the API app (before mount)
 api_app.include_router(educators.router)
 
@@ -851,7 +860,7 @@ def get_public_config(db = Depends(get_db)):
     settings = db.query(PlatformSettings).first()
     default_id = "934016522168-68h4l11qrs3g628191ala3bgugt1cs7l.apps.googleusercontent.com"
     google_client_id = os.environ.get("GOOGLE_CLIENT_ID") or (settings.google_client_id if settings and settings.google_client_id else "") or default_id
-    razorpay_key_id = (settings.razorpay_key_id if settings and settings.razorpay_key_id else "") or os.environ.get("RAZORPAY_KEY_ID", "rzp_test_placeholder")
+    razorpay_key_id = (settings.razorpay_key_id if settings and settings.razorpay_key_id else "") or os.environ.get("RAZORPAY_KEY_ID", "")
     
     launch_promo_active = True
     if settings and hasattr(settings, 'launch_promo_active') and settings.launch_promo_active is not None:

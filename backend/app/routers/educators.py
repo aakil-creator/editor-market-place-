@@ -225,12 +225,10 @@ def list_educator_summary(
             "id": u.id,
             "name": u.name,
             "username": u.username or f"creator_{u.id}",
-            "email": u.email,
-            "slug": u.phone,
+            "slug": u.username or f"creator_{u.id}",
             "niche": p.niche if p else "editors_animators",
             "rating": p.rating if p else 0.0,
             "total_bookings": p.total_bookings if p else 0,
-            "monthly_earnings": p.monthly_earnings if p else 0.0,
             "skills": p.skills if p else [],
             "service_area": p.service_area if p else "online",
             "availability": p.availability if p else "flexible",
@@ -240,7 +238,6 @@ def list_educator_summary(
             "starting_price": min_pkg_price,
             "packages": approved_packages,
             "portfolio_items": portfolio_items,
-            "commission_rate": 0.20,  # 20% platform commission model
         })
 
     # Sort results
@@ -279,7 +276,6 @@ def list_top_rated(
             "name": u.name,
             "rating": p.rating,
             "total_bookings": p.total_bookings,
-            "monthly_earnings": p.monthly_earnings,
             "skills": p.skills,
             "niche": p.niche,
         }
@@ -368,15 +364,13 @@ def get_educator_profile_detail(
     return {
         "id": educator.id,
         "name": educator.name,
-        "phone": educator.phone,
-        "email": educator.email,
+        "username": educator.username or f"creator_{educator.id}",
         "is_verified": educator.is_verified,
         "is_active": educator.is_active,
         "created_at": educator.created_at,
         "niche": profile.niche if profile else "editors_animators",
         "rating": profile.rating if profile else 5.0,
         "total_bookings": profile.total_bookings if profile else 20,
-        "monthly_earnings": profile.monthly_earnings if profile else 0.0,
         "skills": profile.skills if profile else [],
         "service_area": profile.service_area if profile else "online",
         "availability": profile.availability if profile else "flexible",
@@ -393,7 +387,6 @@ def get_educator_profile_detail(
             "response_time": profile.response_time if profile else "24 hours",
             "rating": profile.rating if profile else 5.0,
             "total_bookings": profile.total_bookings if profile else 20,
-            "monthly_earnings": profile.monthly_earnings if profile else 0.0,
         } if profile else {}
     }
 
