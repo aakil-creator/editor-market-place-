@@ -3021,7 +3021,8 @@ function BuyerDashboard() {
                                     </div>
                                 </div>
                                 `;
-                            }).join('')}
+                            }).join('');
+                            })()}
                         </div>
                     </div>
                 ` : ''}
@@ -3105,7 +3106,16 @@ function BuyerDashboard() {
                             onwheel="if (Math.abs(event.deltaY) > Math.abs(event.deltaX)) { this.scrollLeft += event.deltaY; event.preventDefault(); }"
                             onmouseenter="window.__initSliderMouseDrag(this)"
                         >
-                            ${activeSliderConfig.items.map((opt, idx) => {
+                            ${(() => {
+                                const sItems = [...activeSliderConfig.items];
+                                if (searchQuery) {
+                                    const activeIdx = sItems.findIndex(o => searchQuery.toLowerCase() === o.query.toLowerCase());
+                                    if (activeIdx > -1) {
+                                        const [activeO] = sItems.splice(activeIdx, 1);
+                                        sItems.unshift(activeO);
+                                    }
+                                }
+                                return sItems.map((opt, idx) => {
                                 const isSelected = searchQuery.toLowerCase() === opt.query.toLowerCase();
                                 return `
                                 <div 
@@ -6285,6 +6295,12 @@ function ProvidersList() {
     window.setFiverrSubType = (typeId) => {
         providerSearchState.subType = (providerSearchState.subType === typeId ? '' : typeId);
         mount(renderProvidersList());
+        setTimeout(() => {
+            const scrollEl = document.getElementById('fiverr-type-scroll');
+            if (scrollEl) {
+                scrollEl.scrollTo({ left: 0, behavior: 'smooth' });
+            }
+        }, 50);
     };
     window.setFiverrVideoType = window.setFiverrSubType;
 
@@ -7049,41 +7065,34 @@ function ProvidersList() {
                             </div>
                         </div>
                         <div class="fiverr-type-scroll" id="fiverr-type-scroll">
-                            ${activeCfg.types.map(vt => `
-                                <div
-                                    class="fiverr-type-pill ${providerSearchState.subType === vt.id ? 'active' : ''}"
-                                    onclick="setFiverrSubType('${vt.id}')"
-                                >
-                                    <div class="fiverr-type-icon">${getTypeIconSvg(vt.id, vt.icon, 34)}</div>
-                                    <div class="fiverr-type-label-box">
-                                        <div class="fiverr-type-label">${vt.label}</div>
+                            ${(() => {
+                                const typesList = [...activeCfg.types];
+                                if (providerSearchState.subType) {
+                                    const selIdx = typesList.findIndex(t => t.id === providerSearchState.subType);
+                                    if (selIdx > -1) {
+                                        const [selItem] = typesList.splice(selIdx, 1);
+                                        typesList.unshift(selItem);
+                                    }
+                                }
+                                return typesList.map(vt => `
+                                    <div
+                                        class="fiverr-type-pill ${providerSearchState.subType === vt.id ? 'active' : ''}"
+                                        onclick="setFiverrSubType('${vt.id}')"
+                                    >
+                                        <div class="fiverr-type-icon">${getTypeIconSvg(vt.id, vt.icon, 34)}</div>
+                                        <div class="fiverr-type-label-box">
+                                            <div class="fiverr-type-label">${vt.label}</div>
+                                        </div>
                                     </div>
-                                </div>
-                            `).join('')}
+                                `).join('');
+                            })()}
                         </div>
                     </div>
 
                     <!-- Fiverr Filter Dropdown Bar -->
                     <div class="fiverr-filter-bar">
                         <div class="fiverr-filter-left">
-                            <!-- Service options dropdown -->
-                            <div class="fiverr-filter-dropdown-wrap">
-                                <button class="fiverr-filter-btn ${providerSearchState.serviceOption ? 'active' : ''}" onclick="toggleFiverrFilterMenu('menu-service-options')">
-                                    <span>${getActiveServiceOptionLabel(activeCfg) || 'Service options'}</span>
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="6 9 12 15 18 9"/></svg>
-                                </button>
-                                <div class="fiverr-filter-menu" id="menu-service-options">
-                                    <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 8px; margin-bottom: 8px; border-bottom: 1px solid var(--border);">
-                                        <span style="font-weight: 700; font-size: 0.82rem; color: var(--text-primary);">Service Options</span>
-                                        <button type="button" class="modal-back-btn" onclick="document.querySelectorAll('.fiverr-filter-menu.open').forEach(m => m.classList.remove('open'))">✕ Close</button>
-                                    </div>
-                                    ${activeCfg.serviceOptions.map(opt => `
-                                        <div class="fiverr-filter-option ${providerSearchState.serviceOption === opt.id ? 'selected' : ''}" onclick="setFiverrFilter('serviceOption', '${opt.id}')">
-                                            ${opt.label}
-                                        </div>
-                                    `).join('')}
-                                </div>
-                            </div>
+
 
                             ${providerSearchState.niche !== 'tutors' && providerSearchState.niche !== 'writers' && activeCfg.sellerDetails && activeCfg.sellerDetails.length > 0 ? `
                             <!-- Seller details dropdown -->
