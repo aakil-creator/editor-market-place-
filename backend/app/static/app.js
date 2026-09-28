@@ -1,4 +1,4 @@
-﻿// Groove Hub - Main Application
+// Groove Hub - Main Application
 if (window.location.hostname === '127.0.0.1') {
     window.location.replace(window.location.href.replace('127.0.0.1', 'localhost'));
 }
@@ -1834,17 +1834,7 @@ function AuthPortal(initialTab = 'login') {
                             </div>
                             <input type="password" class="form-input" id="reg-password" placeholder="Create strong password" required autocomplete="new-password" style="margin-top: 6px;">
                         </div>
-                        <div class="form-group">
-                            <label class="form-label">I want to:</label>
-                            <div class="tabs" style="margin-top: 8px;">
-                                <button type="button" class="tab ${(window.selectedType || 'BUYER') === 'BUYER' ? 'active' : ''}" id="reg-tab-buyer">
-                                    🎯 Hire Talent (Buyer)
-                                </button>
-                                <button type="button" class="tab ${(window.selectedType || 'BUYER') === 'PROVIDER' ? 'active' : ''}" id="reg-tab-prov">
-                                    🎨 Offer Services (Creator)
-                                </button>
-                            </div>
-                        </div>
+
                         <div class="form-group" style="margin-top: 4px;">
                             <label style="display: flex; align-items: flex-start; gap: 8px; font-size: 0.8rem; color: var(--text-secondary); line-height: 1.45; cursor: pointer;">
                                 <input type="checkbox" id="reg-tos" style="margin-top: 3px; width: 16px; height: 16px; accent-color: var(--accent); flex-shrink: 0;">
@@ -2497,114 +2487,8 @@ function Register() {
 
 // =============== LANDING & START YOUR JOURNEY ===============
 
-function startJourney(preselectedRole = 'BUYER') {
-    let chosenRole = preselectedRole;
-    window.selectedType = chosenRole;
-
-    const overlay = document.createElement('div');
-    overlay.className = 'modal-backdrop';
-    overlay.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.72); backdrop-filter: blur(6px); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px;';
-
-    overlay.innerHTML = `
-        <div class="card" style="max-width: 480px; width: 100%; box-shadow: var(--shadow-lg); border: 1px solid var(--border); animation: fadeIn 0.25s ease;">
-            <div class="card-header" style="border-bottom: 1px solid var(--border); padding-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(91, 52, 234, 0.1); color: #5b34ea; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">🚀</div>
-                    <div>
-                        <h3 style="font-size: 1.2rem; font-weight: 800; margin: 0; color: var(--text-primary);">Start Your Journey</h3>
-                        <p style="font-size: 0.75rem; color: var(--text-secondary); margin: 2px 0 0;">Choose how you want to use Groove Hub</p>
-                    </div>
-                </div>
-                <button type="button" id="close-journey-modal" style="background:transparent; border:none; color:var(--text-muted); font-size:1.3rem; cursor:pointer; padding: 4px;">✕</button>
-            </div>
-            <div class="card-body" style="padding-top: 20px;">
-                <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px;">
-                    <div class="journey-role-card ${chosenRole === 'BUYER' ? 'active' : ''}" id="journey-card-buyer">
-                        <div class="journey-role-icon">🎯</div>
-                        <div class="journey-role-content">
-                            <h4>I want to hire talent</h4>
-                            <p>Find verified video editors, animators & English tutors. 100% Escrow protected with milestone approvals.</p>
-                        </div>
-                    </div>
-                    <div class="journey-role-card ${chosenRole === 'PROVIDER' ? 'active' : ''}" id="journey-card-provider">
-                        <div class="journey-role-icon">🎨</div>
-                        <div class="journey-role-content">
-                            <h4>I want to offer my services</h4>
-                            <p>Publish service packages, deliver client projects, and keep 80% guaranteed payouts with direct UPI / Bank transfer.</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div style="display: flex; flex-direction: column; gap: 10px;">
-                    <button type="button" class="btn btn-primary" id="journey-proceed-btn" style="padding: 14px; font-weight: 700; font-size: 1rem; justify-content: center; background: #5b34ea;">
-                        Continue as ${chosenRole === 'BUYER' ? 'Buyer (Hire Talent)' : 'Creator (Offer Services)'} -->
-                    </button>
-                    <div style="text-align: center; margin: 4px 0; font-size: 0.8rem; color: var(--text-muted);">or continue instantly</div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                        <button type="button" class="btn btn-secondary btn-sm" id="journey-google-btn" style="justify-content: center; padding: 10px;">
-                            <svg width="16" height="16" viewBox="0 0 18 18" style="margin-right: 6px;">
-                                <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.616z"/>
-                                <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"/>
-                                <path fill="#FBBC05" d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.961H.957C.347 6.173 0 7.548 0 9s.348 2.827.957 4.039l3.007-2.332z"/>
-                                <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.961L3.964 7.293C4.672 5.166 6.656 3.58 9 3.58z"/>
-                            </svg>
-                            Google
-                        </button>
-                        <button type="button" class="btn btn-secondary btn-sm" id="journey-apple-btn" style="justify-content: center; padding: 10px;">
-                            <svg width="16" height="16" viewBox="0 0 170 170" fill="currentColor" style="margin-right: 6px;">
-                                <path d="M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.19-2.12-9.97-3.17-14.34-3.17-4.58 0-9.49 1.05-14.74 3.17-5.26 2.13-9.5 3.24-12.74 3.35-4.35.13-9.16-1.9-14.42-6.08-3.7-3.05-7.6-7.79-11.7-14.24-6.3-9.91-11.25-20.98-14.85-33.2-3.6-12.22-5.4-23.77-5.4-34.65 0-14.73 3.65-26.96 10.96-36.68 7.3-9.73 16.48-14.71 27.53-14.96 4.9.12 10.37 1.33 16.4 3.63 6.03 2.3 9.94 3.52 11.73 3.66 2.01-.27 6.02-1.57 12.03-3.9 6.01-2.33 11.37-3.4 16.07-3.21 11.19.74 20.37 4.96 27.55 12.65-9.87 5.99-14.67 14.36-14.41 25.1.26 8.35 3.38 15.35 9.36 21 5.98 5.66 13.06 8.89 21.23 9.69-2.26 6.8-4.99 13.79-8.19 20.97zM119.22 31.84c0-7.23 2.61-13.9 7.82-20.02 5.22-6.12 11.59-9.86 19.11-11.22.13 1.06.2 2.06.2 3 0 7.34-2.73 14.19-8.18 20.55-5.46 6.36-11.96 10.09-19.51 11.19-.27-1.19-.44-2.36-.44-3.5z"/>
-                            </svg>
-                            Apple
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-
-    document.body.appendChild(overlay);
-
-    const close = () => overlay.remove();
-    overlay.querySelector('#close-journey-modal').onclick = close;
-
-    const buyerCard = overlay.querySelector('#journey-card-buyer');
-    const provCard = overlay.querySelector('#journey-card-provider');
-    const proceedBtn = overlay.querySelector('#journey-proceed-btn');
-
-    const updateSelection = (role) => {
-        chosenRole = role;
-        window.selectedType = role;
-        if (role === 'BUYER') {
-            buyerCard.classList.add('active');
-            provCard.classList.remove('active');
-            proceedBtn.textContent = 'Continue as Buyer (Hire Talent) -->';
-        } else {
-            provCard.classList.add('active');
-            buyerCard.classList.remove('active');
-            proceedBtn.textContent = 'Continue as Creator (Offer Services) -->';
-        }
-    };
-
-    buyerCard.onclick = () => updateSelection('BUYER');
-    provCard.onclick = () => updateSelection('PROVIDER');
-
-    proceedBtn.onclick = () => {
-        overlay.dataset.skipHistoryBack = 'true';
-        close();
-        router('/register');
-    };
-
-    overlay.querySelector('#journey-google-btn').onclick = () => {
-        overlay.dataset.skipHistoryBack = 'true';
-        close();
-        handleSocialLogin('google', chosenRole);
-    };
-
-    overlay.querySelector('#journey-apple-btn').onclick = () => {
-        overlay.dataset.skipHistoryBack = 'true';
-        close();
-        handleSocialLogin('apple', chosenRole);
-    };
+function startJourney() {
+    router('/register');
 }
 window.startJourney = startJourney;
 
