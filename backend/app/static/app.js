@@ -2709,6 +2709,7 @@ function ProviderDashboard() {
     let profile = null;
     let recentPackages = [];
     let bookings = [];
+    let portfolioItems = [];
     let loading = true;
 
     async function loadData() {
@@ -2717,6 +2718,9 @@ function ProviderDashboard() {
             try { profile = await apiFetch('/profile'); } catch (_) { profile = {}; }
             try { recentPackages = await apiFetch('/packages'); } catch (_) { recentPackages = []; }
             try { bookings = await apiFetch('/bookings'); } catch (_) { bookings = []; }
+            if (currentUser?.id) {
+                try { portfolioItems = await apiFetch(`/profile/${currentUser.id}/portfolio`); } catch (_) { portfolioItems = []; }
+            }
         } catch (e) {
             showToast(e.message || 'Error loading studio', 'error');
         } finally {
@@ -2739,9 +2743,18 @@ function ProviderDashboard() {
         const pendingOrders = clientOrders.filter(b => b.status === 'in_progress' || b.status === 'confirmed');
         const deliveredOrders = clientOrders.filter(b => b.status === 'delivered' || b.status === 'pending_approval');
 
-        const hasProfile = Boolean((profile?.bio && profile.bio.trim()) || (profile?.specialization && profile.specialization.trim()) || (currentUser?.profile_image));
-        const hasShowreel = Boolean((profile?.portfolio_items && profile.portfolio_items.length > 0) || (profile?.portfolio_count > 0));
-        const hasPackages = recentPackages.length > 0;
+        const hasProfile = Boolean(
+            (profile?.bio && profile.bio.trim().length > 0) ||
+            (profile?.skills && (Array.isArray(profile.skills) ? profile.skills.length > 0 : String(profile.skills).trim().length > 0)) ||
+            (profile?.niche && profile.niche.length > 0) ||
+            (currentUser?.name && currentUser.name.trim().length > 0)
+        );
+        const hasShowreel = Boolean(
+            (portfolioItems && portfolioItems.length > 0) ||
+            (profile?.portfolio_items && profile.portfolio_items.length > 0) ||
+            (profile?.portfolio_count > 0)
+        );
+        const hasPackages = Array.isArray(recentPackages) && recentPackages.length > 0;
         const completedCount = (hasProfile ? 1 : 0) + (hasShowreel ? 1 : 0) + (hasPackages ? 1 : 0);
         const progressPercent = Math.round((completedCount / 3) * 100);
 
@@ -4089,6 +4102,16 @@ function Settings() {
         }
     };
 
+    window.__addSkillTag = (tag) => {
+        const input = document.getElementById('setting-skills');
+        if (!input) return;
+        const current = input.value.split(',').map(s => s.trim()).filter(Boolean);
+        if (!current.includes(tag)) {
+            current.push(tag);
+            input.value = current.join(', ');
+        }
+    };
+
     window.handleProfileSettingsSave = async (e) => {
         e.preventDefault();
         const skillsStr = document.getElementById('setting-skills')?.value || '';
@@ -4097,13 +4120,15 @@ function Settings() {
         const service_area = document.getElementById('setting-service-area')?.value || 'online';
         const availability = document.getElementById('setting-availability')?.value || 'flexible';
         const response_time = document.getElementById('setting-response-time')?.value || '24 hours';
+        const bio = (document.getElementById('setting-bio')?.value || '').trim();
 
         const data = {
             niche,
             service_area,
             availability,
             response_time,
-            skills
+            skills,
+            bio
         };
 
         try {
@@ -4112,7 +4137,7 @@ function Settings() {
                 method: 'PATCH',
                 body: JSON.stringify(data)
             });
-            showToast('Specialty & skills updated successfully!', 'success');
+            showToast('Creator Profile, Bio & Specialty saved successfully!', 'success');
         } catch (e) {
             showToast(e.message || 'Update failed', 'error');
         } finally {
@@ -4540,59 +4565,120 @@ function Settings() {
 
                 <!-- Tab 2: Profile (Provider) -->
                 ${activeSettingsTab === 'profile' && isProvider ? `
-                    <div class="card" style="max-width: 580px;">
-                        <div class="card-header">
-                            <div class="card-title">Provider Specialty & Skills</div>
-                            <span class="badge badge-success">Active Provider</span>
+                    <div style="display: flex; flex-direction: column; gap: 20px; max-width: 640px;">
+                        <div class="card">
+                            <div class="card-header">
+                                <div>
+                                    <div class="card-title">Provider Specialty, Bio &amp; Skills</div>
+                                    <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 2px;">
+                                        This information is shown to clients across the talent directory and on your public portfolio page.
+                                    </div>
+                                </div>
+                                <span class="badge badge-success">Active Creator</span>
+                            </div>
+                            <form onsubmit="handleProfileSettingsSave(event)">
+                                <div class="form-group">
+                                    <label class="form-label">Primary Category / Niche</label>
+                                    <select class="form-select" id="setting-niche">
+                                        <option value="editors_animators" ${profile?.niche === 'editors_animators' ? 'selected' : ''}>🎬 Video Editors &amp; Animators</option>
+                                        <option value="tutors" ${profile?.niche === 'tutors' ? 'selected' : ''}>🗣️ English Tutors &amp; Coaches</option>
+                                        <option value="writers" ${profile?.niche === 'writers' ? 'selected' : ''}>✍️ Writers &amp; Copywriters</option>
+                                        <option value="social_media" ${profile?.niche === 'social_media' ? 'selected' : ''}>📱 Social Media Managers</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">Creator Bio &amp; Experience Headline</label>
+                                    <textarea class="form-textarea" id="setting-bio" rows="3" placeholder="Describe your creative specialty, video editing style (YouTube retention, TikTok ads, color grading), experience level, and software tools...">${escapeHTML(profile?.bio || '')}</textarea>
+                                    <small style="color: var(--text-muted); font-size: 0.75rem; margin-top: 4px; display: block;">
+                                        Clients read this when deciding whether to hire you or open a direct chat.
+                                    </small>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">Skills &amp; Software Tags (Comma-separated)</label>
+                                    <input type="text" class="form-input" id="setting-skills" value="${skillsFormatted}" placeholder="e.g. Premiere Pro, After Effects, DaVinci Resolve, 4K Editing, Color Grading">
+                                    
+                                    <div style="margin-top: 8px;">
+                                        <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600; margin-bottom: 6px;">
+                                            ⚡ Quick Add Popular Skills (Click to add):
+                                        </div>
+                                        <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                                            ${['🎬 Video Editing', '🎨 Color Grading', '✨ Motion Graphics', '📱 Reels & Shorts', '🔊 Sound Design', '🎞️ 4K Editing', '🗣️ Spoken English', '✍️ Scriptwriting'].map(tag => `
+                                                <button type="button" class="btn btn-secondary btn-sm" onclick="window.__addSkillTag('${tag.replace(/^[^\w\s]+\s*/, '')}')" style="padding: 3px 8px; font-size: 0.72rem; border-radius: 999px;">
+                                                    + ${tag}
+                                                </button>
+                                            `).join('')}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label class="form-label">Service Area</label>
+                                        <select class="form-select" id="setting-service-area">
+                                            <option value="online" ${profile?.service_area === 'online' ? 'selected' : ''}>Online (Global)</option>
+                                            <option value="chennai" ${profile?.service_area === 'chennai' ? 'selected' : ''}>Chennai</option>
+                                            <option value="tn" ${profile?.service_area === 'tn' ? 'selected' : ''}>Tamil Nadu</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Availability</label>
+                                        <select class="form-select" id="setting-availability">
+                                            <option value="flexible" ${profile?.availability === 'flexible' ? 'selected' : ''}>Flexible</option>
+                                            <option value="weekdays" ${profile?.availability === 'weekdays' ? 'selected' : ''}>Weekdays Only</option>
+                                            <option value="weekends" ${profile?.availability === 'weekends' ? 'selected' : ''}>Weekends Only</option>
+                                            <option value="limited" ${profile?.availability === 'limited' ? 'selected' : ''}>Limited</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">Response Time</label>
+                                    <select class="form-select" id="setting-response-time">
+                                        <option value="1 hour" ${profile?.response_time === '1 hour' ? 'selected' : ''}>Within 1 hour</option>
+                                        <option value="4 hours" ${profile?.response_time === '4 hours' ? 'selected' : ''}>Within 4 hours</option>
+                                        <option value="12 hours" ${profile?.response_time === '12 hours' ? 'selected' : ''}>Within 12 hours</option>
+                                        <option value="24 hours" ${profile?.response_time === '24 hours' ? 'selected' : ''}>Within 24 hours</option>
+                                    </select>
+                                </div>
+
+                                <div style="display: flex; justify-content: flex-end; margin-top: 18px;">
+                                    <button type="submit" class="btn btn-primary" style="padding: 10px 24px; font-weight: 700;">
+                                        💾 Save Profile &amp; Specialty
+                                    </button>
+                                </div>
+                            </form>
                         </div>
-                        <form onsubmit="handleProfileSettingsSave(event)">
-                            <div class="form-group">
-                                <label class="form-label">Primary Category / Niche</label>
-                                <select class="form-select" id="setting-niche">
-                                    <option value="editors_animators" ${profile?.niche === 'editors_animators' ? 'selected' : ''}>🎬 Video Editors & Animators</option>
-                                    <option value="tutors" ${profile?.niche === 'tutors' ? 'selected' : ''}>🗣️ English Tutors & Coaches</option>
-                                    <option value="writers" ${profile?.niche === 'writers' ? 'selected' : ''}>✍️ Writers & Copywriters</option>
-                                    <option value="social_media" ${profile?.niche === 'social_media' ? 'selected' : ''}>📱 Social Media Managers</option>
-                                </select>
+
+                        <!-- Live Profile Card Preview -->
+                        <div class="card" style="padding: 18px; border: 1.5px dashed var(--border); background: var(--bg-hover);">
+                            <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+                                <span>👁️</span> Public Marketplace Profile Preview
                             </div>
-                            <div class="form-group">
-                                <label class="form-label">Skills (Comma-separated)</label>
-                                <input type="text" class="form-input" id="setting-skills" value="${skillsFormatted}" placeholder="e.g. Premiere Pro, After Effects, IELTS, Accent Training">
-                                <small style="color: var(--text-muted); font-size: 0.75rem; margin-top: 4px; display: block;">
-                                    Popular for Editors: Video Editing, Color Grading, Motion Graphics, Shorts, Reels<br>
-                                    Popular for Tutors: Spoken English, Business English, IELTS Prep, Accent Training
-                                </small>
-                            </div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label class="form-label">Service Area</label>
-                                    <select class="form-select" id="setting-service-area">
-                                        <option value="online" ${profile?.service_area === 'online' ? 'selected' : ''}>Online (Global)</option>
-                                        <option value="chennai" ${profile?.service_area === 'chennai' ? 'selected' : ''}>Chennai</option>
-                                        <option value="tn" ${profile?.service_area === 'tn' ? 'selected' : ''}>Tamil Nadu</option>
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Availability</label>
-                                    <select class="form-select" id="setting-availability">
-                                        <option value="flexible" ${profile?.availability === 'flexible' ? 'selected' : ''}>Flexible</option>
-                                        <option value="weekdays" ${profile?.availability === 'weekdays' ? 'selected' : ''}>Weekdays Only</option>
-                                        <option value="weekends" ${profile?.availability === 'weekends' ? 'selected' : ''}>Weekends Only</option>
-                                        <option value="limited" ${profile?.availability === 'limited' ? 'selected' : ''}>Limited</option>
-                                    </select>
+                            <div style="display: flex; gap: 14px; align-items: flex-start;">
+                                <div>${renderProfileAvatar(48)}</div>
+                                <div style="flex: 1; min-width: 0;">
+                                    <div style="font-weight: 800; font-size: 1.05rem; color: var(--text-primary); display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                                        <span>${escapeHTML(currentUser?.name || 'Your Name')}</span>
+                                        <span class="badge badge-primary" style="font-size: 0.68rem;">★ ${(profile?.rating || 5.0).toFixed(1)}</span>
+                                    </div>
+                                    <div style="font-size: 0.78rem; color: var(--accent); font-weight: 700; margin-top: 2px;">
+                                        ${profile?.niche === 'tutors' ? '🗣️ English Tutor & Coach' : (profile?.niche === 'writers' ? '✍️ Copywriter & Scriptwriter' : '🎬 Video Editor & Animator')}
+                                    </div>
+                                    <div style="font-size: 0.8125rem; color: var(--text-secondary); line-height: 1.4; margin-top: 6px;">
+                                        ${escapeHTML(profile?.bio || 'No bio provided yet. Add your headline above.')}
+                                    </div>
+                                    <div style="display: flex; gap: 4px; flex-wrap: wrap; margin-top: 10px;">
+                                        ${(Array.isArray(profile?.skills) ? profile.skills : (typeof profile?.skills === 'string' ? profile.skills.split(',') : [])).filter(Boolean).map(s => `
+                                            <span style="font-size: 0.68rem; padding: 2px 7px; border-radius: 4px; background: var(--bg-card); border: 1px solid var(--border); color: var(--text-primary); font-weight: 600;">
+                                                ${escapeHTML(String(s).trim())}
+                                            </span>
+                                        `).join('')}
+                                    </div>
                                 </div>
                             </div>
-                            <div class="form-group">
-                                <label class="form-label">Response Time</label>
-                                <select class="form-select" id="setting-response-time">
-                                    <option value="1 hour" ${profile?.response_time === '1 hour' ? 'selected' : ''}>Within 1 hour</option>
-                                    <option value="4 hours" ${profile?.response_time === '4 hours' ? 'selected' : ''}>Within 4 hours</option>
-                                    <option value="12 hours" ${profile?.response_time === '12 hours' ? 'selected' : ''}>Within 12 hours</option>
-                                    <option value="24 hours" ${profile?.response_time === '24 hours' ? 'selected' : ''}>Within 24 hours</option>
-                                </select>
-                            </div>
-                            <button type="submit" class="btn btn-primary">Save Specialty</button>
-                        </form>
+                        </div>
                     </div>
                 ` : ''}
 
