@@ -2773,17 +2773,17 @@ def handle_moderation_violation(db, sender: User, receiver_id: int, booking_id, 
         # Second offence — suspend (keep is_active True so user can still
         # read own bookings/payments and appeal; get_current_user blocks sends via is_blocked)
         sender.is_blocked = True
-        sender.block_reason = f"Account suspended: Sharing direct contact details ({reason}) violates Grove Hub platform safety rules. (Strike {prior + 1})"
+        sender.block_reason = f"Account suspended: Sharing direct contact details ({reason}) violates Groove Hub platform safety rules. (Strike {prior + 1})"
         db.commit()
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail=f"Security Alert: Your message was blocked and your account has been suspended for attempting to share off-platform contact details ({reason}). To protect buyers and sellers under escrow, all communications and payments must stay on Grove Hub."
+            detail=f"Security Alert: Your message was blocked and your account has been suspended for attempting to share off-platform contact details ({reason}). To protect buyers and sellers under escrow, all communications and payments must stay on Groove Hub."
         )
 
     # First offence — warn, do not suspend
     raise HTTPException(
         status_code=status.HTTP_400_BAD_REQUEST,
-        detail=f"Warning (Strike 1): Your message was blocked — {reason}. Keep all contact details and payments on Grove Hub. A repeat violation will suspend your account."
+        detail=f"Warning (Strike 1): Your message was blocked — {reason}. Keep all contact details and payments on Groove Hub. A repeat violation will suspend your account."
     )
 
 
@@ -3247,7 +3247,7 @@ def get_admin_all_chats(
     db = Depends(get_db)
 ):
     """
-    Admin endpoint to view all conversations across Grove Hub,
+    Admin endpoint to view all conversations across Groove Hub,
     including flagged messages and blocked user statuses.
     """
     if current_user.user_type != UserType.ADMIN:

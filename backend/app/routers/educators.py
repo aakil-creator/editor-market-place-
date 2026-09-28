@@ -6,7 +6,7 @@ from typing import List, Optional
 from datetime import datetime
 
 from ..database import get_db
-from ..models import User, Profile, Package, UserType, Booking
+from ..models import User, Profile, Package, UserType, Booking, Review
 from ..schemas import UserResponse, PackageResponse
 
 router = APIRouter(prefix="/educators", tags=["educators"])
@@ -228,7 +228,7 @@ def list_educator_summary(
             "slug": u.username or f"creator_{u.id}",
             "niche": p.niche if p else "editors_animators",
             "rating": p.rating if p else 0.0,
-            "total_bookings": p.total_bookings if p else 0,
+            "review_count": db.query(Review).filter(Review.provider_id == u.id).count(),
             "skills": p.skills if p else [],
             "service_area": p.service_area if p else "online",
             "availability": p.availability if p else "flexible",
@@ -246,9 +246,9 @@ def list_educator_summary(
     elif sort_by == "price_desc":
         result.sort(key=lambda x: (x["starting_price"] is None, -(x["starting_price"] or 0)))
     elif sort_by == "bookings":
-        result.sort(key=lambda x: x["total_bookings"], reverse=True)
+        result.sort(key=lambda x: x["review_count"], reverse=True)
     else:  # rating
-        result.sort(key=lambda x: (x["rating"], x["total_bookings"]), reverse=True)
+        result.sort(key=lambda x: (x["rating"], x["review_count"]), reverse=True)
 
     return result
 
@@ -275,7 +275,7 @@ def list_top_rated(
             "id": u.id,
             "name": u.name,
             "rating": p.rating,
-            "total_bookings": p.total_bookings,
+            "review_count": db.query(Review).filter(Review.provider_id == u.id).count(),
             "skills": p.skills,
             "niche": p.niche,
         }
@@ -367,10 +367,9 @@ def get_educator_profile_detail(
         "username": educator.username or f"creator_{educator.id}",
         "is_verified": educator.is_verified,
         "is_active": educator.is_active,
-        "created_at": educator.created_at,
         "niche": profile.niche if profile else "editors_animators",
         "rating": profile.rating if profile else 5.0,
-        "total_bookings": profile.total_bookings if profile else 20,
+        "review_count": db.query(Review).filter(Review.provider_id == educator.id).count(),
         "skills": profile.skills if profile else [],
         "service_area": profile.service_area if profile else "online",
         "availability": profile.availability if profile else "flexible",
@@ -386,7 +385,7 @@ def get_educator_profile_detail(
             "availability": profile.availability if profile else "flexible",
             "response_time": profile.response_time if profile else "24 hours",
             "rating": profile.rating if profile else 5.0,
-            "total_bookings": profile.total_bookings if profile else 20,
+            "review_count": db.query(Review).filter(Review.provider_id == educator.id).count(),
         } if profile else {}
     }
 
