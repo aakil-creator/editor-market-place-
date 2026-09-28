@@ -1166,17 +1166,20 @@ function mount(content) {
 
 async function handleGoogleSignIn(initialRole = null, credential = null) {
     const role = initialRole || window.selectedType || 'BUYER';
+    const existing = document.getElementById('social-login-modal');
+    if (existing) existing.remove();
 
     // 1. If credential is provided (e.g. from Google GIS callback):
     if (credential) {
         const btn = document.querySelector('#btn-auth-google');
         const origBtnHtml = btn ? btn.innerHTML : '';
-        if (btn) {
+        if (btn && btn.tagName === 'BUTTON') {
             btn.disabled = true;
-            btn.innerHTML = '<span style="display:inline-block;width:14px;height:14px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:8px;vertical-align:middle;"></span> Verifying with Google…';
+            btn.innerHTML = '<span style="display:inline-block;width:14px;height:14px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:8px;vertical-align:middle;"></span> Signing in with Google…';
         }
 
         try {
+            showToast('Verifying with Google...', 'info');
             const res = await apiFetch('/auth/google', {
                 method: 'POST',
                 body: JSON.stringify({
@@ -1197,10 +1200,9 @@ async function handleGoogleSignIn(initialRole = null, credential = null) {
             }
             return;
         } catch (err) {
-            if (btn) { btn.disabled = false; btn.innerHTML = origBtnHtml; }
+            if (btn && btn.tagName === 'BUTTON') { btn.disabled = false; btn.innerHTML = origBtnHtml; }
             console.error('Google token verification failed:', err);
             showToast(err.message || 'Google Sign-In failed. Please try again.', 'error');
-            handleSocialLoginFallback('google', role);
             return;
         }
     }
@@ -1215,41 +1217,26 @@ async function handleGoogleSignIn(initialRole = null, credential = null) {
                     const cred = gisResponse?.credential || gisResponse;
                     if (cred && typeof cred === 'string') {
                         handleGoogleSignIn(role, cred);
-                    } else {
-                        handleSocialLoginFallback('google', role);
                     }
                 },
                 auto_select: false,
                 cancel_on_tap_outside: true,
             });
 
-            // Note: google.accounts.id.signIn does not exist in standard GIS SDK; 15_000 ms timeout safeguard
-            window.google.accounts.id.prompt((notification) => {
-                if (notification.isNotDisplayed() || notification.isSkippedMoment() || notification.isDismissedMoment()) {
-                    handleSocialLoginFallback('google', role);
-                }
-            });
-
-            setTimeout(() => {
-                if (!document.getElementById('social-login-modal') && !currentToken) {
-                    handleSocialLoginFallback('google', role);
-                }
-            }, 800);
+            window.google.accounts.id.prompt();
             return;
         } catch (e) {
             console.warn('GIS One Tap prompt note:', e);
         }
     }
 
-    // 3. Fallback: Open sleek Google sign-in dialog immediately
-    return handleSocialLoginFallback('google', role);
+    // 3. Fallback only if GIS is missing or unconfigured
+    if (!window.google?.accounts?.id || !clientId) {
+        handleSocialLoginFallback('google', role);
+    }
 }
 
 // Modal fallback for Google/Apple sign-in when GIS is unavailable or no client ID
-// Social sign-in fallback — shown only when real Google GIS is unavailable.
-// NOTE: there is deliberately NO email/name form here. The backend only accepts
-// cryptographically verified Google ID tokens, so typing an email can never log
-// anyone in (previously this form allowed account takeover with just an email).
 async function handleSocialLoginFallback(provider, initialRole = null) {
     const providerName = provider === 'google' ? 'Google' : 'Apple';
     const existing = document.getElementById('social-login-modal');
@@ -1258,20 +1245,20 @@ async function handleSocialLoginFallback(provider, initialRole = null) {
     const overlay = document.createElement('div');
     overlay.id = 'social-login-modal';
     overlay.className = 'modal-backdrop';
-    overlay.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(8px); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px;';
+    overlay.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(8px); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 16px;';
     overlay.innerHTML = `
-        <div class="card" style="max-width: 420px; width: 100%; box-shadow: var(--shadow-lg); border: 1px solid var(--border); animation: fadeIn 0.2s ease;">
+        <div class="card" style="max-width: 380px; width: 100%; box-shadow: var(--shadow-lg); border: 1px solid var(--border); border-radius: 16px; animation: fadeIn 0.2s ease;">
             <div class="card-body" style="padding: 24px 20px; text-align: center;">
-                <div style="font-size: 2rem; margin-bottom: 10px;">&#x1F510;</div>
-                <h3 style="margin: 0 0 8px; font-size: 1.05rem; color: var(--text-primary);">${providerName} sign-in unavailable</h3>
+                <div style="font-size: 2rem; margin-bottom: 10px;">🔐</div>
+                <h3 style="margin: 0 0 8px; font-size: 1.1rem; font-weight: 800; color: var(--text-primary);">${providerName} Sign-In</h3>
                 <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5; margin: 0 0 18px;">
                     ${provider === 'apple'
-                        ? 'Apple sign-in is not enabled yet. Please sign in with your email/phone and password, or with a phone OTP.'
-                        : 'Google could not be reached right now. Please sign in with your email/phone and password, or with a phone OTP.'}
+                        ? 'Apple sign-in is coming soon. Please sign in with your email/phone and password, or with a phone OTP.'
+                        : 'Please use email/phone and password, or log in with phone OTP.'}
                 </p>
-                <div style="display: flex; gap: 14px; margin-top: 20px;">
-                    <button class="btn btn-primary" id="fallback-email-btn" style="flex: 1; justify-content: center; padding: 18px 28px; font-weight: 700; font-size: 1.08rem;">Use email / phone</button>
-                    <button class="btn btn-secondary" id="fallback-cancel-btn" style="padding: 18px 28px; font-size: 1.08rem;">Close</button>
+                <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 18px;">
+                    <button class="btn btn-primary" id="fallback-email-btn" style="width: 100%; justify-content: center; padding: 12px 18px; font-weight: 700; font-size: 0.95rem;">Sign In with Email / Phone</button>
+                    <button class="btn btn-secondary" id="fallback-cancel-btn" style="width: 100%; justify-content: center; padding: 10px 18px; font-size: 0.95rem;">Close</button>
                 </div>
             </div>
         </div>
