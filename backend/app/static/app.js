@@ -251,9 +251,8 @@ window.toggleUserMode = toggleUserMode;
 
 // Universal App Header with 100% strict Separation of Modes (Buyer Mode, Provider Mode, and Admin Console)
 
-// Profile avatar — replaces logout button in all headers
-// Shows user's profile image if set, otherwise initials in a colored circle
-function renderProfileAvatar(size = 32) {
+// Profile avatar — click opens the full action menu (Edit Profile, Upload Portfolio, Orders, etc.)
+function renderProfileAvatar(size = 34) {
     const user = currentUser;
     if (!user) return '';
     const initial = (user.name || 'U').charAt(0).toUpperCase();
@@ -266,58 +265,164 @@ function renderProfileAvatar(size = 32) {
         ? `<img src="${user.profile_image}" alt="${user.name}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;" onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'flex\';" />`
         : '';
     return `
-        <div class="header-user-avatar" title="${user.name} (${label})" style="cursor:pointer;" onclick="window.__toggleProfileMenu()">
-            <div class="header-user-avatar-img" style="width:${size}px;height:${size}px;border-radius:50%;background:${gradient};display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:${size >= 40 ? '0.95rem' : '0.8rem'};${imgTag ? 'overflow:hidden;' : ''}border:2px solid var(--bg-card);position:relative;">
+        <div class="header-user-avatar" title="${escapeJs(user.name)} (${label})" style="cursor:pointer;" onclick="window.__toggleProfileMenu(event)">
+            <div class="header-user-avatar-img" style="width:${size}px;height:${size}px;border-radius:50%;background:${gradient};display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:${size >= 40 ? '0.95rem' : '0.85rem'};${imgTag ? 'overflow:hidden;' : ''}border:2px solid var(--border);position:relative;box-shadow:var(--shadow);">
                 ${imgTag}
                 <span style="${imgTag ? 'display:none;' : ''}">${initial}</span>
-                <span class="header-user-status-dot" style="position:absolute;bottom:0;right:0;width:10px;height:10px;border-radius:50%;background:#10b981;border:2px solid var(--bg-card);${size < 36 ? 'width:7px;height:7px;bottom:-1px;right:-1px;' : ''}"></span>
+                <span class="header-user-status-dot" style="position:absolute;bottom:-1px;right:-1px;width:9px;height:9px;border-radius:50%;background:#10b981;border:2px solid var(--bg-card);"></span>
             </div>
         </div>
     `;
 }
 
-// Profile dropdown menu — shown on avatar click
+// Full Profile dropdown menu — provides fast access to Edit Profile, Upload Portfolio, Showreels, Packages, Orders, and Settings
 function renderProfileMenu() {
     const user = currentUser;
     if (!user) return '';
     const isProvider = user.user_type === 'PROVIDER';
+    const isAdmin = user.user_type === 'ADMIN';
     const hasImage = !!(user.profile_image);
+    const initial = (user.name || 'U').charAt(0).toUpperCase();
+    const handle = user.username ? `@${user.username}` : (user.email || '');
+
     return `
-        <div id="profile-menu-dropdown" class="profile-menu-dropdown" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;z-index:9999;align-items:flex-end;justify-content:flex-end;padding:16px;">
-            <div class="profile-menu-panel" style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow-lg);min-width:220px;overflow:hidden;">
-                <div style="display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--border);">
-                    <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#a855f7);display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:0.9rem;flex-shrink:0;overflow:hidden;${hasImage ? 'border:2px solid var(--bg-card);' : ''}">
-                        ${hasImage ? `<img src="${user.profile_image}" alt="" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" /><span style="display:none;">${(user.name || 'U').charAt(0).toUpperCase()}</span>` : `<span>${(user.name || 'U').charAt(0).toUpperCase()}</span>`}
-                    </div>
-                    <div style="flex:1;min-width:0;">
-                        <div style="font-weight:700;font-size:0.9rem;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${user.name}</div>
-                        <div style="font-size:0.7rem;color:var(--text-muted);">${isProvider ? 'Provider' : (user.user_type === 'ADMIN' ? 'Admin' : 'Buyer')}</div>
+        <div id="profile-menu-dropdown" class="profile-menu-dropdown" style="display:none;" onclick="event.stopPropagation()">
+            <!-- Header User Card -->
+            <div class="profile-menu-header">
+                <div class="profile-menu-header-avatar" style="background:${isProvider ? 'linear-gradient(135deg,#f97316,#ef4444)' : 'linear-gradient(135deg,#6366f1,#a855f7)'};">
+                    ${hasImage ? `<img src="${user.profile_image}" alt="${escapeJs(user.name)}" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" /><span style="display:none;">${initial}</span>` : `<span>${initial}</span>`}
+                </div>
+                <div class="profile-menu-header-info">
+                    <div class="profile-menu-header-name">${escapeJs(user.name)}</div>
+                    <div class="profile-menu-header-handle">${escapeJs(handle)}</div>
+                    <div class="profile-menu-header-badge" style="background:${isAdmin ? 'rgba(239,68,68,0.12);color:#ef4444;' : (isProvider ? 'rgba(249,115,22,0.12);color:#f97316;' : 'rgba(99,102,241,0.12);color:#6366f1;')}">
+                        ${isAdmin ? '🛡️ Admin Console' : (isProvider ? '💼 Creator Studio' : '🛍️ Client Mode')}
                     </div>
                 </div>
-                <button class="profile-menu-btn" onclick="openProfileIconPicker()" style="display:flex;align-items:center;gap:8px;padding:10px 16px;font-size:0.8rem;font-weight:600;color:var(--text-primary);background:transparent;border:none;width:100%;text-align:left;cursor:pointer;border-bottom:1px solid var(--border);">
-                    <span>🖼️</span> Change Icon
+            </div>
+
+            <!-- Profile & Portfolio Section -->
+            <div class="profile-menu-section">
+                <div class="profile-menu-section-title">Creative Profile</div>
+                <button class="profile-menu-item" onclick="openSettingsTab('profile')">
+                    <span class="profile-menu-item-icon">✏️</span>
+                    <span>Edit Profile</span>
+                    <span class="profile-menu-item-badge">Bio & Skills</span>
                 </button>
-                <button class="profile-menu-btn" onclick="router('/profile')" style="display:flex;align-items:center;gap:8px;padding:10px 16px;font-size:0.8rem;font-weight:600;color:var(--text-primary);background:transparent;border:none;width:100%;text-align:left;cursor:pointer;border-bottom:1px solid var(--border);">
-                    <span>🎨</span> My Profile
+                <button class="profile-menu-item" onclick="openSettingsTab('portfolio')">
+                    <span class="profile-menu-item-icon">📁</span>
+                    <span>Upload Portfolio</span>
+                    <span class="profile-menu-item-badge">4K Reels</span>
                 </button>
-                <button class="profile-menu-btn" onclick="toggleUserMode()" style="display:flex;align-items:center;gap:8px;padding:10px 16px;font-size:0.8rem;font-weight:600;color:var(--text-primary);background:transparent;border:none;width:100%;text-align:left;cursor:pointer;border-bottom:1px solid var(--border);">
-                    <span>${isProvider ? '🛍️' : '💼'}</span> ${isProvider ? 'Switch to Buyer Mode' : 'Switch to Provider Mode'}
+                <button class="profile-menu-item" onclick="openProfileIconPicker()">
+                    <span class="profile-menu-item-icon">🖼️</span>
+                    <span>Change Profile Icon</span>
                 </button>
-                <button class="profile-menu-btn profile-menu-logout" onclick="logout()" style="display:flex;align-items:center;gap:8px;padding:10px 16px;font-size:0.8rem;font-weight:600;color:var(--danger);background:transparent;border:none;width:100%;text-align:left;cursor:pointer;margin-top:4px;">
-                    <span>🚪</span> Logout
+                <button class="profile-menu-item" onclick="window.__closeProfileMenu(); router('/profile');">
+                    <span class="profile-menu-item-icon">🎨</span>
+                    <span>Public Profile Preview</span>
+                </button>
+            </div>
+
+            <div class="profile-menu-divider"></div>
+
+            <!-- Workspace & Orders Section -->
+            <div class="profile-menu-section">
+                <div class="profile-menu-section-title">Workspace & Orders</div>
+                ${isProvider ? `
+                <button class="profile-menu-item" onclick="window.__closeProfileMenu(); router('/packages');">
+                    <span class="profile-menu-item-icon">📦</span>
+                    <span>My Packages & Pricing</span>
+                </button>
+                ` : ''}
+                <button class="profile-menu-item" onclick="window.__closeProfileMenu(); router('/bookings');">
+                    <span class="profile-menu-item-icon">📋</span>
+                    <span>${isProvider ? 'Client Orders' : 'My Orders & Escrow'}</span>
+                </button>
+                <button class="profile-menu-item" onclick="window.__closeProfileMenu(); router('/messages');">
+                    <span class="profile-menu-item-icon">💬</span>
+                    <span>Messages & Inbox</span>
+                </button>
+                <button class="profile-menu-item" onclick="window.__closeProfileMenu(); router('/payments');">
+                    <span class="profile-menu-item-icon">💳</span>
+                    <span>${isProvider ? 'Earnings & Payouts' : 'Wallet & Escrow'}</span>
+                </button>
+                <button class="profile-menu-item" onclick="openSettingsTab('bank')">
+                    <span class="profile-menu-item-icon">🏦</span>
+                    <span>Bank & Payout Setup</span>
+                </button>
+                ${isAdmin ? `
+                <button class="profile-menu-item" onclick="window.__closeProfileMenu(); router('/admin');">
+                    <span class="profile-menu-item-icon">🛡️</span>
+                    <span>Admin Control Center</span>
+                </button>
+                ` : ''}
+            </div>
+
+            <div class="profile-menu-divider"></div>
+
+            <!-- Account, Mode Switch & Sign Out -->
+            <div class="profile-menu-section">
+                <div class="profile-menu-section-title">Account</div>
+                <button class="profile-menu-item" onclick="openSettingsTab('account')">
+                    <span class="profile-menu-item-icon">⚙️</span>
+                    <span>Account & Security</span>
+                </button>
+                <button class="profile-menu-item" onclick="window.__closeProfileMenu(); toggleUserMode();">
+                    <span class="profile-menu-item-icon">${isProvider ? '🛍️' : '💼'}</span>
+                    <span>${isProvider ? 'Switch to Buyer Mode' : 'Switch to Provider Mode'}</span>
+                </button>
+                <button class="profile-menu-item profile-menu-logout" onclick="window.__closeProfileMenu(); logout();">
+                    <span class="profile-menu-item-icon">🚪</span>
+                    <span>Sign Out</span>
                 </button>
             </div>
         </div>
     `;
 }
 
-// Toggle profile dropdown
-window.__toggleProfileMenu = () => {
-    const existing = document.getElementById('profile-menu-dropdown');
-    if (existing) {
-        existing.style.display = existing.style.display === 'none' ? 'flex' : 'none';
+// Navigation helper to open settings with a specific tab
+window.openSettingsTab = (tab) => {
+    window.__closeProfileMenu();
+    activeSettingsTab = tab;
+    if (window.location.pathname === '/settings' || window.location.pathname === '/profile') {
+        if (typeof window.setSettingsTab === 'function') {
+            window.setSettingsTab(tab);
+        }
+    } else {
+        router('/settings');
     }
 };
+
+// Toggle profile dropdown
+window.__toggleProfileMenu = (e) => {
+    if (e) {
+        e.stopPropagation();
+    }
+    const menu = document.getElementById('profile-menu-dropdown');
+    if (menu) {
+        menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+    }
+};
+
+window.__closeProfileMenu = () => {
+    const menu = document.getElementById('profile-menu-dropdown');
+    if (menu) menu.style.display = 'none';
+};
+
+// Global click-outside listener to close profile menu
+if (!window.__profileMenuGlobalListenerAdded) {
+    window.addEventListener('click', (e) => {
+        const menu = document.getElementById('profile-menu-dropdown');
+        const avatar = document.querySelector('.header-user-avatar');
+        if (menu && menu.style.display !== 'none') {
+            if (!menu.contains(e.target) && (!avatar || !avatar.contains(e.target))) {
+                menu.style.display = 'none';
+            }
+        }
+    });
+    window.__profileMenuGlobalListenerAdded = true;
+}
 
 // Change Icon picker — opens modal with Google photo / Upload / Remove options
 window.openProfileIconPicker = () => {
@@ -548,7 +653,7 @@ function renderAppHeader(activeRoute = '') {
                     <button class="nav-btn" onclick="toggleTheme()" title="Toggle Theme" style="padding: 8px 12px;">
                         ${currentTheme === 'dark' ? '☀️' : '🌙'}
                     </button>
-                    ${renderProfileAvatar(32)}${renderProfileMenu()}
+                    <div class="profile-dropdown-wrapper">${renderProfileAvatar(34)}${renderProfileMenu()}</div>
                 </div>
             </div>
             <!-- Admin Mobile Bottom Nav -->
@@ -600,7 +705,7 @@ function renderAppHeader(activeRoute = '') {
                     <button class="nav-btn" onclick="toggleTheme()" title="Toggle Theme" style="padding: 8px 12px;">
                         ${currentTheme === 'dark' ? '☀️' : '🌙'}
                     </button>
-                    ${renderProfileAvatar(32)}${renderProfileMenu()}
+                    <div class="profile-dropdown-wrapper">${renderProfileAvatar(34)}${renderProfileMenu()}</div>
                 </div>
             </div>
             <!-- Provider Mobile Bottom Nav -->
@@ -651,7 +756,7 @@ function renderAppHeader(activeRoute = '') {
                 <button class="nav-btn" onclick="toggleTheme()" title="Toggle Theme" style="padding: 8px 12px;">
                     ${currentTheme === 'dark' ? '☀️' : '🌙'}
                 </button>
-                ${renderProfileAvatar(32)}${renderProfileMenu()}
+                <div class="profile-dropdown-wrapper">${renderProfileAvatar(34)}${renderProfileMenu()}</div>
             </div>
         </div>
         <!-- Buyer Mobile Bottom Nav -->
@@ -4414,7 +4519,7 @@ function MyPackages() {
             <div class="header-nav">
                 <button class="nav-btn" onclick="router('/')">Dashboard</button>
                 <button class="nav-btn" onclick="router('/profile')">Profile</button>
-                ${renderProfileAvatar(32)}${renderProfileMenu()}
+                <div class="profile-dropdown-wrapper">${renderProfileAvatar(34)}${renderProfileMenu()}</div>
             </div>
         </div>
         <div class="main">
@@ -9265,6 +9370,9 @@ function MessagesInbox() {
                 formData.append('video', file);
                 const res = await fetch('/api/messages/upload', {
                     method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${currentToken}`
+                    },
                     body: formData
                 });
                 if (!res.ok) throw new Error('Upload failed');

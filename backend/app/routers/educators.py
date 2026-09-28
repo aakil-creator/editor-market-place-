@@ -1,5 +1,5 @@
 # Educator-related routers for Editor Marketplace
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import or_, func, cast, String
 from typing import List, Optional
