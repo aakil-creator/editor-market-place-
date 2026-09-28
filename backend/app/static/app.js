@@ -644,6 +644,22 @@ document.addEventListener('keydown', (e) => {
     document.head.appendChild(style);
 })();
 
+function renderLaunchPromoBanner() {
+    if (sessionStorage.getItem('hide_launch_promo') === '1') return '';
+    return `
+        <div class="launch-promo-banner" id="launch-promo-banner">
+            <div class="launch-promo-content">
+                <span class="launch-promo-pill">🚀 PLAY STORE LAUNCH SPECIAL</span>
+                <span class="launch-promo-text">
+                    <strong>0% Platform Commission for 1 Month!</strong> Creators keep <strong>100%</strong> of every order • 100% Escrow Protected • Zero fees for all accounts!
+                </span>
+            </div>
+            <button class="launch-promo-close" onclick="sessionStorage.setItem('hide_launch_promo', '1'); document.getElementById('launch-promo-banner')?.remove()" title="Dismiss">&times;</button>
+        </div>
+    `;
+}
+window.renderLaunchPromoBanner = renderLaunchPromoBanner;
+
 function renderAppHeader(activeRoute = '') {
     const isAdmin = currentUser?.user_type === 'ADMIN';
     const isProvider = currentUser?.user_type === 'PROVIDER';
@@ -651,6 +667,7 @@ function renderAppHeader(activeRoute = '') {
     // 1. ADMIN EXCLUSIVE HEADER (No buyer or provider interference)
     if (isAdmin) {
         return el`<div>
+            ${renderLaunchPromoBanner()}
             <div class="header" style="border-bottom: 2px solid rgba(239, 68, 68, 0.35);">
                 <div class="header-logo-group">
                     ${renderLogo(32, true)}
@@ -700,6 +717,7 @@ function renderAppHeader(activeRoute = '') {
     // 2. PROVIDER EXCLUSIVE HEADER (Creator Studio)
     if (isProvider) {
         return el`<div>
+            ${renderLaunchPromoBanner()}
             <div class="header">
                 <div class="header-logo-group">
                     ${renderLogo(32, true)}
@@ -752,6 +770,7 @@ function renderAppHeader(activeRoute = '') {
 
     // 3. BUYER EXCLUSIVE HEADER (Client / Marketplace)
     return el`<div>
+        ${renderLaunchPromoBanner()}
         <div class="header">
             <div class="header-logo-group">
                 ${renderLogo(32, true)}
@@ -2988,6 +3007,23 @@ function ProviderDashboard() {
             </div>
 
             <div class="main">
+                <!-- 0% Commission Launch Promo Notice Card -->
+                <div class="card launch-zero-comm-card" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(6, 95, 70, 0.08)); border: 1.5px solid rgba(16, 185, 129, 0.35); padding: 16px 20px; border-radius: var(--radius); margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap;">
+                    <div style="display: flex; align-items: center; gap: 14px;">
+                        <div style="font-size: 2.2rem; line-height: 1;">🎉</div>
+                        <div>
+                            <div style="font-weight: 800; color: var(--success); font-size: 1.05rem; display: flex; align-items: center; gap: 8px;">
+                                <span>0% Commission Launch Plan Active (1 Month Free)</span>
+                                <span class="badge badge-success" style="font-size: 0.68rem; padding: 2px 7px;">100% Payout</span>
+                            </div>
+                            <div style="font-size: 0.8125rem; color: var(--text-secondary); margin-top: 3px; max-width: 580px; line-height: 1.4;">
+                                Welcome to the Play Store launch! You will receive <strong>100% of every order</strong>. Zero platform commission deducted for your first 30 days.
+                            </div>
+                        </div>
+                    </div>
+                    <button class="btn btn-secondary btn-sm" onclick="router('/packages')" style="font-weight: 700; border-color: rgba(16, 185, 129, 0.4);">Publish Service Packages →</button>
+                </div>
+
                 <!-- New Creator Fast-Track 3-Step Setup Checklist -->
                 <div class="card" style="padding: 22px 24px; margin-bottom: 24px; border: 1.5px solid rgba(99, 102, 241, 0.35); background: linear-gradient(135deg, rgba(99, 102, 241, 0.06) 0%, rgba(16, 185, 129, 0.06) 100%); border-radius: var(--radius);">
                     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 14px;">
@@ -5923,8 +5959,12 @@ function CreateBooking() {
                             <span style="font-size: 0.875rem; color: var(--text-secondary);">${selectedPkg.title}</span>
                             <span style="font-weight: 700; color: var(--text-primary);">₹${selectedPkg.price.toLocaleString()}</span>
                         </div>
+                        <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px;">
+                            <span>Platform Fee (1 Month Launch Special)</span>
+                            <span style="color: var(--success); font-weight: 700;">₹0 (FREE - 100% to Creator)</span>
+                        </div>
                         <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted);">
-                            <span>Escrow Protection & Secure Payment</span>
+                            <span>Escrow Protection & Secure Milestone</span>
                             <span style="color: var(--success); font-weight: 600;">Included</span>
                         </div>
                         <div class="divider" style="margin: 10px 0;"></div>

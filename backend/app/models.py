@@ -290,7 +290,10 @@ class PlatformSettings(Base):
     __tablename__ = "platform_settings"
 
     id = Column(Integer, primary_key=True, index=True)
-    commission_rate = Column(Float, default=0.20)  # 20% platform commission
+    commission_rate = Column(Float, default=0.20)  # Standard 20% platform commission
+    launch_promo_active = Column(Boolean, default=True)  # 1-month 0% commission launch promo
+    launch_promo_title = Column(String, default="🎉 Play Store Launch Special: 0% Commission for 1 Month!")
+    launch_promo_subtitle = Column(String, default="Keep 100% of your earnings. Zero platform fees on all bookings for 30 days.")
     owner_bank_name = Column(String, default="HDFC Bank")
     owner_account_holder = Column(String, default="Marketplace Owner")
     owner_account_number = Column(String, default="50100492819281")

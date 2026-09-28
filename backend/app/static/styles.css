@@ -7034,3 +7034,90 @@ textarea::placeholder,
         max-width: 100% !important;
     }
 }
+
+/* ==========================================================================
+   LAUNCH PROMOTION BANNER (0% Commission / 1 Month Free)
+   ========================================================================== */
+.launch-promo-banner {
+    background: linear-gradient(90deg, #1e1b4b 0%, #312e81 40%, #064e3b 100%);
+    color: #ffffff;
+    padding: 10px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.825rem;
+    position: relative;
+    z-index: 1000;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+    animation: slideDownBanner 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideDownBanner {
+    from { transform: translateY(-100%); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.launch-promo-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+    flex: 1;
+    text-align: center;
+}
+
+.launch-promo-pill {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: #ffffff;
+    padding: 3px 9px;
+    border-radius: 999px;
+    font-weight: 800;
+    font-size: 0.7rem;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+}
+
+.launch-promo-text {
+    color: #f1f5f9;
+    font-size: 0.825rem;
+}
+
+.launch-promo-text strong {
+    color: #34d399;
+    font-weight: 700;
+}
+
+.launch-promo-close {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 1.25rem;
+    cursor: pointer;
+    padding: 0 4px;
+    line-height: 1;
+    transition: color 0.15s ease;
+}
+
+.launch-promo-close:hover {
+    color: #ffffff;
+}
+
+@media (max-width: 640px) {
+    .launch-promo-banner {
+        padding: 8px 12px;
+        font-size: 0.75rem;
+    }
+    .launch-promo-content {
+        gap: 6px;
+    }
+    .launch-promo-text {
+        font-size: 0.75rem;
+    }
+}
+

@@ -125,15 +125,21 @@ def ensure_schema():
                 conn.execute(text("ALTER TABLE platform_settings ADD COLUMN razorpay_key_secret TEXT DEFAULT ''"))
             if "google_client_id" not in cols_ps:
                 conn.execute(text("ALTER TABLE platform_settings ADD COLUMN google_client_id TEXT DEFAULT ''"))
+            if "launch_promo_active" not in cols_ps:
+                conn.execute(text("ALTER TABLE platform_settings ADD COLUMN launch_promo_active BOOLEAN DEFAULT 1"))
+            if "launch_promo_title" not in cols_ps:
+                conn.execute(text("ALTER TABLE platform_settings ADD COLUMN launch_promo_title TEXT DEFAULT '🎉 Play Store Launch Special: 0% Commission for 1 Month!'"))
+            if "launch_promo_subtitle" not in cols_ps:
+                conn.execute(text("ALTER TABLE platform_settings ADD COLUMN launch_promo_subtitle TEXT DEFAULT 'Keep 100% of your earnings. Zero platform fees on all bookings for 30 days.'"))
             
             # Ensure row 1 exists in platform_settings
             cursor_row = conn.execute(text("SELECT id, google_client_id FROM platform_settings WHERE id = 1"))
             row = cursor_row.fetchone()
             default_google_id = os.environ.get("GOOGLE_CLIENT_ID", "934016522168-68h4l11qrs3g628191ala3bgugt1cs7l.apps.googleusercontent.com")
             if not row:
-                conn.execute(text(f"INSERT INTO platform_settings (id, google_client_id, razorpay_key_id, razorpay_key_secret) VALUES (1, '{default_google_id}', '', '')"))
+                conn.execute(text(f"INSERT INTO platform_settings (id, google_client_id, razorpay_key_id, razorpay_key_secret, launch_promo_active) VALUES (1, '{default_google_id}', '', '', 1)"))
             else:
-                conn.execute(text(f"UPDATE platform_settings SET google_client_id = '{default_google_id}' WHERE id = 1"))
+                conn.execute(text(f"UPDATE platform_settings SET google_client_id = '{default_google_id}', launch_promo_active = 1 WHERE id = 1"))
 
             # Ensure password_reset_tokens table exists
             conn.execute(text("""
@@ -846,9 +852,19 @@ def get_public_config(db = Depends(get_db)):
     default_id = "934016522168-68h4l11qrs3g628191ala3bgugt1cs7l.apps.googleusercontent.com"
     google_client_id = os.environ.get("GOOGLE_CLIENT_ID") or (settings.google_client_id if settings and settings.google_client_id else "") or default_id
     razorpay_key_id = (settings.razorpay_key_id if settings and settings.razorpay_key_id else "") or os.environ.get("RAZORPAY_KEY_ID", "rzp_test_placeholder")
+    
+    launch_promo_active = True
+    if settings and hasattr(settings, 'launch_promo_active') and settings.launch_promo_active is not None:
+        launch_promo_active = bool(settings.launch_promo_active)
+
     return {
         "google_client_id": google_client_id,
-        "razorpay_key_id": razorpay_key_id
+        "razorpay_key_id": razorpay_key_id,
+        "launch_promo_active": launch_promo_active,
+        "launch_promo_title": "🎉 Play Store Launch Special: 0% Platform Commission for 1 Month!",
+        "launch_promo_subtitle": "Keep 100% of your earnings. Zero platform fees on all bookings for 30 days.",
+        "commission_rate": 0.0 if launch_promo_active else (settings.commission_rate if settings else 0.20),
+        "commission_percent": 0 if launch_promo_active else int(round((settings.commission_rate if settings else 0.20) * 100))
     }
 
 
@@ -1633,9 +1649,10 @@ def create_booking(booking_data: BookingCreate, current_user = Depends(get_curre
     db.commit()
     db.refresh(booking)
 
-    # Use platform commission rate from settings
+    # Use platform commission rate (0% during 1-Month Play Store Launch Promo)
     settings = db.query(PlatformSettings).first()
-    comm_rate = settings.commission_rate if (settings and settings.commission_rate is not None) else 0.20
+    is_promo = getattr(settings, 'launch_promo_active', True) if settings else True
+    comm_rate = 0.0 if is_promo else (settings.commission_rate if (settings and settings.commission_rate is not None) else 0.20)
     platform_comm = round(booking_data.total_amount * comm_rate, 2)
     prov_payout = round(booking_data.total_amount * (1.0 - comm_rate), 2)
 
@@ -1858,7 +1875,8 @@ def create_payment_order(
     db.refresh(booking)
 
     settings = db.query(PlatformSettings).first()
-    comm_rate = settings.commission_rate if (settings and settings.commission_rate is not None) else 0.20
+    is_promo = getattr(settings, 'launch_promo_active', True) if settings else True
+    comm_rate = 0.0 if is_promo else (settings.commission_rate if (settings and settings.commission_rate is not None) else 0.20)
     platform_comm = round(package.price * comm_rate, 2)
     prov_payout = round(package.price * (1.0 - comm_rate), 2)
 
@@ -1964,7 +1982,8 @@ def verify_payment(
 
     payment = db.query(Payment).filter(Payment.booking_id == booking.id).first()
     if not payment:
-        comm_rate = settings.commission_rate if (settings and settings.commission_rate is not None) else 0.20
+        is_promo = getattr(settings, 'launch_promo_active', True) if settings else True
+        comm_rate = 0.0 if is_promo else (settings.commission_rate if (settings and settings.commission_rate is not None) else 0.20)
         platform_comm = round(booking.total_amount * comm_rate, 2)
         prov_payout = round(booking.total_amount * (1.0 - comm_rate), 2)
         payment = Payment(
