@@ -7313,43 +7313,18 @@ function ProvidersList() {
         return el`<div>
             ${renderAppHeader('/providers')}
             <div class="main">
-                <!-- Top Navigation & Breadcrumbs Bar: Always returns cleanly to Home / Dashboard -->
-                <div class="fiverr-nav-top" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; padding: 4px 0;">
-                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                        <button type="button" class="btn btn-secondary btn-sm" onclick="setProviderNiche(''); router('/');" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700; padding: 7px 14px; border-radius: 8px; cursor: pointer;" title="Go back to Dashboard">
-                            <span>🏠</span>
-                            <span>Back to Dashboard</span>
-                        </button>
-                        <div style="display: flex; align-items: center; gap: 6px; font-size: 0.84rem; color: var(--text-secondary);">
-                            <span style="color: var(--text-muted);">/</span>
-                            <button type="button" onclick="setProviderNiche('')" style="background:none; border:none; color:var(--text-secondary); cursor:pointer; font-weight:600; padding:0; ${!providerSearchState.niche ? 'color: var(--accent); font-weight: 700;' : ''}">
-                                All Talent
-                            </button>
-                            ${isClassified ? `
-                                <span style="color: var(--text-muted);">/</span>
-                                <span style="color: var(--accent); font-weight: 700;">${activeCfg.title}</span>
-                                ${providerSearchState.subType ? `
-                                    <span style="color: var(--text-muted);">/</span>
-                                    <span style="color: var(--text-primary); font-weight: 600;">${(activeCfg.types.find(t => t.id === providerSearchState.subType) || {}).label || providerSearchState.subType}</span>
-                                ` : ''}
-                            ` : ''}
-                        </div>
-                    </div>
-                    <div style="display: flex; gap: 6px; overflow-x: auto; max-width: 100%; padding-bottom: 2px;">
-                        <button type="button" class="btn btn-sm ${!providerSearchState.niche ? 'btn-primary' : 'btn-secondary'}" onclick="setProviderNiche('')" style="font-size: 0.78rem; padding: 5px 12px; border-radius: 999px;">
-                            🌟 All
-                        </button>
-                        <button type="button" class="btn btn-sm ${providerSearchState.niche === 'editors_animators' ? 'btn-primary' : 'btn-secondary'}" onclick="setProviderNiche('editors_animators')" style="font-size: 0.78rem; padding: 5px 12px; border-radius: 999px;">
-                            🎬 Video Editors
-                        </button>
-                        <button type="button" class="btn btn-sm ${providerSearchState.niche === 'tutors' ? 'btn-primary' : 'btn-secondary'}" onclick="setProviderNiche('tutors')" style="font-size: 0.78rem; padding: 5px 12px; border-radius: 999px;">
-                            🗣️ English Tutors
-                        </button>
-                        <button type="button" class="btn btn-sm ${providerSearchState.niche === 'writers' ? 'btn-primary' : 'btn-secondary'}" onclick="setProviderNiche('writers')" style="font-size: 0.78rem; padding: 5px 12px; border-radius: 999px;">
-                            ✍️ Scriptwriters
+                <!-- Back button when viewing a specific category -->
+                ${isClassified ? `
+                    <div style="margin-bottom: 14px;">
+                        <button type="button" class="fiverr-back-btn" onclick="setProviderNiche('');" style="cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
+                                <line x1="19" y1="12" x2="5" y2="12"></line>
+                                <polyline points="12 19 5 12 12 5"></polyline>
+                            </svg>
+                            <span>← All Categories</span>
                         </button>
                     </div>
-                </div>
+                ` : ''}
 
                 <!-- Search Bar with Dynamic Animated Rotating Placeholder & Blinking Search Button -->
                 <div class="card provider-search-bar-card" style="padding: 14px 16px; margin-bottom: 20px;">
