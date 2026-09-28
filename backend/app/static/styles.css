@@ -1289,7 +1289,7 @@ div#btn-auth-google iframe {
 
 .toast {
     position: fixed;
-    bottom: 20px;
+    bottom: 84px;
     left: 50%;
     transform: translateX(-50%);
     background: var(--bg-card);
@@ -1298,18 +1298,25 @@ div#btn-auth-google iframe {
     padding: 12px 20px;
     color: var(--text-primary);
     font-size: 0.875rem;
-    z-index: 1000;
+    font-weight: 600;
+    z-index: 99999;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
     animation: slideUp 0.3s ease;
+    max-width: calc(100vw - 32px);
+    text-align: center;
+    backdrop-filter: blur(12px);
 }
 
 .toast-success {
     border-color: var(--success);
-    background: rgba(0, 214, 143, 0.1);
+    background: rgba(0, 214, 143, 0.15);
+    color: #10b981;
 }
 
 .toast-error {
     border-color: var(--danger);
-    background: rgba(255, 77, 109, 0.1);
+    background: rgba(255, 77, 109, 0.15);
+    color: #ef4444;
 }
 
 @keyframes slideUp {
@@ -1994,16 +2001,24 @@ div#btn-auth-google iframe {
     border-radius: var(--radius-sm);
     padding: 5px;
     margin-bottom: 16px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+}
+
+.tabs::-webkit-scrollbar {
+    display: none;
 }
 
 .tab {
-    flex: 1;
+    flex: 0 0 auto;
+    white-space: nowrap;
     padding: 8px 16px;
     background: transparent;
     border: none;
     color: var(--text-secondary);
-    font-size: 0.875rem;
-    font-weight: 500;
+    font-size: 0.85rem;
+    font-weight: 600;
     border-radius: 6px;
     cursor: pointer;
     transition: transform 0.2s var(--ease-spring), background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;

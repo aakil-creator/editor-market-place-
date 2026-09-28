@@ -3917,18 +3917,24 @@ function Settings() {
 
     window.handleAccountSave = async (e) => {
         e.preventDefault();
+        const usernameInput = document.getElementById('setting-username');
+        const nameVal = (document.getElementById('setting-name')?.value || '').trim();
+        const emailVal = (document.getElementById('setting-email')?.value || '').trim();
+        const phoneVal = (document.getElementById('setting-phone')?.value || '').trim();
+        const usernameVal = usernameInput ? usernameInput.value.trim().replace(/^@/, '') : '';
+
+        const data = {
+            name: nameVal,
+            email: emailVal,
+            phone: phoneVal
+        };
+        if (usernameVal) {
+            data.username = usernameVal;
+        }
+
         let redirected = false;
         try {
             showLoading();
-            const usernameInput = document.getElementById('setting-username');
-            const data = {
-                name: document.getElementById('setting-name').value.trim(),
-                email: document.getElementById('setting-email').value.trim(),
-                phone: document.getElementById('setting-phone').value.trim()
-            };
-            if (usernameInput) {
-                data.username = usernameInput.value.trim().replace(/^@/, '');
-            }
             currentUser = await apiFetch('/auth/me', {
                 method: 'PATCH',
                 body: JSON.stringify(data)
@@ -4035,19 +4041,19 @@ function Settings() {
 
     window.handleAddPortfolioItem = async (e) => {
         e.preventDefault();
+        const title = (document.getElementById('port-title')?.value || '').trim();
+        const media_url = (document.getElementById('port-media-url')?.value || '').trim();
+        const media_type = document.getElementById('port-media-type')?.value || 'video';
+        const thumbnail_url = (document.getElementById('port-thumb-url')?.value || '').trim() || (media_type === 'image' ? media_url : '');
+        const description = (document.getElementById('port-desc')?.value || '').trim();
+
+        if (!title || !media_url) {
+            showToast('Please provide a title and media URL', 'error');
+            return;
+        }
+
         try {
             showLoading();
-            const title = document.getElementById('port-title').value.trim();
-            const media_url = document.getElementById('port-media-url').value.trim();
-            const media_type = document.getElementById('port-media-type').value;
-            const thumbnail_url = document.getElementById('port-thumb-url').value.trim() || (media_type === 'image' ? media_url : '');
-            const description = document.getElementById('port-desc').value.trim();
-
-            if (!title || !media_url) {
-                showToast('Please provide a title and media URL', 'error');
-                return;
-            }
-
             const item = await apiFetch('/profile/portfolio', {
                 method: 'POST',
                 body: JSON.stringify({
@@ -4060,10 +4066,6 @@ function Settings() {
             });
             showToast('Work sample added to your portfolio showcase!', 'success');
             portfolioItems.unshift(item);
-            document.getElementById('port-title').value = '';
-            document.getElementById('port-media-url').value = '';
-            document.getElementById('port-thumb-url').value = '';
-            document.getElementById('port-desc').value = '';
         } catch (err) {
             showToast(err.message || 'Failed to add portfolio item', 'error');
         } finally {
@@ -4089,22 +4091,28 @@ function Settings() {
 
     window.handleProfileSettingsSave = async (e) => {
         e.preventDefault();
+        const skillsStr = document.getElementById('setting-skills')?.value || '';
+        const skills = skillsStr.split(',').map(s => s.trim()).filter(Boolean);
+        const niche = document.getElementById('setting-niche')?.value || 'editors_animators';
+        const service_area = document.getElementById('setting-service-area')?.value || 'online';
+        const availability = document.getElementById('setting-availability')?.value || 'flexible';
+        const response_time = document.getElementById('setting-response-time')?.value || '24 hours';
+
+        const data = {
+            niche,
+            service_area,
+            availability,
+            response_time,
+            skills
+        };
+
         try {
             showLoading();
-            const skillsStr = document.getElementById('setting-skills').value;
-            const skills = skillsStr.split(',').map(s => s.trim()).filter(Boolean);
-            const data = {
-                niche: document.getElementById('setting-niche').value,
-                service_area: document.getElementById('setting-service-area').value,
-                availability: document.getElementById('setting-availability').value,
-                response_time: document.getElementById('setting-response-time').value,
-                skills: skills
-            };
             profile = await apiFetch('/profile', {
                 method: 'PATCH',
                 body: JSON.stringify(data)
             });
-            showToast('Profile & skills updated', 'success');
+            showToast('Specialty & skills updated successfully!', 'success');
         } catch (e) {
             showToast(e.message || 'Update failed', 'error');
         } finally {
@@ -4116,8 +4124,8 @@ function Settings() {
     // --- Buyer Bio Save ---
     window.handleBioSave = async (e) => {
         e.preventDefault();
-        const bio = document.getElementById('setting-bio').value;
-        const lookingFor = document.getElementById('setting-looking-for').value;
+        const bio = (document.getElementById('setting-bio')?.value || '').trim();
+        const lookingFor = (document.getElementById('setting-looking-for')?.value || '').trim();
         try {
             showLoading();
             await apiFetch('/profile/bio', {
@@ -4129,19 +4137,19 @@ function Settings() {
                 profile.bio = bio || '';
                 profile.looking_for = lookingFor || '';
             }
-            mount(renderSettingsView());
         } catch (err) {
             showToast(err.message || 'Failed to save bio', 'error');
         } finally {
             hideLoading();
+            mount(renderSettingsView());
         }
     };
 
     window.handlePasswordChange = async (e) => {
         e.preventDefault();
-        const curPw = document.getElementById('setting-current-pw').value;
-        const newPw = document.getElementById('setting-new-pw').value;
-        const confirmPw = document.getElementById('setting-confirm-pw').value;
+        const curPw = document.getElementById('setting-current-pw')?.value || '';
+        const newPw = document.getElementById('setting-new-pw')?.value || '';
+        const confirmPw = document.getElementById('setting-confirm-pw')?.value || '';
 
         if (newPw !== confirmPw) {
             showToast('New passwords do not match', 'error');
@@ -4155,9 +4163,6 @@ function Settings() {
                 body: JSON.stringify({ current_password: curPw, new_password: newPw })
             });
             showToast('Password changed successfully', 'success');
-            document.getElementById('setting-current-pw').value = '';
-            document.getElementById('setting-new-pw').value = '';
-            document.getElementById('setting-confirm-pw').value = '';
         } catch (e) {
             showToast(e.message || 'Failed to change password', 'error');
         } finally {
@@ -4168,19 +4173,18 @@ function Settings() {
 
     window.handleBankSave = async (e) => {
         e.preventDefault();
-        const holder = document.getElementById('setting-bank-holder').value.trim();
-        const bank = document.getElementById('setting-bank-name').value.trim();
-        const acc = document.getElementById('setting-bank-acc').value.trim();
-        const ifsc = document.getElementById('setting-bank-ifsc').value.trim();
-        const upi = document.getElementById('setting-bank-upi').value.trim();
+        const holder = (document.getElementById('setting-bank-holder')?.value || '').trim();
+        const bank = (document.getElementById('setting-bank-name')?.value || '').trim();
+        const acc = (document.getElementById('setting-bank-acc')?.value || '').trim();
+        const ifsc = (document.getElementById('setting-bank-ifsc')?.value || '').trim();
+        const upi = (document.getElementById('setting-bank-upi')?.value || '').trim();
+        const rzpKey = (document.getElementById('setting-rzp-key')?.value || '').trim();
+        const rzpSecret = (document.getElementById('setting-rzp-secret')?.value || '').trim();
+        const googleId = (document.getElementById('setting-google-id')?.value || '').trim();
 
-        showLoading();
         try {
+            showLoading();
             if (currentUser?.user_type === 'ADMIN') {
-                const rzpKey = document.getElementById('setting-rzp-key')?.value.trim() || '';
-                const rzpSecret = document.getElementById('setting-rzp-secret')?.value.trim() || '';
-                const googleId = document.getElementById('setting-google-id')?.value.trim() || '';
-
                 await apiFetch('/admin/platform-settings', {
                     method: 'PUT',
                     body: JSON.stringify({
