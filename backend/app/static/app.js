@@ -8145,7 +8145,6 @@ function VerifyEmailPage() {
     window.handleResendVerification = async () => {
         const email = (document.getElementById('verify-email')?.value || '').trim();
         const errBox = document.getElementById('verify-error-container');
-        const demoBox = document.getElementById('verify-demo-token');
         if (!email) {
             if (errBox) errBox.innerHTML = '<div style="background: rgba(239,68,68,0.12); border:1px solid #ef4444; color:#ef4444; padding:10px 14px; border-radius:8px; font-size:0.85rem;">⚠️ Enter your email first.</div>';
             return;
@@ -8154,11 +8153,8 @@ function VerifyEmailPage() {
             const res = await apiFetch('/auth/resend-verification', { method: 'POST', body: JSON.stringify({ email_or_phone: email }) });
             if (res.reset_token) {
                 try { sessionStorage.setItem('pending_verification', JSON.stringify({ email, token: res.reset_token })); } catch (_) {}
-                const input = document.getElementById('verify-token');
-                if (input) input.value = res.reset_token;
-                if (demoBox) { demoBox.style.display = 'block'; document.getElementById('verify-demo-code').textContent = res.reset_token; }
             }
-            showToast(res.message || 'New code sent.', 'success');
+            showToast(res.message || 'Verification code sent.', 'success');
         } catch (err) {
             if (errBox) errBox.innerHTML = `<div style="background: rgba(239,68,68,0.12); border:1px solid #ef4444; color:#ef4444; padding:10px 14px; border-radius:8px; font-size:0.85rem;">⚠️ ${err.message || 'Could not resend code.'}</div>`;
         }
@@ -8190,9 +8186,6 @@ function VerifyEmailPage() {
 						</div>
 						<button type="submit" class="btn btn-primary" style="width: 100%; padding: 13px; font-weight: 700; margin-top: 12px;" id="verify-email-btn">Verify Email</button>
 					</form>
-					<div id="verify-demo-token" style="display: ${tokenParam ? 'block' : 'none'}; margin-top: 14px; background: rgba(16,185,129,0.08); border: 1px dashed var(--border); border-radius: 8px; padding: 10px 12px; font-size: 0.78rem; color: var(--text-secondary); word-break: break-all;">
-						Demo code: <code id="verify-demo-code">${tokenParam}</code>
-					</div>
 					<div style="margin-top: 14px; font-size: 0.85rem; color: var(--text-secondary);">
 						Didn't get a code? <button onclick="handleResendVerification()" style="background:none;border:none;color:var(--accent);font-weight:700;cursor:pointer;padding:0;">Resend code</button>
 					</div>
