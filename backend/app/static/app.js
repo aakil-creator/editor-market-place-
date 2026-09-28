@@ -1090,7 +1090,11 @@ function router(path) {
     }
 
     const routes = {
-        '/': (currentToken ? ProvidersList : Landing),
+        '/': (currentToken ? Dashboard : Landing),
+        '/dashboard': (currentToken ? Dashboard : Login),
+        '/providers': (currentToken ? ProvidersList : Landing),
+        '/explore': (currentToken ? ProvidersList : Landing),
+        '/talent': (currentToken ? ProvidersList : Landing),
         '/welcome': (currentToken ? (currentUser?.user_type === 'ADMIN' ? AdminDashboard : WelcomePage) : Login),
         '/login': Login,
         '/register': Register,
@@ -1107,6 +1111,7 @@ function router(path) {
         '/admin/bookings': (currentToken ? AdminBookings : Login),
         '/admin/disputes': (currentToken ? AdminDisputes : Login),
         '/admin/chats': (currentToken ? AdminChatsView : Login),
+        '/admin/niches': (currentToken ? AdminNiches : Login),
         '/groove-chat': (currentToken ? GrooveChat : Login),
         '/privacy': PrivacyPolicy,
         '/terms': TermsOfService,
@@ -3132,7 +3137,7 @@ function BuyerDashboard() {
                     </div>
                     <div style="display: flex; align-items: center; gap: 12px;">
                         <span style="font-size: 0.8125rem; color: var(--text-muted); font-weight: 600;">🛡️ 100% Escrow Protected</span>
-                        <button class="btn btn-secondary btn-sm" onclick="router('/')" style="padding: 5px 12px; font-size: 0.78rem;">
+                        <button class="btn btn-secondary btn-sm" onclick="router('/providers')" style="padding: 5px 12px; font-size: 0.78rem;">
                             Browse Full Directory →
                         </button>
                     </div>
@@ -3148,7 +3153,7 @@ function BuyerDashboard() {
                         </p>
                         <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
                             <button class="btn btn-secondary btn-sm" onclick="window.__setBuyerFilter('all'); window.__clearBuyerSearch();">Reset Filters</button>
-                            <button class="btn btn-primary btn-sm" onclick="router('/')">Open Full Talent Directory</button>
+                            <button class="btn btn-primary btn-sm" onclick="router('/providers')">Open Full Talent Directory</button>
                         </div>
                     </div>
                 ` : `
@@ -6272,8 +6277,8 @@ function ProvidersList() {
         if (textEl && opts[0]) {
             textEl.textContent = `"${opts[0].label}"`;
         }
-        if (window.location.pathname !== '/') {
-            router('/');
+        if (window.location.pathname !== '/providers' && window.location.pathname !== '/explore' && window.location.pathname !== '/talent') {
+            router('/providers');
         } else {
             loadProviders();
         }
@@ -6983,8 +6988,46 @@ function ProvidersList() {
         }
 
         return el`<div>
-            ${renderAppHeader('/')}
+            ${renderAppHeader('/providers')}
             <div class="main">
+                <!-- Top Navigation & Breadcrumbs Bar: Always returns cleanly to Home / Dashboard -->
+                <div class="fiverr-nav-top" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; padding: 4px 0;">
+                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="setProviderNiche(''); router('/');" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700; padding: 7px 14px; border-radius: 8px; cursor: pointer;" title="Go back to Dashboard">
+                            <span>🏠</span>
+                            <span>Back to Dashboard</span>
+                        </button>
+                        <div style="display: flex; align-items: center; gap: 6px; font-size: 0.84rem; color: var(--text-secondary);">
+                            <span style="color: var(--text-muted);">/</span>
+                            <button type="button" onclick="setProviderNiche('')" style="background:none; border:none; color:var(--text-secondary); cursor:pointer; font-weight:600; padding:0; ${!providerSearchState.niche ? 'color: var(--accent); font-weight: 700;' : ''}">
+                                All Talent
+                            </button>
+                            ${isClassified ? `
+                                <span style="color: var(--text-muted);">/</span>
+                                <span style="color: var(--accent); font-weight: 700;">${activeCfg.title}</span>
+                                ${providerSearchState.subType ? `
+                                    <span style="color: var(--text-muted);">/</span>
+                                    <span style="color: var(--text-primary); font-weight: 600;">${(activeCfg.types.find(t => t.id === providerSearchState.subType) || {}).label || providerSearchState.subType}</span>
+                                ` : ''}
+                            ` : ''}
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 6px; overflow-x: auto; max-width: 100%; padding-bottom: 2px;">
+                        <button type="button" class="btn btn-sm ${!providerSearchState.niche ? 'btn-primary' : 'btn-secondary'}" onclick="setProviderNiche('')" style="font-size: 0.78rem; padding: 5px 12px; border-radius: 999px;">
+                            🌟 All
+                        </button>
+                        <button type="button" class="btn btn-sm ${providerSearchState.niche === 'editors_animators' ? 'btn-primary' : 'btn-secondary'}" onclick="setProviderNiche('editors_animators')" style="font-size: 0.78rem; padding: 5px 12px; border-radius: 999px;">
+                            🎬 Video Editors
+                        </button>
+                        <button type="button" class="btn btn-sm ${providerSearchState.niche === 'tutors' ? 'btn-primary' : 'btn-secondary'}" onclick="setProviderNiche('tutors')" style="font-size: 0.78rem; padding: 5px 12px; border-radius: 999px;">
+                            🗣️ English Tutors
+                        </button>
+                        <button type="button" class="btn btn-sm ${providerSearchState.niche === 'writers' ? 'btn-primary' : 'btn-secondary'}" onclick="setProviderNiche('writers')" style="font-size: 0.78rem; padding: 5px 12px; border-radius: 999px;">
+                            ✍️ Scriptwriters
+                        </button>
+                    </div>
+                </div>
+
                 <!-- Search Bar with Dynamic Animated Rotating Placeholder & Blinking Search Button -->
                 <div class="card provider-search-bar-card" style="padding: 14px 16px; margin-bottom: 20px;">
                     <form onsubmit="handleProviderSearch(event)" class="provider-search-form" style="display: flex; gap: 8px; align-items: center;">
@@ -7235,17 +7278,6 @@ function ProvidersList() {
                         </div>
                     </div>
                 ` : `
-                    <!-- Top Navigation on All Talent Overview -->
-                    <div class="fiverr-nav-top">
-                        <button class="fiverr-back-btn" onclick="router('/')">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
-                                <line x1="19" y1="12" x2="5" y2="12"></line>
-                                <polyline points="12 19 5 12 12 5"></polyline>
-                            </svg>
-                            <span><-- Back to Dashboard</span>
-                        </button>
-                    </div>
-
                     <!-- STANDARD CATEGORY SELECTION CARDS (All Talent Overview) -->
                     <div class="provider-category-grid">
                         ${[
