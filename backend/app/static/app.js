@@ -637,9 +637,9 @@ function renderAppHeader(activeRoute = '') {
     if (isAdmin) {
         return el`<div>
             <div class="header" style="border-bottom: 2px solid rgba(239, 68, 68, 0.35);">
-                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                <div class="header-logo-group">
                     ${renderLogo(32, true)}
-                    <span class="mode-badge-pill mode-badge-admin">🛡️ Admin Console</span>
+                    <span class="mode-badge-pill mode-badge-admin">🛡️ Admin</span>
                 </div>
                 <div class="header-nav" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
                     <button class="nav-btn ${activeRoute === '/admin' || activeRoute === '/' ? 'active' : ''}" onclick="router('/admin')">📊 Dashboard</button>
@@ -686,9 +686,9 @@ function renderAppHeader(activeRoute = '') {
     if (isProvider) {
         return el`<div>
             <div class="header">
-                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <div class="header-logo-group">
                     ${renderLogo(32, true)}
-                    <span class="mode-badge-pill mode-badge-provider">💼 Provider Mode</span>
+                    <span class="mode-badge-pill mode-badge-provider">💼 Provider</span>
                     <button type="button" class="btn-switch-mode" onclick="toggleUserMode()" title="Switch to Buyer Mode to hire talent">
                         🛍️ Switch to Buyer Mode
                     </button>
@@ -738,9 +738,9 @@ function renderAppHeader(activeRoute = '') {
     // 3. BUYER EXCLUSIVE HEADER (Client / Marketplace)
     return el`<div>
         <div class="header">
-            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <div class="header-logo-group">
                 ${renderLogo(32, true)}
-                <span class="mode-badge-pill mode-badge-buyer">🛍️ Buyer Mode</span>
+                <span class="mode-badge-pill mode-badge-buyer">🛍️ Buyer</span>
                 <button type="button" class="btn-switch-mode" onclick="toggleUserMode()" title="Switch to Provider Mode to offer your services">
                     💼 Switch to Provider Mode
                 </button>

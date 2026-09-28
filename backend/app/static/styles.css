@@ -6836,3 +6836,186 @@ textarea::placeholder,
 .profile-menu-logout:hover {
     background: rgba(239, 68, 68, 0.08) !important;
 }
+
+
+
+/* ==========================================================================
+   COMPREHENSIVE MOBILE PHONE OPTIMIZATION (SMARTPHONES & TABLETS)
+   ========================================================================== */
+
+@media (max-width: 768px) {
+    /* Safe bottom clearance for fixed bottom nav bar across all pages */
+    body, #app {
+        padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px)) !important;
+    }
+
+    .main {
+        padding: 14px 12px calc(24px + env(safe-area-inset-bottom, 0px)) 12px !important;
+        max-width: 100% !important;
+    }
+
+    /* Single-line sleek mobile header */
+    .header {
+        padding: 8px 12px !important;
+        min-height: 52px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        flex-wrap: nowrap !important;
+    }
+
+    .header-logo-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
+        flex: 1;
+    }
+
+    /* Hide long switch-mode button on top header on mobile (accessed via profile dropdown / dashboard) */
+    .header .btn-switch-mode {
+        display: none !important;
+    }
+
+    .header .mode-badge-pill {
+        padding: 3px 8px !important;
+        font-size: 0.68rem !important;
+        letter-spacing: 0 !important;
+        flex-shrink: 0;
+    }
+
+    .header-nav {
+        display: flex !important;
+        align-items: center !important;
+        gap: 8px !important;
+        flex-shrink: 0 !important;
+    }
+
+    /* Profile menu dropdown position on mobile */
+    .profile-menu-dropdown {
+        position: fixed !important;
+        top: 56px !important;
+        right: 10px !important;
+        left: 10px !important;
+        width: auto !important;
+        max-width: 360px !important;
+        margin-left: auto !important;
+        max-height: calc(100dvh - 140px) !important;
+        overflow-y: auto !important;
+    }
+
+    /* Category & Tab touch horizontal scrollbars */
+    .filter-pills-bar, .niche-filter-container, .tabs, .payment-tabs, .category-filter-bar {
+        display: flex !important;
+        flex-wrap: nowrap !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        scrollbar-width: none !important;
+        padding: 4px 2px 8px 2px !important;
+        gap: 8px !important;
+    }
+
+    .filter-pills-bar::-webkit-scrollbar, .tabs::-webkit-scrollbar, .payment-tabs::-webkit-scrollbar {
+        display: none !important;
+    }
+
+    .filter-pill, .tab, .payment-tab-btn {
+        flex-shrink: 0 !important;
+        white-space: nowrap !important;
+        font-size: 0.8rem !important;
+        padding: 8px 14px !important;
+    }
+
+    /* Grids & Cards: Single column for maximum clarity */
+    .grid, .providers-grid, .packages-grid, .gigs-grid {
+        grid-template-columns: 1fr !important;
+        gap: 14px !important;
+    }
+
+    /* Dashboard Metrics: Clean 2x2 Grid on phone */
+    .stats-grid, .admin-stats-grid, .dashboard-stats {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 10px !important;
+    }
+
+    .stat-card {
+        padding: 14px 12px !important;
+        border-radius: 12px !important;
+    }
+
+    .stat-value {
+        font-size: 1.3rem !important;
+    }
+
+    .stat-label {
+        font-size: 0.72rem !important;
+    }
+
+    /* Gig & Creator Cards on Mobile */
+    .fiverr-gig-card, .provider-card {
+        border-radius: 14px !important;
+    }
+
+    .fiverr-gig-thumb-wrap {
+        border-radius: 14px 14px 0 0 !important;
+    }
+
+    /* Orders & Bookings on Phone */
+    .booking-card, .order-card, .txn-card {
+        padding: 14px !important;
+        border-radius: 14px !important;
+        margin-bottom: 12px !important;
+    }
+
+    .booking-actions, .order-actions {
+        flex-direction: column !important;
+        width: 100% !important;
+        gap: 8px !important;
+    }
+
+    .booking-actions .btn, .order-actions .btn {
+        width: 100% !important;
+        justify-content: center !important;
+    }
+
+    /* Modals & Dialogs: Native bottom sheet style */
+    .modal-backdrop, .modal-overlay, .invoice-modal-overlay {
+        align-items: flex-end !important;
+        padding: 0 !important;
+        background: rgba(0, 0, 0, 0.75) !important;
+    }
+
+    .modal-backdrop .card, .modal-backdrop .modal-card, #profile-icon-picker .card, .invoice-modal-card {
+        border-radius: 20px 20px 0 0 !important;
+        max-height: 88dvh !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        overflow-y: auto !important;
+        animation: slideUpSheet 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    }
+
+    /* Form Inputs touch optimization */
+    input, select, textarea {
+        font-size: 16px !important; /* Prevents auto-zoom in Safari/Chrome */
+        border-radius: 10px !important;
+    }
+
+    .form-group {
+        margin-bottom: 14px !important;
+    }
+
+    .btn, .btn-primary, .btn-secondary, .btn-outline {
+        min-height: 42px !important;
+        border-radius: 10px !important;
+        font-size: 0.875rem !important;
+    }
+
+    /* Mobile toast notification banner */
+    .toast-container {
+        bottom: calc(76px + env(safe-area-inset-bottom, 0px)) !important;
+        left: 12px !important;
+        right: 12px !important;
+        max-width: 100% !important;
+    }
+}
