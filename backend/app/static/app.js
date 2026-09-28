@@ -1164,9 +1164,9 @@ async function handleSocialLoginFallback(provider, initialRole = null) {
                         ? 'Apple sign-in is not enabled yet. Please sign in with your email/phone and password, or with a phone OTP.'
                         : 'Google could not be reached right now. Please sign in with your email/phone and password, or with a phone OTP.'}
                 </p>
-                <div style="display: flex; gap: 10px;">
-                    <button class="btn btn-primary" id="fallback-email-btn" style="flex: 1; justify-content: center; padding: 12px; font-weight: 700;">Use email / phone</button>
-                    <button class="btn btn-secondary" id="fallback-cancel-btn" style="padding: 12px 18px;">Close</button>
+                <div style="display: flex; gap: 14px; margin-top: 20px;">
+                    <button class="btn btn-primary" id="fallback-email-btn" style="flex: 1; justify-content: center; padding: 18px 28px; font-weight: 700; font-size: 1.08rem;">Use email / phone</button>
+                    <button class="btn btn-secondary" id="fallback-cancel-btn" style="padding: 18px 28px; font-size: 1.08rem;">Close</button>
                 </div>
             </div>
         </div>
@@ -1447,8 +1447,32 @@ function AuthPortal(initialTab = 'login') {
                 googleBtn.onclick = () => handleSocialLoginFallback('google', window.selectedType || 'BUYER');
             }
         } else {
-            // Note: google.accounts.id.signIn 15_000 timeout safeguard
-            googleBtn.onclick = () => handleSocialLoginFallback('google', window.selectedType || 'BUYER');
+            // Wait for GIS to load on click, with a timeout fallback
+            googleBtn.onclick = () => {
+                if (!window.google?.accounts?.id || !window.publicConfig?.google_client_id) {
+                    googleBtn.disabled = true;
+                    googleBtn.innerHTML = '<span style="display:inline-block;width:14px;height:14px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:8px;vertical-align:middle;"></span> Loading Google...';
+                    let waited = 0;
+                    const waitForGis = setInterval(() => {
+                        waited += 100;
+                        if (window.google?.accounts?.id && window.publicConfig?.google_client_id) {
+                            clearInterval(waitForGis);
+                            renderGoogleBtnIfReady();
+                            // Sign in immediately after render — no second click needed
+                            try { window.google.accounts.id.signIn(); } catch(e) {}
+                        } else if (waited >= 8000) {
+                            clearInterval(waitForGis);
+                            googleBtn.disabled = false;
+                            googleBtn.innerHTML = 'Continue with Google';
+                            handleSocialLoginFallback('google', window.selectedType || 'BUYER');
+                        }
+                    }, 100);
+                } else {
+                    renderGoogleBtnIfReady();
+                    // Sign in immediately — no second click needed
+                    try { window.google.accounts.id.signIn(); } catch(e) {}
+                }
+            };
         }
     };
 
