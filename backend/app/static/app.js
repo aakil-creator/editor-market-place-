@@ -12,8 +12,30 @@ try {
 } catch (_) { }
 
 window.selectedType = 'BUYER';
-let publicConfig = { google_client_id: '', razorpay_key_id: 'rzp_test_placeholder' };
+let publicConfig = { google_client_id: '', razorpay_key_id: '' };
 window.publicConfig = publicConfig;
+
+// Global XSS HTML Escaping & URL Sanitization Helpers
+function escapeHTML(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+window.escapeHTML = escapeHTML;
+
+function sanitizeUrl(url) {
+    if (!url || typeof url !== 'string') return '#';
+    const trimmed = url.trim();
+    if (trimmed.startsWith('/') || trimmed.startsWith('https://') || trimmed.startsWith('http://') || trimmed.startsWith('mailto:') || trimmed.startsWith('tel:')) {
+        return escapeHTML(trimmed);
+    }
+    return '#';
+}
+window.sanitizeUrl = sanitizeUrl;
 
 async function fetchPublicConfig() {
     try {
@@ -132,7 +154,7 @@ function showSuspendedModal(detail) {
             </div>
             <h2 style="color: #ef4444; font-size: 1.35rem; font-weight: 800; margin: 0 0 10px;">Account Suspended</h2>
             <div style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 10px; padding: 12px 14px; margin-bottom: 18px; font-size: 0.85rem; color: var(--text-primary); text-align: left; line-height: 1.45;">
-                ${detail || 'Your account was suspended for attempting to exchange phone numbers or direct contact information outside Groove Hub.'}
+                ${escapeHTML(detail || 'Your account was suspended for attempting to exchange phone numbers or direct contact information outside Grove Hub.')}
             </div>
             <p style="font-size: 0.8125rem; color: var(--text-secondary); line-height: 1.5; margin: 0 0 20px;">
                 To protect buyers and creators under our <strong>100% Escrow Guarantee</strong>, Groove Hub strictly prohibits sharing phone numbers, WhatsApp, UPI, or external channels. All transactions and chats must remain on the platform.
@@ -9824,7 +9846,8 @@ function GrooveChat() {
         if (!area) return;
         const div = document.createElement('div');
         div.style.cssText = 'display: flex; gap: 8px; align-self: flex-start; animation: fadeIn 0.2s ease;';
-        div.innerHTML = `<div style="width: 28px; height: 28px; border-radius: 50%; background: var(--bg-hover); display: flex; align-items: center; justify-content: center; font-size: 0.75rem; color: var(--text-secondary); flex-shrink: 0;">🤖</div><div style="background: var(--bg-card); color: var(--text-primary); padding: 8px 12px; border-radius: 12px; border-bottom-left-radius: 4px; font-size: 0.825rem; line-height: 1.4; word-break: break-word; box-shadow: 0 1px 4px rgba(0,0,0,0.06); max-width: 90%;">${text.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}</div>`;
+        const safeText = escapeHTML(text || '').replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        div.innerHTML = `<div style="width: 28px; height: 28px; border-radius: 50%; background: var(--bg-hover); display: flex; align-items: center; justify-content: center; font-size: 0.75rem; color: var(--text-secondary); flex-shrink: 0;">🤖</div><div style="background: var(--bg-card); color: var(--text-primary); padding: 8px 12px; border-radius: 12px; border-bottom-left-radius: 4px; font-size: 0.825rem; line-height: 1.4; word-break: break-word; box-shadow: 0 1px 4px rgba(0,0,0,0.06); max-width: 90%;">${safeText}</div>`;
         area.appendChild(div);
         area.scrollTop = area.scrollHeight;
     }
@@ -9835,7 +9858,8 @@ function GrooveChat() {
         if (!area) return;
         const div = document.createElement('div');
         div.style.cssText = 'display: flex; gap: 8px; align-self: flex-end; flex-direction: row-reverse; animation: fadeIn 0.2s ease;';
-        div.innerHTML = `<div style="width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #a855f7); display: flex; align-items: center; justify-content: center; font-size: 0.75rem; color: white; flex-shrink: 0;">👤</div><div style="background: linear-gradient(135deg, #6366f1, #a855f7); color: white; padding: 8px 12px; border-radius: 12px; border-bottom-right-radius: 4px; font-size: 0.825rem; line-height: 1.4; word-break: break-word; box-shadow: 0 2px 8px rgba(99,102,241,0.3); max-width: 90%;">${text.replace(/\n/g, '<br>')}</div>`;
+        const safeText = escapeHTML(text || '').replace(/\n/g, '<br>');
+        div.innerHTML = `<div style="width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #a855f7); display: flex; align-items: center; justify-content: center; font-size: 0.75rem; color: white; flex-shrink: 0;">👤</div><div style="background: linear-gradient(135deg, #6366f1, #a855f7); color: white; padding: 8px 12px; border-radius: 12px; border-bottom-right-radius: 4px; font-size: 0.825rem; line-height: 1.4; word-break: break-word; box-shadow: 0 2px 8px rgba(99,102,241,0.3); max-width: 90%;">${safeText}</div>`;
         area.appendChild(div);
         area.scrollTop = area.scrollHeight;
     }

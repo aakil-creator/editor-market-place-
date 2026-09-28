@@ -193,7 +193,6 @@ class PackageResponse(BaseModel):
     revision_limit: int
     sample_reference: Optional[str] = None
     status: Optional[str] = "approved"
-    admin_notes: Optional[str] = None
     created_at: Optional[datetime] = None
 
     class Config:
