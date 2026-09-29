@@ -383,26 +383,6 @@ function hideLoading() {
     // No-op, appEl is replaced with content
 }
 
-// Netflix-Style App Opening Intro Splash (with Blooming Effect & Zoom)
-function triggerNetflixAppIntroSplash() {
-    let splash = document.getElementById('grove-netflix-splash');
-    if (!splash) {
-        splash = document.createElement('div');
-        splash.id = 'grove-netflix-splash';
-        document.body.appendChild(splash);
-    }
-    splash.innerHTML = `
-        <div class="bloom-halo"></div>
-        <div class="splash-logo-container">
-            ${renderGroveAnimatedLoader(340, true)}
-        </div>
-    `;
-    setTimeout(() => {
-        splash.remove();
-    }, 3150);
-}
-window.triggerNetflixAppIntroSplash = triggerNetflixAppIntroSplash;
-
 // Redirect to login if not authenticated
 async function requireAuth() {
     if (!currentToken) {
@@ -9925,9 +9905,8 @@ window.openReviewModal = (bookingId) => {
     };
 };
 
-// Initial render - detect current URL path & trigger Netflix-style intro splash
+// Initial render - detect current URL path
 const currentPath = window.location.pathname;
-triggerNetflixAppIntroSplash();
 router(currentPath || '/');
 
 // Handle 401 globally
