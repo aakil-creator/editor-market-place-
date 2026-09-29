@@ -1291,10 +1291,10 @@ div#btn-auth-google iframe {
 
 /* Grove Hub Animated Logo Loader Keyframes & Styles */
 :root {
-    --grove-logo-stroke: #E5D5C5;
+    --grove-logo-stroke: #9CA3AF;
 }
 [data-theme="dark"] {
-    --grove-logo-stroke: #E5D5C5;
+    --grove-logo-stroke: #9CA3AF;
 }
 
 .grove-sun-arc {
