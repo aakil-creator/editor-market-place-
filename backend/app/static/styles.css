@@ -1279,16 +1279,133 @@ div#btn-auth-google iframe {
 }
 
 .spinner {
-    width: 24px;
-    height: 24px;
-    border: 2px solid var(--border);
-    border-top-color: var(--accent);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
+    width: auto;
+    height: auto;
+    border: none;
+    border-radius: 0;
+    animation: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-@keyframes spin {
-    to { transform: rotate(360deg); }
+/* Grove Hub Animated Logo Loader Keyframes & Styles */
+:root {
+    --grove-logo-stroke: #4A3E3D;
+}
+[data-theme="dark"] {
+    --grove-logo-stroke: #EAE4DC;
+}
+
+.grove-sun-arc {
+    stroke-dasharray: 300;
+    stroke-dashoffset: 300;
+    animation: groveDrawSun 0.8s ease-out forwards 0.15s;
+}
+
+@keyframes groveDrawSun {
+    to { stroke-dashoffset: 0; }
+}
+
+.grove-sun-ray {
+    transform-origin: 250px 138px;
+    opacity: 0;
+    animation: groveRayPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes groveRayPop {
+    0% { opacity: 0; transform: scale(0.3); }
+    100% { opacity: 1; transform: scale(1); }
+}
+
+.grove-camera-outer {
+    stroke-dasharray: 550;
+    stroke-dashoffset: 550;
+    animation: groveDrawCamera 1s ease-out forwards 0.3s;
+}
+
+@keyframes groveDrawCamera {
+    to { stroke-dashoffset: 0; }
+}
+
+.grove-camera-inner {
+    opacity: 0;
+    animation: groveFadeInLine 0.4s ease-out forwards 0.8s;
+}
+
+@keyframes groveFadeInLine {
+    to { opacity: 1; }
+}
+
+.grove-lens-eye {
+    transform-origin: 250px 182px;
+    animation: groveEyeBlink 4s ease-in-out infinite 1.8s;
+}
+
+@keyframes groveEyeBlink {
+    0%, 88%, 94%, 100% { transform: scaleY(1) scaleX(1); }
+    91% { transform: scaleY(0.08) scaleX(1.1); }
+}
+
+.grove-lens-pulse {
+    transform-origin: 250px 182px;
+    animation: groveLensPulse 2.5s ease-in-out infinite alternate 1.6s;
+}
+
+@keyframes groveLensPulse {
+    0% { opacity: 0.3; transform: scale(0.92); }
+    100% { opacity: 0.85; transform: scale(1.12); }
+}
+
+.grove-vine-line {
+    stroke-dasharray: 450;
+    stroke-dashoffset: 450;
+    animation: groveDrawVine 1.3s ease-in-out forwards 0.4s;
+}
+
+@keyframes groveDrawVine {
+    to { stroke-dashoffset: 0; }
+}
+
+.grove-leaf {
+    transform-origin: center;
+    opacity: 0;
+    transform: scale(0);
+    animation: groveLeafSprout 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes groveLeafSprout {
+    0% { opacity: 0; transform: scale(0) rotate(-10deg); }
+    80% { transform: scale(1.15) rotate(3deg); }
+    100% { opacity: 1; transform: scale(1) rotate(0deg); }
+}
+
+.gl-1 { animation-delay: 0.6s; transform-origin: 130px 226px; }
+.gl-2 { animation-delay: 0.7s; transform-origin: 122px 208px; }
+.gl-3 { animation-delay: 0.8s; transform-origin: 114px 182px; }
+.gl-4 { animation-delay: 0.9s; transform-origin: 112px 158px; }
+.gl-5 { animation-delay: 1.0s; transform-origin: 117px 132px; }
+.gl-6 { animation-delay: 1.1s; transform-origin: 125px 106px; }
+.gl-7 { animation-delay: 1.2s; transform-origin: 138px 78px; }
+.gl-8 { animation-delay: 1.3s; transform-origin: 155px 48px; }
+
+.gr-1 { animation-delay: 0.6s; transform-origin: 370px 226px; }
+.gr-2 { animation-delay: 0.7s; transform-origin: 378px 208px; }
+.gr-3 { animation-delay: 0.8s; transform-origin: 386px 182px; }
+.gr-4 { animation-delay: 0.9s; transform-origin: 388px 158px; }
+.gr-5 { animation-delay: 1.0s; transform-origin: 383px 132px; }
+.gr-6 { animation-delay: 1.1s; transform-origin: 375px 106px; }
+.gr-7 { animation-delay: 1.2s; transform-origin: 362px 78px; }
+.gr-8 { animation-delay: 1.3s; transform-origin: 345px 48px; }
+
+.grove-brand-text {
+    opacity: 0;
+    transform: translateY(6px);
+    animation: groveTextAppear 0.5s ease-out forwards 1.3s;
+}
+
+@keyframes groveTextAppear {
+    to { opacity: 1; transform: translateY(0); }
 }
 
 .toast {
