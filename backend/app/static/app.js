@@ -337,36 +337,36 @@ function renderGroveAnimatedLoader(size = 140, showText = true) {
           <line class="grove-sun-ray" style="animation-delay: 0.3s;" x1="342" y1="120" x2="372" y2="104" stroke="#FFC107" stroke-width="4.5" stroke-linecap="round" />
         </g>
         <g class="grove-camera-group">
-          <path class="grove-camera-outer" d="M 190 220 L 190 162 C 190 150 205 144 220 144 C 225 144 230 133 238 133 L 262 133 C 270 133 275 144 280 144 C 295 144 310 150 310 162 L 310 220" stroke="var(--grove-logo-stroke, #4A3E3D)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none" />
-          <line class="grove-camera-inner" x1="205" y1="168" x2="205" y2="218" stroke="var(--grove-logo-stroke, #4A3E3D)" stroke-width="4.5" stroke-linecap="round" />
-          <line class="grove-camera-inner" x1="295" y1="168" x2="295" y2="218" stroke="var(--grove-logo-stroke, #4A3E3D)" stroke-width="4.5" stroke-linecap="round" />
-          <circle stroke="var(--grove-logo-stroke, #4A3E3D)" cx="250" cy="182" r="26" stroke-width="5" fill="none" />
+          <path class="grove-camera-outer" d="M 190 220 L 190 162 C 190 150 205 144 220 144 C 225 144 230 133 238 133 L 262 133 C 270 133 275 144 280 144 C 295 144 310 150 310 162 L 310 220" stroke="var(--grove-logo-stroke, #E5D5C5)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+          <line class="grove-camera-inner" x1="205" y1="168" x2="205" y2="218" stroke="var(--grove-logo-stroke, #E5D5C5)" stroke-width="4.5" stroke-linecap="round" />
+          <line class="grove-camera-inner" x1="295" y1="168" x2="295" y2="218" stroke="var(--grove-logo-stroke, #E5D5C5)" stroke-width="4.5" stroke-linecap="round" />
+          <circle stroke="var(--grove-logo-stroke, #E5D5C5)" cx="250" cy="182" r="26" stroke-width="5" fill="none" />
           <circle class="grove-lens-pulse" cx="250" cy="182" r="21" fill="#6ED6EF" opacity="0.4" filter="url(#loaderLensGlow)" />
-          <circle class="grove-lens-eye" cx="250" cy="182" r="21.5" fill="#6ED6EF" stroke="#4A3E3D" stroke-width="3.5" />
+          <circle class="grove-lens-eye" cx="250" cy="182" r="21.5" fill="#6ED6EF" stroke="#E5D5C5" stroke-width="3.5" />
         </g>
-        <path class="grove-vine-line" d="M 190 220 C 160 245 128 238 116 195 C 103 145 125 82 155 45" stroke="var(--grove-logo-stroke, #4A3E3D)" stroke-width="5" stroke-linecap="round" fill="none" />
-        <path class="grove-vine-line" d="M 310 220 C 340 245 372 238 384 195 C 397 145 375 82 345 45" stroke="var(--grove-logo-stroke, #4A3E3D)" stroke-width="5" stroke-linecap="round" fill="none" />
+        <path class="grove-vine-line" d="M 190 220 C 160 245 128 238 116 195 C 103 145 125 82 155 45" stroke="var(--grove-logo-stroke, #E5D5C5)" stroke-width="5" stroke-linecap="round" fill="none" />
+        <path class="grove-vine-line" d="M 310 220 C 340 245 372 238 384 195 C 397 145 375 82 345 45" stroke="var(--grove-logo-stroke, #E5D5C5)" stroke-width="5" stroke-linecap="round" fill="none" />
         <g class="grove-leaves">
-          <path class="grove-leaf gl-1" d="M 130 226 C 108 240 88 226 96 206 C 118 204 132 216 130 226 Z" fill="#85DC73" stroke="#4A3E3D" stroke-width="2.5" />
-          <path class="grove-leaf gl-2" d="M 122 208 C 138 214 150 196 142 184 C 126 186 116 198 122 208 Z" fill="#56C9A3" stroke="#4A3E3D" stroke-width="2.5" />
-          <path class="grove-leaf gl-3" d="M 114 182 C 90 184 76 166 90 152 C 108 156 118 172 114 182 Z" fill="#85DC73" stroke="#4A3E3D" stroke-width="2.5" />
-          <path class="grove-leaf gl-4" d="M 112 158 C 128 160 142 144 134 132 C 118 136 108 148 112 158 Z" fill="#56C9A3" stroke="#4A3E3D" stroke-width="2.5" />
-          <path class="grove-leaf gl-5" d="M 117 132 C 94 126 86 106 104 96 C 120 104 124 122 117 132 Z" fill="#85DC73" stroke="#4A3E3D" stroke-width="2.5" />
-          <path class="grove-leaf gl-6" d="M 125 106 C 144 104 152 86 140 76 C 124 82 118 96 125 106 Z" fill="#56C9A3" stroke="#4A3E3D" stroke-width="2.5" />
-          <path class="grove-leaf gl-7" d="M 138 78 C 118 64 122 44 140 44 C 150 58 146 72 138 78 Z" fill="#85DC73" stroke="#4A3E3D" stroke-width="2.5" />
-          <path class="grove-leaf gl-8" d="M 155 48 C 145 28 162 16 174 28 C 172 46 162 54 155 48 Z" fill="#56C9A3" stroke="#4A3E3D" stroke-width="2.5" />
-          <path class="grove-leaf gr-1" d="M 370 226 C 392 240 412 226 404 206 C 382 204 368 216 370 226 Z" fill="#85DC73" stroke="#4A3E3D" stroke-width="2.5" />
-          <path class="grove-leaf gr-2" d="M 378 208 C 362 214 350 196 358 184 C 374 186 384 198 378 208 Z" fill="#56C9A3" stroke="#4A3E3D" stroke-width="2.5" />
-          <path class="grove-leaf gr-3" d="M 386 182 C 410 184 424 166 410 152 C 392 156 382 172 386 182 Z" fill="#85DC73" stroke="#4A3E3D" stroke-width="2.5" />
-          <path class="grove-leaf gr-4" d="M 388 158 C 372 160 358 144 366 132 C 382 136 392 148 388 158 Z" fill="#56C9A3" stroke="#4A3E3D" stroke-width="2.5" />
-          <path class="grove-leaf gr-5" d="M 383 132 C 406 126 414 106 396 96 C 380 104 376 122 383 132 Z" fill="#85DC73" stroke="#4A3E3D" stroke-width="2.5" />
-          <path class="grove-leaf gr-6" d="M 375 106 C 356 104 348 86 360 76 C 376 82 382 96 375 106 Z" fill="#56C9A3" stroke="#4A3E3D" stroke-width="2.5" />
-          <path class="grove-leaf gr-7" d="M 362 78 C 382 64 378 44 360 44 C 350 58 354 72 362 78 Z" fill="#85DC73" stroke="#4A3E3D" stroke-width="2.5" />
-          <path class="grove-leaf gr-8" d="M 345 48 C 355 28 338 16 326 28 C 328 46 338 54 345 48 Z" fill="#56C9A3" stroke="#4A3E3D" stroke-width="2.5" />
+          <path class="grove-leaf gl-1" d="M 130 226 C 108 240 88 226 96 206 C 118 204 132 216 130 226 Z" fill="#85DC73" stroke="#E5D5C5" stroke-width="2.5" />
+          <path class="grove-leaf gl-2" d="M 122 208 C 138 214 150 196 142 184 C 126 186 116 198 122 208 Z" fill="#56C9A3" stroke="#E5D5C5" stroke-width="2.5" />
+          <path class="grove-leaf gl-3" d="M 114 182 C 90 184 76 166 90 152 C 108 156 118 172 114 182 Z" fill="#85DC73" stroke="#E5D5C5" stroke-width="2.5" />
+          <path class="grove-leaf gl-4" d="M 112 158 C 128 160 142 144 134 132 C 118 136 108 148 112 158 Z" fill="#56C9A3" stroke="#E5D5C5" stroke-width="2.5" />
+          <path class="grove-leaf gl-5" d="M 117 132 C 94 126 86 106 104 96 C 120 104 124 122 117 132 Z" fill="#85DC73" stroke="#E5D5C5" stroke-width="2.5" />
+          <path class="grove-leaf gl-6" d="M 125 106 C 144 104 152 86 140 76 C 124 82 118 96 125 106 Z" fill="#56C9A3" stroke="#E5D5C5" stroke-width="2.5" />
+          <path class="grove-leaf gl-7" d="M 138 78 C 118 64 122 44 140 44 C 150 58 146 72 138 78 Z" fill="#85DC73" stroke="#E5D5C5" stroke-width="2.5" />
+          <path class="grove-leaf gl-8" d="M 155 48 C 145 28 162 16 174 28 C 172 46 162 54 155 48 Z" fill="#56C9A3" stroke="#E5D5C5" stroke-width="2.5" />
+          <path class="grove-leaf gr-1" d="M 370 226 C 392 240 412 226 404 206 C 382 204 368 216 370 226 Z" fill="#85DC73" stroke="#E5D5C5" stroke-width="2.5" />
+          <path class="grove-leaf gr-2" d="M 378 208 C 362 214 350 196 358 184 C 374 186 384 198 378 208 Z" fill="#56C9A3" stroke="#E5D5C5" stroke-width="2.5" />
+          <path class="grove-leaf gr-3" d="M 386 182 C 410 184 424 166 410 152 C 392 156 382 172 386 182 Z" fill="#85DC73" stroke="#E5D5C5" stroke-width="2.5" />
+          <path class="grove-leaf gr-4" d="M 388 158 C 372 160 358 144 366 132 C 382 136 392 148 388 158 Z" fill="#56C9A3" stroke="#E5D5C5" stroke-width="2.5" />
+          <path class="grove-leaf gr-5" d="M 383 132 C 406 126 414 106 396 96 C 380 104 376 122 383 132 Z" fill="#85DC73" stroke="#E5D5C5" stroke-width="2.5" />
+          <path class="grove-leaf gr-6" d="M 375 106 C 356 104 348 86 360 76 C 376 82 382 96 375 106 Z" fill="#56C9A3" stroke="#E5D5C5" stroke-width="2.5" />
+          <path class="grove-leaf gr-7" d="M 362 78 C 382 64 378 44 360 44 C 350 58 354 72 362 78 Z" fill="#85DC73" stroke="#E5D5C5" stroke-width="2.5" />
+          <path class="grove-leaf gr-8" d="M 345 48 C 355 28 338 16 326 28 C 328 46 338 54 345 48 Z" fill="#56C9A3" stroke="#E5D5C5" stroke-width="2.5" />
         </g>
         ${showText ? `
         <g class="grove-brand-text">
-          <text x="250" y="315" text-anchor="middle" fill="var(--text-primary, #4A3E3D)" font-family="system-ui, -apple-system, sans-serif" font-size="32" font-weight="700" letter-spacing="5">GROVE HUB</text>
+          <text x="250" y="315" text-anchor="middle" fill="var(--grove-logo-stroke, #E5D5C5)" font-family="system-ui, -apple-system, sans-serif" font-size="32" font-weight="700" letter-spacing="5">GROVE HUB</text>
         </g>` : ''}
       </svg>
     </div>
