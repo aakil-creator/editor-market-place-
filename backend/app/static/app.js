@@ -383,6 +383,25 @@ function hideLoading() {
     // No-op, appEl is replaced with content
 }
 
+// Netflix-Style App Opening Intro Splash
+function triggerNetflixAppIntroSplash() {
+    let splash = document.getElementById('grove-netflix-splash');
+    if (!splash) {
+        splash = document.createElement('div');
+        splash.id = 'grove-netflix-splash';
+        document.body.appendChild(splash);
+    }
+    splash.innerHTML = `
+        <div class="splash-logo-container">
+            ${renderGroveAnimatedLoader(320, true)}
+        </div>
+    `;
+    setTimeout(() => {
+        splash.remove();
+    }, 3050);
+}
+window.triggerNetflixAppIntroSplash = triggerNetflixAppIntroSplash;
+
 // Redirect to login if not authenticated
 async function requireAuth() {
     if (!currentToken) {
@@ -9905,8 +9924,9 @@ window.openReviewModal = (bookingId) => {
     };
 };
 
-// Initial render - detect current URL path
+// Initial render - detect current URL path & trigger Netflix-style intro splash
 const currentPath = window.location.pathname;
+triggerNetflixAppIntroSplash();
 router(currentPath || '/');
 
 // Handle 401 globally
