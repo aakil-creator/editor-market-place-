@@ -383,7 +383,7 @@ function hideLoading() {
     // No-op, appEl is replaced with content
 }
 
-// Netflix-Style App Opening Intro Splash
+// Netflix-Style App Opening Intro Splash (with Blooming Effect & Zoom)
 function triggerNetflixAppIntroSplash() {
     let splash = document.getElementById('grove-netflix-splash');
     if (!splash) {
@@ -392,13 +392,14 @@ function triggerNetflixAppIntroSplash() {
         document.body.appendChild(splash);
     }
     splash.innerHTML = `
+        <div class="bloom-halo"></div>
         <div class="splash-logo-container">
-            ${renderGroveAnimatedLoader(320, true)}
+            ${renderGroveAnimatedLoader(340, true)}
         </div>
     `;
     setTimeout(() => {
         splash.remove();
-    }, 3050);
+    }, 3150);
 }
 window.triggerNetflixAppIntroSplash = triggerNetflixAppIntroSplash;
 
