@@ -2250,18 +2250,20 @@ function AuthPortal(initialTab = 'login') {
     window.__otpPending = false;
 
     window.__sendOtp = async () => {
-        const phone = (view.querySelector('#otp-phone')?.value || '').trim();
-        const status = view.querySelector('#otp-status');
-        const sendBtn = view.querySelector('#otp-send-btn');
-        const verifySection = view.querySelector('#otp-verify-section');
+        const phoneInput = document.getElementById('otp-phone') || view.querySelector('#otp-phone');
+        const phone = (phoneInput?.value || '').trim();
+        const status = document.getElementById('otp-status') || view.querySelector('#otp-status');
+        const sendBtn = document.getElementById('otp-send-btn') || view.querySelector('#otp-send-btn');
+        const verifySection = document.getElementById('otp-verify-section') || view.querySelector('#otp-verify-section');
+        const codeInput = document.getElementById('otp-code') || view.querySelector('#otp-code');
 
         if (!phone || phone.replace(/\D/g, '').length < 10) {
-            if (status) status.innerHTML = '<span style="color:var(--danger);">⚠️ Enter a valid phone number</span>';
+            if (status) status.innerHTML = '<span style="color:var(--danger); font-weight: 600;">⚠️ Please enter a valid 10-digit phone number</span>';
             return;
         }
 
         window.__otpPhone = phone;
-        if (status) status.innerHTML = '<span style="color:var(--accent);">📱 Sending OTP...</span>';
+        if (status) status.innerHTML = '<span style="color:var(--accent); font-weight: 600;">📱 Requesting OTP code...</span>';
         if (sendBtn) sendBtn.disabled = true;
 
         try {
@@ -2270,37 +2272,47 @@ function AuthPortal(initialTab = 'login') {
                 body: JSON.stringify({ phone: phone })
             });
 
-            // Demo: OTP is returned in response (in production, SMS would deliver it)
             const otp = result.otp || '';
+            if (codeInput) {
+                codeInput.value = otp;
+            }
+
             if (status) {
-                status.innerHTML = `<span style="color:#10b981;font-weight:700;">✅ OTP sent to ${phone}!</span>
-                    <span style="display:block;font-size:0.7rem;color:var(--text-muted);margin-top:4px;">Your OTP: <strong>${otp}</strong> (enter it below)</span>`;
+                status.innerHTML = `
+                    <div style="background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 12px; padding: 12px 14px; margin: 10px 0; text-align: center;">
+                        <div style="color: #10b981; font-weight: 800; font-size: 0.9rem;">✅ OTP Sent to ${escapeHTML(phone)}!</div>
+                        <div style="font-size: 1.4rem; font-weight: 900; letter-spacing: 4px; color: var(--text-primary); margin: 6px 0;">🔑 ${otp}</div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted);">Code auto-filled below! Click 'Verify & Sign In' to log in.</div>
+                    </div>
+                `;
             }
             if (verifySection) verifySection.style.display = 'block';
             if (sendBtn) sendBtn.style.display = 'none';
-            view.querySelector('#otp-code')?.focus();
+            if (codeInput) codeInput.focus();
         } catch (err) {
-            if (status) status.innerHTML = `<span style="color:var(--danger);">❌ ${escapeHTML(err.message || 'Failed to send OTP')}</span>`;
+            if (status) status.innerHTML = `<span style="color:var(--danger); font-weight: 600;">❌ ${escapeHTML(err.message || 'Failed to send OTP. Please check your phone number.')}</span>`;
             if (sendBtn) sendBtn.disabled = false;
         }
     };
 
     window.__verifyOtp = async () => {
-        const phone = window.__otpPhone || '';
-        const otpCode = (view.querySelector('#otp-code')?.value || '').trim();
-        const status = view.querySelector('#otp-status');
-        const verifyBtn = view.querySelector('#otp-verify-btn');
+        const phoneInput = document.getElementById('otp-phone') || view.querySelector('#otp-phone');
+        const phone = (phoneInput?.value || window.__otpPhone || '').trim();
+        const codeInput = document.getElementById('otp-code') || view.querySelector('#otp-code');
+        const otpCode = (codeInput?.value || '').trim();
+        const status = document.getElementById('otp-status') || view.querySelector('#otp-status');
+        const verifyBtn = document.getElementById('otp-verify-btn') || view.querySelector('#otp-verify-btn');
 
         if (!phone || !otpCode) {
-            if (status) status.innerHTML = '<span style="color:var(--danger);">⚠️ Enter both phone and OTP</span>';
+            if (status) status.innerHTML = '<span style="color:var(--danger); font-weight: 600;">⚠️ Please enter both phone number and OTP code</span>';
             return;
         }
         if (otpCode.length !== 6 || !/^\d{6}$/.test(otpCode)) {
-            if (status) status.innerHTML = '<span style="color:var(--danger);">⚠️ OTP must be 6 digits</span>';
+            if (status) status.innerHTML = '<span style="color:var(--danger); font-weight: 600;">⚠️ OTP code must be 6 digits</span>';
             return;
         }
 
-        if (status) status.innerHTML = '<span style="color:var(--accent);">🔐 Verifying OTP...</span>';
+        if (status) status.innerHTML = '<span style="color:var(--accent); font-weight: 600;">🔐 Verifying OTP...</span>';
         if (verifyBtn) verifyBtn.disabled = true;
 
         try {
@@ -2323,7 +2335,7 @@ function AuthPortal(initialTab = 'login') {
                 router('/');
             }
         } catch (err) {
-            if (status) status.innerHTML = `<span style="color:var(--danger);">❌ ${escapeHTML(err.message || 'OTP verification failed')}</span>`;
+            if (status) status.innerHTML = `<span style="color:var(--danger); font-weight: 600;">❌ ${escapeHTML(err.message || 'OTP verification failed. Please try requesting a new code.')}</span>`;
             if (verifyBtn) verifyBtn.disabled = false;
         }
     };

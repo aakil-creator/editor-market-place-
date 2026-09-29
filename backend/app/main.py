@@ -1033,25 +1033,31 @@ def social_login(req: SocialLoginRequest, request: Request, db = Depends(get_db)
 
 @api_app.post("/auth/otp-request", response_model=OtpResponse)
 def request_otp(req: OtpRequest, request: Request, db = Depends(get_db)):
-    """Generate and store a 6-digit OTP for the given phone. Returns OTP for demo/client verification."""
+    """Generate and store a 6-digit OTP for the given phone number."""
     import random
     raw_phone = req.phone.strip()
     digits = re.sub(r'\D', '', raw_phone)
     if not digits or len(digits) < 10:
-        raise HTTPException(status_code=400, detail="Valid phone number required")
-    check_rate_limit(f"otp-req:{digits}", limit=5, window_seconds=600)
+        raise HTTPException(status_code=400, detail="Valid 10-digit phone number required")
+    clean_phone = digits[-10:]
+
+    check_rate_limit(f"otp-req:{clean_phone}", limit=30, window_seconds=300)
 
     user = db.query(User).filter(
-        or_(User.phone == raw_phone, User.phone == digits)
+        or_(
+            User.phone == clean_phone,
+            User.phone == raw_phone,
+            User.phone.like(f"%{clean_phone}")
+        )
     ).first()
 
     if not user:
         user_type_enum = UserType.BUYER
         user = User(
-            name=digits[:15],
-            phone=raw_phone,
-            email=f"{digits}@phonelogin.groovehub.local",
-            password_hash=hash_password(f"otp_{digits}_{random.randint(10000, 99999)}"),
+            name=f"User {clean_phone[-4:]}",
+            phone=clean_phone,
+            email=f"{clean_phone}@phonelogin.groovehub.local",
+            password_hash=hash_password(f"otp_{clean_phone}_{random.randint(10000, 99999)}"),
             user_type=user_type_enum,
             is_verified=True,
             is_active=True
@@ -1065,14 +1071,21 @@ def request_otp(req: OtpRequest, request: Request, db = Depends(get_db)):
         db.commit()
 
     db.query(OtpVerification).filter(
-        and_(OtpVerification.phone == raw_phone, OtpVerification.used == False)
-    ).update({"used": True})
+        and_(
+            or_(
+                OtpVerification.phone == clean_phone,
+                OtpVerification.phone == raw_phone,
+                OtpVerification.phone.like(f"%{clean_phone}")
+            ),
+            OtpVerification.used == False
+        )
+    ).update({"used": True}, synchronize_session=False)
 
     otp_code = str(random.randint(100000, 999999))
-    expires_at = datetime.utcnow() + timedelta(minutes=10)
+    expires_at = datetime.utcnow() + timedelta(minutes=15)
 
     otp_record = OtpVerification(
-        phone=raw_phone,
+        phone=clean_phone,
         otp_code=otp_code,
         expires_at=expires_at,
         used=False
@@ -1095,37 +1108,45 @@ def verify_otp(req: OtpVerifyRequest, request: Request, db = Depends(get_db)):
     raw_phone = req.phone.strip()
     digits = re.sub(r'\D', '', raw_phone)
     if not digits or len(digits) < 10:
-        raise HTTPException(status_code=400, detail="Valid phone number required")
-    check_rate_limit(f"otp-verify:{digits}", limit=10, window_seconds=300)
+        raise HTTPException(status_code=400, detail="Valid 10-digit phone number required")
+    clean_phone = digits[-10:]
 
     otp_record = db.query(OtpVerification).filter(
         and_(
-            OtpVerification.phone == raw_phone,
+            or_(
+                OtpVerification.phone == clean_phone,
+                OtpVerification.phone == raw_phone,
+                OtpVerification.phone.like(f"%{clean_phone}")
+            ),
             OtpVerification.used == False,
             OtpVerification.expires_at > datetime.utcnow()
         )
     ).order_by(OtpVerification.created_at.desc()).first()
 
     if not otp_record:
-        raise HTTPException(status_code=400, detail="OTP expired or not found. Request a new one.")
+        raise HTTPException(status_code=400, detail="OTP expired or not found. Please click 'Send OTP Code' to request a new code.")
 
-    if otp_record.otp_code != req.otp:
-        raise HTTPException(status_code=401, detail="Invalid OTP")
+    if otp_record.otp_code != req.otp.strip():
+        raise HTTPException(status_code=401, detail="Incorrect 6-digit OTP code. Please check the code and try again.")
 
     otp_record.used = True
     db.commit()
 
     user = db.query(User).filter(
-        or_(User.phone == raw_phone, User.phone == digits)
+        or_(
+            User.phone == clean_phone,
+            User.phone == raw_phone,
+            User.phone.like(f"%{clean_phone}")
+        )
     ).first()
 
     if not user:
         user_type_enum = UserType.BUYER
         user = User(
-            name=digits[:15],
-            phone=raw_phone,
-            email=f"{digits}@phonelogin.groovehub.local",
-            password_hash=hash_password(f"otp_{digits}_{random.randint(10000, 99999)}"),
+            name=f"User {clean_phone[-4:]}",
+            phone=clean_phone,
+            email=f"{clean_phone}@phonelogin.groovehub.local",
+            password_hash=hash_password(f"otp_{clean_phone}_{random.randint(10000, 99999)}"),
             user_type=user_type_enum,
             is_verified=True,
             is_active=True
@@ -1510,8 +1531,7 @@ def get_package(package_id: int, current_user = Depends(get_current_user), db = 
 @api_app.post("/packages", response_model=PackageResponse)
 def create_package(package_data: PackageCreate, current_user = Depends(get_current_user), db = Depends(get_db)):
     if current_user.user_type != UserType.PROVIDER:
-        current_user.user_type = UserType.PROVIDER
-        db.commit()
+        raise HTTPException(status_code=403, detail="Only providers can create service packages.")
 
     profile = db.query(Profile).filter(Profile.user_id == current_user.id).first()
     if not profile:
