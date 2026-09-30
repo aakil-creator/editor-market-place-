@@ -6190,7 +6190,7 @@ function CreateBooking() {
         const upiId = (window.publicConfig && window.publicConfig.owner_upi_id) || 'rahura2026@oksbi';
         const payeeName = (window.publicConfig && window.publicConfig.owner_account_holder) || 'RAHURA';
         const amount = selectedPkg.price || 0;
-        const upiLink = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(payeeName)}&am=${encodeURIComponent(amount)}&cu=INR&tn=${encodeURIComponent(`Syncra Escrow Order #${orderData.booking_id}`)}`;
+        const upiLink = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(payeeName)}&am=${encodeURIComponent(amount)}&cu=INR&tn=${encodeURIComponent(`Groove Hub Escrow Order #${orderData.booking_id}`)}`;
         const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=8&data=${encodeURIComponent(upiLink)}`;
 
         modal.innerHTML = `
