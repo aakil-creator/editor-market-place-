@@ -11,6 +11,48 @@ try {
     if (savedUser) currentUser = JSON.parse(savedUser);
 } catch (_) { }
 
+// --- Theme & Appearance Presets System ---
+const THEME_PRESETS = [
+    { id: 'lavender', name: 'Lavender Pearl', color: '#9169c1', bg: '#f6f4fc', desc: 'Default — Soft lavender background with royal amethyst & #D3D3FF accents', badge: 'Default' },
+    { id: 'ocean', name: 'Ocean Sapphire', color: '#0284c7', bg: '#f0f7ff', desc: 'Crisp sky blue with deep ocean sapphire accents', badge: 'Cool' },
+    { id: 'emerald', name: 'Emerald Studio', color: '#059669', bg: '#f0fdf4', desc: 'Fresh mint with pro creator emerald green', badge: 'Vibrant' },
+    { id: 'crimson', name: 'Crimson Sunset', color: '#e11d48', bg: '#fff1f2', desc: 'Warm rose with vibrant ruby red accents', badge: 'Warm' },
+    { id: 'midnight', name: 'Midnight Cyber', color: '#818cf8', bg: '#0b0f19', desc: 'Deep cosmic dark mode with indigo neon', badge: 'Dark OLED' }
+];
+
+let currentThemePreset = localStorage.getItem('groove_theme_preset') || 'lavender';
+let currentThemeMode = localStorage.getItem('groove_theme_mode') || 'light';
+
+function applyTheme(preset, mode) {
+    if (preset) currentThemePreset = preset;
+    if (mode) currentThemeMode = mode;
+    localStorage.setItem('groove_theme_preset', currentThemePreset);
+    localStorage.setItem('groove_theme_mode', currentThemeMode);
+    
+    document.documentElement.setAttribute('data-theme-preset', currentThemePreset);
+    if (currentThemeMode === 'dark' || currentThemePreset === 'midnight') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+    } else {
+        document.documentElement.setAttribute('data-theme', 'light');
+    }
+
+    // Refresh settings view if open
+    if (window.location.hash.startsWith('#/settings') || window.location.pathname.startsWith('/settings')) {
+        const prefContainer = document.getElementById('theme-options-container');
+        if (prefContainer && typeof renderThemeOptionsHTML === 'function') {
+            prefContainer.innerHTML = renderThemeOptionsHTML();
+        }
+    }
+}
+window.applyTheme = applyTheme;
+window.THEME_PRESETS = THEME_PRESETS;
+window.toggleThemeMode = function() {
+    applyTheme(currentThemePreset, currentThemeMode === 'dark' ? 'light' : 'dark');
+};
+
+// Apply saved theme immediately on load
+applyTheme(currentThemePreset, currentThemeMode);
+
 window.selectedType = 'BUYER';
 let publicConfig = { google_client_id: '', razorpay_key_id: '' };
 window.publicConfig = publicConfig;
@@ -886,9 +928,30 @@ function renderProfileMenu() {
 
             <div class="profile-menu-divider"></div>
 
+            <!-- Theme & Appearance -->
+            <div class="profile-menu-section">
+                <div class="profile-menu-section-title" style="display:flex;justify-content:space-between;align-items:center;">
+                    <span>Theme Preset</span>
+                    <button type="button" onclick="window.toggleThemeMode()" style="background:none;border:none;color:var(--accent);font-size:0.75rem;cursor:pointer;font-weight:700;">
+                        ${currentThemeMode === 'dark' ? '☀️ Light' : '🌙 Dark'}
+                    </button>
+                </div>
+                <div style="display:flex;gap:8px;padding:6px 14px 10px;overflow-x:auto;">
+                    ${THEME_PRESETS.map(t => `
+                        <button type="button" onclick="applyTheme('${t.id}');" title="${t.name}" style="width:28px;height:28px;border-radius:50%;background:${t.color};border:2px solid ${currentThemePreset === t.id ? '#ffffff' : 'transparent'};box-shadow:${currentThemePreset === t.id ? '0 0 0 2px var(--accent)' : 'none'};cursor:pointer;flex-shrink:0;transition:transform 0.15s ease;">
+                        </button>
+                    `).join('')}
+                </div>
+            </div>
+
             <!-- Account, Mode Switch & Sign Out -->
             <div class="profile-menu-section">
                 <div class="profile-menu-section-title">Account</div>
+                <button class="profile-menu-item" onclick="openSettingsTab('preferences')">
+                    <span class="profile-menu-item-icon">🎨</span>
+                    <span>Display & Theme</span>
+                    <span class="profile-menu-item-badge">${THEME_PRESETS.find(t=>t.id===currentThemePreset)?.name || 'Lavender'}</span>
+                </button>
                 <button class="profile-menu-item" onclick="openSettingsTab('account')">
                     <span class="profile-menu-item-icon">⚙️</span>
                     <span>Account & Security</span>
@@ -5733,28 +5796,44 @@ function Settings() {
                     </div>
                 ` : ''}
 
-                <!-- Tab 5: Preferences -->
+                <!-- Tab 5: Preferences & Theme Palette -->
                 ${activeSettingsTab === 'preferences' ? `
-                    <div class="card" style="max-width: 480px;">
-                        <div class="card-header">
-                            <div class="card-title">Display & Application Preferences</div>
+                    <div class="card" style="max-width: 640px;">
+                        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                            <div>
+                                <div class="card-title">🎨 Theme &amp; Color Palette</div>
+                                <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 2px;">
+                                    Choose your workspace accent theme. Default is <strong>Lavender Pearl</strong>.
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="window.toggleThemeMode()" style="font-weight: 700; border-radius: 8px;">
+                                ${currentThemeMode === 'dark' ? '☀️ Switch to Light' : '🌙 Switch to Dark'}
+                            </button>
                         </div>
                         <div class="card-body">
-                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border);">
-                                <div>
-                                    <strong style="font-size: 0.875rem; color: var(--text-primary);">Appearance Theme</strong>
-                                    <p style="font-size: 0.75rem; color: var(--text-muted); margin: 0;">Switch between light and dark mode</p>
-                                </div>
-                                <button type="button" class="btn btn-secondary btn-sm" onclick="toggleTheme()" style="width: auto;">
-                                    ${currentTheme === 'dark' ? '☀️ Switch to Light' : '🌙 Switch to Dark'}
-                                </button>
+                            <div id="theme-options-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; margin-bottom: 20px;">
+                                ${THEME_PRESETS.map(t => `
+                                    <div onclick="applyTheme('${t.id}');" style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 12px; border: 2px solid ${currentThemePreset === t.id ? 'var(--accent)' : 'var(--border)'}; background: ${currentThemePreset === t.id ? 'var(--bg-hover)' : 'var(--bg-card)'}; cursor: pointer; transition: all 0.2s ease; box-shadow: ${currentThemePreset === t.id ? 'var(--shadow)' : 'none'};">
+                                        <div style="width: 38px; height: 38px; border-radius: 10px; background: ${t.color}; display: flex; align-items: center; justify-content: center; color: #ffffff; font-size: 1rem; font-weight: 800; flex-shrink: 0; box-shadow: 0 4px 10px ${t.color}40;">
+                                            ${currentThemePreset === t.id ? '✓' : ''}
+                                        </div>
+                                        <div style="flex: 1; min-width: 0;">
+                                            <div style="display: flex; align-items: center; justify-content: space-between; gap: 4px;">
+                                                <strong style="font-size: 0.875rem; color: var(--text-primary);">${t.name}</strong>
+                                                <span class="badge ${currentThemePreset === t.id ? 'badge-primary' : 'badge-secondary'}" style="font-size: 0.65rem; padding: 2px 6px;">${t.badge}</span>
+                                            </div>
+                                            <p style="font-size: 0.72rem; color: var(--text-muted); margin: 3px 0 0; line-height: 1.3;">${t.desc}</p>
+                                        </div>
+                                    </div>
+                                `).join('')}
                             </div>
-                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0;">
+
+                            <div style="padding: 12px 16px; border-radius: 10px; background: var(--bg-hover); border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
                                 <div>
-                                    <strong style="font-size: 0.875rem; color: var(--text-primary);">PWA Status</strong>
-                                    <p style="font-size: 0.75rem; color: var(--text-muted); margin: 0;">Progressive Web App installation</p>
+                                    <strong style="font-size: 0.825rem; color: var(--text-primary);">📱 App &amp; Device Sync</strong>
+                                    <p style="font-size: 0.72rem; color: var(--text-muted); margin: 2px 0 0;">Theme preferences persist automatically across mobile, PWA, and desktop.</p>
                                 </div>
-                                <span class="badge badge-success">Ready</span>
+                                <span class="badge badge-success" style="font-size: 0.7rem;">Active</span>
                             </div>
                         </div>
                     </div>
