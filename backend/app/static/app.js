@@ -91,8 +91,9 @@ function resolveMediaThumbnail(url) {
     const safe = url.trim();
     if (!safe) return '';
     if (
-        safe.endsWith('.jpg') || safe.endsWith('.jpeg') || safe.endsWith('.png') ||
-        safe.endsWith('.webp') || safe.startsWith('/static/') || safe.startsWith('data:image')
+        safe.startsWith('/static/') || safe.startsWith('data:image') || safe.startsWith('blob:') ||
+        safe.includes('images.unsplash.com') ||
+        /\.(jpg|jpeg|png|webp|gif|svg|avif)(\?.*)?$/i.test(safe)
     ) {
         return safe;
     }
@@ -110,12 +111,15 @@ function resolveMediaThumbnail(url) {
             return `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
         }
     } catch (_) {}
+    if (safe.startsWith('http://') || safe.startsWith('https://')) {
+        return safe;
+    }
     return '';
 }
 window.resolveMediaThumbnail = resolveMediaThumbnail;
 
 function getProviderThumbnail(provider, pkg) {
-    // 1. Check Package sample reference or cover
+    // 1. Check Package sample reference or cover image
     if (pkg) {
         if (pkg.sample_reference) {
             const resolved = resolveMediaThumbnail(pkg.sample_reference);
@@ -127,9 +131,19 @@ function getProviderThumbnail(provider, pkg) {
         }
     }
 
-    // 2. Check Provider's uploaded portfolio items (photos, thumbnails, sample reel video thumbnails)
-    if (provider && Array.isArray(provider.portfolio_items) && provider.portfolio_items.length > 0) {
-        for (const item of provider.portfolio_items) {
+    // 2. Check Provider's uploaded portfolio items (custom showcase banners / photos / thumbnails)
+    const pItems = (provider && Array.isArray(provider.portfolio_items) && provider.portfolio_items.length > 0)
+        ? provider.portfolio_items
+        : (provider && provider.id === currentUser?.id && typeof portfolioItems !== 'undefined' && Array.isArray(portfolioItems) ? portfolioItems : []);
+
+    if (pItems.length > 0) {
+        // Prioritize custom image flyers / banners
+        const imgItem = pItems.find(i => i.media_type === 'image' || (i.thumbnail_url && !i.thumbnail_url.includes('unsplash')));
+        if (imgItem) {
+            const resolved = resolveMediaThumbnail(imgItem.thumbnail_url || imgItem.media_url);
+            if (resolved) return resolved;
+        }
+        for (const item of pItems) {
             if (item.thumbnail_url) {
                 const resolved = resolveMediaThumbnail(item.thumbnail_url);
                 if (resolved) return resolved;
@@ -141,32 +155,14 @@ function getProviderThumbnail(provider, pkg) {
         }
     }
 
-    // 3. Check Provider profile image
+    // 3. Check Provider profile image / banner
     if (provider && provider.profile_image) {
         const resolved = resolveMediaThumbnail(provider.profile_image);
         if (resolved) return resolved;
     }
 
-    // 4. Aesthetic category fallback if no photo uploaded yet
-    const niche = (provider?.niche || pkg?.niche || '').toLowerCase();
-    const text = `${provider?.name || ''} ${(provider?.skills || []).join(' ')} ${pkg?.title || ''} ${niche}`.toLowerCase();
-
-    if (text.includes('animat') || text.includes('2d') || text.includes('3d') || text.includes('blender') || text.includes('motion')) {
-        return 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80';
-    }
-    if (text.includes('tiktok') || text.includes('reel') || text.includes('short') || text.includes('social') || text.includes('ugc')) {
-        return 'https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=800&auto=format&fit=crop&q=80';
-    }
-    if (text.includes('gaming') || text.includes('stream') || text.includes('montage')) {
-        return 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&auto=format&fit=crop&q=80';
-    }
-    if (text.includes('tutor') || text.includes('english') || text.includes('ielts') || text.includes('speaking')) {
-        return 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=800&auto=format&fit=crop&q=80';
-    }
-    if (text.includes('writer') || text.includes('copy') || text.includes('script') || text.includes('seo')) {
-        return 'https://images.unsplash.com/photo-1455390582262-044cdead277a?w=800&auto=format&fit=crop&q=80';
-    }
-    return 'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=800&auto=format&fit=crop&q=80';
+    // 4. Fallback to active creator showcase banner if available
+    return '/static/banners/ab_pradeep_reel_editor.png';
 }
 window.getProviderThumbnail = getProviderThumbnail;
 
@@ -1119,44 +1115,6 @@ function openPreBookingChat(providerId, providerName) {
     window.__selectedChatUserName = providerName || 'Creator';
     router('/messages');
 }
-function getProviderThumbnail(provider) {
-    if (!provider) return 'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=800&auto=format&fit=crop&q=80';
-    if (provider.portfolio_items && provider.portfolio_items.length > 0 && provider.portfolio_items[0].thumbnail_url) {
-        const portfolioThumb = validateUrl(provider.portfolio_items[0].thumbnail_url);
-        if (portfolioThumb) return portfolioThumb;
-    }
-    const text = `${provider.name || ''} ${(provider.skills || []).join(' ')} ${(provider.packages || []).map(p => (p.title + ' ' + (p.scope || ''))).join(' ')}`.toLowerCase();
-
-    if (text.includes('animation') || text.includes('2d') || text.includes('3d') || text.includes('character') || text.includes('blender') || text.includes('explainer')) {
-        return 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80';
-    }
-    if (text.includes('tiktok') || text.includes('reels') || text.includes('ads & social') || text.includes('ad') || text.includes('ugc')) {
-        return 'https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=800&auto=format&fit=crop&q=80';
-    }
-    if (text.includes('youtube') || text.includes('long-form') || text.includes('vlog') || text.includes('podcast')) {
-        return 'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=800&auto=format&fit=crop&q=80';
-    }
-    if (text.includes('gaming') || text.includes('twitch') || text.includes('montage') || text.includes('stream') || text.includes('gameplay')) {
-        return 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&auto=format&fit=crop&q=80';
-    }
-    if (text.includes('corporate') || text.includes('b2b') || text.includes('commercial')) {
-        return 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800&auto=format&fit=crop&q=80';
-    }
-    if (text.includes('travel') || text.includes('drone') || text.includes('family')) {
-        return 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800&auto=format&fit=crop&q=80';
-    }
-    if (text.includes('music') || text.includes('vfx') || text.includes('beat')) {
-        return 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=800&auto=format&fit=crop&q=80';
-    }
-    if (text.includes('conversational') || text.includes('fluency') || text.includes('small talk')) {
-        return 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=800&auto=format&fit=crop&q=80';
-    }
-    if (text.includes('ielts') || text.includes('toefl') || text.includes('band')) {
-        return 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=800&auto=format&fit=crop&q=80';
-    }
-    return 'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=800&auto=format&fit=crop&q=80';
-}
-window.getProviderThumbnail = getProviderThumbnail;
 
 async function openFiverrPortfolioModal(providerId, providerName) {
     if (!providerId) return;
@@ -4656,6 +4614,17 @@ function Settings() {
                 })
             });
 
+            try {
+                await apiFetch('/profile', {
+                    method: 'PUT',
+                    body: JSON.stringify({ profile_image: flyerUrl })
+                });
+            } catch (_) {}
+
+            if (currentUser) {
+                currentUser.profile_image = flyerUrl;
+            }
+
             if (typeof portfolioItems !== 'undefined') {
                 portfolioItems.unshift(newItem);
             }
@@ -7752,72 +7721,9 @@ function ProvidersList() {
     }
 
     function getProviderThumbnail(provider) {
-        if (provider.portfolio_items && provider.portfolio_items.length > 0 && provider.portfolio_items[0].thumbnail_url) {
-            return provider.portfolio_items[0].thumbnail_url;
-        }
-        const text = `${provider.name || ''} ${(provider.skills || []).join(' ')} ${(provider.packages || []).map(p => (p.title + ' ' + (p.scope || ''))).join(' ')}`.toLowerCase();
-
-        if (text.includes('animation') || text.includes('2d') || text.includes('3d') || text.includes('character') || text.includes('blender') || text.includes('explainer')) {
-            return 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80';
-        }
-        if (text.includes('tiktok') || text.includes('reels') || text.includes('ads & social') || text.includes('ad') || text.includes('ugc')) {
-            return 'https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=800&auto=format&fit=crop&q=80';
-        }
-        if (text.includes('youtube') || text.includes('long-form') || text.includes('vlog') || text.includes('podcast')) {
-            return 'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=800&auto=format&fit=crop&q=80';
-        }
-        if (text.includes('gaming') || text.includes('twitch') || text.includes('montage') || text.includes('stream') || text.includes('gameplay')) {
-            return 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&auto=format&fit=crop&q=80';
-        }
-        if (text.includes('corporate') || text.includes('b2b') || text.includes('commercial')) {
-            return 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800&auto=format&fit=crop&q=80';
-        }
-        if (text.includes('travel') || text.includes('drone') || text.includes('family')) {
-            return 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800&auto=format&fit=crop&q=80';
-        }
-        if (text.includes('music') || text.includes('vfx') || text.includes('beat')) {
-            return 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=800&auto=format&fit=crop&q=80';
-        }
-
-        if (text.includes('conversational') || text.includes('fluency') || text.includes('small talk')) {
-            return 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=800&auto=format&fit=crop&q=80';
-        }
-        if (text.includes('ielts') || text.includes('toefl') || text.includes('band')) {
-            return 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=800&auto=format&fit=crop&q=80';
-        }
-        if (text.includes('business english') || text.includes('executive') || text.includes('presentation')) {
-            return 'https://images.unsplash.com/photo-1557804506-669a67965ba0?w=800&auto=format&fit=crop&q=80';
-        }
-        if (text.includes('interview') || text.includes('mock') || text.includes('star')) {
-            return 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=800&auto=format&fit=crop&q=80';
-        }
-        if (text.includes('kids') || text.includes('children') || text.includes('phonics')) {
-            return 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=800&auto=format&fit=crop&q=80';
-        }
-        if (text.includes('accent') || text.includes('neutralization') || text.includes('speech')) {
-            return 'https://images.unsplash.com/photo-1478737270239-2f02b77fc618?w=800&auto=format&fit=crop&q=80';
-        }
-
-        if (text.includes('seo') || text.includes('blog') || text.includes('surfer')) {
-            return 'https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=800&auto=format&fit=crop&q=80';
-        }
-        if (text.includes('landing page') || text.includes('website copy') || text.includes('saas')) {
-            return 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&auto=format&fit=crop&q=80';
-        }
-        if (text.includes('social media') || text.includes('linkedin') || text.includes('ad copy')) {
-            return 'https://images.unsplash.com/photo-1611162616305-c69b3fa7fbe0?w=800&auto=format&fit=crop&q=80';
-        }
-        if (text.includes('email') || text.includes('newsletter') || text.includes('klaviyo')) {
-            return 'https://images.unsplash.com/photo-1596526131083-e8c633c948d2?w=800&auto=format&fit=crop&q=80';
-        }
-        if (text.includes('script') || text.includes('storytelling')) {
-            return 'https://images.unsplash.com/photo-1485846234645-a62644f84728?w=800&auto=format&fit=crop&q=80';
-        }
-        if (text.includes('whitepaper') || text.includes('case study') || text.includes('technical')) {
-            return 'https://images.unsplash.com/photo-1455390582262-044cdead277a?w=800&auto=format&fit=crop&q=80';
-        }
-
-        return 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&auto=format&fit=crop&q=80';
+        return (typeof window.getProviderThumbnail === 'function')
+            ? window.getProviderThumbnail(provider, null)
+            : '/static/banners/ab_pradeep_reel_editor.png';
     }
 
     function getGigBadge(provider, cfg) {

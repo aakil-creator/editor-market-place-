@@ -246,6 +246,55 @@ ensure_schema()
 # --- Pre-seeded Verified Creators to ensure zero 404/User not found errors ---
 SEED_CREATORS = [
     {
+        "id": 9,
+        "name": "AB. Pradeep",
+        "username": "ab_pradeep_edits",
+        "phone": "+919876543209",
+        "email": "ab.pradeep@groove.local",
+        "niche": "editors_animators",
+        "rating": 5.0,
+        "total_bookings": 68,
+        "monthly_earnings": 62000.0,
+        "response_time": "15 mins",
+        "service_area": "online",
+        "bio": "No. 1 Reel Editor in South Chennai. Specializing in high-retention cinematic reels, viral TikTok/IG pacing, color grading, and studio sound design.",
+        "skills": ["Cinematic Reels", "Viral Retention Pacing", "Color Grading", "Sound Design", "Premiere Pro", "CapCut Pro"],
+        "packages": [
+            {
+                "title": "Viral 4K Reel / Short Retention Edit",
+                "price": 799.0,
+                "turnaround": "12 hours",
+                "revision_limit": 3,
+                "scope": "High-retention reel edit with custom showcase pacing, dynamic subtitles, visual hooks, beat sound effects, and color grading.",
+                "sample_reference": "/static/banners/ab_pradeep_reel_editor.png"
+            },
+            {
+                "title": "Full Channel Turnkey Monthly Bundle (8 Reels)",
+                "price": 5999.0,
+                "turnaround": "3 days",
+                "revision_limit": 5,
+                "scope": "Turnkey monthly viral short-form pipeline with priority turnaround and sound sync.",
+                "sample_reference": "/static/banners/ab_pradeep_reel_editor.png"
+            }
+        ],
+        "portfolio": [
+            {
+                "title": "AB. Pradeep Creator Showcase Banner",
+                "description": "No. 1 Reel Editor in South Chennai — Official Groove Hub Showcase Flyer.",
+                "media_url": "/static/banners/ab_pradeep_reel_editor.png",
+                "media_type": "image",
+                "thumbnail_url": "/static/banners/ab_pradeep_reel_editor.png"
+            },
+            {
+                "title": "High-Retention Instagram Reel Sample",
+                "description": "Fast-paced visual cut with kinetic typography and audio beat sync.",
+                "media_url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+                "media_type": "video",
+                "thumbnail_url": "/static/banners/ab_pradeep_reel_editor.png"
+            }
+        ]
+    },
+    {
         "id": 2,
         "name": "Aryan Sharma",
         "username": "aryan_edits",
@@ -503,6 +552,7 @@ def ensure_seed_data():
                         turnaround=pkg["turnaround"],
                         revision_limit=pkg["revision_limit"],
                         scope=pkg["scope"],
+                        sample_reference=pkg.get("sample_reference", "/static/banners/ab_pradeep_reel_editor.png" if item["niche"] == "editors_animators" else None),
                         status="approved"
                     )
                     db.add(p)
@@ -517,6 +567,12 @@ def ensure_seed_data():
                         thumbnail_url=pf["thumbnail_url"]
                     )
                     db.add(pi)
+            else:
+                # Update existing creator package sample reference if empty
+                if item["niche"] == "editors_animators":
+                    top_pkg = db.query(Package).filter(Package.provider_id == existing.id).first()
+                    if top_pkg and not top_pkg.sample_reference:
+                        top_pkg.sample_reference = "/static/banners/ab_pradeep_reel_editor.png"
 
         db.commit()
     except Exception as e:
