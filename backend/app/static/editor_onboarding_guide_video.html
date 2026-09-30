@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Syncra — Video Editor Onboarding Masterclass & Video Guide</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #070913;
+      --card-bg: rgba(17, 24, 39, 0.95);
+      --accent: #818cf8;
+      --accent-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%);
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --border: rgba(255, 255, 255, 0.12);
+      --success: #10b981;
+      --font-heading: 'Outfit', sans-serif;
+      --font-body: 'Inter', sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      overflow-x: hidden;
+    }
+
+    .video-container {
+      width: 100%;
+      max-width: 900px;
+      aspect-ratio: 16/9;
+      background: #0d111e;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      box-shadow: 0 25px 60px -12px rgba(0, 0, 0, 0.85), 0 0 40px rgba(99, 102, 241, 0.15);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Top Stage Bar */
+    .video-header {
+      padding: 16px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(13, 17, 30, 0.8);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--border);
+      z-index: 10;
+    }
+
+    .brand-pill {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: var(--font-heading);
+      font-weight: 800;
+      font-size: 1.15rem;
+      letter-spacing: -0.5px;
+    }
+
+    .brand-logo-icon {
+      width: 28px;
+      height: 28px;
+      background: var(--accent-gradient);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+    }
+
+    .scene-pill {
+      background: rgba(99, 102, 241, 0.15);
+      border: 1px solid rgba(99, 102, 241, 0.4);
+      color: #c7d2fe;
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    /* Screen Display Stage */
+    .video-stage {
+      flex: 1;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: radial-gradient(circle at 50% 30%, rgba(99, 102, 241, 0.12) 0%, transparent 70%);
+    }
+
+    .scene-card {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transform: scale(0.95) translateY(10px);
+      transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1), transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+      pointer-events: none;
+    }
+
+    .scene-card.active {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+      pointer-events: auto;
+    }
+
+    /* Scene Elements */
+    .step-badge {
+      font-size: 0.8rem;
+      font-weight: 800;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-bottom: 8px;
+    }
+
+    .scene-title {
+      font-family: var(--font-heading);
+      font-size: 1.75rem;
+      font-weight: 900;
+      text-align: center;
+      margin-bottom: 12px;
+      background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .scene-desc {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      text-align: center;
+      max-width: 600px;
+      line-height: 1.5;
+      margin-bottom: 20px;
+    }
+
+    /* Interactive Mockup Boxes */
+    .mockup-window {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      width: 100%;
+      max-width: 620px;
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.5);
+      overflow: hidden;
+    }
+
+    .mockup-window-header {
+      background: rgba(255, 255, 255, 0.05);
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .window-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+
+    .mockup-window-body {
+      padding: 18px 22px;
+    }
+
+    /* Scene Specific Mockups */
+    .input-row {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .mock-input {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 12px;
+      color: #fff;
+      font-size: 0.85rem;
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .tag-cloud {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .mock-tag {
+      background: rgba(99, 102, 241, 0.2);
+      border: 1px solid rgba(99, 102, 241, 0.4);
+      color: #e0e7ff;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .highlight-glow {
+      box-shadow: 0 0 15px rgba(99, 102, 241, 0.6);
+      border-color: #818cf8 !important;
+      animation: pulseGlow 1.8s infinite;
+    }
+
+    @keyframes pulseGlow {
+      0%, 100% { box-shadow: 0 0 15px rgba(99, 102, 241, 0.6); }
+      50% { box-shadow: 0 0 25px rgba(192, 132, 252, 0.9); }
+    }
+
+    /* Bottom Control Bar */
+    .video-controls {
+      padding: 12px 24px;
+      background: rgba(13, 17, 30, 0.95);
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      z-index: 10;
+    }
+
+    .play-btn {
+      background: var(--accent-gradient);
+      border: none;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      color: #fff;
+      font-size: 1.1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.2s;
+    }
+
+    .play-btn:hover { transform: scale(1.08); }
+
+    .progress-bar-container {
+      flex: 1;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 999px;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: var(--accent-gradient);
+      border-radius: 999px;
+      transition: width 0.1s linear;
+    }
+
+    .time-indicator {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      font-weight: 600;
+      min-width: 65px;
+    }
+
+    .voiceover-toggle {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .voiceover-toggle.active {
+      background: rgba(16, 185, 129, 0.2);
+      border-color: var(--success);
+      color: #6ee7b7;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="video-container">
+    <!-- Header -->
+    <div class="video-header">
+      <div class="brand-pill">
+        <div class="brand-logo-icon">⚡</div>
+        <span>Syncra Creator Studio</span>
+      </div>
+      <div id="scene-pill" class="scene-pill">Scene 1 / 4: Quick Sign In</div>
+    </div>
+
+    <!-- Stage -->
+    <div class="video-stage">
+      
+      <!-- Scene 1: Sign In & Onboarding -->
+      <div class="scene-card active" id="scene-1">
+        <div class="step-badge">Step 1 • 10 Seconds</div>
+        <h2 class="scene-title">Sign In as a Video Editor</h2>
+        <p class="scene-desc">Go to <b>syncra-qui2.onrender.com</b> and tap <b>"Sign in with Google"</b> or register as a <b>Video Editor / Provider</b>.</p>
+        
+        <div class="mockup-window">
+          <div class="mockup-window-header">
+            <div class="window-dot" style="background:#ef4444;"></div>
+            <div class="window-dot" style="background:#f59e0b;"></div>
+            <div class="window-dot" style="background:#10b981;"></div>
+            <span style="font-size:0.75rem; color:var(--text-muted); margin-left:8px;">https://syncra-qui2.onrender.com/login</span>
+          </div>
+          <div class="mockup-window-body">
+            <div style="text-align:center; padding: 10px 0;">
+              <button class="highlight-glow" style="background:#ffffff; color:#1f2937; border:none; padding:10px 20px; border-radius:10px; font-weight:700; font-size:0.9rem; cursor:pointer; display:inline-flex; align-items:center; gap:8px;">
+                <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
+                Continue with Google
+              </button>
+              <div style="font-size:0.75rem; color:var(--text-muted); margin-top:10px;">Select role: <b>Video Editor / Creator</b></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scene 2: Bio, Skills & UPI Payout -->
+      <div class="scene-card" id="scene-2">
+        <div class="step-badge">Step 2 • Profile & Payouts</div>
+        <h2 class="scene-title">Add Skills & UPI ID for Payouts</h2>
+        <p class="scene-desc">Highlight your editing software and enter your <b>UPI ID</b> so client payments transfer directly to you.</p>
+
+        <div class="mockup-window">
+          <div class="mockup-window-header">
+            <span style="font-size:0.75rem; color:var(--text-muted);">Creator Studio • Profile Settings</span>
+          </div>
+          <div class="mockup-window-body">
+            <div class="input-row">
+              <div class="mock-input"><span>📝</span> <b>Bio:</b> High-Retention YouTube Shorts & Reels Editor</div>
+            </div>
+            <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:4px;">Software & Tags:</div>
+            <div class="tag-cloud">
+              <span class="mock-tag">Premiere Pro</span>
+              <span class="mock-tag">After Effects</span>
+              <span class="mock-tag">CapCut Pro</span>
+              <span class="mock-tag">DaVinci Resolve</span>
+              <span class="mock-tag">Sound Design</span>
+            </div>
+            <div class="input-row" style="margin-top:12px;">
+              <div class="mock-input highlight-glow"><span>💳</span> <b>Payout UPI:</b> youreditorname@okhdfcbank</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scene 3: Portfolio Video Links Upload -->
+      <div class="scene-card" id="scene-3">
+        <div class="step-badge">Step 3 • Upload Sample Reels</div>
+        <h2 class="scene-title">Add Your Best 16:9 Showcase Reels</h2>
+        <p class="scene-desc">Paste links from <b>YouTube Shorts</b>, <b>YouTube Videos</b>, <b>Google Drive</b>, or <b>Vimeo</b>.</p>
+
+        <div class="mockup-window">
+          <div class="mockup-window-header">
+            <span style="font-size:0.75rem; color:var(--text-muted);">+ Add New Portfolio Item</span>
+          </div>
+          <div class="mockup-window-body">
+            <div class="input-row">
+              <div class="mock-input"><span>🎬</span> <b>Title:</b> Viral Tech Reel (1.2M Views)</div>
+            </div>
+            <div class="input-row">
+              <div class="mock-input highlight-glow" style="color:#a5b4fc;">
+                <span>🔗</span> <b>Media URL:</b> https://www.youtube.com/shorts/...
+              </div>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
+              <span style="font-size:0.75rem; color:var(--success);">✓ Video embed verified & 16:9 thumbnail synced</span>
+              <button style="background:var(--accent-gradient); border:none; color:#fff; padding:6px 14px; border-radius:6px; font-weight:700; font-size:0.8rem;">Save Item</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scene 4: Marketplace Feed & Getting Paid -->
+      <div class="scene-card" id="scene-4">
+        <div class="step-badge">Step 4 • 100% Escrow & Launch Special</div>
+        <h2 class="scene-title">Go Live & Keep 100% of Your Earnings</h2>
+        <p class="scene-desc">Clients book your packages via instant UPI Escrow. Deliver your 4K renders and receive immediate payouts!</p>
+
+        <div class="mockup-window highlight-glow" style="max-width:520px;">
+          <div class="mockup-window-body" style="text-align:center; padding:20px;">
+            <div style="font-size:2.2rem; margin-bottom:8px;">🎉</div>
+            <h3 style="font-size:1.15rem; font-weight:800; color:#fff; margin-bottom:4px;">0% Platform Fee Active</h3>
+            <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:14px;">1-Month Launch Special • Keep 100% of every ₹1,499 reel or ₹29,999 monthly retainer.</p>
+            <div style="background:rgba(16, 185, 129, 0.15); border:1px solid var(--success); padding:8px; border-radius:8px; font-size:0.8rem; color:#6ee7b7; font-weight:700;">
+              🔒 100% Secure Escrow Protection on All Bookings
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Controls -->
+    <div class="video-controls">
+      <button id="play-btn" class="play-btn">▶</button>
+      <div class="progress-bar-container" id="progress-container">
+        <div class="progress-bar-fill" id="progress-fill"></div>
+      </div>
+      <div class="time-indicator" id="time-display">0:00 / 0:32</div>
+      <button id="voiceover-btn" class="voiceover-toggle active">
+        <span>🔊</span> Voiceover On
+      </button>
+    </div>
+  </div>
+
+  <script>
+    const TOTAL_DURATION = 32; // 32 seconds total (8s per scene)
+    let currentTime = 0;
+    let isPlaying = false;
+    let voiceoverEnabled = true;
+    let animationFrame = null;
+    let lastTimestamp = 0;
+    let currentSceneIndex = 0;
+
+    const scenes = [
+      { id: 'scene-1', title: 'Scene 1 / 4: Quick Sign In', speech: 'Welcome to Syncra. Step one: Visit syncra-qui2.onrender.com and sign in with Google or create your video editor profile.' },
+      { id: 'scene-2', title: 'Scene 2 / 4: Bio & UPI Payouts', speech: 'Step two: Add your editing software skills and enter your personal UPI ID so client payments transfer directly to your bank account.' },
+      { id: 'scene-3', title: 'Scene 3 / 4: Uploading Sample Reels', speech: 'Step three: Paste your best YouTube Shorts, YouTube videos, or Google Drive links to showcase your 16:9 video editing samples.' },
+      { id: 'scene-4', title: 'Scene 4 / 4: 0% Fee Launch Promo', speech: 'Step four: Go live! Enjoy 0% platform commission during the launch special and keep 100% of all client payouts.' }
+    ];
+
+    const playBtn = document.getElementById('play-btn');
+    const progressFill = document.getElementById('progress-fill');
+    const progressContainer = document.getElementById('progress-container');
+    const timeDisplay = document.getElementById('time-display');
+    const scenePill = document.getElementById('scene-pill');
+    const voiceoverBtn = document.getElementById('voiceover-btn');
+
+    function speak(text) {
+      if (!voiceoverEnabled || !('speechSynthesis' in window)) return;
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 1.05;
+      utterance.pitch = 1.0;
+      window.speechSynthesis.speak(utterance);
+    }
+
+    function setScene(index) {
+      if (index === currentSceneIndex && scenes[index]) return;
+      currentSceneIndex = index;
+      scenes.forEach((s, idx) => {
+        const el = document.getElementById(s.id);
+        if (el) el.classList.toggle('active', idx === index);
+      });
+      scenePill.textContent = scenes[index].title;
+      if (isPlaying) {
+        speak(scenes[index].speech);
+      }
+    }
+
+    function updateDisplay() {
+      const pct = (currentTime / TOTAL_DURATION) * 100;
+      progressFill.style.width = `${pct}%`;
+      const curSec = Math.floor(currentTime);
+      const totalSec = TOTAL_DURATION;
+      timeDisplay.textContent = `0:${curSec < 10 ? '0' : ''}${curSec} / 0:${totalSec}`;
+
+      // Scene index calculation (8 seconds per scene)
+      const targetScene = Math.min(Math.floor(currentTime / 8), scenes.length - 1);
+      if (targetScene !== currentSceneIndex) {
+        setScene(targetScene);
+      }
+    }
+
+    function tick(timestamp) {
+      if (!lastTimestamp) lastTimestamp = timestamp;
+      const delta = (timestamp - lastTimestamp) / 1000;
+      lastTimestamp = timestamp;
+
+      if (isPlaying) {
+        currentTime += delta;
+        if (currentTime >= TOTAL_DURATION) {
+          currentTime = TOTAL_DURATION;
+          pause();
+        }
+        updateDisplay();
+        animationFrame = requestAnimationFrame(tick);
+      }
+    }
+
+    function play() {
+      isPlaying = true;
+      playBtn.textContent = '⏸';
+      if (currentTime >= TOTAL_DURATION) {
+        currentTime = 0;
+        setScene(0);
+      }
+      lastTimestamp = 0;
+      speak(scenes[currentSceneIndex].speech);
+      animationFrame = requestAnimationFrame(tick);
+    }
+
+    function pause() {
+      isPlaying = false;
+      playBtn.textContent = '▶';
+      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+      if (animationFrame) cancelAnimationFrame(animationFrame);
+    }
+
+    playBtn.addEventListener('click', () => {
+      if (isPlaying) pause();
+      else play();
+    });
+
+    progressContainer.addEventListener('click', (e) => {
+      const rect = progressContainer.getBoundingClientRect();
+      const clickRatio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+      currentTime = clickRatio * TOTAL_DURATION;
+      const targetScene = Math.min(Math.floor(currentTime / 8), scenes.length - 1);
+      setScene(targetScene);
+      updateDisplay();
+      if (isPlaying) {
+        speak(scenes[targetScene].speech);
+      }
+    });
+
+    voiceoverBtn.addEventListener('click', () => {
+      voiceoverEnabled = !voiceoverEnabled;
+      voiceoverBtn.classList.toggle('active', voiceoverEnabled);
+      voiceoverBtn.innerHTML = `<span>${voiceoverEnabled ? '🔊' : '🔇'}</span> Voiceover ${voiceoverEnabled ? 'On' : 'Off'}`;
+      if (!voiceoverEnabled && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+    });
+
+    // Auto-start on load
+    window.addEventListener('load', () => {
+      setTimeout(play, 600);
+    });
+  </script>
+</body>
+</html>
