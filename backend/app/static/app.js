@@ -4061,16 +4061,16 @@ function providerWelcomeCard(profile) {
                         <span style="font-size: 0.8125rem; font-weight: 500; color: var(--text-secondary); margin-left: 4px;">(${profile?.review_count || 0} reviews)</span>
                     </div>
                 </div>
-                <div style="font-size: 0.8125rem; color: var(--text-secondary); text-align: right;">
+                <div style="font-size: 0.8125rem; color: var(--text-secondary); text-align: left; font-weight: 600;">
                     Guaranteed 80% Payout • Direct Bank Transfer
                 </div>
             </div>
         </div>
-        <div class="card-footer" style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px;">
-            <button class="btn btn-primary" onclick="setSettingsTab('portfolio'); router('/settings');" style="flex: 1; min-width: 150px;">📁 Upload Portfolios</button>
-            <button class="btn btn-secondary" onclick="router('/packages')" style="flex: 1; min-width: 140px;">Manage Packages</button>
-            <button class="btn btn-secondary" onclick="router('/payments')" style="flex: 1; min-width: 140px;">💳 Earnings &amp; Payouts</button>
-            <button class="btn btn-secondary" onclick="router('/profile')" style="flex: 1; min-width: 120px;">Edit Profile</button>
+        <div class="dashboard-action-grid" style="margin-top: 18px;">
+            <button class="btn btn-primary" onclick="setSettingsTab('portfolio'); router('/settings');">📁 Upload Portfolio</button>
+            <button class="btn btn-secondary" onclick="router('/packages')">📦 Manage Packages</button>
+            <button class="btn btn-secondary" onclick="router('/payments')">💳 Earnings &amp; Payouts</button>
+            <button class="btn btn-secondary" onclick="router('/profile')">✏️ Edit Profile</button>
         </div>
     </div>`;
 }
@@ -4512,7 +4512,7 @@ function Settings() {
             }
         };
 
-        xhr.onload = () => {
+        xhr.onload = async () => {
             if (xhr.status === 200) {
                 try {
                     const res = JSON.parse(xhr.responseText);
@@ -4520,21 +4520,38 @@ function Settings() {
                     const titleInput = document.getElementById('port-title');
                     const typeSelect = document.getElementById('port-media-type');
 
-                    if (urlInput) urlInput.value = res.url;
-                    if (titleInput && !titleInput.value.trim()) {
-                        const cleanName = file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
-                        titleInput.value = cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
-                    }
-                    if (typeSelect) {
-                        if (file.type.startsWith('image/')) typeSelect.value = 'image';
-                        else if (file.type.startsWith('audio/')) typeSelect.value = 'audio';
-                        else typeSelect.value = 'video';
-                    }
+                    const cleanName = file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
+                    const title = cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
+                    const media_type = file.type.startsWith('image/') ? 'image' : (file.type.startsWith('audio/') ? 'audio' : 'video');
 
-                    if (statusText) statusText.textContent = '✅ Upload complete!';
+                    if (urlInput) urlInput.value = res.url;
+                    if (titleInput && !titleInput.value.trim()) titleInput.value = title;
+                    if (typeSelect) typeSelect.value = media_type;
+
+                    if (statusText) statusText.textContent = '✅ Upload complete! Adding to your profile reels...';
                     if (progressBar) progressBar.style.width = '100%';
                     if (progressPct) progressPct.textContent = '100%';
-                    showToast('Media uploaded successfully! Click "Add to My Showcase" below.', 'success');
+
+                    // Auto-save to portfolio reels
+                    try {
+                        const newItem = await apiFetch('/profile/portfolio', {
+                            method: 'POST',
+                            body: JSON.stringify({
+                                title,
+                                media_url: res.url,
+                                media_type,
+                                thumbnail_url: media_type === 'image' ? res.url : '/static/banners/ab_pradeep_reel_editor.png',
+                                description: 'Verified 4K sample reel deliverable'
+                            })
+                        });
+                        if (typeof portfolioItems !== 'undefined') {
+                            portfolioItems.unshift(newItem);
+                        }
+                        showToast(`✨ "${title}" added live to your profile reels!`, 'success');
+                        setTimeout(() => { mount(renderSettingsView()); }, 600);
+                    } catch (saveErr) {
+                        showToast('File uploaded! Click "Add to My Profile Reels" below to confirm.', 'info');
+                    }
                 } catch (e) {
                     showToast('Failed to parse upload response', 'error');
                 }
@@ -4545,7 +4562,7 @@ function Settings() {
                     errText = errRes.detail || errText;
                 } catch (_) {}
                 showToast(errText, 'error');
-                if (statusText) statusText.textContent = '❌ Upload failed';
+                if (statusText) statusText.textContent = `❌ Upload failed: ${errText}`;
             }
         };
 
@@ -4604,7 +4621,11 @@ function Settings() {
                 headers: token ? { 'Authorization': `Bearer ${token}` } : {},
                 body: formData
             });
-            if (!res.ok) throw new Error('Flyer upload failed');
+            if (!res.ok) {
+                let errText = 'Flyer upload failed';
+                try { const errRes = await res.json(); errText = errRes.detail || errText; } catch (_) {}
+                throw new Error(errText);
+            }
             const data = await res.json();
             const flyerUrl = data.url;
 

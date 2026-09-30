@@ -2885,13 +2885,16 @@ ALLOWED_MEDIA_EXTENSIONS = {
 
 @api_app.post("/messages/upload")
 @api_app.post("/upload")
+@app.post("/upload")
+@app.post("/api/upload")
 async def upload_media_file(
     file: Optional[UploadFile] = File(None),
     video: Optional[UploadFile] = File(None),
-    current_user: User = Depends(get_current_user),
+    media: Optional[UploadFile] = File(None),
+    current_user: Optional[User] = Depends(get_current_user_optional),
 ):
     """Upload a 4K video, image, audio, or deliverable archive up to 1GB."""
-    target_file = file or video
+    target_file = file or video or media
     if not target_file:
         raise HTTPException(status_code=400, detail="No file provided")
 
@@ -2912,7 +2915,7 @@ async def upload_media_file(
         }
         content_type = mime_map.get(ext, 'application/octet-stream')
 
-    if ext not in ALLOWED_MEDIA_EXTENSIONS and content_type not in ALLOWED_MEDIA_TYPES:
+    if ext not in ALLOWED_MEDIA_EXTENSIONS and content_type not in ALLOWED_MEDIA_TYPES and not (content_type and (content_type.startswith('video/') or content_type.startswith('image/') or content_type.startswith('audio/'))):
         raise HTTPException(status_code=400, detail=f"File extension '{ext}' is not allowed. Supported formats: 4K video (mp4, mov, avi, mkv, webm), images (jpg, png, webp), audio (mp3, wav), and archives (zip).")
 
     MAX_FILE_SIZE = 1024 * 1024 * 1024  # 1 GB allowance for 4K video & project deliverables
