@@ -539,9 +539,9 @@ function renderProfileMenu() {
                     <span class="profile-menu-item-badge">Bio & Skills</span>
                 </button>
                 <button class="profile-menu-item" onclick="openSettingsTab('portfolio')">
-                    <span class="profile-menu-item-icon">📁</span>
-                    <span>Upload Portfolio</span>
-                    <span class="profile-menu-item-badge">4K Reels</span>
+                    <span class="profile-menu-item-icon">🖼️</span>
+                    <span>Showcase Flyer &amp; Reels</span>
+                    <span class="profile-menu-item-badge">Homepage 16:9</span>
                 </button>
                 <button class="profile-menu-item" onclick="openProfileIconPicker()">
                     <span class="profile-menu-item-icon">🖼️</span>
@@ -4628,15 +4628,55 @@ function Settings() {
         }
     };
 
+    window.handleShowcaseFlyerUpload = async (file) => {
+        if (!file) return;
+        try {
+            showLoading();
+            const formData = new FormData();
+            formData.append('file', file);
+            const token = currentToken || localStorage.getItem('access_token');
+            const res = await fetch('/api/upload', {
+                method: 'POST',
+                headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+                body: formData
+            });
+            if (!res.ok) throw new Error('Flyer upload failed');
+            const data = await res.json();
+            const flyerUrl = data.url;
+
+            // Save as top portfolio showcase item
+            const newItem = await apiFetch('/profile/portfolio', {
+                method: 'POST',
+                body: JSON.stringify({
+                    title: `${currentUser?.name || 'Creator'} Showcase Banner`,
+                    description: 'Custom verified homepage showcase flyer',
+                    media_url: flyerUrl,
+                    media_type: 'image',
+                    thumbnail_url: flyerUrl
+                })
+            });
+
+            if (typeof portfolioItems !== 'undefined') {
+                portfolioItems.unshift(newItem);
+            }
+            showToast('✨ Custom Showcase Flyer updated! Displayed live on your homepage card.', 'success');
+        } catch (err) {
+            showToast(err.message || 'Failed to upload showcase flyer', 'error');
+        } finally {
+            hideLoading();
+            mount(renderSettingsView());
+        }
+    };
+
     window.handleDeletePortfolioItem = async (itemId) => {
-        if (!confirm('Are you sure you want to remove this project from your showcase?')) return;
+        if (!confirm('Are you sure you want to remove this item from your showcase?')) return;
         try {
             showLoading();
             await apiFetch(`/profile/portfolio/${itemId}`, { method: 'DELETE' });
-            showToast('Portfolio item removed', 'success');
+            showToast('Showcase item removed', 'success');
             portfolioItems = portfolioItems.filter(i => i.id !== itemId);
         } catch (err) {
-            showToast(err.message || 'Failed to remove portfolio item', 'error');
+            showToast(err.message || 'Failed to remove item', 'error');
         } finally {
             hideLoading();
             mount(renderSettingsView());
@@ -4957,36 +4997,69 @@ function Settings() {
                     </div>
                 ` : ''}
 
-                <!-- Tab: Portfolio Showcase (Provider Only) -->
+                <!-- Tab: Showcase Flyer & Portfolio (Provider Only) -->
                 ${activeSettingsTab === 'portfolio' && isProvider ? `
                     <div style="display: flex; flex-direction: column; gap: 24px; max-width: 860px;">
-                        <!-- Banner -->
+                        <!-- Banner Header -->
                         <div class="card" style="padding: 20px 24px; background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(16, 185, 129, 0.08) 100%); border: 1px solid rgba(99, 102, 241, 0.25);">
                             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
                                 <div>
                                     <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--text-primary); margin-bottom: 4px; display: flex; align-items: center; gap: 8px;">
-                                        <span>🎨</span> Public Portfolio Showcase &amp; Work Uploads
+                                        <span>🖼️</span> Creator Showcase Flyer &amp; Sample Video Reels
                                     </h3>
                                     <p style="font-size: 0.8125rem; color: var(--text-secondary); margin: 0; line-height: 1.45;">
-                                        Upload your video showreels, client proof, IELTS teaching samples, or copywriting deliverables. Buyers see these when browsing your profile.
+                                        Your <strong>Showcase Flyer</strong> displays prominently on your homepage marketplace card. Your <strong>Sample Reels</strong> play in-app when clients click to view your profile.
                                     </p>
                                 </div>
                                 <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-                                    <button type="button" class="btn btn-primary btn-sm" onclick="openBitmojiStudioModal()" style="background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%); font-weight: 700; font-size: 0.8rem;">
-                                        🎨 Create Bitmoji Avatar &amp; Card
-                                    </button>
                                     <button type="button" class="btn btn-secondary btn-sm" onclick="openFiverrPortfolioModal(${currentUser.id}, '${escapeHTML(currentUser.name)}')">
-                                        👁️ Preview Profile
+                                        👁️ Preview My Profile &amp; Reels
                                     </button>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Add Portfolio Item Form -->
+                        <!-- 1. Showcase Flyer & Cover Banner Card -->
+                        <div class="card" style="padding: 24px; border: 1.5px solid var(--accent); background: var(--bg-card);">
+                            <div class="card-header" style="margin-bottom: 16px;">
+                                <div>
+                                    <div class="card-title" style="font-size: 1.05rem; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+                                        <span>🖼️</span> 1. Homepage Showcase Flyer / Cover Banner (16:9)
+                                    </div>
+                                    <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">
+                                        Displayed as the primary visual on your homepage marketplace card.
+                                    </div>
+                                </div>
+                                <span class="badge badge-success">Live on Homepage</span>
+                            </div>
+
+                            <!-- Live 16:9 Flyer Preview -->
+                            <div style="width: 100%; aspect-ratio: 16/9; max-height: 240px; border-radius: 12px; overflow: hidden; background: #000; position: relative; border: 1px solid var(--border); box-shadow: 0 8px 24px rgba(0,0,0,0.5); margin-bottom: 16px;">
+                                <img src="${sanitizeUrl(getProviderThumbnail(currentUser, null))}" alt="Showcase Flyer" style="width: 100%; height: 100%; object-fit: cover; display: block;">
+                                <div style="position: absolute; bottom: 10px; left: 12px; background: rgba(0,0,0,0.75); color: #fff; padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+                                    <span>⚡</span> Active Homepage Card Flyer
+                                </div>
+                            </div>
+
+                            <input type="file" id="flyer-file-input" style="display:none;" accept="image/*" onchange="if(this.files[0]) handleShowcaseFlyerUpload(this.files[0])" />
+                            <div style="display: flex; gap: 10px; align-items: center; justify-content: flex-end; flex-wrap: wrap;">
+                                <span style="font-size: 0.75rem; color: var(--text-muted);">Recommended: 16:9 ratio (.PNG / .JPG / .WEBP)</span>
+                                <button type="button" class="btn btn-primary" onclick="document.getElementById('flyer-file-input').click()" style="padding: 10px 20px; font-weight: 700; display: inline-flex; align-items: center; gap: 8px;">
+                                    <span>📤</span> Upload / Change Showcase Flyer
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 2. Sample Video Reels Upload Card -->
                         <div class="card" style="padding: 24px;">
                             <div class="card-header" style="margin-bottom: 16px;">
-                                <div class="card-title" style="font-size: 1rem; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
-                                    <span>➕</span> Add New Work Sample / Showcase Item
+                                <div>
+                                    <div class="card-title" style="font-size: 1rem; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+                                        <span>🎬</span> 2. Verified Sample Video Reels (.MP4 / .MOV)
+                                    </div>
+                                    <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">
+                                        Playable in-app when buyers click your profile to evaluate your editing style.
+                                    </div>
                                 </div>
                                 <span class="badge badge-info">1GB 4K Video Allowance</span>
                             </div>
@@ -4995,8 +5068,8 @@ function Settings() {
                             <div class="portfolio-upload-dropzone" style="border: 2px dashed var(--border); border-radius: 12px; padding: 22px; text-align: center; background: var(--bg-hover); cursor: pointer; margin-bottom: 18px; transition: all 0.2s ease;" onclick="document.getElementById('port-file-input').click()">
                                 <input type="file" id="port-file-input" style="display:none;" accept="video/*,image/*,audio/*" onchange="if(this.files[0]) handlePortfolioFileUpload(this.files[0])" />
                                 <div style="font-size: 2.2rem; margin-bottom: 6px;">📤</div>
-                                <div style="font-weight: 800; font-size: 0.98rem; color: var(--text-primary); margin-bottom: 4px;">Click to Upload 4K Video Reel / Image from Device</div>
-                                <div style="font-size: 0.8rem; color: var(--text-muted);">Supports MP4, MOV, MKV, WebM, PNG, JPG (up to 1GB 4K allowance with high-speed streaming)</div>
+                                <div style="font-weight: 800; font-size: 0.98rem; color: var(--text-primary); margin-bottom: 4px;">Click to Upload 4K Sample Video Reel from Device</div>
+                                <div style="font-size: 0.8rem; color: var(--text-muted);">Supports MP4, MOV, MKV, WebM (up to 1GB 4K allowance with high-speed streaming)</div>
                                 <div id="port-upload-progress-wrap" style="display: none; margin-top: 14px; text-align: left; background: var(--bg-card); padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border);">
                                     <div style="display: flex; justify-content: space-between; font-size: 0.78rem; font-weight: 700; margin-bottom: 6px;">
                                         <span id="port-upload-status-text" style="color: var(--text-primary);">Uploading 4K file...</span>
@@ -5010,39 +5083,33 @@ function Settings() {
 
                             <form onsubmit="handleAddPortfolioItem(event)">
                                 <div class="form-group">
-                                    <label class="form-label">Project Title <span style="color: var(--danger);">*</span></label>
-                                    <input type="text" class="form-input" id="port-title" placeholder="e.g. High-Retention YouTube Tech Edit / Band 8 IELTS Mock Drill / SaaS Landing Copy" required>
+                                    <label class="form-label">Reel / Deliverable Title <span style="color: var(--danger);">*</span></label>
+                                    <input type="text" class="form-input" id="port-title" placeholder="e.g. High-Retention YouTube Shorts Edit / Viral SaaS Ad Reel" required>
                                 </div>
 
                                 <div class="form-row">
                                     <div class="form-group">
                                         <label class="form-label">Media Type</label>
                                         <select class="form-select" id="port-media-type">
-                                            <option value="video">🎬 Video (4K Upload / YouTube / Reel)</option>
-                                            <option value="image">🖼️ Image (Thumbnails, Graphics, Designs)</option>
-                                            <option value="audio">🎙️ Audio (Podcast, Voiceover, Accent Clinic)</option>
-                                            <option value="link">🔗 Link / Case Study (Notion, Drive, Medium)</option>
+                                            <option value="video">🎬 Video (.MP4 / .MOV / 4K Reel)</option>
+                                            <option value="image">🖼️ Image (Showcase Poster / Flyer)</option>
+                                            <option value="audio">🎙️ Audio (Sound Design / Voiceover)</option>
                                         </select>
                                     </div>
                                     <div class="form-group">
-                                        <label class="form-label">Media URL / File Link <span style="color: var(--danger);">*</span></label>
-                                        <input type="text" class="form-input" id="port-media-url" placeholder="Uploaded file path or https://youtube.com/watch?v=..." required>
+                                        <label class="form-label">Media File Path / URL <span style="color: var(--danger);">*</span></label>
+                                        <input type="text" class="form-input" id="port-media-url" placeholder="Uploaded file path auto-fills here" required>
                                     </div>
                                 </div>
 
                                 <div class="form-group">
-                                    <label class="form-label">Cover / Thumbnail Image URL <span style="color: var(--text-muted); font-size: 0.75rem;">(Optional - for card preview)</span></label>
-                                    <input type="text" class="form-input" id="port-thumb-url" placeholder="https://images.unsplash.com/... or leave blank for auto">
-                                </div>
-
-                                <div class="form-group">
-                                    <label class="form-label">Project Description &amp; Client Deliverables</label>
-                                    <textarea class="form-textarea" id="port-desc" rows="3" placeholder="Describe the goal, tools used (Premiere, After Effects, Figma), turn-around time, and results achieved for the client..."></textarea>
+                                    <label class="form-label">Project Description &amp; Editing Techniques</label>
+                                    <textarea class="form-textarea" id="port-desc" rows="2" placeholder="Describe the pacing, sound sync, color grading, tools used (Premiere Pro, CapCut, DaVinci), and turn-around time..."></textarea>
                                 </div>
 
                                 <div style="display: flex; justify-content: flex-end; margin-top: 14px;">
                                     <button type="submit" class="btn btn-primary" style="padding: 10px 24px; font-weight: 700;">
-                                        ➕ Add to My Showcase
+                                        ➕ Add to My Profile Reels
                                     </button>
                                 </div>
                             </form>
@@ -5052,7 +5119,7 @@ function Settings() {
                         <div class="card" style="padding: 24px;">
                             <div class="card-header" style="margin-bottom: 16px;">
                                 <div class="card-title" style="font-size: 1rem; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
-                                    <span>📁</span> Live Projects on Your Profile (${portfolioItems.length})
+                                    <span>📁</span> Live Projects &amp; Reels on Your Profile (${portfolioItems.length})
                                 </div>
                             </div>
 
@@ -5061,7 +5128,7 @@ function Settings() {
                                     <div style="font-size: 2.5rem; margin-bottom: 10px;">🎨</div>
                                     <h4 style="font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">No showcase projects added yet</h4>
                                     <p style="font-size: 0.8125rem; color: var(--text-secondary); max-width: 440px; margin: 0 auto 16px;">
-                                        Creators who upload at least 2 video reels or work samples receive <strong>4x more client bookings</strong>. Add your first sample above!
+                                        Creators who upload their showcase flyer and at least 1 video reel receive <strong>4x more client bookings</strong>. Add your first sample above!
                                     </p>
                                 </div>
                             ` : `
@@ -5106,8 +5173,6 @@ function Settings() {
                                     `).join('')}
                                 </div>
                             `}
-                        </div>
-                    </div>
                 ` : ''}
 
                 <!-- Tab 2: Profile (Provider) -->
