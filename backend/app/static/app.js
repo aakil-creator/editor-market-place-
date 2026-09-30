@@ -543,14 +543,9 @@ function renderProfileMenu() {
                     <span class="profile-menu-item-icon">🖼️</span>
                     <span>Change Profile Icon</span>
                 </button>
-                <button class="profile-menu-item" onclick="window.__closeProfileMenu(); openBitmojiStudioModal();">
-                    <span class="profile-menu-item-icon">🎨</span>
-                    <span>Create Bitmoji Avatar</span>
-                    <span class="profile-menu-item-badge" style="background: linear-gradient(135deg, #a855f7, #ec4899); color: white;">NEW</span>
-                </button>
-                <button class="profile-menu-item" onclick="window.__closeProfileMenu(); router('/profile');">
+                <button class="profile-menu-item" onclick="window.__closeProfileMenu(); openFiverrPortfolioModal(currentUser?.id, currentUser?.name);">
                     <span class="profile-menu-item-icon">👁️</span>
-                    <span>Public Profile Preview</span>
+                    <span>Public Profile &amp; Reels Preview</span>
                 </button>
             </div>
 
@@ -615,7 +610,8 @@ function renderProfileMenu() {
 window.openSettingsTab = (tab) => {
     window.__closeProfileMenu();
     activeSettingsTab = tab;
-    if (window.location.pathname === '/settings' || window.location.pathname === '/profile') {
+    sessionStorage.setItem('settings_tab', tab);
+    if (window.location.pathname === '/settings' || window.location.pathname === '/profile' || window.location.pathname === '/portfolio') {
         if (typeof window.setSettingsTab === 'function') {
             window.setSettingsTab(tab);
         }
@@ -1635,6 +1631,7 @@ function router(path, pushState = true) {
         '/login': Login,
         '/register': Register,
         '/profile': (currentToken ? Settings : Login),
+        '/portfolio': (currentToken ? Settings : Login),
         '/settings': (currentToken ? Settings : Login),
         '/payments': (currentToken ? PaymentsPortal : Login),
         '/packages': (currentToken ? MyPackages : Landing),
@@ -4377,7 +4374,7 @@ function NotFound() {
 
 // =============== SETTINGS & PROFILE ===============
 
-let activeSettingsTab = 'account';
+let activeSettingsTab = 'portfolio';
 
 function Settings() {
     let profile = {};
@@ -4386,8 +4383,17 @@ function Settings() {
     let success = '';
     let loading = true;
     let platformSettings = null;
-    if (window.location.pathname === '/profile') {
-        activeSettingsTab = currentUser?.user_type === 'PROVIDER' ? 'profile' : 'account';
+    
+    const storedTab = sessionStorage.getItem('settings_tab');
+    if (storedTab) {
+        activeSettingsTab = storedTab;
+        sessionStorage.removeItem('settings_tab');
+    } else if (window.location.pathname === '/portfolio') {
+        activeSettingsTab = 'portfolio';
+    } else if (window.location.pathname === '/profile') {
+        activeSettingsTab = currentUser?.user_type === 'PROVIDER' ? 'portfolio' : 'account';
+    } else if (currentUser?.user_type === 'PROVIDER' && !activeSettingsTab) {
+        activeSettingsTab = 'portfolio';
     }
 
     async function loadData() {
@@ -4879,7 +4885,7 @@ function Settings() {
                     </button>
                     ${isProvider ? `
                         <button type="button" class="tab ${activeSettingsTab === 'portfolio' ? 'active' : ''}" onclick="setSettingsTab('portfolio')">
-                            📁 Portfolio &amp; Uploads (${portfolioItems.length})
+                            🖼️ Showcase Flyer &amp; 4K Reels (${portfolioItems.length})
                         </button>
                         <button type="button" class="tab ${activeSettingsTab === 'profile' ? 'active' : ''}" onclick="setSettingsTab('profile')">
                             🎨 Specialty &amp; Skills
@@ -5086,10 +5092,13 @@ function Settings() {
 
                         <!-- Live Portfolio Showcase Items Grid -->
                         <div class="card" style="padding: 24px;">
-                            <div class="card-header" style="margin-bottom: 16px;">
+                            <div class="card-header" style="margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                                 <div class="card-title" style="font-size: 1rem; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
                                     <span>📁</span> Live Projects &amp; Reels on Your Profile (${portfolioItems.length})
                                 </div>
+                                <button type="button" class="btn btn-secondary btn-sm" onclick="openFiverrPortfolioModal(${currentUser.id}, '${escapeHTML(currentUser.name)}')" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700;">
+                                    <span>👁️</span> Open Live Profile &amp; Reels Player
+                                </button>
                             </div>
 
                             ${portfolioItems.length === 0 ? `
@@ -5106,7 +5115,7 @@ function Settings() {
                                         <div class="card" style="padding: 14px; background: var(--bg-hover); border: 1px solid var(--border); border-radius: var(--radius-sm); display: flex; flex-direction: column; justify-content: space-between;">
                                             <div>
                                                 ${item.media_type === 'video' && item.media_url && (item.media_url.endsWith('.mp4') || item.media_url.endsWith('.mov') || item.media_url.endsWith('.webm') || item.media_url.startsWith('/static/')) ? `
-                                                    <div style="border-radius: 8px; overflow: hidden; margin-bottom: 10px; background: #000;">
+                                                    <div style="border-radius: 8px; overflow: hidden; margin-bottom: 10px; background: #000; cursor: pointer;" onclick="openFiverrPortfolioModal(${currentUser.id}, '${escapeHTML(currentUser.name)}')">
                                                         <video src="${item.media_url}" controls preload="metadata" style="width: 100%; max-height: 180px; display: block;"></video>
                                                     </div>
                                                 ` : item.media_type === 'video' && item.media_url && item.media_url.includes('youtube') ? `
@@ -5114,26 +5123,31 @@ function Settings() {
                                                         <iframe src="${item.media_url.replace('watch?v=', 'embed/').split('&')[0]}" style="position: absolute; top:0; left: 0; width: 100%; height: 100%; border: 0;" allowfullscreen></iframe>
                                                     </div>
                                                 ` : item.thumbnail_url || (item.media_type === 'image' && item.media_url) ? `
-                                                    <div style="height: 140px; overflow: hidden; border-radius: 8px; margin-bottom: 10px; background: #111;">
+                                                    <div style="height: 140px; overflow: hidden; border-radius: 8px; margin-bottom: 10px; background: #111; cursor: pointer;" onclick="openFiverrPortfolioModal(${currentUser.id}, '${escapeHTML(currentUser.name)}')">
                                                         <img src="${item.thumbnail_url || item.media_url}" alt="${escapeHTML(item.title)}" style="width: 100%; height: 100%; object-fit: cover;">
                                                     </div>
                                                 ` : `
-                                                    <div style="height: 90px; display: flex; align-items: center; justify-content: center; background: var(--bg-card); border-radius: 8px; margin-bottom: 10px; font-size: 2rem;">
+                                                    <div style="height: 90px; display: flex; align-items: center; justify-content: center; background: var(--bg-card); border-radius: 8px; margin-bottom: 10px; font-size: 2rem; cursor: pointer;" onclick="openFiverrPortfolioModal(${currentUser.id}, '${escapeHTML(currentUser.name)}')">
                                                         ${item.media_type === 'video' ? '🎬' : item.media_type === 'image' ? '🖼️' : item.media_type === 'audio' ? '🎙️' : '🔗'}
                                                     </div>
                                                 `}
                                                 <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 6px;">
-                                                    <h4 style="font-size: 0.92rem; font-weight: 700; color: var(--text-primary); margin: 0;">${escapeHTML(item.title)}</h4>
+                                                    <h4 style="font-size: 0.92rem; font-weight: 700; color: var(--text-primary); margin: 0; cursor: pointer;" onclick="openFiverrPortfolioModal(${currentUser.id}, '${escapeHTML(currentUser.name)}')">${escapeHTML(item.title)}</h4>
                                                     <span class="badge badge-info" style="font-size: 0.68rem; text-transform: uppercase;">${item.media_type}</span>
                                                 </div>
                                                 <p style="font-size: 0.78rem; color: var(--text-secondary); line-height: 1.4; margin: 0 0 10px 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
                                                     ${escapeHTML(item.description || 'Verified project sample')}
                                                 </p>
                                             </div>
-                                            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding-top: 8px; margin-top: 8px;">
-                                                <a href="${escapeHTML(item.media_url)}" target="_blank" rel="noopener noreferrer" style="font-size: 0.75rem; color: var(--accent); font-weight: 600; text-decoration: none;">
-                                                    Open / Download ↗
-                                                </a>
+                                            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding-top: 8px; margin-top: 8px; flex-wrap: wrap; gap: 6px;">
+                                                <div style="display: flex; gap: 8px; align-items: center;">
+                                                    <button type="button" class="btn btn-primary btn-sm" onclick="openFiverrPortfolioModal(${currentUser.id}, '${escapeHTML(currentUser.name)}')" style="padding: 3px 10px; font-size: 0.72rem; font-weight: 700;">
+                                                        ▶ Play in Player
+                                                    </button>
+                                                    <a href="${escapeHTML(item.media_url)}" target="_blank" rel="noopener noreferrer" style="font-size: 0.72rem; color: var(--accent); font-weight: 600; text-decoration: none;">
+                                                        Download ↗
+                                                    </a>
+                                                </div>
                                                 <button type="button" class="btn btn-secondary btn-sm" onclick="handleDeletePortfolioItem(${item.id})" style="color: var(--danger); border-color: rgba(239, 68, 68, 0.3); padding: 3px 8px; font-size: 0.72rem;">
                                                     🗑️ Delete
                                                 </button>
@@ -5573,6 +5587,34 @@ function CreatePackage() {
 
     window.handleSubmit = handleSubmit;
 
+    window.handlePackageSampleUpload = async (file) => {
+        if (!file) return;
+        const statusEl = document.getElementById('pkg-sample-status');
+        const inputEl = document.getElementById('pkg-sample');
+        if (statusEl) {
+            statusEl.style.display = 'block';
+            statusEl.textContent = `Uploading ${(file.size / (1024 * 1024)).toFixed(1)} MB 4K sample...`;
+        }
+        const formData = new FormData();
+        formData.append('file', file);
+        try {
+            const token = currentToken || localStorage.getItem('access_token');
+            const res = await fetch('/api/upload', {
+                method: 'POST',
+                headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+                body: formData
+            });
+            if (!res.ok) throw new Error('Upload failed');
+            const data = await res.json();
+            if (inputEl) inputEl.value = data.url;
+            if (statusEl) statusEl.textContent = `✅ 4K Sample reel uploaded! Ready to save.`;
+            showToast('Sample reel / flyer uploaded successfully!', 'success');
+        } catch (err) {
+            if (statusEl) statusEl.textContent = `❌ Upload failed: ${err.message}`;
+            showToast(err.message || 'Upload failed', 'error');
+        }
+    };
+
     window.selectPackageType = (type) => {
         selectedType = type;
         mount(renderCreatePackage());
@@ -5625,8 +5667,15 @@ function CreatePackage() {
                                 <input type="number" class="form-input" id="pkg-revisions" min="1" max="10" value="${editData?.revision_limit || 2}" required>
                             </div>
                             <div class="form-group">
-                                <label class="form-label">Sample Reference (Optional)</label>
-                                <input type="text" class="form-input" id="pkg-sample" placeholder="https://drive.google.com/..." value="${editData?.sample_reference || ''}">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                                    <label class="form-label" style="margin: 0;">Showcase Reel / Flyer</label>
+                                    <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('pkg-sample-file').click()" style="padding: 2px 8px; font-size: 0.72rem; font-weight: 700;">
+                                        📤 Upload 4K Reel
+                                    </button>
+                                </div>
+                                <input type="file" id="pkg-sample-file" style="display:none;" accept="video/*,image/*" onchange="handlePackageSampleUpload(this.files[0])" />
+                                <input type="text" class="form-input" id="pkg-sample" placeholder="File path auto-fills on upload" value="${editData?.sample_reference || ''}">
+                                <div id="pkg-sample-status" style="display: none; font-size: 0.75rem; color: var(--accent); margin-top: 4px; font-weight: 600;"></div>
                             </div>
                         </div>
                         <div class="form-group">
