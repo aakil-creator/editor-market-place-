@@ -1233,10 +1233,10 @@ async function openFiverrPortfolioModal(providerId, providerName) {
         const cardEl = modal.querySelector('.fiverr-escrow-card');
         if (!cardEl) return;
 
-        const firstVideo = items.find(i => i.media_type === 'video' || (i.media_url && /\.(mp4|webm|mov|mkv)$/i.test(i.media_url)));
-        const primaryMedia = firstVideo || items[0];
-        const primaryMediaUrl = validateUrl(primaryMedia?.media_url);
-        const primaryThumbnailUrl = validateUrl(primaryMedia?.thumbnail_url);
+        const videoItems = items.filter(i => i.media_type === 'video' || (i.media_url && /\.(mp4|webm|mov|mkv)$/i.test(i.media_url)));
+        const otherItems = items.filter(i => !videoItems.includes(i));
+        const activeMedia = videoItems[0] || items[0];
+        const activeMediaUrl = validateUrl(activeMedia?.media_url);
 
         cardEl.innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
@@ -1261,21 +1261,56 @@ async function openFiverrPortfolioModal(providerId, providerName) {
                 <button class="modal-close" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--text-muted);">&times;</button>
             </div>
 
-            <!-- Media Preview / Showreel Player -->
-            <div id="provider-modal-media-wrap" style="position: relative; width: 100%; padding-top: 56.25%; border-radius: 12px; overflow: hidden; background: #000; margin-bottom: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.35);">
-                ${primaryMediaUrl && /\.(mp4|webm|mov|mkv)$/i.test(primaryMediaUrl) ? `
-                    <video controls playsinline preload="metadata" src="${sanitizeUrl(primaryMediaUrl)}" style="position: absolute; top:0; left:0; width:100%; height:100%; object-fit: contain; background: #000;"></video>
-                ` : `
-                    <img src="${sanitizeUrl(primaryThumbnailUrl || thumb)}" style="position: absolute; top:0; left:0; width:100%; height:100%; object-fit: cover;" alt="${escapeHTML(name)}">
-                    <div style="position: absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background: rgba(0,0,0,0.45); color:white; text-align:center; padding:16px;">
-                        <div style="width: 56px; height: 56px; border-radius: 50%; background: rgba(255,255,255,0.95); color: #0f172a; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-bottom: 10px; box-shadow: 0 4px 16px rgba(0,0,0,0.4); padding-left: 4px;">
-                            ▶
-                        </div>
-                        <div style="font-weight: 700; font-size: 1.05rem;">${escapeHTML(primaryMedia?.title || 'Verified 4K Creator Showcase')}</div>
-                        <div style="font-size: 0.8125rem; opacity: 0.85; max-width: 460px; margin-top: 4px;">${escapeHTML(primaryMedia?.description || 'High-retention editing, motion graphics, and sound design deliverables with 100% Escrow Protection.')}</div>
-                    </div>
-                `}
+            <!-- Active Video Sample Reel Player -->
+            <div style="margin-bottom: 14px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <span style="font-size: 0.8125rem; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 6px;">
+                        <span>🎬</span> Verified Sample Video Reel
+                    </span>
+                    <span style="font-size: 0.72rem; color: var(--success); font-weight: 700;">✓ In-App Native Playback</span>
+                </div>
+                <div id="provider-modal-media-wrap" style="position: relative; width: 100%; padding-top: 56.25%; border-radius: 12px; overflow: hidden; background: #000; box-shadow: 0 6px 24px rgba(0,0,0,0.5); border: 1px solid var(--border);">
+                    ${activeMediaUrl && /\.(mp4|webm|mov|mkv)$/i.test(activeMediaUrl) ? `
+                        <video id="modal-active-video-player" controls autoplay playsinline preload="auto" src="${sanitizeUrl(activeMediaUrl)}" style="position: absolute; top:0; left:0; width:100%; height:100%; object-fit: contain; background: #000;"></video>
+                    ` : activeMediaUrl && activeMediaUrl.includes('youtube') ? `
+                        <iframe id="modal-active-iframe-player" src="${activeMediaUrl.replace('watch?v=', 'embed/').split('&')[0]}?autoplay=1" style="position: absolute; top:0; left:0; width:100%; height:100%; border: 0;" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+                    ` : `
+                        <img src="${sanitizeUrl(activeMedia?.thumbnail_url || thumb)}" style="position: absolute; top:0; left:0; width:100%; height:100%; object-fit: cover;" alt="${escapeHTML(name)}">
+                    `}
+                </div>
+                <div id="modal-active-reel-title" style="font-size: 0.85rem; font-weight: 700; color: var(--text-primary); margin-top: 8px;">
+                    ${escapeHTML(activeMedia?.title || 'Creator Portfolio Showcase')}
+                </div>
+                <div id="modal-active-reel-desc" style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px;">
+                    ${escapeHTML(activeMedia?.description || 'High-retention editing, sound design, and color grading deliverables with 100% Escrow Protection.')}
+                </div>
             </div>
+
+            <!-- Multiple Sample Reels Switcher (If multiple exist) -->
+            ${items.length > 1 ? `
+                <div style="margin-bottom: 16px;">
+                    <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">
+                        All Sample Reels &amp; Deliverables (${items.length}):
+                    </div>
+                    <div style="display: flex; gap: 8px; overflow-x: auto; padding-bottom: 6px; scrollbar-width: thin;">
+                        ${items.map((item, idx) => `
+                            <div class="sample-reel-tab" onclick="window.__switchModalShowcaseItem(${JSON.stringify(escapeHTML(item.media_url || '')).replace(/"/g, '&quot;')}, ${JSON.stringify(escapeHTML(item.title || '')).replace(/"/g, '&quot;')}, ${JSON.stringify(escapeHTML(item.description || '')).replace(/"/g, '&quot;')})" style="flex-shrink: 0; width: 120px; cursor: pointer; background: var(--bg-hover); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; transition: transform 0.15s ease;">
+                                <div style="width: 100%; height: 65px; background: #000; position: relative;">
+                                    ${item.thumbnail_url || (item.media_type === 'image' && item.media_url) ? `
+                                        <img src="${sanitizeUrl(item.thumbnail_url || item.media_url)}" style="width: 100%; height: 100%; object-fit: cover;" alt="${escapeHTML(item.title)}">
+                                    ` : `
+                                        <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; background: #1e1b4b; color: #fff;">🎬</div>
+                                    `}
+                                    <span style="position: absolute; bottom: 3px; right: 3px; background: rgba(0,0,0,0.7); font-size: 0.6rem; color: #fff; padding: 1px 4px; border-radius: 3px;">▶ #${idx + 1}</span>
+                                </div>
+                                <div style="padding: 4px 6px; font-size: 0.7rem; font-weight: 700; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                    ${escapeHTML(item.title)}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            ` : ''}
 
             <!-- Skills & Specializations -->
             ${skills && skills.length > 0 ? `
@@ -1306,6 +1341,24 @@ async function openFiverrPortfolioModal(providerId, providerName) {
                 </button>
             </div>
         `;
+
+        window.__switchModalShowcaseItem = (url, title, desc) => {
+            const wrap = document.getElementById('provider-modal-media-wrap');
+            const titleEl = document.getElementById('modal-active-reel-title');
+            const descEl = document.getElementById('modal-active-reel-desc');
+            if (titleEl) titleEl.textContent = title;
+            if (descEl) descEl.textContent = desc;
+            if (!wrap) return;
+
+            if (url && /\.(mp4|webm|mov|mkv)$/i.test(url)) {
+                wrap.innerHTML = `<video controls autoplay playsinline preload="auto" src="${sanitizeUrl(url)}" style="position: absolute; top:0; left:0; width:100%; height:100%; object-fit: contain; background: #000;"></video>`;
+            } else if (url && url.includes('youtube')) {
+                wrap.innerHTML = `<iframe src="${url.replace('watch?v=', 'embed/').split('&')[0]}?autoplay=1" style="position: absolute; top:0; left:0; width:100%; height:100%; border: 0;" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
+            } else if (url) {
+                wrap.innerHTML = `<img src="${sanitizeUrl(url)}" style="position: absolute; top:0; left:0; width:100%; height:100%; object-fit: cover;">`;
+            }
+        };
+
         cardEl.querySelector('.modal-close').onclick = () => modal.remove();
     } catch (err) {
         const bodyEl = modal.querySelector('.provider-modal-body');
