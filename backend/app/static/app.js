@@ -4861,6 +4861,9 @@ function Settings() {
         const progressBar = document.getElementById('port-upload-bar');
         const progressPct = document.getElementById('port-upload-pct');
         const statusText = document.getElementById('port-upload-status-text');
+        const previewWrap = document.getElementById('port-uploaded-preview');
+        const previewFileName = document.getElementById('port-preview-file-name');
+        const dropzoneContent = document.getElementById('port-dropzone-content');
 
         if (progressWrap) progressWrap.style.display = 'block';
         if (progressBar) progressBar.style.width = '0%';
@@ -4887,7 +4890,7 @@ function Settings() {
             }
         };
 
-        xhr.onload = async () => {
+        xhr.onload = () => {
             if (xhr.status === 200) {
                 try {
                     const res = JSON.parse(xhr.responseText);
@@ -4899,34 +4902,22 @@ function Settings() {
                     const title = cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
                     const media_type = file.type.startsWith('image/') ? 'image' : (file.type.startsWith('audio/') ? 'audio' : 'video');
 
+                    // Save uploaded URL to global window object so form submit picks it up automatically
+                    window.__lastUploadedPortfolioUrl = res.url;
+                    window.__lastUploadedPortfolioType = media_type;
+
                     if (urlInput) urlInput.value = res.url;
                     if (titleInput && !titleInput.value.trim()) titleInput.value = title;
                     if (typeSelect) typeSelect.value = media_type;
 
-                    if (statusText) statusText.textContent = '✅ Upload complete! Adding to your profile reels...';
-                    if (progressBar) progressBar.style.width = '100%';
-                    if (progressPct) progressPct.textContent = '100%';
-
-                    // Auto-save to portfolio reels
-                    try {
-                        const newItem = await apiFetch('/profile/portfolio', {
-                            method: 'POST',
-                            body: JSON.stringify({
-                                title,
-                                media_url: res.url,
-                                media_type,
-                                thumbnail_url: media_type === 'image' ? res.url : '/static/banners/ab_pradeep_reel_editor.png',
-                                description: 'Verified 4K sample reel deliverable'
-                            })
-                        });
-                        if (typeof portfolioItems !== 'undefined') {
-                            portfolioItems.unshift(newItem);
-                        }
-                        showToast(`✨ "${title}" added live to your profile reels!`, 'success');
-                        setTimeout(() => { mount(renderSettingsView()); }, 600);
-                    } catch (saveErr) {
-                        showToast('File uploaded! Click "Add to My Profile Reels" below to confirm.', 'info');
+                    if (progressWrap) progressWrap.style.display = 'none';
+                    if (dropzoneContent) dropzoneContent.style.display = 'none';
+                    if (previewWrap) {
+                        previewWrap.style.display = 'block';
+                        if (previewFileName) previewFileName.textContent = `Attached: ${file.name} (${(file.size / (1024 * 1024)).toFixed(1)} MB)`;
                     }
+
+                    showToast(`✅ "${file.name}" uploaded successfully! Now click "Add to My Profile Reels" below.`, 'success');
                 } catch (e) {
                     showToast('Failed to parse upload response', 'error');
                 }
@@ -4950,16 +4941,25 @@ function Settings() {
     };
 
     window.handleAddPortfolioItem = async (e) => {
-        e.preventDefault();
-        const title = (document.getElementById('port-title')?.value || '').trim();
-        const media_url = (document.getElementById('port-media-url')?.value || '').trim();
-        const media_type = document.getElementById('port-media-type')?.value || 'video';
-        const thumbnail_url = (document.getElementById('port-thumb-url')?.value || '').trim() || (media_type === 'image' ? media_url : '');
-        const description = (document.getElementById('port-desc')?.value || '').trim();
+        if (e && e.preventDefault) e.preventDefault();
+        const titleInput = document.getElementById('port-title');
+        const mediaUrlInput = document.getElementById('port-media-url');
+        const mediaTypeSelect = document.getElementById('port-media-type');
+        const descInput = document.getElementById('port-desc');
 
-        if (!title || !media_url) {
-            showToast('Please provide a title and media URL', 'error');
+        const media_url = window.__lastUploadedPortfolioUrl || (mediaUrlInput?.value || '').trim();
+        let title = (titleInput?.value || '').trim();
+        const media_type = (mediaTypeSelect?.value || window.__lastUploadedPortfolioType || 'video');
+        const description = (descInput?.value || '').trim() || 'Verified 4K sample reel deliverable';
+        const thumbnail_url = media_type === 'image' ? media_url : '/static/banners/ab_pradeep_reel_editor.png';
+
+        if (!media_url) {
+            showToast('Please upload a sample file above or provide a media URL/link', 'error');
             return;
+        }
+
+        if (!title) {
+            title = 'Sample Video Reel';
         }
 
         try {
@@ -4974,10 +4974,14 @@ function Settings() {
                     description
                 })
             });
-            showToast('Work sample added to your portfolio showcase!', 'success');
-            portfolioItems.unshift(item);
+            showToast(`✨ "${title}" added live to your profile reels!`, 'success');
+            if (typeof portfolioItems !== 'undefined' && Array.isArray(portfolioItems)) {
+                portfolioItems.unshift(item);
+            }
+            window.__lastUploadedPortfolioUrl = null;
+            window.__lastUploadedPortfolioType = null;
         } catch (err) {
-            showToast(err.message || 'Failed to add portfolio item', 'error');
+            showToast(err.message || 'Failed to add portfolio reel', 'error');
         } finally {
             hideLoading();
             mount(renderSettingsView());
@@ -5436,11 +5440,13 @@ function Settings() {
                             </div>
 
                             <!-- Direct 4K File Upload Dropzone -->
-                            <div class="portfolio-upload-dropzone" style="border: 2px dashed var(--border); border-radius: 12px; padding: 22px; text-align: center; background: var(--bg-hover); cursor: pointer; margin-bottom: 18px; transition: all 0.2s ease;" onclick="document.getElementById('port-file-input').click()">
+                            <div class="portfolio-upload-dropzone" id="port-dropzone-box" style="border: 2px dashed var(--border); border-radius: 12px; padding: 22px; text-align: center; background: var(--bg-hover); cursor: pointer; margin-bottom: 18px; transition: all 0.2s ease;" onclick="document.getElementById('port-file-input').click()">
                                 <input type="file" id="port-file-input" style="display:none;" accept="video/*,image/*,audio/*" onchange="if(this.files[0]) handlePortfolioFileUpload(this.files[0])" />
-                                <div style="font-size: 2.2rem; margin-bottom: 6px;">📤</div>
-                                <div style="font-weight: 800; font-size: 0.98rem; color: var(--text-primary); margin-bottom: 4px;">Click to Upload 4K Sample Video Reel from Device</div>
-                                <div style="font-size: 0.8rem; color: var(--text-muted);">Supports MP4, MOV, MKV, WebM (up to 1GB 4K allowance with high-speed streaming)</div>
+                                <div id="port-dropzone-content">
+                                    <div style="font-size: 2.2rem; margin-bottom: 6px;">📤</div>
+                                    <div style="font-weight: 800; font-size: 0.98rem; color: var(--text-primary); margin-bottom: 4px;">Click to Upload 4K Sample Video Reel from Device</div>
+                                    <div style="font-size: 0.8rem; color: var(--text-muted);">Supports MP4, MOV, MKV, WebM (up to 1GB 4K allowance with high-speed streaming)</div>
+                                </div>
                                 <div id="port-upload-progress-wrap" style="display: none; margin-top: 14px; text-align: left; background: var(--bg-card); padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border);">
                                     <div style="display: flex; justify-content: space-between; font-size: 0.78rem; font-weight: 700; margin-bottom: 6px;">
                                         <span id="port-upload-status-text" style="color: var(--text-primary);">Uploading 4K file...</span>
@@ -5448,6 +5454,17 @@ function Settings() {
                                     </div>
                                     <div style="width: 100%; height: 7px; background: var(--border); border-radius: 999px; overflow: hidden;">
                                         <div id="port-upload-bar" style="width: 0%; height: 100%; background: var(--accent); transition: width 0.15s ease;"></div>
+                                    </div>
+                                </div>
+                                <div id="port-uploaded-preview" style="display: none; margin-top: 6px; text-align: center; background: rgba(16, 185, 129, 0.1); border: 1px dashed rgba(16, 185, 129, 0.5); padding: 14px 18px; border-radius: 10px;">
+                                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+                                        <div style="display: flex; align-items: center; gap: 10px; font-weight: 700; color: #10b981; font-size: 0.88rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                            <span style="font-size: 1.2rem;">✅</span>
+                                            <span id="port-preview-file-name">Sample File Attached</span>
+                                        </div>
+                                        <button type="button" class="btn btn-secondary btn-sm" onclick="event.stopPropagation(); document.getElementById('port-file-input').click();" style="padding: 4px 10px; font-size: 0.75rem;">
+                                            🔄 Change File
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -5468,8 +5485,8 @@ function Settings() {
                                         </select>
                                     </div>
                                     <div class="form-group">
-                                        <label class="form-label">Media File Path / URL <span style="color: var(--danger);">*</span></label>
-                                        <input type="text" class="form-input" id="port-media-url" placeholder="Uploaded file path auto-fills here" required>
+                                        <label class="form-label">Media File Path / External Link <span style="font-weight: 400; color: var(--text-muted); font-size: 0.78rem;">(Optional if uploaded above)</span></label>
+                                        <input type="text" class="form-input" id="port-media-url" placeholder="Auto-filled when you upload above, or paste YouTube/Drive link">
                                     </div>
                                 </div>
 
