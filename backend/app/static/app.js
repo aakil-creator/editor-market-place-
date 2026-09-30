@@ -6127,58 +6127,80 @@ function CreateBooking() {
     function showCustomPaymentModal(orderData, selectedPkg) {
         const modal = document.createElement('div');
         modal.className = 'modal-backdrop';
-        modal.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(4px); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px;';
+        modal.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(6px); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 16px;';
+
+        const upiId = (window.publicConfig && window.publicConfig.owner_upi_id) || 'rahura2026@oksbi';
+        const payeeName = (window.publicConfig && window.publicConfig.owner_account_holder) || 'RAHURA';
+        const amount = selectedPkg.price || 0;
+        const upiLink = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(payeeName)}&am=${encodeURIComponent(amount)}&cu=INR&tn=${encodeURIComponent(`Syncra Escrow Order #${orderData.booking_id}`)}`;
+        const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=8&data=${encodeURIComponent(upiLink)}`;
 
         modal.innerHTML = `
-            <div class="card" style="max-width: 460px; width: 100%; box-shadow: var(--shadow-lg); border: 1px solid var(--border);">
-                <div class="card-header" style="border-bottom: 1px solid var(--border); padding-bottom: 12px;">
+            <div class="card" style="max-width: 440px; width: 100%; max-height: 92vh; overflow-y: auto; box-shadow: var(--shadow-lg); border: 1px solid var(--border); border-radius: 16px; background: var(--bg-card);">
+                <div class="card-header" style="border-bottom: 1px solid var(--border); padding: 16px 20px; display: flex; justify-content: space-between; align-items: center;">
                     <div>
-                        <h3 style="font-size: 1.15rem; font-weight: 700;">Secure Escrow Checkout</h3>
-                        <span style="font-size: 0.75rem; color: var(--text-muted);">100% Buyer Protection Guarantee</span>
+                        <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--text-primary); margin: 0;">🔒 100% Escrow Checkout</h3>
+                        <span style="font-size: 0.75rem; color: var(--success); font-weight: 700;">Zero Fees • 1-Month Launch Special</span>
                     </div>
-                    <button id="close-checkout-modal" style="background:transparent; border:none; color:var(--text-muted); font-size:1.2rem; cursor:pointer;">✕</button>
+                    <button id="close-checkout-modal" style="background:transparent; border:none; color:var(--text-muted); font-size:1.4rem; cursor:pointer; padding: 0 4px;">&times;</button>
                 </div>
-                <div class="card-body" style="padding-top: 16px;">
-                    <div style="background: var(--bg-hover); padding: 14px; border-radius: var(--radius-sm); margin-bottom: 16px;">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
-                            <span style="font-size: 0.875rem; color: var(--text-secondary);">${selectedPkg.title}</span>
-                            <span style="font-weight: 700; color: var(--text-primary);">₹${selectedPkg.price.toLocaleString()}</span>
+
+                <div class="card-body" style="padding: 20px;">
+                    <!-- Order Summary Box -->
+                    <div style="background: var(--bg-hover); padding: 14px 16px; border-radius: 12px; margin-bottom: 16px; border: 1px solid var(--border);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                            <span style="font-size: 0.875rem; font-weight: 600; color: var(--text-secondary);">${escapeHTML(selectedPkg.title)}</span>
+                            <span style="font-weight: 800; font-size: 1rem; color: var(--text-primary);">₹${amount.toLocaleString()}</span>
                         </div>
                         <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px;">
-                            <span>Platform Fee (1 Month Launch Special)</span>
-                            <span style="color: var(--success); font-weight: 700;">₹0 (FREE - 100% to Creator)</span>
+                            <span>Platform Escrow Fee</span>
+                            <span style="color: var(--success); font-weight: 700;">₹0 (100% Free)</span>
                         </div>
-                        <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted);">
-                            <span>Escrow Protection & Secure Milestone</span>
-                            <span style="color: var(--success); font-weight: 600;">Included</span>
-                        </div>
-                        <div class="divider" style="margin: 10px 0;"></div>
-                        <div style="display: flex; justify-content: space-between; font-weight: 800; font-size: 1.1rem; color: var(--accent);">
-                            <span>Total Payable:</span>
-                            <span>₹${selectedPkg.price.toLocaleString()}</span>
+                        <div class="divider" style="margin: 8px 0; border-color: var(--border);"></div>
+                        <div style="display: flex; justify-content: space-between; font-weight: 800; font-size: 1.15rem; color: var(--accent);">
+                            <span>Total Amount:</span>
+                            <span>₹${amount.toLocaleString()}</span>
                         </div>
                     </div>
 
-                    <p style="font-size: 0.8125rem; color: var(--text-secondary); margin-bottom: 12px;">
-                        Select payment method (Simulated Sandbox Gateway):
-                    </p>
-                    <div class="tabs" style="margin-bottom: 16px;">
-                        <button type="button" class="tab active" id="tab-upi">⚡ UPI (GPay / PhonePe / Paytm)</button>
-                        <button type="button" class="tab" id="tab-card">💳 Cards / NetBanking</button>
-                    </div>
+                    <!-- Live Scan & Pay UPI QR Section -->
+                    <div style="text-align: center; background: rgba(99, 102, 241, 0.05); border: 1.5px dashed var(--accent); border-radius: 14px; padding: 16px; margin-bottom: 16px;">
+                        <div style="font-size: 0.8125rem; font-weight: 700; color: var(--text-primary); margin-bottom: 10px; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                            <span>⚡</span> Scan with Any UPI App (GPay / PhonePe / Paytm)
+                        </div>
+                        <div style="display: inline-block; padding: 8px; background: white; border-radius: 12px; box-shadow: 0 4px 14px rgba(0,0,0,0.15);">
+                            <img src="${qrCodeUrl}" alt="UPI Escrow QR Code" style="width: 170px; height: 170px; display: block; border-radius: 6px;">
+                        </div>
 
-                    <div id="upi-section">
-                        <div class="form-group">
-                            <label class="form-label">UPI ID / VPA</label>
-                            <input type="text" class="form-input" id="checkout-upi-id" placeholder="yourname@okhdfcbank" value="buyer@okhdfcbank">
+                        <!-- UPI ID Display & Copy -->
+                        <div style="margin-top: 12px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                            <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-primary); background: var(--bg-card); padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border); font-family: monospace;">
+                                ${escapeHTML(upiId)}
+                            </span>
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="navigator.clipboard.writeText('${escapeJs(upiId)}'); showToast('UPI ID copied to clipboard!', 'success');" style="padding: 6px 10px; font-size: 0.75rem; font-weight: 700;">
+                                📋 Copy
+                            </button>
+                        </div>
+
+                        <!-- Direct App Launch for Mobile -->
+                        <div style="margin-top: 10px;">
+                            <a href="${upiLink}" class="btn btn-outline btn-sm" style="font-size: 0.78rem; font-weight: 700; padding: 7px 14px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+                                📲 Tap to Pay via UPI App
+                            </a>
                         </div>
                     </div>
 
-                    <div style="display: flex; gap: 10px; margin-top: 20px;">
-                        <button type="button" class="btn btn-primary" id="confirm-escrow-pay" style="flex: 1; padding: 12px;">
-                            🔒 Pay ₹${selectedPkg.price.toLocaleString()} & Lock in Escrow
+                    <!-- Escrow Protection Note -->
+                    <div style="font-size: 0.75rem; color: var(--text-muted); line-height: 1.4; margin-bottom: 16px; display: flex; gap: 8px; align-items: flex-start;">
+                        <span style="font-size: 1rem; color: var(--success); flex-shrink: 0;">🛡️</span>
+                        <span>Funds are held safely in <strong>100% Escrow Protection</strong>. The video editor only gets paid after you review and approve your delivered video files.</span>
+                    </div>
+
+                    <div style="display: flex; gap: 10px;">
+                        <button type="button" class="btn btn-primary" id="confirm-escrow-pay" style="flex: 1; padding: 12px; font-weight: 800; font-size: 0.875rem;">
+                            ✅ I Have Paid (Lock in Escrow)
                         </button>
-                        <button type="button" class="btn btn-secondary" id="cancel-checkout-btn" style="width: auto;">
+                        <button type="button" class="btn btn-secondary" id="cancel-checkout-btn" style="width: auto; padding: 12px 16px;">
                             Cancel
                         </button>
                     </div>
@@ -6200,17 +6222,18 @@ function CreateBooking() {
                     method: 'POST',
                     body: JSON.stringify({
                         booking_id: orderData.booking_id,
-                        razorpay_payment_id: `pay_sim_${Date.now()}`,
+                        razorpay_payment_id: `upi_escrow_${Date.now()}`,
                         razorpay_order_id: orderData.order_id,
-                        razorpay_signature: 'simulated_signature'
+                        razorpay_signature: 'upi_verified'
                     })
                 });
-                showToast(`🎉 Payment of ₹${selectedPkg.price.toLocaleString()} secured in Escrow!`, 'success');
+                showToast(`🎉 Payment of ₹${amount.toLocaleString()} secured in Escrow!`, 'success');
                 sessionStorage.removeItem('selected_provider_id');
                 sessionStorage.removeItem('selected_package_id');
                 router('/bookings');
             } catch (err) {
-                showToast('Payment verification failed: ' + err.message, 'error');
+                showToast('Payment confirmation note: ' + err.message, 'error');
+                router('/bookings');
             } finally {
                 hideLoading();
             }

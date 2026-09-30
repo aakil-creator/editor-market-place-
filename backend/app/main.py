@@ -880,6 +880,9 @@ def get_public_config(db = Depends(get_db)):
     return {
         "google_client_id": google_client_id,
         "razorpay_key_id": razorpay_key_id,
+        "owner_upi_id": (settings.owner_upi_id if settings and settings.owner_upi_id else "rahura2026@oksbi"),
+        "owner_account_holder": (settings.owner_account_holder if settings and settings.owner_account_holder else "RAHURA"),
+        "owner_bank_name": (settings.owner_bank_name if settings and settings.owner_bank_name else "State Bank of India (SBI)"),
         "launch_promo_active": launch_promo_active,
         "launch_promo_title": "🎉 Play Store Launch Special: 0% Platform Commission for 1 Month!",
         "launch_promo_subtitle": "Keep 100% of your earnings. Zero platform fees on all bookings for 30 days.",
@@ -1711,7 +1714,7 @@ def create_booking(booking_data: BookingCreate, current_user = Depends(get_curre
     # Increment total_bookings only once (use confirmed provider_id from package)
     provider_profile = db.query(Profile).filter(Profile.user_id == provider_id).first()
     if provider_profile:
-        provider_profile.total_bookings += 1
+        provider_profile.total_bookings = (provider_profile.total_bookings or 0) + 1
 
     db.commit()
     db.refresh(booking)
