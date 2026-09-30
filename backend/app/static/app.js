@@ -298,7 +298,17 @@ function showSuspendedModal(detail) {
 }
 window.showSuspendedModal = showSuspendedModal;
 
-// Toast notification
+// Request device notification permission for system push popups
+async function requestNotificationPermission() {
+    if (window.Notification && Notification.permission === 'default') {
+        try {
+            await Notification.requestPermission();
+        } catch(e) {}
+    }
+}
+window.requestNotificationPermission = requestNotificationPermission;
+
+// Toast notification (In-app popup & System push notification)
 function showToast(message, type = 'info') {
     const existing = document.querySelector('.toast');
     if (existing) existing.remove();
@@ -308,8 +318,298 @@ function showToast(message, type = 'info') {
     toast.textContent = message;
     document.body.appendChild(toast);
 
-    setTimeout(() => toast.remove(), 3000);
+    // Trigger system push notification if permitted
+    if (window.Notification && Notification.permission === 'granted' && (type === 'success' || type === 'info')) {
+        try {
+            new Notification('Groove Hub 🌿', {
+                body: message,
+                icon: '/static/icons/grove_hub_emblem_dark.png'
+            });
+        } catch(e) {}
+    }
+
+    setTimeout(() => toast.remove(), 3500);
 }
+
+// Web Audio API Synthesized Chime for Real-Time Notification Alerts
+function playNotificationChime() {
+    try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5 note
+        osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.15); // A5 note
+        gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.35);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.35);
+    } catch(e) {}
+}
+window.playNotificationChime = playNotificationChime;
+
+// Notification System State
+let notificationState = {
+    notifications: [],
+    unreadCount: 0,
+    filter: 'all',
+    drawerOpen: false,
+    pollInterval: null,
+    seenIds: new Set()
+};
+
+async function fetchNotifications(silent = false) {
+    if (!currentUser) return;
+    try {
+        const data = await apiFetch('/notifications?limit=30');
+        const unreadRes = await apiFetch('/notifications/unread-count');
+        const msgUnreadRes = await apiFetch('/messages/unread-count');
+        
+        notificationState.notifications = data || [];
+        notificationState.unreadCount = (unreadRes?.unread_count || 0) + (msgUnreadRes?.unread_count || 0);
+
+        // Check for newly arrived notifications
+        if (!silent && data && data.length > 0) {
+            const latest = data[0];
+            if (!latest.is_read && !notificationState.seenIds.has(latest.id)) {
+                notificationState.seenIds.add(latest.id);
+                playNotificationChime();
+                showToast(`${latest.title}: ${latest.message}`, 'info');
+                
+                // Trigger native device system push notification
+                if (window.Notification && Notification.permission === 'granted') {
+                    try {
+                        new Notification(latest.title, {
+                            body: latest.message,
+                            icon: '/static/icons/grove_hub_emblem_dark.png',
+                            data: { url: latest.link || '/' }
+                        });
+                    } catch(e) {}
+                }
+            }
+        }
+
+        // Mark existing IDs as seen
+        if (data && Array.isArray(data)) {
+            data.forEach(n => notificationState.seenIds.add(n.id));
+        }
+
+        updateNotificationBadges();
+
+        if (notificationState.drawerOpen) {
+            renderNotificationDrawerBody();
+        }
+    } catch(e) {
+        console.log('[NOTIF ERROR]', e);
+    }
+}
+
+function updateNotificationBadges() {
+    const headerCountEls = document.querySelectorAll('#header-notif-count');
+    const bottomDotEl = document.getElementById('bottom-unread-dot');
+    const headerUnreadMsgEls = document.querySelectorAll('#header-unread-count');
+
+    headerCountEls.forEach(el => {
+        if (notificationState.unreadCount > 0) {
+            el.textContent = notificationState.unreadCount > 99 ? '99+' : notificationState.unreadCount;
+            el.style.display = 'inline-block';
+        } else {
+            el.style.display = 'none';
+        }
+    });
+
+    if (bottomDotEl) {
+        bottomDotEl.style.display = notificationState.unreadCount > 0 ? 'block' : 'none';
+    }
+
+    headerUnreadMsgEls.forEach(el => {
+        const msgCount = notificationState.notifications.filter(n => n.type === 'message' && !n.is_read).length;
+        if (msgCount > 0) {
+            el.textContent = msgCount;
+            el.style.display = 'inline-block';
+        } else {
+            el.style.display = 'none';
+        }
+    });
+}
+
+function toggleNotificationDrawer() {
+    notificationState.drawerOpen = !notificationState.drawerOpen;
+    let overlay = document.getElementById('notif-drawer-overlay');
+    let drawer = document.getElementById('notif-drawer');
+
+    if (!overlay || !drawer) {
+        renderNotificationDrawer();
+        overlay = document.getElementById('notif-drawer-overlay');
+        drawer = document.getElementById('notif-drawer');
+    }
+
+    if (notificationState.drawerOpen) {
+        overlay.classList.add('active');
+        drawer.classList.add('active');
+        fetchNotifications(true);
+    } else {
+        overlay.classList.remove('active');
+        drawer.classList.remove('active');
+    }
+}
+
+function renderNotificationDrawer() {
+    let existing = document.getElementById('notif-drawer-root');
+    if (existing) existing.remove();
+
+    const root = document.createElement('div');
+    root.id = 'notif-drawer-root';
+    root.innerHTML = `
+        <div class="notif-drawer-overlay" id="notif-drawer-overlay" onclick="toggleNotificationDrawer()"></div>
+        <div class="notif-drawer" id="notif-drawer">
+            <div class="notif-drawer-header">
+                <div class="notif-drawer-title">
+                    <span>🔔</span> Notifications
+                </div>
+                <div class="notif-drawer-actions">
+                    <button class="notif-btn-clear" onclick="markAllNotificationsRead()">Mark all read</button>
+                    <button class="notif-btn-close" onclick="toggleNotificationDrawer()">✕</button>
+                </div>
+            </div>
+            <div class="notif-filter-bar">
+                <button class="notif-filter-tab ${notificationState.filter === 'all' ? 'active' : ''}" onclick="setNotificationFilter('all')">All</button>
+                <button class="notif-filter-tab ${notificationState.filter === 'unread' ? 'active' : ''}" onclick="setNotificationFilter('unread')">Unread</button>
+                <button class="notif-filter-tab ${notificationState.filter === 'message' ? 'active' : ''}" onclick="setNotificationFilter('message')">Messages</button>
+                <button class="notif-filter-tab ${notificationState.filter === 'order' ? 'active' : ''}" onclick="setNotificationFilter('order')">Orders</button>
+            </div>
+            <div class="notif-list-body" id="notif-list-body">
+                <!-- Rendered dynamically -->
+            </div>
+        </div>
+    `;
+    document.body.appendChild(root);
+    renderNotificationDrawerBody();
+}
+
+function setNotificationFilter(filter) {
+    notificationState.filter = filter;
+    document.querySelectorAll('.notif-filter-tab').forEach(tab => {
+        tab.classList.toggle('active', tab.textContent.toLowerCase().includes(filter));
+    });
+    renderNotificationDrawerBody();
+}
+
+function renderNotificationDrawerBody() {
+    const container = document.getElementById('notif-list-body');
+    if (!container) return;
+
+    let notifs = notificationState.notifications;
+    if (notificationState.filter === 'unread') {
+        notifs = notifs.filter(n => !n.is_read);
+    } else if (notificationState.filter !== 'all') {
+        notifs = notifs.filter(n => n.type === notificationState.filter);
+    }
+
+    if (!notifs || notifs.length === 0) {
+        container.innerHTML = `
+            <div class="notif-empty-state">
+                <span>🌿</span>
+                <strong style="display:block; color:var(--text-primary); font-size:1rem; margin-bottom:4px;">All caught up!</strong>
+                <span>No ${notificationState.filter !== 'all' ? notificationState.filter : ''} notifications right now.</span>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = notifs.map(n => {
+        let iconClass = 'notif-icon-info';
+        let iconSymbol = 'ℹ️';
+        if (n.type === 'message') { iconClass = 'notif-icon-message'; iconSymbol = '💬'; }
+        else if (n.type === 'order') { iconClass = 'notif-icon-order'; iconSymbol = '📦'; }
+        else if (n.type === 'payment') { iconClass = 'notif-icon-payment'; iconSymbol = '💰'; }
+        else if (n.type === 'dispute') { iconClass = 'notif-icon-dispute'; iconSymbol = '⚠️'; }
+
+        const timeAgo = formatTimeAgo(n.created_at);
+
+        return `
+            <div class="notif-item ${!n.is_read ? 'unread' : ''}" onclick="handleNotificationClick(${n.id}, '${escapeJs(n.link || '/')}')">
+                <div class="notif-icon-bubble ${iconClass}">${iconSymbol}</div>
+                <div class="notif-content">
+                    <div class="notif-item-title">
+                        <span>${escapeHtml(n.title)}</span>
+                        <span class="notif-item-time">${timeAgo}</span>
+                    </div>
+                    <div class="notif-item-msg">${escapeHtml(n.message)}</div>
+                </div>
+                ${!n.is_read ? '<div class="notif-unread-dot"></div>' : ''}
+            </div>
+        `;
+    }).join('');
+}
+
+async function handleNotificationClick(id, link) {
+    try {
+        await apiFetch(`/notifications/${id}/read`, { method: 'POST' });
+        const notif = notificationState.notifications.find(n => n.id === id);
+        if (notif) notif.is_read = true;
+        updateNotificationBadges();
+        toggleNotificationDrawer();
+        if (link && link !== '/') {
+            router(link);
+        }
+    } catch(e) {
+        toggleNotificationDrawer();
+    }
+}
+
+async function markAllNotificationsRead() {
+    try {
+        await apiFetch('/notifications/read-all', { method: 'POST' });
+        notificationState.notifications.forEach(n => n.is_read = true);
+        notificationState.unreadCount = 0;
+        updateNotificationBadges();
+        renderNotificationDrawerBody();
+        showToast('All notifications marked as read', 'info');
+    } catch(e) {}
+}
+
+function formatTimeAgo(dateStr) {
+    if (!dateStr) return '';
+    try {
+        const date = new Date(dateStr.endsWith('Z') ? dateStr : dateStr + 'Z');
+        const seconds = Math.floor((new Date() - date) / 1000);
+        if (seconds < 60) return 'Just now';
+        const minutes = Math.floor(seconds / 60);
+        if (minutes < 60) return `${minutes}m ago`;
+        const hours = Math.floor(minutes / 60);
+        if (hours < 24) return `${hours}h ago`;
+        const days = Math.floor(hours / 24);
+        return `${days}d ago`;
+    } catch(e) {
+        return '';
+    }
+}
+
+function initNotificationPoller() {
+    if (notificationState.pollInterval) clearInterval(notificationState.pollInterval);
+    
+    // Initial fetch
+    fetchNotifications(true);
+    
+    // Prompt notification permission on app start
+    requestNotificationPermission();
+
+    // Poll every 7 seconds
+    notificationState.pollInterval = setInterval(() => {
+        if (currentUser) {
+            fetchNotifications(false);
+        }
+    }, 7000);
+}
+
+window.toggleNotificationDrawer = toggleNotificationDrawer;
+window.markAllNotificationsRead = markAllNotificationsRead;
+window.handleNotificationClick = handleNotificationClick;
+window.setNotificationFilter = setNotificationFilter;
+window.initNotificationPoller = initNotificationPoller;
 
 // Grove Hub Animated Logo Loader Component
 function renderGroveAnimatedLoader(size = 140, showText = true) {
@@ -951,6 +1251,9 @@ function renderAppHeader(activeRoute = '') {
                     <button class="nav-btn ${activeRoute === '/payments' ? 'active' : ''}" onclick="router('/payments')">💳 Financials</button>
                     <button class="nav-btn ${activeRoute === '/admin/niches' ? 'active' : ''}" onclick="router('/admin/niches')">🗂️ Niches</button>
                     <button class="nav-btn ${activeRoute === '/settings' ? 'active' : ''}" onclick="router('/settings')">⚙️ Settings</button>
+                    <button class="nav-btn notif-bell-btn" onclick="toggleNotificationDrawer()" title="Notifications" style="position: relative; padding: 8px 12px;">
+                        🔔 <span class="nav-notif-badge" id="header-notif-count" style="display:none; position:absolute; top:2px; right:4px; background:#ff4757; color:#fff; font-size:0.65rem; font-weight:800; padding:1px 5px; border-radius:10px; border:2px solid var(--bg-surface, #1e2230);"></span>
+                    </button>
                     <button class="nav-btn" onclick="toggleTheme()" title="Toggle Theme" style="padding: 8px 12px;">
                         ${currentTheme === 'dark' ? '☀️' : '🌙'}
                     </button>
@@ -1004,6 +1307,9 @@ function renderAppHeader(activeRoute = '') {
                     </button>
                     <button class="nav-btn ${activeRoute === '/payments' ? 'active' : ''}" onclick="router('/payments')">💳 Earnings & Payouts</button>
                     <button class="nav-btn ${activeRoute === '/profile' || activeRoute === '/settings' ? 'active' : ''}" onclick="router('/profile')">🎨 My Profile</button>
+                    <button class="nav-btn notif-bell-btn" onclick="toggleNotificationDrawer()" title="Notifications" style="position: relative; padding: 8px 12px;">
+                        🔔 <span class="nav-notif-badge" id="header-notif-count" style="display:none; position:absolute; top:2px; right:4px; background:#ff4757; color:#fff; font-size:0.65rem; font-weight:800; padding:1px 5px; border-radius:10px; border:2px solid var(--bg-surface, #1e2230);"></span>
+                    </button>
                     <button class="nav-btn" onclick="toggleTheme()" title="Toggle Theme" style="padding: 8px 12px;">
                         ${currentTheme === 'dark' ? '☀️' : '🌙'}
                     </button>
@@ -1056,6 +1362,9 @@ function renderAppHeader(activeRoute = '') {
                 <button class="nav-btn ${activeRoute === '/bookings' ? 'active' : ''}" onclick="router('/bookings')">📦 My Orders</button>
                 <button class="nav-btn ${activeRoute === '/payments' ? 'active' : ''}" onclick="router('/payments')">💳 Wallet / Escrow</button>
                 <button class="nav-btn ${activeRoute === '/settings' ? 'active' : ''}" onclick="router('/settings')">⚙️ Settings</button>
+                <button class="nav-btn notif-bell-btn" onclick="toggleNotificationDrawer()" title="Notifications" style="position: relative; padding: 8px 12px;">
+                    🔔 <span class="nav-notif-badge" id="header-notif-count" style="display:none; position:absolute; top:2px; right:4px; background:#ff4757; color:#fff; font-size:0.65rem; font-weight:800; padding:1px 5px; border-radius:10px; border:2px solid var(--bg-surface, #1e2230);"></span>
+                </button>
                 <button class="nav-btn" onclick="toggleTheme()" title="Toggle Theme" style="padding: 8px 12px;">
                     ${currentTheme === 'dark' ? '☀️' : '🌙'}
                 </button>
@@ -1665,6 +1974,9 @@ function router(path, pushState = true) {
         history.pushState({ path: targetPath }, '', targetPath);
     }
     render(component);
+    if (currentToken && currentUser && !notificationState.pollInterval) {
+        initNotificationPoller();
+    }
     try { window.scrollTo({ top: 0, behavior: 'instant' }); } catch (_) { window.scrollTo(0, 0); }
 }
 window.router = router;

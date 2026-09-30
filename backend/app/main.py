@@ -31,14 +31,14 @@ from .database import get_db, engine, Base, SessionLocal
 from .models import (
     User, Profile, Package, Booking, Payment, Release, Review, Dispute, Niche,
     UserType, BookingStatus, PaymentStatus, PackageType, Message, PortfolioItem, PlatformSettings,
-    PasswordResetToken, EmailVerificationToken, OtpVerification
+    PasswordResetToken, EmailVerificationToken, OtpVerification, Notification
 )
 from .schemas import (
     UserCreate, UserUpdate, UserLogin, Token, UserResponse, ProfileCreate, ProfileUpdate,
     ProfileResponse, PackageCreate, PackageUpdate, PackageResponse,
     BookingCreate, BookingStatusUpdate, BookingDeliveryUpdate, BookingResponse,
     PaymentCreate, PaymentResponse, PaymentRelease,
-    CreatePaymentOrderRequest, PaymentOrderResponse, VerifyPaymentRequest,
+    CreatePaymentOrderRequest, PaymentOrderResponse, VerifyPaymentRequest, NotificationResponse,
     ReviewCreate, ReviewResponse,
     DisputeCreate, DisputeResponse, DisputeResolve,
     AdminStats, NicheCreate, NicheUpdate, NicheResponse,
@@ -237,11 +237,46 @@ def ensure_schema():
                 if n_name not in existing_niches:
                     conn.execute(text(f"INSERT INTO niches (name, display_name, is_active, supply_cap) VALUES ('{n_name}', '{n_disp}', 1, 100)"))
 
+            # Ensure notifications table exists
+            conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS notifications (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL REFERENCES users(id),
+                    title VARCHAR NOT NULL,
+                    message TEXT NOT NULL,
+                    type VARCHAR DEFAULT 'info',
+                    link VARCHAR,
+                    is_read BOOLEAN DEFAULT 0,
+                    created_at DATETIME
+                )
+            """))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS ix_notifications_user_id ON notifications(user_id)"))
+
             conn.commit()
         except Exception as e:
             print(f"ensure_schema warning: {e}")
 
 ensure_schema()
+
+# Helper to trigger system notifications
+def create_user_notification(db, user_id: int, title: str, message: str, type: str = "info", link: str = None):
+    try:
+        notif = Notification(
+            user_id=user_id,
+            title=title,
+            message=message,
+            type=type,
+            link=link,
+            is_read=False
+        )
+        db.add(notif)
+        db.commit()
+        db.refresh(notif)
+        return notif
+    except Exception as e:
+        db.rollback()
+        print(f"[NOTIFICATION ERROR] Failed to create notification: {e}")
+        return None
 
 # --- Pre-seeded Verified Creators to ensure zero 404/User not found errors ---
 SEED_CREATORS = [
@@ -1852,6 +1887,15 @@ def update_booking_delivery(
     booking.status = "delivered"
     db.commit()
     db.refresh(booking)
+
+    create_user_notification(
+        db,
+        user_id=booking.buyer_id,
+        title="🚚 Order Delivered!",
+        message=f"Provider submitted final delivery files for order #{booking.id}",
+        type="order",
+        link=f"/bookings?id={booking.id}"
+    )
     return booking
 
 @api_app.post("/bookings/{booking_id}/approve", response_model=BookingResponse)
@@ -1890,6 +1934,15 @@ def approve_booking(booking_id: int, current_user = Depends(get_current_user), d
 
     db.commit()
     db.refresh(booking)
+
+    create_user_notification(
+        db,
+        user_id=booking.provider_id,
+        title="🎉 Delivery Approved & Payout Released!",
+        message=f"Client approved order #{booking.id}. Funds released to your wallet.",
+        type="payment",
+        link="/payments"
+    )
     return booking
 
 @api_app.post("/bookings/{booking_id}/dispute", response_model=BookingResponse)
@@ -1919,6 +1972,16 @@ def dispute_booking(booking_id: int, dispute_data: DisputeCreate, current_user =
     db.add(dispute)
     db.commit()
     db.refresh(booking)
+
+    other_user_id = booking.provider_id if current_user.id == booking.buyer_id else booking.buyer_id
+    create_user_notification(
+        db,
+        user_id=other_user_id,
+        title="⚠️ Dispute Opened",
+        message=f"Dispute opened for order #{booking.id}: {dispute_data.description[:80]}",
+        type="dispute",
+        link=f"/bookings?id={booking.id}"
+    )
     return booking
 
 @api_app.post("/bookings/{booking_id}/complete", response_model=BookingResponse)
@@ -2116,6 +2179,15 @@ def verify_payment(
     db.commit()
     db.refresh(booking)
     db.refresh(payment)
+
+    create_user_notification(
+        db,
+        user_id=booking.provider_id,
+        title="📦 New Order Secured!",
+        message=f"Client {current_user.name} paid ₹{booking.total_amount:,.2f} in Escrow for order #{booking.id}",
+        type="order",
+        link=f"/bookings?id={booking.id}"
+    )
 
     return {
         "status": "success",
@@ -3001,6 +3073,15 @@ def send_booking_message(
     db.commit()
     db.refresh(msg)
 
+    create_user_notification(
+        db,
+        user_id=receiver_id,
+        title=f"💬 New Message from {current_user.name}",
+        message=clean_content[:120],
+        type="message",
+        link=f"/messages?booking={booking_id}"
+    )
+
     return MessageResponse(
         id=msg.id,
         booking_id=msg.booking_id,
@@ -3234,6 +3315,15 @@ def send_direct_message_to_user(
     db.commit()
     db.refresh(msg)
 
+    create_user_notification(
+        db,
+        user_id=other_user_id,
+        title=f"💬 New Message from {current_user.name}",
+        message=clean_content[:120],
+        type="message",
+        link=f"/messages?user={current_user.id}"
+    )
+
     return MessageResponse(
         id=msg.id,
         booking_id=msg.booking_id,
@@ -3261,6 +3351,68 @@ def get_unread_messages_count(
         Message.is_flagged == False
     ).count()
     return {"unread_count": count}
+
+
+# --- Notification API Endpoints ---
+@api_app.get("/notifications", response_model=List[NotificationResponse])
+def get_user_notifications(
+    limit: int = 30,
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    notifications = db.query(Notification).filter(
+        Notification.user_id == current_user.id
+    ).order_by(Notification.created_at.desc()).limit(limit).all()
+    return notifications
+
+@api_app.get("/notifications/unread-count")
+def get_unread_notifications_count(
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    count = db.query(Notification).filter(
+        Notification.user_id == current_user.id,
+        Notification.is_read == False
+    ).count()
+    return {"unread_count": count}
+
+@api_app.post("/notifications/{notification_id}/read")
+def mark_notification_read(
+    notification_id: int,
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    notif = db.query(Notification).filter(
+        Notification.id == notification_id,
+        Notification.user_id == current_user.id
+    ).first()
+    if notif:
+        notif.is_read = True
+        db.commit()
+    return {"status": "ok"}
+
+@api_app.post("/notifications/read-all")
+def mark_all_notifications_read(
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    db.query(Notification).filter(
+        Notification.user_id == current_user.id,
+        Notification.is_read == False
+    ).update({Notification.is_read: True}, synchronize_session=False)
+    db.commit()
+    return {"status": "ok"}
+
+@api_app.delete("/notifications/clear-all")
+def clear_all_notifications(
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    db.query(Notification).filter(
+        Notification.user_id == current_user.id
+    ).delete(synchronize_session=False)
+    db.commit()
+    return {"status": "ok"}
 
 
 @api_app.get("/messages/inbox", response_model=List[MessageResponse])

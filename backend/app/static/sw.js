@@ -86,3 +86,42 @@ self.addEventListener('fetch', (event) => {
     })
   );
 });
+
+// Push & System Notification Handlers
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const targetUrl = event.notification.data?.url || '/';
+
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        if (client.url.includes(self.location.origin) && 'focus' in client) {
+          if (client.navigate) {
+            client.navigate(targetUrl);
+          }
+          return client.focus();
+        }
+      }
+      if (clients.openWindow) {
+        return clients.openWindow(targetUrl);
+      }
+    })
+  );
+});
+
+self.addEventListener('push', (event) => {
+  if (!event.data) return;
+  try {
+    const data = event.data.json();
+    const title = data.title || 'Groove Hub 🌿';
+    const options = {
+      body: data.message || data.body || 'New notification',
+      icon: data.icon || '/static/icons/icon-192.png',
+      badge: '/static/icons/favicon.png',
+      data: { url: data.link || '/' }
+    };
+    event.waitUntil(self.registration.showNotification(title, options));
+  } catch(e) {
+    console.log('[SW Push Error]', e);
+  }
+});
