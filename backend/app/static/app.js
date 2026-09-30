@@ -658,6 +658,49 @@ if (!window.__profileMenuGlobalListenerAdded) {
     window.__profileMenuGlobalListenerAdded = true;
 }
 
+// Helper: Compress and center-crop selected image file to 512x512 square data URL
+function compressAndCropImage(file, maxSize = 512, quality = 0.85) {
+    return new Promise((resolve, reject) => {
+        if (!file || !file.type.startsWith('image/')) {
+            return reject(new Error('Please select a valid image file (PNG, JPG, WebP, etc.).'));
+        }
+        const reader = new FileReader();
+        reader.onerror = () => reject(new Error('Failed to read selected image file.'));
+        reader.onload = (e) => {
+            const rawDataUrl = e.target.result;
+            if (file.type === 'image/svg+xml') {
+                return resolve(rawDataUrl);
+            }
+            const img = new Image();
+            img.onerror = () => reject(new Error('Selected file could not be parsed as an image.'));
+            img.onload = () => {
+                try {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = maxSize;
+                    canvas.height = maxSize;
+                    const ctx = canvas.getContext('2d');
+                    if (!ctx) return resolve(rawDataUrl);
+
+                    const minSide = Math.min(img.width, img.height);
+                    const sx = (img.width - minSide) / 2;
+                    const sy = (img.height - minSide) / 2;
+
+                    ctx.fillStyle = '#FFFFFF';
+                    ctx.fillRect(0, 0, maxSize, maxSize);
+                    ctx.drawImage(img, sx, sy, minSide, minSide, 0, 0, maxSize, maxSize);
+
+                    const compressed = canvas.toDataURL('image/jpeg', quality);
+                    resolve(compressed);
+                } catch {
+                    resolve(rawDataUrl);
+                }
+            };
+            img.src = rawDataUrl;
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
 // Change Icon picker — opens modal with Google photo / Upload / Remove options
 window.openProfileIconPicker = () => {
     const existing = document.getElementById('profile-menu-dropdown');
@@ -701,11 +744,11 @@ window.openProfileIconPicker = () => {
                 </div>
 
                 <div id="icon-preview-container" style="margin-top:16px;display:none;text-align:center;">
-                    <div style="width:60px;height:60px;border-radius:50%;overflow:hidden;margin:0 auto 8px;border:2px solid var(--accent);box-shadow:0 0 0 3px rgba(99,102,241,0.2);">
+                    <div style="width:64px;height:64px;border-radius:50%;overflow:hidden;margin:0 auto 8px;border:2px solid var(--accent);box-shadow:0 0 0 3px rgba(99,102,241,0.2);position:relative;background:#1e293b;">
                         <img id="icon-preview-img" src="" style="width:100%;height:100%;object-fit:cover;display:block;" />
                     </div>
-                    <div style="font-size:0.75rem;color:var(--text-muted);">Preview — tap "Save" to apply</div>
-                    <button id="btn-save-icon" class="btn btn-primary" style="margin-top:8px;width:100%;justify-content:center;">
+                    <div style="font-size:0.75rem;color:var(--text-muted);">Preview — tap "Save Icon" to apply</div>
+                    <button id="btn-save-icon" class="btn btn-primary" style="margin-top:10px;width:100%;justify-content:center;font-weight:700;">
                         <span style="margin-right:6px;">💾</span> Save Icon
                     </button>
                 </div>
@@ -725,7 +768,6 @@ window.openProfileIconPicker = () => {
     if (googleBtn) {
         googleBtn.onclick = async () => {
             if (!currentUser) return;
-            // Re-fetch via Google Sign-In to get the latest credential
             try {
                 if (window.google?.accounts?.id) {
                     await new Promise((resolve) => {
@@ -735,7 +777,6 @@ window.openProfileIconPicker = () => {
                             window.google.accounts.id.signIn({
                                 callback: async (response) => {
                                     if (response?.credential) {
-                                        // Save the Google picture directly
                                         const payload = JSON.parse(atob(response.credential.split('.')[1] + '='.repeat((4 - response.credential.split('.')[1].length % 4) % 4)));
                                         const pic = payload.picture || '';
                                         await saveProfileImage(pic);
@@ -759,46 +800,57 @@ window.openProfileIconPicker = () => {
         };
     }
 
-    // --- Upload Custom ---
+    // --- Upload Custom Photo ---
     const uploadBtn = modal.querySelector('#btn-upload-custom');
     const fileInput = modal.querySelector('#icon-file-input');
     if (uploadBtn && fileInput) {
         uploadBtn.onclick = () => fileInput.click();
-        fileInput.onchange = (e) => {
+        fileInput.onchange = async (e) => {
             const file = e.target.files?.[0];
             if (!file) return;
-            const url = URL.createObjectURL(file);
             const previewImg = modal.querySelector('#icon-preview-img');
             const previewContainer = modal.querySelector('#icon-preview-container');
             const previewUrlInput = modal.querySelector('#icon-preview-url');
-            if (previewImg) previewImg.src = url;
-            if (previewContainer) previewContainer.style.display = 'block';
-            if (previewUrlInput) previewUrlInput.value = url;
-            if (googleBtn) googleBtn.style.display = 'none';
+            
+            uploadBtn.disabled = true;
+            uploadBtn.innerHTML = '<span style="display:inline-block;width:14px;height:14px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:8px;"></span> Processing photo…';
+
+            try {
+                const compressedDataUrl = await compressAndCropImage(file, 512, 0.85);
+                modal._selectedDataUrl = compressedDataUrl;
+                if (previewImg) previewImg.src = compressedDataUrl;
+                if (previewContainer) previewContainer.style.display = 'block';
+                if (previewUrlInput) previewUrlInput.value = compressedDataUrl;
+                if (googleBtn) googleBtn.style.display = 'none';
+            } catch (err) {
+                showToast(err.message || 'Could not process image file', 'error');
+            } finally {
+                uploadBtn.disabled = false;
+                uploadBtn.innerHTML = '<span style="font-size:1.1rem;margin-right:6px;">📁</span> Upload Custom Photo';
+            }
         };
     }
 
-    // --- Preview save ---
+    // --- Save Previewed Icon ---
     const saveBtn = modal.querySelector('#btn-save-icon');
     if (saveBtn) {
         saveBtn.onclick = async () => {
-            const previewUrl = modal.querySelector('#icon-preview-url')?.value;
-            if (!previewUrl) return;
-            const previewImg = modal.querySelector('#icon-preview-img');
-            if (!previewImg || !previewImg.src) return;
-            // Upload to server as base64 data URL or keep blob URL for preview
-            // Convert to data URL for persistence
+            const dataUrl = modal._selectedDataUrl || modal.querySelector('#icon-preview-url')?.value;
+            if (!dataUrl) {
+                showToast('Please select a photo first', 'warning');
+                return;
+            }
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<span style="display:inline-block;width:14px;height:14px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:8px;"></span> Saving icon…';
             try {
-                const res = await fetch(previewUrl);
-                const blob = await res.blob();
-                const reader = new FileReader();
-                reader.onloadend = async () => {
-                    const dataUrl = reader.result;
-                    await saveProfileImage(dataUrl);
-                };
-                reader.readAsDataURL(blob);
-            } catch {
-                showToast('Failed to read image. Try again.', 'error');
+                await saveProfileImage(dataUrl);
+            } catch (err) {
+                showToast(err.message || 'Failed to save profile icon', 'error');
+            } finally {
+                if (document.body.contains(saveBtn)) {
+                    saveBtn.disabled = false;
+                    saveBtn.innerHTML = '<span style="margin-right:6px;">💾</span> Save Icon';
+                }
             }
         };
     }
@@ -826,10 +878,16 @@ window.saveProfileImage = async (imageUrl) => {
         currentUser = res;
         localStorage.setItem('current_user', JSON.stringify(currentUser));
         showToast(currentUser?.profile_image ? 'Profile icon updated!' : 'Profile photo removed.', 'success');
-        // Re-render current page
+        document.getElementById('profile-icon-picker')?.remove();
+        
+        // Update header profile avatar elements dynamically
+        const avatarWrapper = document.querySelector('.profile-dropdown-wrapper');
+        if (avatarWrapper) {
+            avatarWrapper.innerHTML = `${renderProfileAvatar(34)}${renderProfileMenu()}`;
+        }
         router(window.location.pathname);
-    } catch (e) {
-        showToast(e.message || 'Failed to update profile icon.', 'error');
+    } catch (err) {
+        showToast(err.message || 'Failed to update profile icon', 'error');
     }
 };
 
