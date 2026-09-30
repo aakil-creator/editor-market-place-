@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "com.onrender.syncra_qui2.twa",
+        "sha256_cert_fingerprints": ["AF:17:18:24:B6:69:32:86:DD:28:7A:29:51:1B:90:D3:4D:EB:2A:81:C0:9C:33:5F:56:AB:17:AA:83:DE:6C:FB"]
+      }
+    }]
