@@ -458,10 +458,26 @@
     let currentSceneIndex = 0;
 
     const scenes = [
-      { id: 'scene-1', title: 'Scene 1 / 4: Quick Sign In', speech: 'Welcome to Groove Hub. Step one: Visit syncra-qui2.onrender.com and sign in with Google or create your video editor profile.' },
-      { id: 'scene-2', title: 'Scene 2 / 4: Bio & UPI Payouts', speech: 'Step two: Add your editing software skills and enter your personal UPI ID so client payments transfer directly to your bank account.' },
-      { id: 'scene-3', title: 'Scene 3 / 4: Uploading Sample Reels', speech: 'Step three: Paste your best YouTube Shorts, YouTube videos, or Google Drive links to showcase your 16:9 video editing samples.' },
-      { id: 'scene-4', title: 'Scene 4 / 4: 0% Fee Launch Promo', speech: 'Step four: Go live! Enjoy 0% platform commission during the launch special and keep 100% of all client payouts.' }
+      { 
+        id: 'scene-1', 
+        title: 'Scene 1 / 4: Quick Sign In', 
+        speech: 'Welcome to Groove Hub! Setting up your creator profile takes less than a minute. First, head over to the web app and click Continue with Google, then choose the Video Editor role.' 
+      },
+      { 
+        id: 'scene-2', 
+        title: 'Scene 2 / 4: Bio & UPI Payouts', 
+        speech: 'Next, let us highlight your skills. Tag your editing tools like Premiere Pro, After Effects, or CapCut, and enter your UPI ID so client payments transfer directly into your bank account.' 
+      },
+      { 
+        id: 'scene-3', 
+        title: 'Scene 3 / 4: Uploading Sample Reels', 
+        speech: 'Now for your portfolio! Simply paste links to your best YouTube Shorts, video reels, or Google Drive clips. They will instantly appear as live interactive video previews on the marketplace.' 
+      },
+      { 
+        id: 'scene-4', 
+        title: 'Scene 4 / 4: 0% Fee Launch Promo', 
+        speech: 'And you are ready to get booked! Every order is protected by secure escrow, and with our launch special, you keep one hundred percent of your earnings with zero platform fees.' 
+      }
     ];
 
     const playBtn = document.getElementById('play-btn');
@@ -471,31 +487,35 @@
     const scenePill = document.getElementById('scene-pill');
     const voiceoverBtn = document.getElementById('voiceover-btn');
 
-    let selectedVoiceIndex = 0;
+    let selectedVoice = null;
     let availableVoices = [];
 
-    const voiceSelector = document.getElementById('voice-selector');
+    function findBestNaturalVoice() {
+      if (!('speechSynthesis' in window)) return null;
+      availableVoices = window.speechSynthesis.getVoices();
+      if (!availableVoices || availableVoices.length === 0) return null;
+
+      // Priority ranking for realistic neural & human-like voices
+      const priorityKeywords = [
+        'natural', 'online (natural)', 'neural', 'google us english', 
+        'microsoft jenny', 'microsoft guy', 'microsoft ryan', 'microsoft christopher',
+        'microsoft aria', 'samantha', 'daniel', 'alex', 'oliver', 'serena',
+        'google uk english male', 'google uk english female'
+      ];
+
+      // 1. Check for top realistic voices
+      for (const kw of priorityKeywords) {
+        const match = availableVoices.find(v => v.name.toLowerCase().includes(kw) && v.lang.startsWith('en'));
+        if (match) return match;
+      }
+
+      // 2. Fallback to any high-quality English voice
+      const enVoice = availableVoices.find(v => v.lang.startsWith('en-US') || v.lang.startsWith('en-GB') || v.lang.startsWith('en-IN') || v.lang.startsWith('en'));
+      return enVoice || availableVoices[0];
+    }
 
     function populateVoiceList() {
-      if (!('speechSynthesis' in window)) return;
-      availableVoices = window.speechSynthesis.getVoices();
-      
-      const enVoices = availableVoices.filter(v => v.lang.startsWith('en') || v.lang.includes('US') || v.lang.includes('GB') || v.lang.includes('IN'));
-      const voiceList = enVoices.length > 0 ? enVoices : availableVoices;
-
-      if (voiceSelector && voiceList.length > 0) {
-        voiceSelector.innerHTML = '';
-        voiceList.forEach((voice, i) => {
-          const option = document.createElement('option');
-          option.textContent = `${voice.name} (${voice.lang})`;
-          option.value = i;
-          if (voice.name.includes('Google') || voice.name.includes('Natural') || voice.name.includes('Samantha') || voice.name.includes('David') || voice.name.includes('Guy')) {
-            option.selected = true;
-            selectedVoiceIndex = i;
-          }
-          voiceSelector.appendChild(option);
-        });
-      }
+      selectedVoice = findBestNaturalVoice();
     }
 
     if ('speechSynthesis' in window) {
@@ -508,29 +528,27 @@
       window.speechSynthesis.cancel();
       
       const utterance = new SpeechSynthesisUtterance(text);
-      const enVoices = availableVoices.filter(v => v.lang.startsWith('en') || v.lang.includes('US') || v.lang.includes('GB') || v.lang.includes('IN'));
-      const voicePool = enVoices.length > 0 ? enVoices : availableVoices;
-
-      const voiceType = document.getElementById('voice-style-preset')?.value || 'natural_creator';
-
-      if (voicePool.length > 0) {
-        const customIdx = parseInt(voiceSelector?.value || '0', 10);
-        utterance.voice = voicePool[customIdx] || voicePool[0];
+      if (!selectedVoice) {
+        selectedVoice = findBestNaturalVoice();
+      }
+      if (selectedVoice) {
+        utterance.voice = selectedVoice;
       }
 
-      // Voice preset modulation
+      const voiceType = document.getElementById('voice-style-preset')?.value || 'natural_realistic';
+
       if (voiceType === 'deep_narrator') {
-        utterance.rate = 0.95;
-        utterance.pitch = 0.85;
+        utterance.rate = 0.94;
+        utterance.pitch = 0.88;
       } else if (voiceType === 'studio_female') {
-        utterance.rate = 1.06;
-        utterance.pitch = 1.15;
+        utterance.rate = 0.98;
+        utterance.pitch = 1.08;
       } else if (voiceType === 'cinematic_uk') {
-        utterance.rate = 0.92;
-        utterance.pitch = 0.95;
+        utterance.rate = 0.93;
+        utterance.pitch = 0.96;
       } else {
-        // Natural Creator (Default)
-        utterance.rate = 1.02;
+        // Natural Realistic (Default) - Conversational, warm, clear
+        utterance.rate = 0.96;
         utterance.pitch = 1.0;
       }
 
