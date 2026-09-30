@@ -282,18 +282,8 @@ def create_user_notification(db, user_id: int, title: str, message: str, type: s
 def ensure_admin_exists():
     db = SessionLocal()
     try:
-        # 1. Clean out any legacy demo / mock accounts completely
-        demo_users = db.query(User).filter(
-            or_(
-                User.email.like('%@groove.local'),
-                User.email.like('demo@%'),
-                User.email.like('audit_%'),
-                User.email.like('qa_%'),
-                User.email.like('buyer_%'),
-                User.email.like('video-test%'),
-                User.email.like('%pradeep%')
-            )
-        ).all()
+        # 1. Clean out any legacy demo / mock accounts completely (keep ONLY primary owner)
+        demo_users = db.query(User).filter(User.email != "rahura2026@gmail.com").all()
         
         if demo_users:
             demo_ids = [u.id for u in demo_users]
@@ -305,7 +295,7 @@ def ensure_admin_exists():
             db.query(Profile).filter(Profile.user_id.in_(demo_ids)).delete(synchronize_session=False)
             db.query(User).filter(User.id.in_(demo_ids)).delete(synchronize_session=False)
             db.commit()
-            print(f"[CLEANUP] Purged {len(demo_users)} legacy demo profiles on startup.")
+            print(f"[CLEANUP] Purged {len(demo_users)} demo accounts on startup. Only admin remains.")
 
         # 2. Ensure official owner/admin account exists
         admin_email = "rahura2026@gmail.com"
