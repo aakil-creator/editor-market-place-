@@ -7286,6 +7286,23 @@ function BookingsList() {
                                 💬 Project Chat & Messages
                             </button>
 
+                            <!-- On-Site Store Visit QR Check-In Verification -->
+                            ${booking.onsite_checkin_at ? `
+                                <div style="background: rgba(34, 197, 94, 0.12); border: 1px solid var(--success); border-radius: 8px; padding: 8px 10px; font-size: 0.78rem; color: var(--success); font-weight: 700; text-align: center;">
+                                    ✅ Verified On-Site Arrival via QR (${new Date(booking.onsite_checkin_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})})
+                                </div>
+                            ` : `
+                                ${isTalent ? `
+                                    <button class="btn btn-outline btn-sm" onclick="openOnSiteCheckInModal(${booking.id})" style="border-color: var(--accent); color: var(--accent); font-weight: 700;">
+                                        📱 Show On-Site Check-In QR Code
+                                    </button>
+                                ` : `
+                                    <button class="btn btn-outline btn-sm" onclick="openScanArrivalModal(${booking.id})" style="border-color: var(--success); color: var(--success); font-weight: 700;">
+                                        🔍 Verify Creator Arrival (QR Scan)
+                                    </button>
+                                `}
+                            `}
+
                             ${isTalent && booking.status === 'confirmed' ? `
                                 <button class="btn btn-primary btn-sm" onclick="startProject(${booking.id})">
                                     ▶️ Start Working on Project
@@ -7357,6 +7374,67 @@ function BookingsList() {
         } catch (e) {
             showToast(e.message, 'error');
             loadBookings();
+        }
+    };
+
+    window.openOnSiteCheckInModal = async (bookingId) => {
+        showLoading();
+        try {
+            const data = await apiFetch(`/bookings/${bookingId}/checkin-qr`);
+            hideLoading();
+
+            const existing = document.getElementById('qr-checkin-modal');
+            if (existing) existing.remove();
+
+            const overlay = document.createElement('div');
+            overlay.id = 'qr-checkin-modal';
+            overlay.className = 'modal-backdrop';
+            overlay.innerHTML = `
+                <div class="card" style="max-width: 440px; width: 100%; border-radius: 16px; padding: 24px; text-align: center; background: var(--bg-card); border: 1px solid var(--border); box-shadow: var(--shadow-lg);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                        <h3 style="font-size: 1.15rem; font-weight: 800; margin: 0; color: var(--text-primary);">📱 On-Site QR Check-In</h3>
+                        <button type="button" onclick="document.getElementById('qr-checkin-modal').remove()" style="background:none; border:none; color:var(--text-muted); font-size:1.4rem; cursor:pointer;">&times;</button>
+                    </div>
+                    <div style="font-size: 0.8125rem; color: var(--text-secondary); margin-bottom: 16px; line-height: 1.45;">
+                        Show this QR Code to <strong>${escapeHTML(data.buyer_name || 'Shop Owner')}</strong> when you arrive at their store/venue to verify your on-site arrival.
+                    </div>
+                    <div style="background: white; padding: 12px; border-radius: 14px; display: inline-block; box-shadow: 0 4px 16px rgba(0,0,0,0.12); margin-bottom: 16px;">
+                        <img src="${data.qr_image_url}" alt="On-Site Check-In QR" style="width: 220px; height: 220px; display: block; border-radius: 8px;">
+                    </div>
+                    <div id="checkin-verification-badge" style="margin-bottom: 16px;">
+                        ${data.is_verified ? `
+                            <div style="background: rgba(34, 197, 94, 0.12); border: 1px solid var(--success); border-radius: 10px; padding: 10px; color: var(--success); font-weight: 700; font-size: 0.85rem;">
+                                ✅ Verified On-Site Arrival at ${new Date(data.checkin_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}
+                            </div>
+                        ` : `
+                            <div style="background: rgba(245, 158, 11, 0.12); border: 1px solid #f59e0b; border-radius: 10px; padding: 10px; color: #f59e0b; font-weight: 700; font-size: 0.8125rem;">
+                                ⏳ Waiting for shop owner to scan QR code...
+                            </div>
+                        `}
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <button type="button" class="btn btn-secondary btn-sm" style="flex:1;" onclick="document.getElementById('qr-checkin-modal').remove()">Close</button>
+                        <button type="button" class="btn btn-primary btn-sm" style="flex:1;" onclick="openOnSiteCheckInModal(${bookingId})">🔄 Refresh Status</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+        } catch (e) {
+            hideLoading();
+            showToast(e.message || 'Error loading check-in QR', 'error');
+        }
+    };
+
+    window.openScanArrivalModal = async (bookingId) => {
+        showLoading();
+        try {
+            const res = await apiFetch(`/bookings/${bookingId}/verify-checkin`, { method: 'POST' });
+            hideLoading();
+            showToast('✅ Creator arrival verified! Escrow filming active.', 'success');
+            if (typeof loadBookings === 'function') loadBookings();
+        } catch (e) {
+            hideLoading();
+            showToast(e.message || 'Failed to verify arrival', 'error');
         }
     };
 

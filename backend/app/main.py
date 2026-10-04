@@ -1678,6 +1678,87 @@ def update_booking_delivery(
     )
     return booking
 
+@api_app.get("/bookings/{booking_id}/checkin-qr")
+def get_booking_checkin_qr(
+    booking_id: int,
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    booking = db.query(Booking).filter(Booking.id == booking_id).first()
+    if not booking:
+        raise HTTPException(status_code=404, detail="Booking not found")
+
+    if current_user.id not in [booking.buyer_id, booking.provider_id] and current_user.user_type != UserType.ADMIN:
+        raise HTTPException(status_code=403, detail="Not authorized for this booking")
+
+    if not booking.checkin_token:
+        booking.checkin_token = uuid.uuid4().hex[:12]
+        db.commit()
+        db.refresh(booking)
+
+    checkin_payload = f"groove_hub_checkin:{booking.id}:{booking.checkin_token}"
+    qr_image_url = f"https://api.qrserver.com/v1/create-qr-code/?size=260x260&margin=8&data={checkin_payload}"
+
+    return {
+        "booking_id": booking.id,
+        "checkin_token": booking.checkin_token,
+        "qr_image_url": qr_image_url,
+        "is_verified": bool(booking.onsite_checkin_at),
+        "checkin_at": booking.onsite_checkin_at.isoformat() if booking.onsite_checkin_at else None,
+        "provider_name": booking.provider_name,
+        "buyer_name": booking.buyer_name
+    }
+
+@api_app.post("/bookings/{booking_id}/verify-checkin")
+def verify_booking_checkin(
+    booking_id: int,
+    payload: Optional[dict] = None,
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    booking = db.query(Booking).filter(Booking.id == booking_id).first()
+    if not booking:
+        raise HTTPException(status_code=404, detail="Booking not found")
+
+    if current_user.id not in [booking.buyer_id, booking.provider_id] and current_user.user_type != UserType.ADMIN:
+        token_sent = payload.get("token") if payload else None
+        if not token_sent or token_sent != booking.checkin_token:
+            raise HTTPException(status_code=403, detail="Not authorized to verify check-in")
+
+    if not booking.onsite_checkin_at:
+        booking.onsite_checkin_at = datetime.utcnow()
+        if booking.status in ["pending", "confirmed"]:
+            booking.status = "in_progress"
+        db.commit()
+        db.refresh(booking)
+
+        msg = Message(
+            booking_id=booking.id,
+            sender_id=current_user.id,
+            receiver_id=booking.provider_id if current_user.id == booking.buyer_id else booking.buyer_id,
+            message=f"📱 ON-SITE ARRIVAL VERIFIED: {booking.provider_name} checked in at shop via QR scan at {booking.onsite_checkin_at.strftime('%I:%M %p')}. Escrow service active!",
+            created_at=datetime.utcnow()
+        )
+        db.add(msg)
+        db.commit()
+
+        create_user_notification(
+            db,
+            user_id=booking.provider_id if current_user.id == booking.buyer_id else booking.buyer_id,
+            title="📱 Verified On-Site Arrival",
+            message=f"Shop owner verified creator arrival for order #{booking.id} via QR scan!",
+            type="order",
+            link=f"/bookings?id={booking.id}"
+        )
+
+    return {
+        "success": True,
+        "booking_id": booking.id,
+        "is_verified": True,
+        "checkin_at": booking.onsite_checkin_at.isoformat(),
+        "status": booking.status
+    }
+
 @api_app.post("/bookings/{booking_id}/approve", response_model=BookingResponse)
 def approve_booking(booking_id: int, current_user = Depends(get_current_user), db = Depends(get_db)):
     booking = db.query(Booking).filter(Booking.id == booking_id).first()

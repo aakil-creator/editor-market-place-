@@ -349,6 +349,8 @@ class BookingResponse(BaseModel):
     package_turnaround: Optional[str] = None
     package_scope: Optional[str] = None
     deadline_at: Optional[datetime] = None
+    onsite_checkin_at: Optional[datetime] = None
+    checkin_token: Optional[str] = None
 
     class Config:
         from_attributes = True

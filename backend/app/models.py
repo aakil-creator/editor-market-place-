@@ -134,6 +134,8 @@ class Booking(Base):
     delivery_file_url = Column(String)
     delivery_file_link = Column(String)
     admin_notes = Column(Text)
+    onsite_checkin_at = Column(DateTime, nullable=True)
+    checkin_token = Column(String, nullable=True)
 
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
