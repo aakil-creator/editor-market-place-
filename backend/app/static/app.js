@@ -128,14 +128,21 @@ function getYouTubeEmbedUrl(rawUrl) {
 }
 window.getYouTubeEmbedUrl = getYouTubeEmbedUrl;
 
+function isMediaVideo(url) {
+    if (!url || typeof url !== 'string') return false;
+    const clean = url.trim().toLowerCase().split('?')[0];
+    return /\.(mp4|webm|mov|mkv|m4v|3gp|avi)$/i.test(clean) || (clean.startsWith('/static/chat_uploads/') && !/\.(jpg|jpeg|png|webp|gif|svg|avif)$/i.test(clean));
+}
+window.isMediaVideo = isMediaVideo;
+
 function resolveMediaThumbnail(url) {
     if (!url || typeof url !== 'string') return '';
     const safe = url.trim();
     if (!safe) return '';
     if (
-        safe.startsWith('/static/') || safe.startsWith('data:image') || safe.startsWith('blob:') ||
+        safe.startsWith('/static/') || safe.startsWith('data:') || safe.startsWith('blob:') ||
         safe.includes('images.unsplash.com') ||
-        /\.(jpg|jpeg|png|webp|gif|svg|avif)(\?.*)?$/i.test(safe)
+        /\.(jpg|jpeg|png|webp|gif|svg|avif|mp4|webm|mov|mkv)(\?.*)?$/i.test(safe)
     ) {
         return safe;
     }
@@ -160,6 +167,29 @@ function resolveMediaThumbnail(url) {
 }
 window.resolveMediaThumbnail = resolveMediaThumbnail;
 
+function renderMediaThumbnailOrVideo(url, options = {}) {
+    const safeUrl = sanitizeUrl(url);
+    const className = options.className || 'fiverr-gig-thumb-img';
+    const alt = escapeHTML(options.alt || 'Creator Showcase');
+    const autoPlay = options.autoplay !== false ? 'playsinline muted loop autoplay preload="metadata"' : 'playsinline preload="metadata"';
+
+    if (!url || safeUrl === '#') {
+        return `<img src="/static/banners/ab_pradeep_reel_editor.png" alt="${alt}" class="${className}" loading="lazy">`;
+    }
+
+    if (isMediaVideo(url)) {
+        return `
+            <video src="${safeUrl}" ${autoPlay} class="${className} fiverr-gig-thumb-video" onmouseover="try{this.play()}catch(_){}" onmouseout="try{this.pause()}catch(_){}"></video>
+            <div style="position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.75); color: #fff; font-size: 0.65rem; font-weight: 800; padding: 2px 7px; border-radius: 4px; backdrop-filter: blur(4px); display: flex; align-items: center; gap: 4px; pointer-events: none; z-index: 2;">
+                <span>🎬</span> 4K Reel
+            </div>
+        `;
+    }
+
+    return `<img src="${safeUrl}" alt="${alt}" class="${className}" loading="lazy" onerror="this.onerror=null; this.src='/static/banners/ab_pradeep_reel_editor.png';">`;
+}
+window.renderMediaThumbnailOrVideo = renderMediaThumbnailOrVideo;
+
 function getProviderThumbnail(provider, pkg) {
     // 1. Check Package sample reference or cover image
     if (pkg) {
@@ -173,37 +203,50 @@ function getProviderThumbnail(provider, pkg) {
         }
     }
 
-    // 2. Check Provider's uploaded portfolio items (custom showcase banners / photos / thumbnails)
+    // 2. Check Provider's packages if pkg wasn't passed or had no sample
+    if (provider && Array.isArray(provider.packages) && provider.packages.length > 0) {
+        for (const p of provider.packages) {
+            if (p.sample_reference) {
+                const resolved = resolveMediaThumbnail(p.sample_reference);
+                if (resolved) return resolved;
+            }
+        }
+    }
+
+    // 3. Check Provider's uploaded portfolio items (custom showcase banners / photos / thumbnails)
     const pItems = (provider && Array.isArray(provider.portfolio_items) && provider.portfolio_items.length > 0)
         ? provider.portfolio_items
         : (provider && provider.id === currentUser?.id && typeof portfolioItems !== 'undefined' && Array.isArray(portfolioItems) ? portfolioItems : []);
 
     if (pItems.length > 0) {
-        // Prioritize custom image flyers / banners
-        const imgItem = pItems.find(i => i.media_type === 'image' || (i.thumbnail_url && !i.thumbnail_url.includes('unsplash')));
+        // Prioritize custom video reels
+        const videoItem = pItems.find(i => i.media_type === 'video' || isMediaVideo(i.media_url));
+        if (videoItem) {
+            const videoUrl = (!videoItem.thumbnail_url || videoItem.thumbnail_url.includes('ab_pradeep_reel_editor.png')) ? videoItem.media_url : videoItem.thumbnail_url;
+            const resolved = resolveMediaThumbnail(videoUrl || videoItem.media_url);
+            if (resolved) return resolved;
+        }
+        const imgItem = pItems.find(i => i.media_type === 'image' || (i.thumbnail_url && !i.thumbnail_url.includes('unsplash') && !i.thumbnail_url.includes('ab_pradeep_reel_editor.png')));
         if (imgItem) {
             const resolved = resolveMediaThumbnail(imgItem.thumbnail_url || imgItem.media_url);
             if (resolved) return resolved;
         }
         for (const item of pItems) {
-            if (item.thumbnail_url) {
-                const resolved = resolveMediaThumbnail(item.thumbnail_url);
-                if (resolved) return resolved;
-            }
-            if (item.media_url) {
-                const resolved = resolveMediaThumbnail(item.media_url);
+            const itemUrl = (!item.thumbnail_url || item.thumbnail_url.includes('ab_pradeep_reel_editor.png')) ? item.media_url : item.thumbnail_url;
+            if (itemUrl) {
+                const resolved = resolveMediaThumbnail(itemUrl);
                 if (resolved) return resolved;
             }
         }
     }
 
-    // 3. Check Provider profile image / banner
+    // 4. Check Provider profile image / banner
     if (provider && provider.profile_image) {
         const resolved = resolveMediaThumbnail(provider.profile_image);
         if (resolved) return resolved;
     }
 
-    // 4. Fallback to active creator showcase banner if available
+    // 5. Fallback to active creator showcase banner if available
     return '/static/banners/ab_pradeep_reel_editor.png';
 }
 window.getProviderThumbnail = getProviderThumbnail;
@@ -222,16 +265,14 @@ async function fetchPublicConfig() {
 }
 fetchPublicConfig();
 
-// Verify active session on load
+// Verify active session on load safely
 if (currentToken) {
     apiFetch('/auth/me').then(u => {
         currentUser = u;
         localStorage.setItem('current_user', JSON.stringify(u));
-    }).catch(() => {
-        currentToken = null;
-        currentUser = null;
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('current_user');
+    }).catch(err => {
+        // Do NOT erase session/token on network errors or offline transitions!
+        console.warn('Session background check notice:', err.message || err);
     });
 }
 
@@ -274,12 +315,7 @@ async function apiFetch(endpoint, options = {}) {
     try { data = text ? JSON.parse(text) : {}; } catch (_) { data = { detail: text }; }
 
     if (!response.ok) {
-        if (response.status === 401 && data.detail && (
-            data.detail.toLowerCase().includes('user not found') ||
-            data.detail.toLowerCase().includes('could not validate') ||
-            data.detail.toLowerCase().includes('not authenticated') ||
-            data.detail.toLowerCase().includes('token')
-        )) {
+        if (response.status === 401 && endpoint.startsWith('/auth/me')) {
             currentToken = null;
             currentUser = null;
             localStorage.removeItem('access_token');
@@ -729,16 +765,21 @@ async function requireAuth() {
         return false;
     }
 
-    // Verify token
     try {
-        await apiFetch('/auth/me');
+        const u = await apiFetch('/auth/me');
+        currentUser = u;
+        localStorage.setItem('current_user', JSON.stringify(u));
+        return true;
     } catch (e) {
-        currentToken = null;
-        currentUser = null;
+        // If offline or network unavailable, but token exists in localStorage, maintain session!
+        if (currentToken) {
+            console.warn('Network unavailable during route check, maintaining active session:', e.message || e);
+            return true;
+        }
+        showToast('Please login first', 'error');
         router('/login');
         return false;
     }
-    return true;
 }
 
 // Theme Management
@@ -1130,15 +1171,17 @@ window.openProfileIconPicker = () => {
                         googleBtn.innerHTML = '<span style="display:inline-block;width:14px;height:14px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:8px;"></span> Connecting to Google…';
                         window.google.accounts.id.revoke(currentUser.email, () => {
                             window.google.accounts.id.signIn({
-                                callback: async (response) => {
-                                    if (response?.credential) {
-                                        const payload = JSON.parse(atob(response.credential.split('.')[1] + '='.repeat((4 - response.credential.split('.')[1].length % 4) % 4)));
-                                        const pic = payload.picture || '';
-                                        await saveProfileImage(pic);
-                                    }
-                                    googleBtn.disabled = false;
-                                    googleBtn.innerHTML = '<span style="font-size:1.1rem;margin-right:6px;">📸</span> Use Google Profile Photo';
-                                    resolve();
+                                callback: (response) => {
+                                    (async () => {
+                                        if (response?.credential) {
+                                            const payload = JSON.parse(atob(response.credential.split('.')[1] + '='.repeat((4 - response.credential.split('.')[1].length % 4) % 4)));
+                                            const pic = payload.picture || '';
+                                            await saveProfileImage(pic);
+                                        }
+                                        googleBtn.disabled = false;
+                                        googleBtn.innerHTML = '<span style="font-size:1.1rem;margin-right:6px;">📸</span> Use Google Profile Photo';
+                                        resolve();
+                                    })();
                                 },
                                 cancel_on_tap_outside: false,
                             });
@@ -1277,7 +1320,7 @@ document.addEventListener('keydown', (e) => {
 })();
 
 function renderLaunchPromoBanner() {
-    if (sessionStorage.getItem('hide_launch_promo') === '1') return '';
+    if (localStorage.getItem('hide_launch_promo') === '1' || sessionStorage.getItem('hide_launch_promo') === '1') return '';
     return `
         <div class="launch-promo-banner" id="launch-promo-banner">
             <div class="launch-promo-content">
@@ -1286,7 +1329,7 @@ function renderLaunchPromoBanner() {
                     <strong>0% Platform Commission for 1 Month!</strong> Creators keep <strong>100%</strong> of every order • 100% Escrow Protected • Zero fees for all accounts!
                 </span>
             </div>
-            <button class="launch-promo-close" onclick="sessionStorage.setItem('hide_launch_promo', '1'); document.getElementById('launch-promo-banner')?.remove()" title="Dismiss">&times;</button>
+            <button class="launch-promo-close" onclick="localStorage.setItem('hide_launch_promo', '1'); sessionStorage.setItem('hide_launch_promo', '1'); document.getElementById('launch-promo-banner')?.remove()" title="Remove Banner" style="display: flex; align-items: center; gap: 4px; padding: 4px 10px; font-size: 0.78rem; font-weight: 700; background: rgba(255,255,255,0.18); color: #fff; border: 1px solid rgba(255,255,255,0.35); border-radius: 6px; cursor: pointer; white-space: nowrap;">✕ Remove</button>
         </div>
     `;
 }
@@ -1549,9 +1592,26 @@ async function openFiverrPortfolioModal(providerId, providerName) {
         const rating = Number(provider.rating || provider.profile?.rating || 5.0).toFixed(1);
         const totalOrders = provider.review_count || provider.profile?.review_count || 20;
         const skills = (provider.skills && provider.skills.length > 0) ? provider.skills : (provider.profile?.skills || ['Video Editing', 'Color Grading', 'Sound Design']);
-        const items = provider.portfolio_items || [];
-        const thumb = getProviderThumbnail(provider);
+        let items = Array.isArray(provider.portfolio_items) ? [...provider.portfolio_items] : [];
         const packages = provider.packages || [];
+
+        // Also gather sample references from provider packages so package videos appear in the modal
+        if (packages && Array.isArray(packages)) {
+            packages.forEach(pkg => {
+                if (pkg.sample_reference && !items.some(i => i.media_url === pkg.sample_reference)) {
+                    items.push({
+                        id: `pkg_${pkg.id}`,
+                        title: pkg.title || '4K Sample Reel',
+                        media_url: pkg.sample_reference,
+                        thumbnail_url: pkg.sample_reference,
+                        media_type: isMediaVideo(pkg.sample_reference) ? 'video' : 'image',
+                        description: `${pkg.title} — ₹${(pkg.price || 0).toLocaleString()} (${pkg.turnaround || '24h'})`
+                    });
+                }
+            });
+        }
+
+        const thumb = getProviderThumbnail(provider);
         const startingPrice = provider.starting_price || (packages[0]?.price) || 999;
         const turnaround = packages[0]?.turnaround || '24 hours';
         const responseTime = provider.response_time || provider.profile?.response_time || '1 hour';
@@ -1559,10 +1619,9 @@ async function openFiverrPortfolioModal(providerId, providerName) {
         const cardEl = modal.querySelector('.fiverr-escrow-card');
         if (!cardEl) return;
 
-        const videoItems = items.filter(i => i.media_type === 'video' || (i.media_url && /\.(mp4|webm|mov|mkv)$/i.test(i.media_url)));
-        const otherItems = items.filter(i => !videoItems.includes(i));
+        const videoItems = items.filter(i => i.media_type === 'video' || (i.media_url && isMediaVideo(i.media_url)) || (i.media_url && (i.media_url.includes('youtube') || i.media_url.includes('youtu.be'))));
         const activeMedia = videoItems[0] || items[0];
-        const activeMediaUrl = validateUrl(activeMedia?.media_url);
+        const activeMediaUrl = activeMedia?.media_url ? sanitizeUrl(activeMedia.media_url) : (thumb && isMediaVideo(thumb) ? sanitizeUrl(thumb) : '');
 
         cardEl.innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
@@ -1591,17 +1650,17 @@ async function openFiverrPortfolioModal(providerId, providerName) {
             <div style="margin-bottom: 14px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                     <span style="font-size: 0.8125rem; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 6px;">
-                        <span>🎬</span> Verified Sample Video Reel
+                        <span>🎬</span> Verified 4K Video Reel
                     </span>
                     <span style="font-size: 0.72rem; color: var(--success); font-weight: 700;">✓ In-App Native Playback</span>
                 </div>
                 <div id="provider-modal-media-wrap" style="position: relative; width: 100%; padding-top: 56.25%; border-radius: 12px; overflow: hidden; background: #000; box-shadow: 0 6px 24px rgba(0,0,0,0.5); border: 1px solid var(--border);">
-                    ${activeMediaUrl && /\.(mp4|webm|mov|mkv)$/i.test(activeMediaUrl) ? `
-                        <video id="modal-active-video-player" controls autoplay playsinline preload="auto" src="${sanitizeUrl(activeMediaUrl)}" style="position: absolute; top:0; left:0; width:100%; height:100%; object-fit: contain; background: #000;"></video>
-                    ` : activeMediaUrl && activeMediaUrl.includes('youtube') ? `
+                    ${activeMediaUrl && isMediaVideo(activeMediaUrl) ? `
+                        <video id="modal-active-video-player" controls autoplay playsinline preload="auto" src="${activeMediaUrl}" style="position: absolute; top:0; left:0; width:100%; height:100%; object-fit: contain; background: #000;"></video>
+                    ` : activeMediaUrl && (activeMediaUrl.includes('youtube') || activeMediaUrl.includes('youtu.be')) ? `
                         <iframe id="modal-active-iframe-player" src="${activeMediaUrl.replace('watch?v=', 'embed/').split('&')[0]}?autoplay=1" style="position: absolute; top:0; left:0; width:100%; height:100%; border: 0;" allow="autoplay; encrypted-media" allowfullscreen></iframe>
                     ` : `
-                        <img src="${sanitizeUrl(activeMedia?.thumbnail_url || thumb)}" style="position: absolute; top:0; left:0; width:100%; height:100%; object-fit: cover;" alt="${escapeHTML(name)}">
+                        <img src="${sanitizeUrl(activeMedia?.thumbnail_url || activeMediaUrl || thumb)}" style="position: absolute; top:0; left:0; width:100%; height:100%; object-fit: cover;" alt="${escapeHTML(name)}">
                     `}
                 </div>
                 <div id="modal-active-reel-title" style="font-size: 0.85rem; font-weight: 700; color: var(--text-primary); margin-top: 8px;">
@@ -1622,8 +1681,11 @@ async function openFiverrPortfolioModal(providerId, providerName) {
                         ${items.map((item, idx) => `
                             <div class="sample-reel-tab" onclick="window.__switchModalShowcaseItem(${JSON.stringify(escapeHTML(item.media_url || '')).replace(/"/g, '&quot;')}, ${JSON.stringify(escapeHTML(item.title || '')).replace(/"/g, '&quot;')}, ${JSON.stringify(escapeHTML(item.description || '')).replace(/"/g, '&quot;')})" style="flex-shrink: 0; width: 120px; cursor: pointer; background: var(--bg-hover); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; transition: transform 0.15s ease;">
                                 <div style="width: 100%; height: 65px; background: #000; position: relative;">
-                                    ${item.thumbnail_url || (item.media_type === 'image' && item.media_url) ? `
-                                        <img src="${sanitizeUrl(item.thumbnail_url || item.media_url)}" style="width: 100%; height: 100%; object-fit: cover;" alt="${escapeHTML(item.title)}">
+                                    ${item.thumbnail_url && !isMediaVideo(item.thumbnail_url) ? `
+                                        <img src="${sanitizeUrl(item.thumbnail_url)}" style="width: 100%; height: 100%; object-fit: cover;" alt="${escapeHTML(item.title)}">
+                                    ` : isMediaVideo(item.media_url) ? `
+                                        <video src="${sanitizeUrl(item.media_url)}" preload="metadata" muted playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>
+                                        <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.3); color: #fff; font-size: 1rem;">▶</div>
                                     ` : `
                                         <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; background: #1e1b4b; color: #fff;">🎬</div>
                                     `}
@@ -1676,9 +1738,9 @@ async function openFiverrPortfolioModal(providerId, providerName) {
             if (descEl) descEl.textContent = desc;
             if (!wrap) return;
 
-            if (url && /\.(mp4|webm|mov|mkv)$/i.test(url)) {
+            if (url && isMediaVideo(url)) {
                 wrap.innerHTML = `<video controls autoplay playsinline preload="auto" src="${sanitizeUrl(url)}" style="position: absolute; top:0; left:0; width:100%; height:100%; object-fit: contain; background: #000;"></video>`;
-            } else if (url && url.includes('youtube')) {
+            } else if (url && (url.includes('youtube') || url.includes('youtu.be'))) {
                 wrap.innerHTML = `<iframe src="${url.replace('watch?v=', 'embed/').split('&')[0]}?autoplay=1" style="position: absolute; top:0; left:0; width:100%; height:100%; border: 0;" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
             } else if (url) {
                 wrap.innerHTML = `<img src="${sanitizeUrl(url)}" style="position: absolute; top:0; left:0; width:100%; height:100%; object-fit: cover;">`;
@@ -1979,17 +2041,37 @@ if (!history.state) {
     } catch (_) {}
 }
 
+function getSafeNextUrl() {
+    try {
+        const nextParam = new URLSearchParams(window.location.search).get('next');
+        if (nextParam && nextParam.startsWith('/') && !nextParam.startsWith('//') && !nextParam.includes('\\')) {
+            return nextParam;
+        }
+    } catch (_) {}
+    return null;
+}
+window.getSafeNextUrl = getSafeNextUrl;
+
 // Router
 function router(path, pushState = true) {
+    if (!path) path = window.location.pathname + window.location.search + window.location.hash;
+    let rawPath = '/';
+    try {
+        const urlObj = new URL(path, window.location.origin);
+        rawPath = urlObj.pathname || '/';
+    } catch (_) {
+        rawPath = (path || '/').split('?')[0].split('#')[0] || '/';
+    }
+
     // 1. If admin is logged in, enforce exclusive Admin Console experience (no buyer/provider interference)
     if (currentToken && currentUser?.user_type === 'ADMIN') {
         const buyerProviderOnlyRoutes = ['/', '/welcome', '/providers', '/create-package', '/create-booking', '/packages'];
-        if (buyerProviderOnlyRoutes.includes(path)) {
-            path = '/admin';
-        } else if (path === '/messages') {
-            path = '/admin/chats';
-        } else if (path === '/bookings') {
-            path = '/admin/bookings';
+        if (buyerProviderOnlyRoutes.includes(rawPath)) {
+            rawPath = '/admin';
+        } else if (rawPath === '/messages') {
+            rawPath = '/admin/chats';
+        } else if (rawPath === '/bookings') {
+            rawPath = '/admin/bookings';
         }
     }
 
@@ -2027,14 +2109,20 @@ function router(path, pushState = true) {
     };
 
     const protectedPaths = ['/dashboard', '/messages', '/bookings', '/payments', '/create-booking', '/create-package', '/admin', '/admin/providers', '/admin/bookings', '/admin/disputes', '/admin/chats', '/admin/niches', '/groove-chat'];
-    let targetPath = path;
-    if (!currentToken && protectedPaths.includes(path)) {
-        targetPath = '/login';
+    let targetFullUrl = path;
+    if (!currentToken && protectedPaths.includes(rawPath)) {
+        const safeNext = encodeURIComponent(path);
+        targetFullUrl = `/login?next=${safeNext}`;
+        rawPath = '/login';
     }
 
-    const component = routes[path] || NotFound;
-    if (pushState && (window.location.pathname !== targetPath || !history.state)) {
-        history.pushState({ path: targetPath }, '', targetPath);
+    const component = routes[rawPath] || NotFound;
+    if (pushState) {
+        try {
+            if (window.location.pathname + window.location.search !== targetFullUrl || !history.state) {
+                history.pushState({ path: targetFullUrl }, '', targetFullUrl);
+            }
+        } catch (_) {}
     }
     render(component);
     if (currentToken && currentUser && !notificationState.pollInterval) {
@@ -2210,7 +2298,10 @@ async function handleGoogleSignIn(initialRole = null, credential = null) {
             currentUser = await apiFetch('/auth/me');
             localStorage.setItem('current_user', JSON.stringify(currentUser));
             showToast(`Signed in with Google as ${currentUser.name}!`, 'success');
-            if (currentUser?.user_type === 'ADMIN') {
+            const safeNext = getSafeNextUrl();
+            if (safeNext) {
+                router(safeNext);
+            } else if (currentUser?.user_type === 'ADMIN') {
                 router('/admin');
             } else {
                 router('/');
@@ -2788,7 +2879,10 @@ function AuthPortal(initialTab = 'login') {
             localStorage.setItem('current_user', JSON.stringify(currentUser));
 
             showToast(`Welcome back, ${currentUser.name || 'User'}!`, 'success');
-            if (currentUser?.user_type === 'ADMIN') {
+            const safeNext = getSafeNextUrl();
+            if (safeNext) {
+                router(safeNext);
+            } else if (currentUser?.user_type === 'ADMIN') {
                 router('/admin');
             } else {
                 router('/');
@@ -2928,7 +3022,10 @@ function AuthPortal(initialTab = 'login') {
 
             showToast(`Welcome, ${currentUser.name || 'User'}!`, 'success');
             window.__cancelOtp();
-            if (currentUser?.user_type === 'ADMIN') {
+            const safeNext = getSafeNextUrl();
+            if (safeNext) {
+                router(safeNext);
+            } else if (currentUser?.user_type === 'ADMIN') {
                 router('/admin');
             } else {
                 router('/');
@@ -3050,7 +3147,10 @@ function AuthPortal(initialTab = 'login') {
             localStorage.setItem('current_user', JSON.stringify(currentUser));
 
             showToast(`Account created successfully! Welcome, ${currentUser.name}!`, 'success');
-            if (currentUser?.user_type === 'ADMIN') {
+            const safeNext = getSafeNextUrl();
+            if (safeNext) {
+                router(safeNext);
+            } else if (currentUser?.user_type === 'ADMIN') {
                 router('/admin');
             } else {
                 router('/');
@@ -3127,13 +3227,20 @@ function navigateToProviderNiche(niche) {
     router('/providers');
 }
 
+function goToBusinessAds() {
+    navigateToProviderNiche('business_ads');
+}
+window.goToBusinessAds = goToBusinessAds;
+
 function goToVideoEditors() {
     navigateToProviderNiche('editors_animators');
 }
+window.goToVideoEditors = goToVideoEditors;
 
 function goToTutors() {
     navigateToProviderNiche('tutors');
 }
+window.goToTutors = goToTutors;
 
 // =============== WELCOME / START YOUR JOURNEY PAGE (POST-LOGIN) ===============
 function WelcomePage() {
@@ -3399,6 +3506,13 @@ function Landing() {
 
             <!-- Value Proposition Row -->
             <div class="hero-features-bar">
+                <div class="hero-feature-card" onclick="goToBusinessAds()" style="cursor: pointer; border-color: rgba(91, 52, 234, 0.4); background: linear-gradient(135deg, rgba(91, 52, 234, 0.05), transparent);"
+                   onmouseover="this.style.transform='translateY(-4px)'; this.style.borderColor='#5b34ea';"
+                   onmouseout="this.style.transform='translateY(0)'; this.style.borderColor='rgba(91, 52, 234, 0.4)';">
+                    <div class="hero-feature-icon">🏢</div>
+                    <h3 class="hero-feature-title">Small Business & Brand Ads</h3>
+                    <p class="hero-feature-desc">Turn raw phone footage into high-converting Instagram Reels, Cafes/Restaurant promos, and E-commerce product ads.</p>
+                </div>
                 <div class="hero-feature-card" onclick="goToVideoEditors()" style="cursor: pointer;"
                    onmouseover="this.style.transform='translateY(-4px)'; this.style.borderColor='#5b34ea';"
                    onmouseout="this.style.transform='translateY(0)'; this.style.borderColor='var(--border)';">
@@ -3417,11 +3531,6 @@ function Landing() {
                     <div class="hero-feature-icon">🔒</div>
                     <h3 class="hero-feature-title">100% Escrow Protection</h3>
                     <p class="hero-feature-desc">Your payment is locked safely in escrow and released to the creator only when you review and approve the final work.</p>
-                </div>
-                <div class="hero-feature-card">
-                    <div class="hero-feature-icon">⚡</div>
-                    <h3 class="hero-feature-title">Fast 24-48h Delivery</h3>
-                    <p class="hero-feature-desc">Clear packages, guaranteed revision rounds, and real-time chat with file previews directly in your browser.</p>
                 </div>
             </div>
         </div>
@@ -4181,10 +4290,7 @@ function BuyerDashboard() {
                             <div class="card fiverr-gig-card" style="overflow: hidden;">
                                 <!-- 16:9 Thumbnail (Dynamic Editor Portfolio Image / Reel Showcase) -->
                                 <div class="fiverr-gig-thumb-wrap" onclick="openFiverrPortfolioModal(${pkg.provider_id})">
-                                    <img src="${sanitizeUrl(thumb)}" alt="${escapeHTML(pkg.title)}" class="fiverr-gig-thumb-img" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                                    <div style="position:absolute; inset:0; display:${thumb ? 'none' : 'flex'}; align-items:center; justify-content:center; color:white; font-size:2.5rem; background: linear-gradient(135deg, #1e1b4b, #312e81);">
-                                        ${isTutor ? '🗣️' : '🎬'}
-                                    </div>
+                                    ${renderMediaThumbnailOrVideo(thumb, { className: 'fiverr-gig-thumb-img', alt: pkg.title, autoplay: true })}
                                     <span class="fiverr-gig-badge">${nicheBadge}</span>
                                     <div class="fiverr-gig-play-hint">
                                         <div class="fiverr-gig-play-btn">▶</div>
@@ -4261,10 +4367,7 @@ function BuyerDashboard() {
                             <div class="card fiverr-gig-card" style="display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg-card); transition: all 0.25s ease;">
                                 <!-- 16:9 Thumbnail Header -->
                                 <div class="fiverr-gig-thumb-wrap" onclick="openFiverrPortfolioModal(${pr.id})" style="cursor: pointer;">
-                                    <img src="${sanitizeUrl(prThumb)}" alt="${escapeHTML(pr.name)}" class="fiverr-gig-thumb-img" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                                    <div style="position:absolute; inset:0; display:${prThumb ? 'none' : 'flex'}; align-items:center; justify-content:center; color:white; font-size:2.5rem; background: linear-gradient(135deg, #1e1b4b, #312e81);">
-                                        ${isTutor ? '🗣️' : '🎬'}
-                                    </div>
+                                    ${renderMediaThumbnailOrVideo(prThumb, { className: 'fiverr-gig-thumb-img', alt: pr.name, autoplay: true })}
                                     <span class="fiverr-gig-badge">${nicheBadge}</span>
                                     <div class="fiverr-gig-play-hint">
                                         <div class="fiverr-gig-play-btn">▶</div>
@@ -4816,14 +4919,21 @@ function Settings() {
         const phoneVal = (document.getElementById('setting-phone')?.value || '').trim();
         const usernameVal = usernameInput ? usernameInput.value.trim().replace(/^@/, '') : '';
 
+        if (!nameVal || nameVal.length < 2) {
+            showToast('Full Name is compulsory and must be at least 2 characters.', 'error');
+            return;
+        }
+        if (!usernameVal || usernameVal.length < 3) {
+            showToast('Creator Username (@handle) is required and must be at least 3 characters.', 'error');
+            return;
+        }
+
         const data = {
             name: nameVal,
+            username: usernameVal,
             email: emailVal,
             phone: phoneVal
         };
-        if (usernameVal) {
-            data.username = usernameVal;
-        }
 
         let redirected = false;
         try {
@@ -4949,9 +5059,9 @@ function Settings() {
 
         const media_url = window.__lastUploadedPortfolioUrl || (mediaUrlInput?.value || '').trim();
         let title = (titleInput?.value || '').trim();
-        const media_type = (mediaTypeSelect?.value || window.__lastUploadedPortfolioType || 'video');
+        const media_type = (mediaTypeSelect?.value || window.__lastUploadedPortfolioType || (isMediaVideo(media_url) ? 'video' : 'image'));
         const description = (descInput?.value || '').trim() || 'Verified 4K sample reel deliverable';
-        const thumbnail_url = media_type === 'image' ? media_url : '/static/banners/ab_pradeep_reel_editor.png';
+        const thumbnail_url = media_url; // Store actual media_url as thumbnail_url so native video tags and showcase player work everywhere
 
         if (!media_url) {
             showToast('Please upload a sample file above or provide a media URL/link', 'error');
@@ -5021,22 +5131,71 @@ function Settings() {
             });
 
             try {
-                await apiFetch('/profile', {
-                    method: 'PUT',
+                const updatedUser = await apiFetch('/auth/me', {
+                    method: 'PATCH',
                     body: JSON.stringify({ profile_image: flyerUrl })
                 });
+                if (updatedUser) {
+                    currentUser = updatedUser;
+                    localStorage.setItem('current_user', JSON.stringify(updatedUser));
+                }
             } catch (_) {}
 
             if (currentUser) {
                 currentUser.profile_image = flyerUrl;
+                localStorage.setItem('current_user', JSON.stringify(currentUser));
             }
-
-            if (typeof portfolioItems !== 'undefined') {
+            if (typeof portfolioItems !== 'undefined' && Array.isArray(portfolioItems)) {
                 portfolioItems.unshift(newItem);
             }
-            showToast('✨ Custom Showcase Flyer updated! Displayed live on your homepage card.', 'success');
-        } catch (err) {
-            showToast(err.message || 'Failed to upload showcase flyer', 'error');
+            showToast('🎉 Showcase Flyer updated! It is now live on your homepage talent card.', 'success');
+        } catch (e) {
+            showToast(e.message || 'Upload failed', 'error');
+        } finally {
+            hideLoading();
+            mount(renderSettingsView());
+        }
+    };
+
+    window.handleRemoveShowcaseFlyer = async () => {
+        if (!confirm('Are you sure you want to remove your custom Showcase Flyer? Default visual will be restored.')) return;
+        try {
+            showLoading();
+            if (typeof portfolioItems !== 'undefined' && Array.isArray(portfolioItems)) {
+                const flyerItems = portfolioItems.filter(item => 
+                    (item.title && item.title.includes('Showcase Banner')) ||
+                    (item.description && item.description.includes('showcase flyer'))
+                );
+                for (const fItem of flyerItems) {
+                    try {
+                        await apiFetch(`/profile/portfolio/${fItem.id}`, { method: 'DELETE' });
+                    } catch (_) {}
+                }
+                portfolioItems = portfolioItems.filter(item => 
+                    !(item.title && item.title.includes('Showcase Banner')) &&
+                    !(item.description && item.description.includes('showcase flyer'))
+                );
+            }
+
+            try {
+                const updatedUser = await apiFetch('/auth/me', {
+                    method: 'PATCH',
+                    body: JSON.stringify({ profile_image: "" })
+                });
+                if (updatedUser) {
+                    currentUser = updatedUser;
+                    localStorage.setItem('current_user', JSON.stringify(updatedUser));
+                }
+            } catch (_) {}
+
+            if (currentUser) {
+                currentUser.profile_image = null;
+                localStorage.setItem('current_user', JSON.stringify(currentUser));
+            }
+
+            showToast('🗑️ Showcase Flyer removed successfully!', 'success');
+        } catch (e) {
+            showToast(e.message || 'Failed to remove flyer', 'error');
         } finally {
             hideLoading();
             mount(renderSettingsView());
@@ -5318,18 +5477,18 @@ function Settings() {
                         </div>
                         <form onsubmit="handleAccountSave(event)">
                             <div class="form-group">
-                                <label class="form-label">Full Name</label>
-                                <input type="text" class="form-input" id="setting-name" value="${currentUser?.name || ''}" required>
+                                <label class="form-label" style="font-weight: 800;">Full Name <span style="color: var(--danger);">* (Compulsory)</span></label>
+                                <input type="text" class="form-input" id="setting-name" value="${escapeHTML(currentUser?.name || '')}" required minlength="2" maxlength="60" placeholder="Enter your full name" style="font-weight: 700;">
                             </div>
 
                             <div class="form-group">
-                                <label class="form-label">Creator Username (@handle)</label>
+                                <label class="form-label" style="font-weight: 800;">Creator Username (@handle) <span style="color: var(--danger);">* (Required)</span></label>
                                 <div style="position: relative; display: flex; align-items: center;">
                                     <span style="position: absolute; left: 14px; color: var(--accent); font-weight: 800; font-size: 1rem; pointer-events: none;">@</span>
-                                    <input type="text" class="form-input" id="setting-username" value="${currentUser?.username || ''}" placeholder="your_unique_handle" style="padding-left: 32px; font-weight: 700;" pattern="[a-zA-Z0-9_]{3,30}" title="3-30 letters, numbers, or underscores">
+                                    <input type="text" class="form-input" id="setting-username" value="${escapeHTML(currentUser?.username || '')}" required minlength="3" maxlength="30" placeholder="your_unique_handle" style="padding-left: 32px; font-weight: 700;" pattern="[a-zA-Z0-9_]{3,30}" title="3-30 letters, numbers, or underscores">
                                 </div>
                                 <small style="color: var(--text-muted); font-size: 0.75rem; margin-top: 5px; display: block;">
-                                    Your unique creator link: <strong>groovehub.com/@${currentUser?.username || 'username'}</strong>. Clients can search and find you directly.
+                                    Your unique creator link: <strong>groovehub.com/@${escapeHTML(currentUser?.username || 'username')}</strong>. Clients can search and find you directly.
                                 </small>
                             </div>
 
@@ -5419,24 +5578,29 @@ function Settings() {
                             <input type="file" id="flyer-file-input" style="display:none;" accept="image/*" onchange="if(this.files[0]) handleShowcaseFlyerUpload(this.files[0])" />
                             <div style="display: flex; gap: 10px; align-items: center; justify-content: flex-end; flex-wrap: wrap;">
                                 <span style="font-size: 0.75rem; color: var(--text-muted);">Recommended: 16:9 ratio (.PNG / .JPG / .WEBP)</span>
+                                <button type="button" class="btn btn-secondary" onclick="handleRemoveShowcaseFlyer()" style="padding: 10px 18px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; color: #ef4444; border: 1.5px solid rgba(239, 68, 68, 0.4); background: rgba(239, 68, 68, 0.08);" title="Remove Showcase Flyer">
+                                    <span>🗑️</span> Remove Showcase Flyer
+                                </button>
                                 <button type="button" class="btn btn-primary" onclick="document.getElementById('flyer-file-input').click()" style="padding: 10px 20px; font-weight: 700; display: inline-flex; align-items: center; gap: 8px;">
                                     <span>📤</span> Upload / Change Showcase Flyer
                                 </button>
                             </div>
                         </div>
 
-                        <!-- 2. Sample Video Reels Upload Card -->
+                        <!-- 2. Sample Video Reels & Portfolio Showcase Card -->
                         <div class="card" style="padding: 24px;">
-                            <div class="card-header" style="margin-bottom: 16px;">
+                            <div class="card-header" style="margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                                 <div>
-                                    <div class="card-title" style="font-size: 1rem; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
-                                        <span>🎬</span> 2. Verified Sample Video Reels (.MP4 / .MOV)
+                                    <div class="card-title" style="font-size: 1.05rem; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+                                        <span>🎬</span> 2. My 4K Sample Video Reels &amp; Portfolio Showcase (${portfolioItems.length})
                                     </div>
                                     <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">
-                                        Playable in-app when buyers click your profile to evaluate your editing style.
+                                        Upload your best editing work. Playable in-app when buyers click your profile.
                                     </div>
                                 </div>
-                                <span class="badge badge-info">1GB 4K Video Allowance</span>
+                                <button type="button" class="btn btn-secondary btn-sm" onclick="openFiverrPortfolioModal(${currentUser.id}, '${escapeHTML(currentUser.name)}')" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700;">
+                                    <span>👁️</span> Open Live Profile Player
+                                </button>
                             </div>
 
                             <!-- Direct 4K File Upload Dropzone -->
@@ -5469,10 +5633,10 @@ function Settings() {
                                 </div>
                             </div>
 
-                            <form onsubmit="handleAddPortfolioItem(event)">
+                            <form onsubmit="handleAddPortfolioItem(event)" style="margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px solid var(--border);">
                                 <div class="form-group">
-                                    <label class="form-label">Reel / Deliverable Title <span style="color: var(--danger);">*</span></label>
-                                    <input type="text" class="form-input" id="port-title" placeholder="e.g. High-Retention YouTube Shorts Edit / Viral SaaS Ad Reel" required>
+                                    <label class="form-label">Reel / Deliverable Title <span style="font-weight: 400; color: var(--text-muted); font-size: 0.78rem;">(Optional — auto-generated from file name if empty)</span></label>
+                                    <input type="text" class="form-input" id="port-title" placeholder="Optional — e.g. High-Retention YouTube Shorts Edit">
                                 </div>
 
                                 <div class="form-row">
@@ -5501,18 +5665,6 @@ function Settings() {
                                     </button>
                                 </div>
                             </form>
-                        </div>
-
-                        <!-- Live Portfolio Showcase Items Grid -->
-                        <div class="card" style="padding: 24px;">
-                            <div class="card-header" style="margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-                                <div class="card-title" style="font-size: 1rem; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
-                                    <span>📁</span> Live Projects &amp; Reels on Your Profile (${portfolioItems.length})
-                                </div>
-                                <button type="button" class="btn btn-secondary btn-sm" onclick="openFiverrPortfolioModal(${currentUser.id}, '${escapeHTML(currentUser.name)}')" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700;">
-                                    <span>👁️</span> Open Live Profile &amp; Reels Player
-                                </button>
-                            </div>
 
                             ${portfolioItems.length === 0 ? `
                                 <div style="text-align: center; padding: 40px 20px; border: 1.5px dashed var(--border); border-radius: var(--radius);">
@@ -5875,7 +6027,8 @@ function MyPackages() {
     async function loadPackages() {
         showLoading();
         try {
-            packages = await apiFetch('/packages');
+            const provId = currentUser ? currentUser.id : '';
+            packages = await apiFetch(provId ? `/packages?provider_id=${provId}` : '/packages');
         } catch (e) {
             showToast(e.message, 'error');
             packages = [];
@@ -5921,20 +6074,31 @@ function MyPackages() {
             ` : `
                 <div class="grid grid-2">
                     ${packages.map(pkg => `
-                        <div class="card">
-                            <div class="card-header">
-                                <div class="card-title">${pkg.title}</div>
-                                <span class="badge ${pkg.status === 'approved' ? 'badge-success' : pkg.status === 'pending' ? 'badge-warning' : 'badge-danger'}">${pkg.status}</span>
+                        <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+                            <div>
+                                ${pkg.sample_reference ? `
+                                    <div style="position: relative; width: 100%; padding-top: 56.25%; border-radius: 8px; overflow: hidden; background: #000; margin-bottom: 12px; border: 1px solid var(--border);">
+                                        ${isMediaVideo(pkg.sample_reference) ? `
+                                            <video src="${sanitizeUrl(pkg.sample_reference)}" controls playsinline preload="metadata" style="position: absolute; top:0; left:0; width:100%; height:100%; object-fit: contain; background: #000;"></video>
+                                        ` : `
+                                            <img src="${sanitizeUrl(pkg.sample_reference)}" style="position: absolute; top:0; left:0; width:100%; height:100%; object-fit: cover;" alt="${escapeHTML(pkg.title)}">
+                                        `}
+                                    </div>
+                                ` : ''}
+                                <div class="card-header" style="margin-bottom: 8px;">
+                                    <div class="card-title" style="font-size: 1rem; font-weight: 800;">${escapeHTML(pkg.title)}</div>
+                                    <span class="badge ${pkg.status === 'approved' ? 'badge-success' : pkg.status === 'pending' ? 'badge-warning' : 'badge-danger'}">${pkg.status}</span>
+                                </div>
+                                <div class="card-body" style="padding: 0;">
+                                    <div class="price" style="font-size: 1.25rem; font-weight: 900; color: var(--text-primary); margin-bottom: 4px;">₹${(pkg.price || 0).toLocaleString()}</div>
+                                    <div class="price-range" style="font-size: 0.78rem; color: var(--text-muted);">${pkg.package_type.replace('_', ' ')} • ⚡ ${escapeHTML(pkg.turnaround || '24h')}</div>
+                                    <div class="divider" style="margin: 10px 0;"></div>
+                                    <div style="font-size: 0.8125rem; color: var(--text-secondary); line-height: 1.45;">${escapeHTML(pkg.scope || 'No description')}</div>
+                                </div>
                             </div>
-                            <div class="card-body">
-                                <div class="price">₹${pkg.price.toLocaleString()}</div>
-                                <div class="price-range">${pkg.package_type.replace('_', ' ')} • ${pkg.turnaround}</div>
-                                <div class="divider"></div>
-                                <div style="font-size: 0.8125rem; color: var(--text-secondary);">${pkg.scope || 'No description'}</div>
-                            </div>
-                            <div class="card-footer">
-                                <button class="btn btn-secondary btn-sm" onclick="editPackage(${pkg.id})">Edit</button>
-                                <button class="btn btn-danger btn-sm" onclick="deletePackage(${pkg.id})">Delete</button>
+                            <div class="card-footer" style="margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--border); display: flex; gap: 8px;">
+                                <button class="btn btn-secondary btn-sm" onclick="editPackage(${pkg.id})" style="flex: 1; font-weight: 700;">✏️ Edit</button>
+                                <button class="btn btn-danger btn-sm" onclick="deletePackage(${pkg.id})" style="font-weight: 700;">🗑️ Delete</button>
                             </div>
                         </div>
                     `).join('')}
@@ -5969,12 +6133,244 @@ function MyPackages() {
     return renderMyPackages();
 }
 
-// =============== CREATE PACKAGE ===============
+// =============== CREATE PACKAGE & VETTING SYSTEM ===============
+
+const VETTING_TIERS_CONFIG = {
+    beginner: {
+        id: 'beginner',
+        name: 'Beginner Editor',
+        badge: '3 Free Test Edits',
+        badgeColor: 'var(--success)',
+        reqCount: 3,
+        suggestedPrice: '₹500 – ₹1,500',
+        summary: '3 free video editing & brand ad test tasks to qualify for client task assignments.',
+        tasks: [
+            {
+                id: 'beg_task_1',
+                title: '🏢 Test Task 1: Local Gym/Cafe 30s Brand Promo Reel',
+                objective: 'Edit a fast-paced 30-second vertical brand ad from raw smartphone footage.',
+                brief: 'Hook the viewer in the first 3 seconds with dynamic text. Cut dead air, sync video beats to upbeat royalty-free music, insert a clean lower-third with the business name/address, and design an end screen with a "Visit Today / 20% OFF" call-to-action.',
+                deliverables: '1080x1920 (9:16 vertical MP4), dynamic text hooks, sound design & SFX.',
+                sample_footage_url: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=800'
+            },
+            {
+                id: 'beg_task_2',
+                title: '🛍️ Test Task 2: E-Commerce 45s UGC Product Video Ad',
+                objective: 'Create a high-converting direct-response product demonstration ad.',
+                brief: 'Structure the edit into Problem -> Demonstration -> Solution -> Offer. Punch in zooms during key feature demonstrations, animate a 20% OFF coupon badge, and overlay positive customer review quotes.',
+                deliverables: '1080x1920 (9:16 vertical MP4), price tag callout, sound pops, and subtitle hooks.',
+                sample_footage_url: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800'
+            },
+            {
+                id: 'beg_task_3',
+                title: '📝 Test Task 3: Dynamic Animated Subtitles Reel (30s)',
+                objective: 'Add viral Alex Hormozi style dynamic animated captions to talking-head footage.',
+                brief: 'Accurately time every word with animated highlight pop colors (yellow/green), insert context emojis at emphasis words, and add subtle whoosh sound effects on key phrase transitions.',
+                deliverables: '1080x1920 MP4 with 100% accurate subtitle timing, high-contrast captions, and visual emoji pops.',
+                sample_footage_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800'
+            }
+        ]
+    },
+    intermediate: {
+        id: 'intermediate',
+        name: 'Intermediate Editor',
+        badge: '2 Free Test Edits',
+        badgeColor: 'var(--accent)',
+        reqCount: 2,
+        suggestedPrice: '₹1,500 – ₹3,500',
+        summary: '2 free video editing & brand ad test tasks to unlock Verified Pro status.',
+        tasks: [
+            {
+                id: 'inter_task_1',
+                title: '⚡ Test Task 1: High-Retention Brand Commercial (45s)',
+                objective: 'Craft a cinematic high-retention commercial with advanced pacing & SFX layering.',
+                brief: 'Seamless speed ramps on dynamic camera motion, sound design with risers, impacts, and whooshes, animated motion graphic feature callouts, and multi-track audio leveling.',
+                deliverables: 'Cinema-level sound mastering, 9:16 vertical export, scroll-stopping hook.',
+                sample_footage_url: 'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=800'
+            },
+            {
+                id: 'inter_task_2',
+                title: '🎨 Test Task 2: Cinematic Multi-Angle Product Promo (60s)',
+                objective: 'Color-correct and grade log/flat footage into a punchy commercial look.',
+                brief: 'Apply custom LUTs to achieve deep cinematic contrast and balanced skin tones. Add branded split-screen transitions, animated logo sting, and high-energy music mix.',
+                deliverables: 'Professional color grading LUTs, audio normalization, 4K master export.',
+                sample_footage_url: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800'
+            }
+        ]
+    },
+    pro: {
+        id: 'pro',
+        name: 'Pro Master Editor',
+        badge: '1 Benchmark Test Edit',
+        badgeColor: '#f59e0b',
+        reqCount: 1,
+        suggestedPrice: '₹3,500 – ₹15,000+',
+        summary: '1 free benchmark brand ad test task for instant Top-Rated Pro status and high-ticket client jobs.',
+        tasks: [
+            {
+                id: 'pro_task_1',
+                title: '👑 Benchmark Task: High-Ticket Brand Commercial Master',
+                objective: 'Master-grade commercial ad with 3 scroll-stopping hook variants and bespoke motion graphics.',
+                brief: 'Create 3 distinct 3-second hook openings (Question hook, Pattern interrupt, Bold claim), bespoke 2D motion graphic lower thirds, high-end sound engineering, and dual-format master exports (9:16 vertical & 16:9 widescreen).',
+                deliverables: 'Direct-response retention mastery, broadcast audio engineering, top-tier motion graphics.',
+                sample_footage_url: 'https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?w=800'
+            }
+        ]
+    }
+};
+
+window.openVettingTestModal = (tierKey = 'beginner') => {
+    const existingModal = document.getElementById('vetting-test-modal');
+    if (existingModal) existingModal.remove();
+
+    const tier = VETTING_TIERS_CONFIG[tierKey] || VETTING_TIERS_CONFIG.beginner;
+    const localSubmissions = JSON.parse(localStorage.getItem('groove_test_submissions') || '{}');
+
+    const modal = document.createElement('div');
+    modal.id = 'vetting-test-modal';
+    modal.className = 'modal-backdrop';
+    modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.75); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 16px;';
+
+    modal.innerHTML = `
+        <div class="card" style="max-width: 720px; width: 100%; max-height: 90vh; overflow-y: auto; border-radius: 20px; padding: 24px; position: relative; border: 2px solid ${tier.badgeColor}; box-shadow: 0 20px 50px rgba(0,0,0,0.5); background: var(--bg-card);">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 14px;">
+                <div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="font-size: 1.4rem;">🎯</span>
+                        <h2 style="font-size: 1.3rem; font-weight: 900; margin: 0; color: var(--text-primary);">
+                            ${tier.name} Vetting & Test Task Center
+                        </h2>
+                        <span style="background: ${tier.badgeColor}20; color: ${tier.badgeColor}; font-weight: 800; font-size: 0.75rem; padding: 3px 8px; border-radius: 6px;">
+                            ${tier.badge}
+                        </span>
+                    </div>
+                    <p style="font-size: 0.8125rem; color: var(--text-secondary); margin: 6px 0 0 0; line-height: 1.4;">
+                        ${tier.summary} Once submitted, our team reviews and approves your editor badge to match you with paying business clients.
+                    </p>
+                </div>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('vetting-test-modal').remove()" style="padding: 6px 10px; border-radius: 8px; font-weight: 800;">✕</button>
+            </div>
+
+            <!-- Tier Qualification Progress -->
+            <div style="background: var(--bg-hover); border: 1px solid var(--border); border-radius: 12px; padding: 12px 16px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <div>
+                    <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Qualification Requirement</div>
+                    <div style="font-size: 0.95rem; font-weight: 800; color: var(--text-primary); margin-top: 2px;">
+                        Complete ${tier.reqCount} Free Test Sample Edit${tier.reqCount > 1 ? 's' : ''}
+                    </div>
+                </div>
+                <div style="text-align: right;">
+                    <div style="font-size: 0.75rem; color: var(--text-muted);">Recommended Client Pricing</div>
+                    <div style="font-size: 0.95rem; font-weight: 900; color: var(--success);">${tier.suggestedPrice}</div>
+                </div>
+            </div>
+
+            <!-- List of Assigned Tasks -->
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+                ${tier.tasks.map((task, idx) => {
+                    const sub = localSubmissions[task.id] || null;
+                    const isSubmitted = !!sub;
+                    return `
+                        <div style="border: 1px solid var(--border); border-radius: 14px; padding: 18px; background: var(--bg-card); transition: all 0.2s ease;">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                                <div style="font-weight: 800; font-size: 0.95rem; color: var(--text-primary);">
+                                    ${task.title}
+                                </div>
+                                <span style="font-size: 0.72rem; font-weight: 800; padding: 3px 8px; border-radius: 6px; ${isSubmitted ? 'background: rgba(34, 197, 94, 0.15); color: var(--success);' : 'background: rgba(234, 179, 8, 0.15); color: #eab308;'}">
+                                    ${isSubmitted ? '✅ Submitted (In Review)' : '⏳ Action Required'}
+                                </span>
+                            </div>
+
+                            <div style="font-size: 0.8125rem; color: var(--text-secondary); margin-bottom: 10px; line-height: 1.45;">
+                                ${task.brief}
+                            </div>
+
+                            <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 12px; background: var(--bg-hover); padding: 6px 10px; border-radius: 8px;">
+                                <strong>🎯 Deliverables:</strong> ${task.deliverables}
+                            </div>
+
+                            <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 10px;">
+                                <a href="${task.sample_footage_url}" target="_blank" class="btn btn-secondary btn-sm" style="font-size: 0.75rem; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px;">
+                                    <span>📥</span> Sample Raw Clip / Brief
+                                </a>
+                                
+                                <div style="flex: 1; min-width: 220px; display: flex; gap: 6px;">
+                                    <input type="url" id="test-task-url-${task.id}" class="form-input" placeholder="Paste Google Drive / YouTube URL" value="${sub?.url ? escapeHTML(sub.url) : ''}" style="font-size: 0.78rem; padding: 6px 10px;">
+                                    <button type="button" class="btn btn-primary btn-sm" onclick="submitTestTask('${task.id}', '${tier.id}')" style="font-size: 0.78rem; font-weight: 700; white-space: nowrap; padding: 6px 12px;">
+                                        ${isSubmitted ? 'Update' : 'Submit'}
+                                    </button>
+                                </div>
+                            </div>
+                            ${sub?.url ? `
+                                <div style="font-size: 0.72rem; color: var(--success); margin-top: 6px; font-weight: 600;">
+                                    ✓ Submitted link: <a href="${sanitizeUrl(sub.url)}" target="_blank" style="color: var(--accent); text-decoration: underline;">${escapeHTML(sub.url)}</a>
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+
+            <div style="margin-top: 24px; text-align: right; border-top: 1px solid var(--border); padding-top: 16px; display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 0.78rem; color: var(--text-muted);">
+                    💡 Doing these free sample edits proves your reliability and gets you direct small business client tasks.
+                </span>
+                <button type="button" class="btn btn-primary" onclick="document.getElementById('vetting-test-modal').remove()" style="font-weight: 800; padding: 8px 20px; border-radius: 10px;">
+                    Done / Back to Package
+                </button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+};
+
+window.submitTestTask = async (taskId, tierKey) => {
+    const inputEl = document.getElementById(`test-task-url-${taskId}`);
+    if (!inputEl) return;
+    const url = inputEl.value.trim();
+    if (!url || (!url.startsWith('http://') && !url.startsWith('https://'))) {
+        showToast('Please enter a valid Google Drive, Dropbox, or YouTube video URL', 'error');
+        return;
+    }
+
+    try {
+        showLoading();
+        // Save to backend if authenticated
+        try {
+            await apiFetch('/provider/vetting-submit', {
+                method: 'POST',
+                body: JSON.stringify({ task_id: taskId, submission_url: url })
+            });
+        } catch (apiErr) {
+            console.warn('API submission fallback to local:', apiErr);
+        }
+
+        // Save to localStorage for instant UI feedback
+        const localSubmissions = JSON.parse(localStorage.getItem('groove_test_submissions') || '{}');
+        localSubmissions[taskId] = {
+            url,
+            tier: tierKey,
+            status: 'in_review',
+            submitted_at: new Date().toISOString()
+        };
+        localStorage.setItem('groove_test_submissions', JSON.stringify(localSubmissions));
+
+        hideLoading();
+        showToast('🎉 Test task submitted for admin review! Great job.', 'success');
+        openVettingTestModal(tierKey);
+    } catch (e) {
+        hideLoading();
+        showToast(e.message || 'Error submitting test task', 'error');
+    }
+};
 
 function CreatePackage() {
     const editId = sessionStorage.getItem('edit_package_id');
     const editData = editId ? JSON.parse(sessionStorage.getItem('edit_package_data') || '{}') : null;
     let selectedType = editData?.package_type || 'per_deliverable';
+    let selectedTier = 'beginner';
+    let selectedCategory = 'small_business_ad';
     let error = '';
     let success = '';
 
@@ -5983,18 +6379,284 @@ function CreatePackage() {
         sessionStorage.removeItem('edit_package_data');
     }
 
+    const SERVICE_CATEGORIES = [
+        {
+            id: 'starter_reel',
+            icon: '⚡',
+            label: 'Quick Reel Cut (Starter ₹500)',
+            badge: '⚡ Starts @ ₹500',
+            type: 'per_deliverable',
+            title: 'Basic Video Editing, Trimming & Subtitles (Per Reel / Shorts)',
+            price: 500,
+            turnaround: '24 Hours',
+            revisions: 1,
+            scope: '⚡ Clean trimming, jump cuts & dead-air removal\n📝 High-contrast subtitles & caption overlay\n🎵 Royalty-free background music level sync\n🎬 1080p 9:16 vertical export ready for Instagram / YouTube'
+        },
+        {
+            id: 'small_business_ad',
+            icon: '🏢',
+            label: 'Small Business Brand Ad',
+            badge: '🔥 High Demand',
+            type: 'per_deliverable',
+            title: 'Small Business & Local Store Promotional Brand Video Ad (30-60s)',
+            price: 2000,
+            turnaround: '24-48 Hours',
+            revisions: 2,
+            scope: '🏢 30-60s High-converting vertical brand ad for local businesses & stores\n⚡ Scroll-stopping 3-second hook & fast retention pacing\n🎨 Color correction & store branding lower-thirds included\n🎵 Licensed commercial background music & sound design\n🎬 1080p / 4K 9:16 vertical export optimized for Instagram & Meta Ads'
+        },
+        {
+            id: 'shorts',
+            icon: '⚡',
+            label: 'Viral Reels & TikTok Ads',
+            badge: '⚡ Viral Hooks',
+            type: 'per_deliverable',
+            title: 'High-Retention Viral Shorts & Reels Edit with Styled Captions',
+            price: 1500,
+            turnaround: '24 Hours',
+            revisions: 2,
+            scope: '⚡ Fast-paced hook pacing & viral retention cuts\n🎨 Premium color grading & sound design (SFX + Music)\n📝 Dynamic animated captions & styled subtitles (Alex Hormozi style)\n🎬 1080p / 4K 9:16 export ready for Instagram, TikTok & YouTube'
+        },
+        {
+            id: 'ugc_product',
+            icon: '🛍️',
+            label: 'E-Commerce UGC Product Ad',
+            badge: '🛍️ Direct Sales',
+            type: 'per_deliverable',
+            title: 'E-Commerce UGC Product Video Ad with Pain-Point Hook & Offer',
+            price: 2500,
+            turnaround: '24-48 Hours',
+            revisions: 3,
+            scope: '🛍️ Problem -> Solution -> Demo -> Offer direct-response structure\n🏷️ 20% OFF animated coupon sticker & pricing badges\n💬 Customer quote / review overlays & trust badges\n🎵 Upbeat commercial music sync & punchy sound design'
+        },
+        {
+            id: 'youtube',
+            icon: '🎬',
+            label: 'YouTube Full Video (10-15m)',
+            badge: '🎬 Long Form',
+            type: 'per_deliverable',
+            title: 'Complete YouTube Video Editing, Sound Design & Custom Thumbnail',
+            price: 4500,
+            turnaround: '48 Hours',
+            revisions: 3,
+            scope: '✂️ Full footage assembly, jump cuts & dead-air cleanup\n🎵 Copyright-free background music & rich SFX audio leveling\n🖼️ B-roll insertions, zoom cuts & smooth transitions\n🎨 Professional color grade and 4K 60fps final master render\n🔥 High-CTR Clickable YouTube Thumbnail included'
+        },
+        {
+            id: 'real_estate',
+            icon: '🏠',
+            label: 'Real Estate & Video Tours',
+            badge: '🏠 Luxury',
+            type: 'per_deliverable',
+            title: 'Cinematic Real Estate Property Walkthrough & Architectural Video Tour',
+            price: 3500,
+            turnaround: '48 Hours',
+            revisions: 2,
+            scope: '🏠 Smooth speed ramps, gimbal stabilization & drone footage integration\n🎨 Luxury architectural color grade & interior lighting enhancement\n📍 Property features callouts, floor plan highlights & agent contact outro\n🎬 4K 60fps cinematic master delivery in 16:9 and 9:16 vertical'
+        },
+        {
+            id: 'script',
+            icon: '✍️',
+            label: 'Video Script & Hooks',
+            badge: '✍️ Copywriting',
+            type: 'per_deliverable',
+            title: 'Viral Brand Video Script with 3 Scroll-Stopping Hook Options',
+            price: 1800,
+            turnaround: '24 Hours',
+            revisions: 2,
+            scope: '🎣 3 High-retention scroll-stopping hook variants\n📜 Full structured video script with visual & audio cues\n🎯 Optimized call-to-action & audience retention triggers'
+        }
+    ];
+
+    window.applyServiceCategory = (catId) => {
+        const cat = SERVICE_CATEGORIES.find(c => c.id === catId);
+        if (!cat) return;
+        selectedCategory = catId;
+        selectedType = cat.type;
+
+        document.querySelectorAll('.service-cat-card').forEach(el => {
+            el.classList.toggle('active', el.dataset.id === catId);
+        });
+
+        const titleEl = document.getElementById('pkg-title');
+        const priceEl = document.getElementById('pkg-price');
+        const turnEl = document.getElementById('pkg-turnaround');
+        const revEl = document.getElementById('pkg-revisions');
+        const scopeEl = document.getElementById('pkg-scope');
+
+        if (titleEl) titleEl.value = cat.title;
+        if (priceEl) priceEl.value = cat.price;
+        if (turnEl) turnEl.value = cat.turnaround;
+        if (revEl) revEl.value = cat.revisions;
+        if (scopeEl) scopeEl.value = cat.scope;
+
+        updatePackageLivePreview();
+        showToast(`✨ Selected "${cat.label}"! Package details pre-filled.`, 'info');
+    };
+
+    window.selectExperienceTier = (tierKey) => {
+        selectedTier = tierKey;
+        const tier = VETTING_TIERS_CONFIG[tierKey];
+        if (!tier) return;
+
+        document.querySelectorAll('.vetting-tier-card').forEach(el => {
+            el.classList.toggle('active', el.dataset.tier === tierKey);
+        });
+
+        const infoEl = document.getElementById('tier-rule-info');
+        if (infoEl) {
+            infoEl.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                    <div>
+                        <strong style="color: var(--text-primary); font-size: 0.85rem;">${tier.name} Requirement:</strong>
+                        <span style="color: var(--text-secondary); font-size: 0.825rem; margin-left: 6px;">${tier.summary}</span>
+                    </div>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="openVettingTestModal('${tier.id}')" style="font-weight: 800; font-size: 0.75rem; border-color: ${tier.badgeColor}; color: ${tier.badgeColor};">
+                        📋 View ${tier.badge} Briefs
+                    </button>
+                </div>
+            `;
+        }
+
+        // Adjust suggested price if not manually customized
+        const priceEl = document.getElementById('pkg-price');
+        if (priceEl) {
+            if (tierKey === 'beginner' && parseFloat(priceEl.value) > 2000) priceEl.value = 1200;
+            else if (tierKey === 'intermediate' && parseFloat(priceEl.value) < 1500) priceEl.value = 2500;
+            else if (tierKey === 'pro' && parseFloat(priceEl.value) < 3000) priceEl.value = 4500;
+        }
+
+        // Inform backend of tier selection if logged in
+        apiFetch('/provider/update-tier', {
+            method: 'POST',
+            body: JSON.stringify({ tier: tierKey })
+        }).catch(() => {});
+
+        updatePackageLivePreview();
+        autoSavePackageDraft();
+    };
+
+    window.addScopeFeature = (featureText) => {
+        const scopeEl = document.getElementById('pkg-scope');
+        if (!scopeEl) return;
+        const cur = scopeEl.value.trim();
+        if (cur.includes(featureText)) return;
+        scopeEl.value = cur ? `${cur}\n• ${featureText}` : `• ${featureText}`;
+        updatePackageLivePreview();
+    };
+
+    window.setTurnaroundPreset = (val) => {
+        const turnEl = document.getElementById('pkg-turnaround');
+        if (turnEl) {
+            turnEl.value = val;
+            updatePackageLivePreview();
+        }
+    };
+
+    window.setRevisionPreset = (val) => {
+        const revEl = document.getElementById('pkg-revisions');
+        if (revEl) {
+            revEl.value = val;
+            updatePackageLivePreview();
+        }
+    };
+
+    window.autoSavePackageDraft = () => {
+        if (editId) return;
+        try {
+            const draft = {
+                package_type: selectedType,
+                tier: selectedTier,
+                category: selectedCategory,
+                title: document.getElementById('pkg-title')?.value || '',
+                price: document.getElementById('pkg-price')?.value || '',
+                turnaround: document.getElementById('pkg-turnaround')?.value || '',
+                revisions: document.getElementById('pkg-revisions')?.value || '',
+                scope: document.getElementById('pkg-scope')?.value || '',
+                sample_reference: document.getElementById('pkg-sample')?.value || ''
+            };
+            sessionStorage.setItem('pkg_create_draft', JSON.stringify(draft));
+        } catch (_) {}
+    };
+
+    window.updatePackageLivePreview = () => {
+        const title = document.getElementById('pkg-title')?.value || 'Your Package Title';
+        const price = parseFloat(document.getElementById('pkg-price')?.value) || 0;
+        const turnaround = document.getElementById('pkg-turnaround')?.value || '24-48 Hours';
+        const revisions = document.getElementById('pkg-revisions')?.value || '2';
+        const scope = document.getElementById('pkg-scope')?.value || 'Package details and deliverables will appear here...';
+        const sample = document.getElementById('pkg-sample')?.value?.trim() || '';
+
+        const tierConfig = VETTING_TIERS_CONFIG[selectedTier] || VETTING_TIERS_CONFIG.beginner;
+
+        const prevTitle = document.getElementById('preview-pkg-title');
+        const prevPrice = document.getElementById('preview-pkg-price');
+        const prevTurn = document.getElementById('preview-pkg-turnaround');
+        const prevRev = document.getElementById('preview-pkg-revisions');
+        const prevScope = document.getElementById('preview-pkg-scope');
+        const prevPayout = document.getElementById('preview-payout-amount');
+        const prevTierBadge = document.getElementById('preview-pkg-tier-badge');
+        const mediaWrap = document.getElementById('preview-pkg-media-wrap');
+
+        if (prevTitle) prevTitle.textContent = title;
+        if (prevPrice) prevPrice.textContent = `₹${price.toLocaleString()}`;
+        if (prevTurn) prevTurn.textContent = `⚡ ${turnaround}`;
+        if (prevRev) prevRev.textContent = `🔄 ${revisions} Revisions`;
+        if (prevTierBadge) {
+            prevTierBadge.textContent = `${tierConfig.name} (${tierConfig.badge})`;
+            prevTierBadge.style.background = `${tierConfig.badgeColor}25`;
+            prevTierBadge.style.color = tierConfig.badgeColor;
+            prevTierBadge.style.borderColor = tierConfig.badgeColor;
+        }
+        if (prevScope) {
+            prevScope.innerHTML = scope.split('\n').filter(Boolean).map(l => `<div style="margin-bottom: 3px; display: flex; gap: 6px; align-items: flex-start;"><span style="color: var(--success); font-weight: 700;">✓</span><span>${escapeHTML(l.replace(/^[•\-\*]\s*/, ''))}</span></div>`).join('') || '<span style="color: var(--text-muted);">No description added yet</span>';
+        }
+        if (prevPayout) {
+            prevPayout.textContent = `₹${price.toLocaleString()}`;
+        }
+        if (mediaWrap) {
+            if (sample) {
+                mediaWrap.style.display = 'block';
+                if (isMediaVideo(sample)) {
+                    mediaWrap.innerHTML = `<video src="${sanitizeUrl(sample)}" controls autoplay muted playsinline preload="metadata" style="position: absolute; top:0; left:0; width:100%; height:100%; object-fit: contain; background: #000;"></video>`;
+                } else {
+                    mediaWrap.innerHTML = `<img src="${sanitizeUrl(sample)}" style="position: absolute; top:0; left:0; width:100%; height:100%; object-fit: cover;" alt="Sample">`;
+                }
+            } else {
+                mediaWrap.style.display = 'none';
+                mediaWrap.innerHTML = '';
+            }
+        }
+        autoSavePackageDraft();
+    };
+
     async function handleSubmit(e) {
         e.preventDefault();
         try {
+            const title = document.getElementById('pkg-title').value.trim();
+            const price = parseFloat(document.getElementById('pkg-price').value);
+            const scope = document.getElementById('pkg-scope').value.trim();
+            const turnaround = document.getElementById('pkg-turnaround').value.trim();
+            const revision_limit = parseInt(document.getElementById('pkg-revisions').value) || 1;
+            const sample_reference = document.getElementById('pkg-sample')?.value?.trim() || null;
+
+            if (!title) {
+                showToast('Please enter a package title', 'error');
+                return;
+            }
+            if (!price || isNaN(price) || price < 100) {
+                showToast('Please set a valid price (minimum ₹100)', 'error');
+                return;
+            }
+
             const data = {
                 package_type: selectedType,
-                title: document.getElementById('pkg-title').value.trim(),
-                price: parseFloat(document.getElementById('pkg-price').value),
-                scope: document.getElementById('pkg-scope').value.trim(),
-                turnaround: document.getElementById('pkg-turnaround').value.trim(),
-                revision_limit: parseInt(document.getElementById('pkg-revisions').value) || 1,
-                sample_reference: document.getElementById('pkg-sample')?.value?.trim() || null
+                title,
+                price,
+                scope: scope || 'Complete video editing & deliverable files included.',
+                turnaround: turnaround || '24-48 hours',
+                revision_limit,
+                sample_reference
             };
+
             showLoading();
 
             const url = editId ? `/packages/${editId}` : '/packages';
@@ -6005,24 +6667,85 @@ function CreatePackage() {
                 body: JSON.stringify(data)
             });
 
-            showToast(editId ? 'Package updated successfully!' : 'Package created successfully!', 'success');
+            // Also update tier on profile
+            try {
+                await apiFetch('/provider/update-tier', {
+                    method: 'POST',
+                    body: JSON.stringify({ tier: selectedTier })
+                });
+            } catch (_) {}
+
+            sessionStorage.removeItem('pkg_create_draft');
+            showToast(editId ? '🎉 Package updated successfully!' : '🎉 Package published to Talent Directory!', 'success');
             router('/packages');
         } catch (e) {
             error = e.message;
             hideLoading();
+            showToast(error, 'error');
             mount(renderCreatePackage());
         }
     }
 
     window.handleSubmit = handleSubmit;
 
+    function renderPackageSamplePreviewHtml(url) {
+        if (!url) {
+            return `
+                <div style="border: 1.5px dashed var(--border); border-radius: 12px; padding: 20px; text-align: center; background: var(--bg-hover); transition: all 0.2s ease;">
+                    <div style="font-size: 1.8rem; margin-bottom: 6px;">📥</div>
+                    <div style="font-weight: 800; font-size: 0.9rem; color: var(--text-primary); margin-bottom: 4px;">Attach 4K Showcase Reel or Sample Flyer</div>
+                    <div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 12px;">Showcase your editing work live on your gig card</div>
+                    <button type="button" class="btn btn-primary btn-sm" onclick="document.getElementById('pkg-sample-file').click()" style="padding: 8px 18px; font-weight: 700;">
+                        📥 Upload 4K Reel / Flyer
+                    </button>
+                </div>
+            `;
+        }
+        return `
+            <div style="border-radius: 12px; overflow: hidden; background: #000; position: relative; border: 1px solid var(--border); box-shadow: 0 4px 16px rgba(0,0,0,0.3);">
+                ${isMediaVideo(url) ? `
+                    <video src="${sanitizeUrl(url)}" controls playsinline style="width: 100%; max-height: 220px; object-fit: contain; background: #000; display: block;"></video>
+                ` : `
+                    <img src="${sanitizeUrl(url)}" style="width: 100%; max-height: 220px; object-fit: cover; display: block;" alt="Uploaded Reel Showcase">
+                `}
+                <div style="padding: 10px 14px; background: var(--bg-hover); display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+                    <span style="font-size: 0.78rem; font-weight: 700; color: var(--success); display: flex; align-items: center; gap: 6px;">
+                        <span>✅</span> Uploaded Reel Attached
+                    </span>
+                    <div style="display: flex; gap: 8px;">
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('pkg-sample-file').click()" style="padding: 4px 10px; font-size: 0.75rem; font-weight: 700;">
+                            🔄 Change
+                        </button>
+                        <button type="button" class="btn btn-danger btn-sm" onclick="handleRemovePackageSampleReel()" style="padding: 4px 10px; font-size: 0.75rem; font-weight: 700;">
+                            🗑️ Remove
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    window.renderPackageSamplePreviewHtml = renderPackageSamplePreviewHtml;
+
+    window.handleRemovePackageSampleReel = () => {
+        const inputEl = document.getElementById('pkg-sample');
+        if (inputEl) inputEl.value = '';
+        const statusEl = document.getElementById('pkg-sample-status');
+        if (statusEl) { statusEl.style.display = 'none'; statusEl.innerHTML = ''; }
+        const previewWrap = document.getElementById('pkg-sample-preview');
+        if (previewWrap) previewWrap.innerHTML = renderPackageSamplePreviewHtml('');
+        updatePackageLivePreview();
+        autoSavePackageDraft();
+        showToast('Sample reel removed', 'info');
+    };
+
     window.handlePackageSampleUpload = async (file) => {
         if (!file) return;
         const statusEl = document.getElementById('pkg-sample-status');
         const inputEl = document.getElementById('pkg-sample');
+        const previewWrap = document.getElementById('pkg-sample-preview');
         if (statusEl) {
             statusEl.style.display = 'block';
-            statusEl.textContent = `Uploading ${(file.size / (1024 * 1024)).toFixed(1)} MB 4K sample...`;
+            statusEl.textContent = `⏳ Uploading ${(file.size / (1024 * 1024)).toFixed(1)} MB sample...`;
         }
         const formData = new FormData();
         formData.append('file', file);
@@ -6036,7 +6759,10 @@ function CreatePackage() {
             if (!res.ok) throw new Error('Upload failed');
             const data = await res.json();
             if (inputEl) inputEl.value = data.url;
-            if (statusEl) statusEl.textContent = `✅ 4K Sample reel uploaded! Ready to save.`;
+            if (previewWrap) previewWrap.innerHTML = renderPackageSamplePreviewHtml(data.url);
+            if (statusEl) statusEl.style.display = 'none';
+            updatePackageLivePreview();
+            autoSavePackageDraft();
             showToast('Sample reel / flyer uploaded successfully!', 'success');
         } catch (err) {
             if (statusEl) statusEl.textContent = `❌ Upload failed: ${err.message}`;
@@ -6046,78 +6772,340 @@ function CreatePackage() {
 
     window.selectPackageType = (type) => {
         selectedType = type;
-        mount(renderCreatePackage());
+        document.querySelectorAll('.pkg-type-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.type === type);
+        });
+
+        const turnEl = document.getElementById('pkg-turnaround');
+        if (turnEl) {
+            const currentTurn = turnEl.value.trim().toLowerCase();
+            if (!currentTurn || currentTurn.includes('24') || currentTurn.includes('hours') || currentTurn.includes('retainer') || currentTurn.includes('bundle')) {
+                if (type === 'monthly') turnEl.value = 'Monthly Retainer';
+                else if (type === 'quarterly') turnEl.value = '3-Month Bundle';
+                else if (type === 'per_deliverable') turnEl.value = '24-48 Hours';
+            }
+        }
+        updatePackageLivePreview();
+        autoSavePackageDraft();
     };
 
     function renderCreatePackage() {
         const isEdit = !!editId;
+        const savedDraft = !isEdit ? JSON.parse(sessionStorage.getItem('pkg_create_draft') || 'null') : null;
+        if (savedDraft?.package_type) selectedType = savedDraft.package_type;
+        if (savedDraft?.tier) selectedTier = savedDraft.tier;
+        if (savedDraft?.category) selectedCategory = savedDraft.category;
+
+        const initialTitle = editData?.title || savedDraft?.title || SERVICE_CATEGORIES[0].title;
+        const initialPrice = editData?.price || savedDraft?.price || SERVICE_CATEGORIES[0].price;
+        const initialTurnaround = editData?.turnaround || savedDraft?.turnaround || (selectedType === 'monthly' ? 'Monthly Retainer' : selectedType === 'quarterly' ? '3-Month Bundle' : SERVICE_CATEGORIES[0].turnaround);
+        const initialRevisions = editData?.revision_limit || savedDraft?.revisions || 2;
+        const initialScope = editData?.scope || savedDraft?.scope || SERVICE_CATEGORIES[0].scope;
+        const initialSample = editData?.sample_reference || savedDraft?.sample_reference || '';
+
         const view = el`<div>
             ${renderAppHeader('/packages')}
-            <div class="main">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <div class="section-title" style="margin: 0;">${isEdit ? 'Edit Package' : 'Create Package'}</div>
-                    <button class="btn btn-secondary btn-sm" onclick="router('/packages')"><-- Back to Packages</button>
+            <div class="main" style="max-width: 1080px; margin: 0 auto; padding-bottom: 60px;">
+                <!-- Header Bar -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
+                    <div>
+                        <button class="fiverr-back-btn" onclick="router('/packages')" style="margin-bottom: 8px;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
+                                <line x1="19" y1="12" x2="5" y2="12"></line>
+                                <polyline points="12 19 5 12 12 5"></polyline>
+                            </svg>
+                            <span>Back to My Packages</span>
+                        </button>
+                        <h1 style="font-size: 1.5rem; font-weight: 900; color: var(--text-primary); margin: 0; letter-spacing: -0.02em;">
+                            ${isEdit ? '✏️ Edit Service Package' : '📦 Create a New Service Package'}
+                        </h1>
+                        <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 4px 0 0 0;">
+                            Set up your video editing and brand ad packages. Clients hire and book you instantly via Escrow.
+                        </p>
+                    </div>
+                    <div style="background: rgba(108, 92, 231, 0.1); border: 1px solid var(--accent); padding: 8px 16px; border-radius: 12px; display: flex; align-items: center; gap: 8px;">
+                        <span style="font-size: 1.2rem;">🚀</span>
+                        <div style="font-size: 0.78rem; color: var(--text-primary);">
+                            <strong>100% Launch Special:</strong> You keep <strong>100% payout</strong> (0% platform fee)
+                        </div>
+                    </div>
                 </div>
-                <div class="card" style="max-width: 540px;">
-                    ${error ? `<div class="toast toast-error" style="margin-bottom: 12px;">${error}</div>` : ''}
-                    ${success ? `<div class="toast toast-success" style="margin-bottom: 12px;">${success}</div>` : ''}
-                    <form onsubmit="handleSubmit(event)">
-                        <div class="form-group">
-                            <label class="form-label">Package Type</label>
-                            <div class="tabs" style="margin-top: 4px;">
-                                <button type="button" class="tab ${selectedType === 'per_deliverable' ? 'active' : ''}" onclick="selectPackageType('per_deliverable')">
-                                    📦 Per Deliverable
-                                </button>
-                                <button type="button" class="tab ${selectedType === 'monthly' ? 'active' : ''}" onclick="selectPackageType('monthly')">
-                                    📅 Monthly Retainer
-                                </button>
-                                <button type="button" class="tab ${selectedType === 'quarterly' ? 'active' : ''}" onclick="selectPackageType('quarterly')">
-                                    📆 Quarterly
-                                </button>
+
+                ${error ? `<div class="toast toast-error" style="margin-bottom: 16px;">${error}</div>` : ''}
+
+                <!-- STEP 1: SERVICE CATEGORY SELECTION ("Tap what you are creating") -->
+                <div class="card" style="margin-bottom: 20px; border: 1px solid rgba(108, 92, 231, 0.35); background: linear-gradient(135deg, var(--bg-card), var(--bg-hover));">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="font-size: 1.3rem;">🎯</span>
+                            <div>
+                                <span style="font-weight: 900; font-size: 1rem; color: var(--text-primary);">Step 1: Tap What You Are Creating</span>
+                                <div style="font-size: 0.75rem; color: var(--text-secondary);">Tap any category to auto-fill high-converting deliverables and pricing:</div>
                             </div>
                         </div>
-                        <div class="form-group">
-                            <label class="form-label">Title</label>
-                            <input type="text" class="form-input" id="pkg-title" placeholder="e.g. Short Video Edit (60s)" value="${editData?.title || ''}" required>
+                        <span style="font-size: 0.72rem; background: var(--accent); color: white; padding: 3px 10px; border-radius: 999px; font-weight: 800;">1-Tap Fill</span>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px;">
+                        ${SERVICE_CATEGORIES.map(cat => `
+                            <button type="button" class="service-cat-card btn btn-outline btn-sm ${selectedCategory === cat.id ? 'active' : ''}" data-id="${cat.id}" onclick="applyServiceCategory('${cat.id}')" style="display: flex; flex-direction: column; align-items: flex-start; text-align: left; padding: 12px; height: auto; border-radius: 12px; border: 2px solid ${selectedCategory === cat.id ? 'var(--accent)' : 'var(--border)'}; background: ${selectedCategory === cat.id ? 'var(--bg-hover)' : 'var(--bg-card)'}; gap: 4px; transition: all 0.2s ease;">
+                                <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                                    <span style="font-size: 1.25rem;">${cat.icon}</span>
+                                    <span style="font-size: 0.65rem; font-weight: 800; color: var(--accent); background: rgba(108, 92, 231, 0.12); padding: 2px 6px; border-radius: 4px;">${cat.badge}</span>
+                                </div>
+                                <div style="font-weight: 800; font-size: 0.8125rem; color: var(--text-primary); line-height: 1.25; margin-top: 4px;">${cat.label}</div>
+                                <div style="font-size: 0.72rem; color: var(--text-muted); font-weight: 600;">₹${cat.price.toLocaleString()} • ${cat.turnaround}</div>
+                            </button>
+                        `).join('')}
+                    </div>
+                </div>
+
+                <!-- STEP 2: EXPERIENCE LEVEL & VETTING TIER -->
+                <div class="card" style="margin-bottom: 24px; border: 1px solid var(--border); padding: 20px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="font-size: 1.25rem;">🎖️</span>
+                            <div>
+                                <span style="font-weight: 900; font-size: 1rem; color: var(--text-primary);">Step 2: Select Your Experience & Vetting Tier</span>
+                                <div style="font-size: 0.75rem; color: var(--text-secondary);">We test editors with free sample tasks before assigning high-ticket small business clients:</div>
+                            </div>
                         </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label class="form-label">Price (₹)</label>
-                                <input type="number" class="form-input" id="pkg-price" placeholder="2500" value="${editData?.price || ''}" required>
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="openVettingTestModal(selectedTier)" style="font-weight: 800; font-size: 0.75rem;">
+                            📋 View Assigned Test Briefs
+                        </button>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 14px;">
+                        <!-- Beginner Tier -->
+                        <div class="vetting-tier-card ${selectedTier === 'beginner' ? 'active' : ''}" data-tier="beginner" onclick="selectExperienceTier('beginner')" style="border: 2px solid ${selectedTier === 'beginner' ? 'var(--success)' : 'var(--border)'}; background: ${selectedTier === 'beginner' ? 'var(--bg-hover)' : 'var(--bg-card)'}; border-radius: 14px; padding: 14px; cursor: pointer; transition: all 0.2s ease;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="font-size: 1.2rem;">🟢</span>
+                                <span style="font-size: 0.68rem; font-weight: 800; color: var(--success); background: rgba(34, 197, 94, 0.15); padding: 2px 8px; border-radius: 6px;">3 Free Edits</span>
                             </div>
-                            <div class="form-group">
-                                <label class="form-label">Turnaround</label>
-                                <input type="text" class="form-input" id="pkg-turnaround" placeholder="e.g. 24-48 hours" value="${editData?.turnaround || ''}" required>
-                            </div>
+                            <div style="font-weight: 800; font-size: 0.9rem; color: var(--text-primary); margin-top: 6px;">Beginner Editor</div>
+                            <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px;">Assigned: <strong>3 Free Test Edits</strong> (Local Ad, E-Comm, Captions)</div>
+                            <div style="font-size: 0.72rem; color: var(--success); font-weight: 700; margin-top: 6px;">Target: ₹500 – ₹1,500/video</div>
                         </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label class="form-label">Revision Limit</label>
-                                <input type="number" class="form-input" id="pkg-revisions" min="1" max="10" value="${editData?.revision_limit || 2}" required>
+
+                        <!-- Intermediate Tier -->
+                        <div class="vetting-tier-card ${selectedTier === 'intermediate' ? 'active' : ''}" data-tier="intermediate" onclick="selectExperienceTier('intermediate')" style="border: 2px solid ${selectedTier === 'intermediate' ? 'var(--accent)' : 'var(--border)'}; background: ${selectedTier === 'intermediate' ? 'var(--bg-hover)' : 'var(--bg-card)'}; border-radius: 14px; padding: 14px; cursor: pointer; transition: all 0.2s ease;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="font-size: 1.2rem;">🟡</span>
+                                <span style="font-size: 0.68rem; font-weight: 800; color: var(--accent); background: rgba(108, 92, 231, 0.15); padding: 2px 8px; border-radius: 6px;">2 Free Edits</span>
                             </div>
-                            <div class="form-group">
-                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                                    <label class="form-label" style="margin: 0;">Showcase Reel / Flyer</label>
-                                    <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('pkg-sample-file').click()" style="padding: 2px 8px; font-size: 0.72rem; font-weight: 700;">
-                                        📤 Upload 4K Reel
+                            <div style="font-weight: 800; font-size: 0.9rem; color: var(--text-primary); margin-top: 6px;">Intermediate Editor</div>
+                            <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px;">Assigned: <strong>2 Free Test Edits</strong> (Commercial & Color Grade)</div>
+                            <div style="font-size: 0.72rem; color: var(--accent); font-weight: 700; margin-top: 6px;">Target: ₹1,500 – ₹3,500/video</div>
+                        </div>
+
+                        <!-- Pro Tier -->
+                        <div class="vetting-tier-card ${selectedTier === 'pro' ? 'active' : ''}" data-tier="pro" onclick="selectExperienceTier('pro')" style="border: 2px solid ${selectedTier === 'pro' ? '#f59e0b' : 'var(--border)'}; background: ${selectedTier === 'pro' ? 'var(--bg-hover)' : 'var(--bg-card)'}; border-radius: 14px; padding: 14px; cursor: pointer; transition: all 0.2s ease;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="font-size: 1.2rem;">👑</span>
+                                <span style="font-size: 0.68rem; font-weight: 800; color: #f59e0b; background: rgba(245, 158, 11, 0.15); padding: 2px 8px; border-radius: 6px;">1 Benchmark Edit</span>
+                            </div>
+                            <div style="font-weight: 800; font-size: 0.9rem; color: var(--text-primary); margin-top: 6px;">Pro Master Editor</div>
+                            <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px;">Assigned: <strong>1 Benchmark Test</strong> (High-Ticket Master Ad)</div>
+                            <div style="font-size: 0.72rem; color: #f59e0b; font-weight: 700; margin-top: 6px;">Target: ₹3,500 – ₹15,000+/video</div>
+                        </div>
+                    </div>
+
+                    <div id="tier-rule-info" style="background: var(--bg-hover); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                            <div>
+                                <strong style="color: var(--text-primary); font-size: 0.85rem;">${VETTING_TIERS_CONFIG[selectedTier].name} Requirement:</strong>
+                                <span style="color: var(--text-secondary); font-size: 0.825rem; margin-left: 6px;">${VETTING_TIERS_CONFIG[selectedTier].summary}</span>
+                            </div>
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="openVettingTestModal('${selectedTier}')" style="font-weight: 800; font-size: 0.75rem; border-color: ${VETTING_TIERS_CONFIG[selectedTier].badgeColor}; color: ${VETTING_TIERS_CONFIG[selectedTier].badgeColor};">
+                                📋 View ${VETTING_TIERS_CONFIG[selectedTier].badge} Briefs
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 340px; gap: 24px; align-items: start;">
+                    <!-- Main Creation Form -->
+                    <div class="card" style="padding: 24px;">
+                        <form id="create-pkg-form" onsubmit="handleSubmit(event)">
+                            
+                            <!-- Section 1: Package Type -->
+                            <div class="form-group" style="margin-bottom: 20px;">
+                                <label class="form-label" style="font-weight: 800; display: flex; justify-content: space-between;">
+                                    <span>1. Package Format</span>
+                                    <span style="font-weight: 500; font-size: 0.75rem; color: var(--text-muted);">How you will deliver this gig</span>
+                                </label>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 6px;">
+                                    <button type="button" class="pkg-type-btn btn btn-outline ${selectedType === 'per_deliverable' ? 'active' : ''}" data-type="per_deliverable" onclick="selectPackageType('per_deliverable')" style="padding: 10px 8px; text-align: center; border-radius: 10px; font-weight: 700; font-size: 0.8125rem;">
+                                        📦 Single Project<br><span style="font-size: 0.7rem; font-weight: 400; color: var(--text-muted);">Per video / delivery</span>
+                                    </button>
+                                    <button type="button" class="pkg-type-btn btn btn-outline ${selectedType === 'monthly' ? 'active' : ''}" data-type="monthly" onclick="selectPackageType('monthly')" style="padding: 10px 8px; text-align: center; border-radius: 10px; font-weight: 700; font-size: 0.8125rem;">
+                                        📅 Monthly Retainer<br><span style="font-size: 0.7rem; font-weight: 400; color: var(--text-muted);">Ongoing monthly</span>
+                                    </button>
+                                    <button type="button" class="pkg-type-btn btn btn-outline ${selectedType === 'quarterly' ? 'active' : ''}" data-type="quarterly" onclick="selectPackageType('quarterly')" style="padding: 10px 8px; text-align: center; border-radius: 10px; font-weight: 700; font-size: 0.8125rem;">
+                                        📆 3-Month Bundle<br><span style="font-size: 0.7rem; font-weight: 400; color: var(--text-muted);">Quarterly contract</span>
                                     </button>
                                 </div>
+                            </div>
+
+                            <!-- Section 2: Package Title -->
+                            <div class="form-group" style="margin-bottom: 20px;">
+                                <label class="form-label" style="font-weight: 800;">
+                                    2. Package Title <span style="color: var(--danger);">*</span>
+                                </label>
+                                <input type="text" class="form-input" id="pkg-title" placeholder="e.g. Small Business & Local Store Promotional Brand Video Ad (30-60s)" value="${escapeHTML(initialTitle)}" required oninput="updatePackageLivePreview()" style="font-size: 0.95rem; font-weight: 600;">
+                                <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;">
+                                    💡 Make it clear and action-oriented so business owners instantly know what they are getting.
+                                </div>
+                            </div>
+
+                            <!-- Section 3: Pricing & Payout -->
+                            <div class="form-group" style="margin-bottom: 20px;">
+                                <label class="form-label" style="font-weight: 800; display: flex; justify-content: space-between;">
+                                    <span>3. Price (in ₹ INR) <span style="color: var(--danger);">*</span></span>
+                                    <span style="color: var(--success); font-weight: 700; font-size: 0.78rem;">0% Fee During Launch Promo</span>
+                                </label>
+                                <div style="position: relative;">
+                                    <span style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-weight: 800; color: var(--text-secondary); font-size: 1.1rem;">₹</span>
+                                    <input type="number" class="form-input" id="pkg-price" placeholder="500" value="${initialPrice}" min="100" step="50" required oninput="updatePackageLivePreview()" style="padding-left: 32px; font-size: 1.1rem; font-weight: 800; color: var(--text-primary);">
+                                </div>
+                                <div style="margin-top: 8px; background: rgba(34, 197, 94, 0.08); border: 1px solid rgba(34, 197, 94, 0.25); border-radius: 8px; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; font-size: 0.78rem;">
+                                    <span style="color: var(--text-secondary);">Your Guaranteed Payout (Direct to Bank / UPI):</span>
+                                    <span style="font-weight: 800; color: var(--success); font-size: 0.95rem;" id="preview-payout-amount">₹${initialPrice.toLocaleString()}</span>
+                                </div>
+                            </div>
+
+                            <!-- Section 4: Delivery Time & Revision Count -->
+                            <div class="form-row" style="margin-bottom: 20px;">
+                                <div class="form-group">
+                                    <label class="form-label" style="font-weight: 800;">
+                                        4. Delivery Speed <span style="color: var(--danger);">*</span>
+                                    </label>
+                                    <input type="text" class="form-input" id="pkg-turnaround" placeholder="e.g. 24-48 Hours" value="${escapeHTML(initialTurnaround)}" required oninput="updatePackageLivePreview()" style="font-weight: 600;">
+                                    <div style="display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap;">
+                                        <button type="button" class="btn btn-secondary btn-sm" onclick="setTurnaroundPreset('24 Hours')" style="padding: 2px 8px; font-size: 0.72rem; font-weight: 700;">⚡ 24h</button>
+                                        <button type="button" class="btn btn-secondary btn-sm" onclick="setTurnaroundPreset('48 Hours')" style="padding: 2px 8px; font-size: 0.72rem; font-weight: 700;">⏱️ 2 Days</button>
+                                        <button type="button" class="btn btn-secondary btn-sm" onclick="setTurnaroundPreset('3-5 Days')" style="padding: 2px 8px; font-size: 0.72rem; font-weight: 700;">📅 3-5 Days</button>
+                                        <button type="button" class="btn btn-secondary btn-sm" onclick="setTurnaroundPreset('1 Week')" style="padding: 2px 8px; font-size: 0.72rem; font-weight: 700;">🗓️ 1 Week</button>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label" style="font-weight: 800;">
+                                        5. Included Revisions <span style="color: var(--danger);">*</span>
+                                    </label>
+                                    <input type="number" class="form-input" id="pkg-revisions" min="1" max="15" value="${initialRevisions}" required oninput="updatePackageLivePreview()" style="font-weight: 600;">
+                                    <div style="display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap;">
+                                        <button type="button" class="btn btn-secondary btn-sm" onclick="setRevisionPreset(1)" style="padding: 2px 8px; font-size: 0.72rem; font-weight: 700;">1 Rev</button>
+                                        <button type="button" class="btn btn-secondary btn-sm" onclick="setRevisionPreset(2)" style="padding: 2px 8px; font-size: 0.72rem; font-weight: 700;">2 Revs</button>
+                                        <button type="button" class="btn btn-secondary btn-sm" onclick="setRevisionPreset(3)" style="padding: 2px 8px; font-size: 0.72rem; font-weight: 700;">3 Revs</button>
+                                        <button type="button" class="btn btn-secondary btn-sm" onclick="setRevisionPreset(5)" style="padding: 2px 8px; font-size: 0.72rem; font-weight: 700;">5 Revs</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Section 5: Scope & Deliverables -->
+                            <div class="form-group" style="margin-bottom: 20px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                                    <label class="form-label" style="font-weight: 800; margin: 0;">
+                                        6. What's Included (Scope & Features)
+                                    </label>
+                                    <span style="font-size: 0.72rem; color: var(--text-muted);">Tap tags below to insert</span>
+                                </div>
+                                <div style="display: flex; gap: 6px; margin-bottom: 8px; flex-wrap: wrap;">
+                                    <button type="button" class="btn btn-secondary btn-sm" onclick="addScopeFeature('🏢 Business branding & store logo sting included')" style="padding: 3px 8px; font-size: 0.72rem; font-weight: 600;">+ Brand Intro/Outro</button>
+                                    <button type="button" class="btn btn-secondary btn-sm" onclick="addScopeFeature('📝 Dynamic Styled Captions & Subtitles')" style="padding: 3px 8px; font-size: 0.72rem; font-weight: 600;">+ Dynamic Captions</button>
+                                    <button type="button" class="btn btn-secondary btn-sm" onclick="addScopeFeature('🎨 Pro Color Grading & Tone Matching')" style="padding: 3px 8px; font-size: 0.72rem; font-weight: 600;">+ Color Grade</button>
+                                    <button type="button" class="btn btn-secondary btn-sm" onclick="addScopeFeature('🎵 Sound Design, SFX & Commercial Music Track')" style="padding: 3px 8px; font-size: 0.72rem; font-weight: 600;">+ Sound Design</button>
+                                    <button type="button" class="btn btn-secondary btn-sm" onclick="addScopeFeature('🎬 4K 60fps Master Render Export (9:16 + 16:9)')" style="padding: 3px 8px; font-size: 0.72rem; font-weight: 600;">+ 4K Render</button>
+                                    <button type="button" class="btn btn-secondary btn-sm" onclick="addScopeFeature('🔥 High-CTR Clickable Thumbnail Cover')" style="padding: 3px 8px; font-size: 0.72rem; font-weight: 600;">+ Thumbnail</button>
+                                </div>
+                                <textarea class="form-textarea" id="pkg-scope" rows="5" placeholder="List exactly what the client receives..." oninput="updatePackageLivePreview()" style="font-family: inherit; font-size: 0.875rem; line-height: 1.5;">${escapeHTML(initialScope)}</textarea>
+                            </div>
+
+                            <!-- Section 6: Sample Video / Portfolio Reel -->
+                            <div class="form-group" style="margin-bottom: 24px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                    <label class="form-label" style="font-weight: 800; margin: 0;">
+                                        7. Showcase Reel or Sample Flyer (Optional)
+                                    </label>
+                                </div>
                                 <input type="file" id="pkg-sample-file" style="display:none;" accept="video/*,image/*" onchange="handlePackageSampleUpload(this.files[0])" />
-                                <input type="text" class="form-input" id="pkg-sample" placeholder="File path auto-fills on upload" value="${editData?.sample_reference || ''}">
-                                <div id="pkg-sample-status" style="display: none; font-size: 0.75rem; color: var(--accent); margin-top: 4px; font-weight: 600;"></div>
+                                <input type="hidden" id="pkg-sample" value="${escapeHTML(initialSample)}">
+                                <div id="pkg-sample-preview" style="margin-top: 6px;">
+                                    ${renderPackageSamplePreviewHtml(initialSample)}
+                                </div>
+                                <div id="pkg-sample-status" style="display: none; font-size: 0.78rem; color: var(--accent); margin-top: 6px; font-weight: 600;"></div>
+                            </div>
+
+                            <!-- Submit Action -->
+                            <div style="display: flex; gap: 12px;">
+                                <button type="submit" class="btn btn-primary" style="flex: 1; padding: 14px; font-size: 1rem; font-weight: 800; border-radius: 12px; box-shadow: 0 6px 20px rgba(108, 92, 231, 0.35);">
+                                    ${isEdit ? '💾 Save Package Changes' : '🚀 Publish Service Package'}
+                                </button>
+                                <button type="button" class="btn btn-secondary" onclick="router('/packages')" style="padding: 14px 20px; font-weight: 700; border-radius: 12px;">
+                                    Cancel
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Live Real-Time Card Preview -->
+                    <div style="position: sticky; top: 80px;">
+                        <div style="font-size: 0.8125rem; font-weight: 800; color: var(--text-secondary); margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+                            <span>👁️</span> Live Marketplace Preview
+                        </div>
+                        <div class="card" style="border: 2px solid var(--accent); border-radius: 16px; overflow: hidden; box-shadow: var(--shadow-lg); background: var(--bg-card);">
+                            <div style="background: linear-gradient(135deg, #6c5ce7, #a29bfe); padding: 16px 18px; color: white;">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px;">
+                                    <div style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 800; opacity: 0.9;">100% Escrow Protected</div>
+                                    <span id="preview-pkg-tier-badge" style="background: rgba(255,255,255,0.25); backdrop-filter: blur(4px); font-size: 0.7rem; font-weight: 800; padding: 2px 8px; border-radius: 6px; white-space: nowrap; border: 1px solid rgba(255,255,255,0.4);">
+                                        Beginner (3 Free Tests)
+                                    </span>
+                                </div>
+                                <h3 id="preview-pkg-title" style="font-size: 1.05rem; font-weight: 800; margin: 4px 0 0 0; color: white; line-height: 1.3;">
+                                    ${escapeHTML(initialTitle || 'Your Package Title')}
+                                </h3>
+                            </div>
+                            <div id="preview-pkg-media-wrap" style="position: relative; width: 100%; padding-top: 56.25%; background: #000; overflow: hidden; ${initialSample ? '' : 'display: none;'}">
+                                ${initialSample && isMediaVideo(initialSample) ? `
+                                    <video src="${sanitizeUrl(initialSample)}" controls autoplay muted playsinline preload="metadata" style="position: absolute; top:0; left:0; width:100%; height:100%; object-fit: contain; background: #000;"></video>
+                                ` : initialSample ? `
+                                    <img src="${sanitizeUrl(initialSample)}" style="position: absolute; top:0; left:0; width:100%; height:100%; object-fit: cover;" alt="Sample">
+                                ` : ''}
+                            </div>
+                            <div style="padding: 18px;">
+                                <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--border);">
+                                    <span style="font-size: 0.8125rem; color: var(--text-muted); font-weight: 600;">Fixed Price</span>
+                                    <span id="preview-pkg-price" style="font-size: 1.35rem; font-weight: 900; color: var(--text-primary);">
+                                        ₹${initialPrice.toLocaleString()}
+                                    </span>
+                                </div>
+                                <div style="display: flex; gap: 10px; margin-bottom: 14px; font-size: 0.78rem;">
+                                    <span id="preview-pkg-turnaround" style="background: var(--bg-hover); padding: 4px 8px; border-radius: 6px; font-weight: 700; color: var(--text-primary);">
+                                        ⚡ ${escapeHTML(initialTurnaround)}
+                                    </span>
+                                    <span id="preview-pkg-revisions" style="background: var(--bg-hover); padding: 4px 8px; border-radius: 6px; font-weight: 700; color: var(--text-primary);">
+                                        🔄 ${initialRevisions} Revisions
+                                    </span>
+                                </div>
+                                <div style="font-size: 0.78rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 6px;">Included Deliverables:</div>
+                                <div id="preview-pkg-scope" style="font-size: 0.8125rem; color: var(--text-primary); line-height: 1.45; max-height: 150px; overflow-y: auto; margin-bottom: 16px;">
+                                    ${initialScope.split('\n').filter(Boolean).map(l => `<div style="margin-bottom: 3px; display: flex; gap: 6px; align-items: flex-start;"><span style="color: var(--success); font-weight: 700;">✓</span><span>${escapeHTML(l.replace(/^[•\-\*]\s*/, ''))}</span></div>`).join('')}
+                                </div>
+                                <button type="button" class="btn btn-primary" style="width: 100%; pointer-events: none; opacity: 0.85; font-weight: 800; padding: 10px; font-size: 0.875rem;">
+                                    📦 Hire / Book This Package
+                                </button>
                             </div>
                         </div>
-                        <div class="form-group">
-                            <label class="form-label">Scope / Description</label>
-                            <textarea class="form-textarea" id="pkg-scope" rows="3" placeholder="Describe what's included in this package...">${editData?.scope || ''}</textarea>
-                        </div>
-                        <button type="submit" class="btn btn-primary">${isEdit ? 'Save Changes' : 'Create Package'}</button>
-                    </form>
+                    </div>
                 </div>
             </div>
         </div>`;
-        const form = view.querySelector('form');
-        if (form) { form.removeAttribute('onsubmit'); form.addEventListener('submit', handleSubmit); }
+
+        const form = view.querySelector('#create-pkg-form');
+        if (form) {
+            form.removeAttribute('onsubmit');
+            form.addEventListener('submit', handleSubmit);
+        }
         return view;
     }
 
@@ -6681,10 +7669,10 @@ function CreateBooking() {
             });
             hideLoading();
 
-            // Step 2: Launch Razorpay Standard Checkout
+            // Step 2: Launch Razorpay Standard Checkout (if configured with live key)
             const rzpKey = orderData.razorpay_key_id;
 
-            if (typeof Razorpay !== 'undefined') {
+            if (typeof Razorpay !== 'undefined' && rzpKey && rzpKey.trim().length > 0) {
                 const options = {
                     key: rzpKey,
                     amount: orderData.amount_paise,
@@ -6694,9 +7682,9 @@ function CreateBooking() {
                     image: "/static/icons/icon-192.png",
                     order_id: orderData.order_id && orderData.order_id.startsWith('order_') ? orderData.order_id : undefined,
                     prefill: {
-                        name: currentUser?.name || orderData.buyer_name,
-                        email: currentUser?.email || orderData.buyer_email || 'client@example.com',
-                        contact: currentUser?.phone || orderData.buyer_phone || '9999999999'
+                        name: currentUser?.name || orderData.buyer_name || 'Client',
+                        email: currentUser?.email || orderData.buyer_email || '',
+                        contact: currentUser?.phone || orderData.buyer_phone || ''
                     },
                     theme: {
                         color: "#6c5ce7"
@@ -6718,7 +7706,8 @@ function CreateBooking() {
                             sessionStorage.removeItem('selected_package_id');
                             router('/bookings');
                         } catch (err) {
-                            showToast('Payment verification failed: ' + err.message, 'error');
+                            showToast('Payment verification note: ' + err.message, 'error');
+                            router('/bookings');
                         } finally {
                             hideLoading();
                         }
@@ -6736,7 +7725,7 @@ function CreateBooking() {
                 });
                 rzp.open();
             } else {
-                // In-app fallback payment confirmation modal
+                // Direct In-App UPI Escrow Modal
                 showCustomPaymentModal(orderData, selectedPkg);
             }
         } catch (e) {
@@ -7119,12 +8108,15 @@ function PaymentsPortal() {
                 </div>
 
                 <!-- Escrow Explainer Banner -->
-                <div class="escrow-guarantee-banner">
+                <div class="escrow-guarantee-banner" id="escrow-guarantee-banner">
                     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
                         <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-primary); display: flex; align-items: center; gap: 6px;">
                             <span style="font-size: 1.2rem;">🔒</span> How Escrow & 80/20 Revenue Split Works
                         </div>
-                        <span style="font-size: 0.75rem; color: var(--text-muted);">Zero Risk for Buyers • Guaranteed Payout for Creators</span>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span style="font-size: 0.75rem; color: var(--text-muted);">Zero Risk for Buyers • Guaranteed Payout for Creators</span>
+                            <button class="btn btn-secondary btn-sm" onclick="document.getElementById('escrow-guarantee-banner')?.remove()" style="padding: 2px 8px; font-size: 0.72rem; font-weight: 600;">✕ Remove</button>
+                        </div>
                     </div>
                     <div class="escrow-steps-grid">
                         <div class="escrow-step-item">
@@ -7769,6 +8761,7 @@ const fiverrCategoryConfigs = {
 
 const providerCategoryOptionsMap = {
     all: [
+        { label: '🏢 Small Business & Brand Ads', query: 'business_ads' },
         { label: 'Video Editors & Animators', query: 'editors' },
         { label: 'English Tutors & Coaches', query: 'tutors' },
         { label: 'Scriptwriters & Copywriters', query: 'writers' },
@@ -7776,6 +8769,14 @@ const providerCategoryOptionsMap = {
         { label: 'IELTS Band 8+ Prep', query: 'ielts' },
         { label: 'Gaming Montages & VFX', query: 'gaming' },
         { label: '2D & 3D Animation', query: 'animation' }
+    ],
+    business_ads: [
+        { label: 'Local Business & Store Promos', query: 'local business' },
+        { label: 'Restaurant & Cafe Reels', query: 'restaurant' },
+        { label: 'Product & UGC Video Ads', query: 'product ads' },
+        { label: 'Real Estate Walkthroughs', query: 'real estate' },
+        { label: 'Gym & Fitness Promos', query: 'gym' },
+        { label: 'Corporate & Brand Story', query: 'corporate' }
     ],
     editors_animators: [
         { label: 'Social Ads & Reels', query: 'ads' },
@@ -8010,73 +9011,6 @@ function ProvidersList() {
         modal.querySelector('.modal-close').onclick = () => modal.remove();
         modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
     };
-
-    window.openFiverrPortfolioModal = (providerId, providerName) => {
-        const provider = providers.find(p => p.id === providerId);
-        const name = provider ? provider.name : (providerName || 'Provider');
-        const items = provider?.portfolio_items || [];
-        const thumb = getProviderThumbnail(provider || {});
-        const cfg = fiverrCategoryConfigs[provider?.niche] || fiverrCategoryConfigs['editors_animators'];
-
-        const modal = document.createElement('div');
-        modal.className = 'fiverr-escrow-modal';
-        modal.innerHTML = `
-            <div class="fiverr-escrow-card" style="max-width: 620px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <button class="modal-back-btn" onclick="this.closest('.fiverr-escrow-modal').remove()">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14">
-                                <line x1="19" y1="12" x2="5" y2="12"></line>
-                                <polyline points="12 19 5 12 12 5"></polyline>
-                            </svg>
-                            <span>Back</span>
-                        </button>
-                        <div>
-                            <h3 style="margin: 0; font-size: 1.15rem; font-weight: 800; color: var(--text-primary);">${name}'s Showcase</h3>
-                            <div style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 2px;">★ ${(provider?.rating || 5.0).toFixed(1)} (${provider?.total_bookings || 20} orders) • 100% Escrow Protected</div>
-                        </div>
-                    </div>
-                    <button class="modal-close" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--text-muted);">&times;</button>
-                </div>
-
-                <div style="position: relative; width: 100%; padding-top: 56.25%; border-radius: 12px; overflow: hidden; background: #000; margin-bottom: 16px;">
-                    <img src="${thumb}" style="position: absolute; top:0; left:0; width:100%; height:100%; object-fit: cover;" alt="${name}">
-                    <div style="position: absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background: rgba(0,0,0,0.45); color:white; text-align:center; padding:16px;">
-                        <div style="width: 56px; height: 56px; border-radius: 50%; background: rgba(255,255,255,0.95); color: #0f172a; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-bottom: 10px; box-shadow: 0 4px 16px rgba(0,0,0,0.4); padding-left: 4px;">
-                            ▶
-                        </div>
-                        <div style="font-weight: 700; font-size: 1.05rem;">${items[0]?.title || cfg.showreelLabel}</div>
-                        <div style="font-size: 0.8125rem; opacity: 0.85; max-width: 460px; margin-top: 4px;">${items[0]?.description || 'Verified showcase deliverable with 100% escrow protection and quality assurance.'}</div>
-                    </div>
-                </div>
-
-                <div style="background: var(--bg-hover); padding: 12px 16px; border-radius: 10px; margin-bottom: 18px; display: flex; justify-content: space-between; align-items: center;">
-                    <div>
-                        <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Starting Package</div>
-                        <div style="font-weight: 800; color: var(--accent); font-size: 1.15rem;">₹${(provider?.starting_price || 999).toLocaleString()}</div>
-                    </div>
-                    <div style="text-align: right;">
-                        <div style="font-size: 0.75rem; color: var(--text-muted);">Standard Turnaround</div>
-                        <div style="font-weight: 700; color: var(--text-primary); font-size: 0.875rem;">⚡ ${provider?.packages?.[0]?.turnaround || '24 hours'}</div>
-                    </div>
-                </div>
-
-                <div style="display: flex; gap: 10px;">
-                    <button class="btn btn-outline" onclick="this.closest('.fiverr-escrow-modal').remove(); openPreBookingChat(${providerId}, '${name.replace(/'/g, "\\'")}')" style="flex: 1; min-height: 46px; font-weight: 700; border-color: var(--accent); color: var(--accent); display: flex; align-items: center; justify-content: center; gap: 6px;">
-                        💬 Chat with ${name}
-                    </button>
-                    <button class="btn btn-primary" onclick="this.closest('.fiverr-escrow-modal').remove(); selectProvider(${providerId})" style="flex: 1.5; font-weight: 700; min-height: 46px;">
-                        ${cfg.primaryBtnText}
-                    </button>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(modal);
-        modal.querySelector('.modal-close').onclick = () => modal.remove();
-        modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
-    };
-
-    window.viewProviderPortfolio = window.openFiverrPortfolioModal;
 
     window.openPreBookingChat = (providerId, providerName) => {
         if (!currentToken) {
@@ -8313,12 +9247,12 @@ function ProvidersList() {
     }
 
     function renderFiverrGigCard(provider, activeCfg) {
-        const thumb = getProviderThumbnail(provider);
+        const mainPkg = provider.packages?.[0];
+        const thumb = getProviderThumbnail(provider, mainPkg);
         const cfg = activeCfg || fiverrCategoryConfigs[provider.niche] || fiverrCategoryConfigs['editors_animators'];
         const badge = getGigBadge(provider, cfg);
         const level = getSellerLevelBadge(provider);
         const isFav = localStorage.getItem(`fiverr_fav_${provider.id}`) === 'true';
-        const mainPkg = provider.packages?.[0];
         const hookTitle = mainPkg?.title || `${provider.specialization || 'Professional verified services'} with 100% escrow protection`;
         const startPrice = provider.starting_price || mainPkg?.price || (provider.niche === 'tutors' ? 799 : (provider.niche === 'writers' ? 1199 : 1499));
         const turnaround = mainPkg?.turnaround || (provider.niche === 'tutors' ? 'Immediate' : '24 hours');
@@ -8345,7 +9279,7 @@ function ProvidersList() {
         <div class="fiverr-gig-card">
             <!-- 16:9 Thumbnail Showcase with Badges & Fav Heart -->
             <div class="fiverr-gig-thumb-wrap" onclick="openFiverrPortfolioModal(${provider.id})">
-                <img src="${sanitizeUrl(thumb)}" alt="${escapeHTML(provider.name || 'Provider')}" class="fiverr-gig-thumb-img" loading="lazy">
+                ${renderMediaThumbnailOrVideo(thumb, { className: 'fiverr-gig-thumb-img', alt: provider.name, autoplay: true })}
                 <span class="fiverr-gig-badge">${escapeHTML(badge)}</span>
                 <button
                     class="fiverr-gig-heart ${isFav ? 'active' : ''}"
@@ -10488,16 +11422,9 @@ window.openReviewModal = (bookingId) => {
     };
 };
 
-// Initial render - detect current URL path
-const currentPath = window.location.pathname;
-router(currentPath || '/');
-
-// Handle 401 globally
-window.addEventListener('error', (e) => {
-    if (e.message.includes('401')) {
-        logout();
-    }
-});
+// Initial render - detect current URL path with query parameters
+const currentPath = window.location.pathname + window.location.search + window.location.hash;
+router(currentPath || '/', false);
 
 // =============== GROOVE CHATBOT (VANILLA JS) ===============
 function GrooveChat() {

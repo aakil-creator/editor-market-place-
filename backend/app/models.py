@@ -40,7 +40,7 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_type = Column(Enum(UserType), default=UserType.BUYER)
     name = Column(String, nullable=False)
-    username = Column(String, unique=True, index=True, nullable=False)
+    username = Column(String, unique=True, index=True, nullable=True)
     phone = Column(String, unique=True, index=True)
     email = Column(String, unique=True, index=True)
     password_hash = Column(String, nullable=False)
@@ -51,6 +51,7 @@ class User(Base):
     is_blocked = Column(Boolean, default=False)
     block_reason = Column(String, nullable=True)
     profile_image = Column(String, nullable=True)
+    last_login_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -85,6 +86,9 @@ class Profile(Base):
     upi_id = Column(String, nullable=True)
     bio = Column(Text, nullable=True)
     looking_for = Column(Text, nullable=True)
+    experience_tier = Column(String, default="beginner")
+    vetting_status = Column(String, default="pending")
+    test_tasks_data = Column(JSON, default=dict)
 
     # Note: packages relationship is on User, not Profile (foreign key is user_id)
 

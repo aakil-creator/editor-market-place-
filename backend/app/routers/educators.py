@@ -7,14 +7,14 @@ from datetime import datetime
 
 from ..database import get_db
 from ..models import User, Profile, Package, UserType, Booking, Review
-from ..schemas import UserResponse, PackageResponse
+from ..schemas import PublicProviderResponse, PublicPackageResponse
 
 router = APIRouter(prefix="/educators", tags=["educators"])
 
 
 # ============ EDUCATOR (PROVIDER) LISTS ============
 
-@router.get("/", response_model=List[UserResponse])
+@router.get("/", response_model=List[PublicProviderResponse])
 def list_educators(
     q: Optional[str] = Query(None, description="Search keyword in name, skills, niche, service area, or packages"),
     niche: Optional[str] = Query(None, description="Filter by niche (e.g. editors_animators, tutors)"),
@@ -43,8 +43,8 @@ def list_educators(
                 Profile.niche.ilike(term),
                 Profile.service_area.ilike(term),
                 cast(Profile.skills, String).ilike(term),
-                User.packages.any(Package.title.ilike(term)),
-                User.packages.any(Package.scope.ilike(term))
+                User.packages.any((Package.status == "approved") & Package.title.ilike(term)),
+                User.packages.any((Package.status == "approved") & Package.scope.ilike(term))
             )
         )
 
@@ -65,7 +65,10 @@ def list_educators(
         query = query.order_by(Profile.total_bookings.desc(), Profile.rating.desc())
     elif sort_by == "newest":
         query = query.order_by(User.created_at.desc())
+    elif sort_by == "rating":
+        query = query.order_by(Profile.rating.desc(), Profile.total_bookings.desc())
     else:
+        # Default safe sort
         query = query.order_by(Profile.rating.desc(), Profile.total_bookings.desc())
 
     query = query.offset((page - 1) * page_size).limit(page_size)
@@ -78,6 +81,19 @@ def list_categories(
 ):
     """List all available service categories/niches with built-in sub-categories."""
     return [
+        {
+            "id": "business_ads",
+            "name": "Small Business & Brand Ads",
+            "slug": "business_ads",
+            "description": "High-converting video commercials, Instagram Reels, and local business promotional ads",
+            "subcategories": [
+                {"id": "local_biz_reels", "name": "Local Business & Store Promos", "description": "Engaging Reels/TikToks for restaurants, cafes, salons, gyms, and clinics"},
+                {"id": "product_ecommerce_ads", "name": "Product & E-Commerce Video Ads", "description": "High-converting UGC ads, Amazon/Shopify product videos, and social ads"},
+                {"id": "real_estate_showcase", "name": "Real Estate & Architecture Videos", "description": "Property walkthroughs, drone showcase edits, and agent introductions"},
+                {"id": "corporate_promo", "name": "Corporate & Brand Commercials", "description": "Brand story promos, website hero videos, and corporate commercials"},
+                {"id": "restaurant_food_promo", "name": "Restaurant & Food Reels", "description": "Mouthwatering food shoots, menu showcases, and ambiance reels"}
+            ]
+        },
         {
             "id": "editors_animators",
             "name": "Editors & Animators",
@@ -170,8 +186,8 @@ def list_educator_summary(
                 Profile.niche.ilike(term),
                 Profile.service_area.ilike(term),
                 cast(Profile.skills, String).ilike(term),
-                User.packages.any(Package.title.ilike(term)),
-                User.packages.any(Package.scope.ilike(term))
+                User.packages.any((Package.status == "approved") & Package.title.ilike(term)),
+                User.packages.any((Package.status == "approved") & Package.scope.ilike(term))
             )
         )
 
@@ -193,7 +209,7 @@ def list_educator_summary(
     result = []
     for u in educators:
         p = u.profile
-        # approved packages for this provider
+        # approved packages for this provider only
         approved_packages = [
             {
                 "id": pkg.id,
@@ -274,6 +290,7 @@ def list_top_rated(
         {
             "id": u.id,
             "name": u.name,
+            "username": u.username or f"creator_{u.id}",
             "rating": p.rating,
             "review_count": db.query(Review).filter(Review.provider_id == u.id).count(),
             "skills": p.skills,
@@ -285,37 +302,39 @@ def list_top_rated(
 
 # ============ INDIVIDUAL EDUCATOR DETAIL ============
 
-@router.get("/{educator_id}", response_model=UserResponse)
+@router.get("/{educator_id}", response_model=PublicProviderResponse)
 def get_educator(educator_id: int, db: Session = Depends(get_db)):
-    """Get a single educator's profile by ID."""
+    """Get a single educator's public profile by ID."""
     educator = db.query(User).filter(
         User.id == educator_id,
-        User.user_type == UserType.PROVIDER
+        User.user_type == UserType.PROVIDER,
+        User.is_active == True,
+        User.is_verified == True
     ).first()
     if not educator:
         raise HTTPException(status_code=404, detail="Educator not found")
-    if not educator.is_verified:
-        raise HTTPException(status_code=403, detail="Educator not yet verified")
     return educator
 
 
-@router.get("/{educator_id}/packages", response_model=List[PackageResponse])
+@router.get("/{educator_id}/packages", response_model=List[PublicPackageResponse])
 def get_educator_packages(
     educator_id: int,
-    status: Optional[str] = Query(None, description="Filter by status"),
     db: Session = Depends(get_db)
 ):
-    """Get all packages (services) offered by a specific educator."""
+    """Get all approved packages (services) offered by a specific educator."""
     educator = db.query(User).filter(
         User.id == educator_id,
-        User.user_type == UserType.PROVIDER
+        User.user_type == UserType.PROVIDER,
+        User.is_active == True,
+        User.is_verified == True
     ).first()
     if not educator:
         raise HTTPException(status_code=404, detail="Educator not found")
 
-    query = db.query(Package).filter(Package.provider_id == educator_id)
-    if status:
-        query = query.filter(Package.status == status)
+    query = db.query(Package).filter(
+        Package.provider_id == educator_id,
+        Package.status == "approved"
+    )
     query = query.order_by(Package.created_at.desc())
     return query.all()
 
@@ -325,10 +344,12 @@ def get_educator_profile_detail(
     educator_id: int,
     db: Session = Depends(get_db)
 ):
-    """Get full educator profile detail including profile data, packages, and portfolio items."""
+    """Get full educator profile detail including public profile data, approved packages, and portfolio items."""
     educator = db.query(User).filter(
         User.id == educator_id,
-        User.user_type == UserType.PROVIDER
+        User.user_type == UserType.PROVIDER,
+        User.is_active == True,
+        User.is_verified == True
     ).first()
     if not educator:
         raise HTTPException(status_code=404, detail="Educator not found")
@@ -365,8 +386,6 @@ def get_educator_profile_detail(
         "id": educator.id,
         "name": educator.name,
         "username": educator.username or f"creator_{educator.id}",
-        "is_verified": educator.is_verified,
-        "is_active": educator.is_active,
         "niche": profile.niche if profile else "editors_animators",
         "rating": profile.rating if profile else 5.0,
         "review_count": db.query(Review).filter(Review.provider_id == educator.id).count(),
@@ -388,4 +407,5 @@ def get_educator_profile_detail(
             "review_count": db.query(Review).filter(Review.provider_id == educator.id).count(),
         } if profile else {}
     }
+
 

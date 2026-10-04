@@ -1,6 +1,7 @@
 # Pydantic schemas for API
-from pydantic import BaseModel, Field
-from typing import Optional, List
+import re
+from pydantic import BaseModel, Field, field_validator
+from typing import Optional, List, Any
 from datetime import datetime
 from enum import Enum
 
@@ -33,15 +34,48 @@ class PackageType(str, Enum):
     MONTHLY = "monthly"
     QUARTERLY = "quarterly"
 
+def validate_safe_url(url: Optional[str]) -> Optional[str]:
+    """Validate that a URL uses safe protocols and does not contain script injection."""
+    if not url:
+        return None
+    url_clean = str(url).strip()
+    if not url_clean:
+        return None
+    url_lower = url_clean.lower()
+    
+    # Reject dangerous protocol schemes immediately
+    forbidden_schemes = ("javascript:", "vbscript:", "data:text/html", "data:application", "file:", "about:")
+    if any(url_lower.startswith(scheme) for scheme in forbidden_schemes):
+        raise ValueError("Invalid or unsafe URL scheme")
+    
+    # Permit relative /static/ paths, data:image/ base64, and safe https/http URLs
+    if (
+        url_clean.startswith("/static/") or
+        url_clean.startswith("/") or
+        url_lower.startswith("data:image/") or
+        url_lower.startswith("https://") or
+        url_lower.startswith("http://")
+    ):
+        return url_clean
+    
+    # Otherwise format as relative or safe https
+    if re.match(r'^[a-zA-Z0-9_\-\./]+$', url_clean):
+        return url_clean
+    raise ValueError("Invalid URL format")
+
 # Auth schemas
 class UserCreate(BaseModel):
-    name: str
-    username: str  # Required — must be unique across all users, cannot match name
-    phone: str
-    email: str
-    password: str
+    name: str = Field(min_length=2, max_length=60)
+    username: str = Field(min_length=3, max_length=30)  # Required — unique across all users
+    phone: Optional[str] = Field(default=None, max_length=20)
+    email: Optional[str] = Field(default=None, max_length=100)
+    password: str = Field(min_length=8, max_length=100)
     user_type: UserType = UserType.BUYER
-    tos_accepted: bool = False  # Must be True — Terms of Service + Privacy Policy consent
+    tos_accepted: bool = False  # Must be True
+
+class UserCreateResponse(BaseModel):
+    message: str
+    email: str
 
 class UserLogin(BaseModel):
     phone: str
@@ -50,7 +84,6 @@ class UserLogin(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"
-    otp: Optional[str] = None
     phone: Optional[str] = None
     message: Optional[str] = None
 
@@ -61,22 +94,17 @@ class SocialLoginRequest(BaseModel):
     token: Optional[str] = None
     user_type: Optional[UserType] = UserType.BUYER
 
-
 class OtpRequest(BaseModel):
-    phone: str
-
+    phone: str = Field(min_length=7, max_length=20)
 
 class OtpResponse(BaseModel):
-    access_token: Optional[str] = None
-    token_type: str = "bearer"
-    otp: Optional[str] = None
-    phone: Optional[str] = None
     message: str
-
+    phone: Optional[str] = None
+    expires_in_seconds: int = 300
 
 class OtpVerifyRequest(BaseModel):
-    phone: str
-    otp: str
+    phone: str = Field(min_length=7, max_length=20)
+    otp: str = Field(min_length=4, max_length=8)
 
 class RoleSwitchRequest(BaseModel):
     role: str
@@ -86,39 +114,47 @@ class UserResponse(BaseModel):
     user_type: UserType
     name: str
     username: Optional[str] = None
-    phone: str
+    phone: Optional[str] = None
     email: str
     is_verified: bool
     is_active: bool
     profile_image: Optional[str] = None
+    last_login_at: Optional[datetime] = None
     created_at: datetime
 
     class Config:
         from_attributes = True
 
+# Alias for private user detail endpoint
+PrivateUserResponse = UserResponse
+
 class UserUpdate(BaseModel):
-    name: Optional[str] = None
-    username: Optional[str] = None
-    email: Optional[str] = None
-    phone: Optional[str] = None
-    profile_image: Optional[str] = None  # Image URL — Google picture or custom upload
+    name: Optional[str] = Field(None, max_length=60)
+    username: Optional[str] = Field(None, max_length=30)
+    email: Optional[str] = Field(None, max_length=100)
+    phone: Optional[str] = Field(None, max_length=20)
+    profile_image: Optional[str] = None
     current_password: Optional[str] = None
     new_password: Optional[str] = None
 
+    @field_validator('profile_image')
+    @classmethod
+    def check_profile_image(cls, v):
+        return validate_safe_url(v)
+
 # Auth additional schemas
 class ForgotPasswordRequest(BaseModel):
-    email_or_phone: str
+    email_or_phone: str = Field(min_length=3, max_length=100)
 
 class ForgotPasswordResponse(BaseModel):
     message: str
-    reset_token: Optional[str] = None
 
 class ResetPasswordWithTokenRequest(BaseModel):
-    token: str
-    new_password: str
+    token: str = Field(min_length=10, max_length=256)
+    new_password: str = Field(min_length=8, max_length=100)
 
 class VerifyEmailRequest(BaseModel):
-    token: str
+    token: str = Field(min_length=10, max_length=256)
 
 # Profile schemas
 class ProfileCreate(BaseModel):
@@ -140,6 +176,9 @@ class ProfileUpdate(BaseModel):
     upi_id: Optional[str] = None
     bio: Optional[str] = None
     looking_for: Optional[str] = None
+    experience_tier: Optional[str] = None
+    vetting_status: Optional[str] = None
+    test_tasks_data: Optional[dict] = None
 
 class ProfileResponse(BaseModel):
     id: int
@@ -159,46 +198,124 @@ class ProfileResponse(BaseModel):
     upi_id: Optional[str] = None
     bio: Optional[str] = None
     looking_for: Optional[str] = None
+    experience_tier: Optional[str] = "beginner"
+    vetting_status: Optional[str] = "pending"
+    test_tasks_data: Optional[dict] = {}
+
+    class Config:
+        from_attributes = True
+
+class PublicProfileResponse(BaseModel):
+    """Sanitized public profile DTO excluding banking, earnings, and contact info."""
+    niche: Optional[str] = "editors_animators"
+    service_area: Optional[str] = "online"
+    skills: Optional[list] = []
+    availability: Optional[str] = "flexible"
+    response_time: Optional[str] = "24 hours"
+    rating: Optional[float] = 5.0
+    total_bookings: Optional[int] = 0
+    bio: Optional[str] = ""
+    looking_for: Optional[str] = ""
+    experience_tier: Optional[str] = "beginner"
+    vetting_status: Optional[str] = "pending"
 
     class Config:
         from_attributes = True
 
 # Package schemas
 class PackageCreate(BaseModel):
-    package_type: PackageType
-    title: str
-    price: float
-    scope: str
-    turnaround: str
-    revision_limit: int = 1
+    package_type: Optional[str] = "per_deliverable"
+    title: str = Field(min_length=3, max_length=120)
+    price: float = Field(ge=50, le=1000000)
+    scope: Optional[str] = Field("", max_length=3000)
+    turnaround: Optional[str] = Field("24-48 hours", max_length=60)
+    revision_limit: Optional[int] = Field(1, ge=0, le=30)
     sample_reference: Optional[str] = None
+    niche: Optional[str] = None
+
+    @field_validator('sample_reference')
+    @classmethod
+    def check_sample(cls, v):
+        return validate_safe_url(v)
 
 class PackageUpdate(BaseModel):
-    title: Optional[str] = None
-    price: Optional[float] = None
-    scope: Optional[str] = None
-    turnaround: Optional[str] = None
-    revision_limit: Optional[int] = None
+    title: Optional[str] = Field(None, max_length=120)
+    price: Optional[float] = Field(None, ge=50, le=1000000)
+    scope: Optional[str] = Field(None, max_length=3000)
+    turnaround: Optional[str] = Field(None, max_length=60)
+    revision_limit: Optional[int] = Field(None, ge=0, le=30)
     sample_reference: Optional[str] = None
+    package_type: Optional[str] = None
+    niche: Optional[str] = None
+
+    @field_validator('sample_reference')
+    @classmethod
+    def check_sample(cls, v):
+        return validate_safe_url(v)
 
 class PackageResponse(BaseModel):
     id: int
     provider_id: int
-    niche: str
+    niche: Optional[str] = "editors_animators"
     package_type: Optional[str] = "per_deliverable"
     title: str
     price: float
-    scope: str
-    turnaround: str
-    revision_limit: int
+    scope: Optional[str] = ""
+    turnaround: Optional[str] = ""
+    revision_limit: Optional[int] = 1
     sample_reference: Optional[str] = None
     status: Optional[str] = "approved"
 
     class Config:
         from_attributes = True
 
+class PublicPackageResponse(BaseModel):
+    """Sanitized public package DTO for marketplace visitors."""
+    id: int
+    provider_id: int
+    niche: Optional[str] = "editors_animators"
+    package_type: Optional[str] = "per_deliverable"
+    title: str
+    price: float
+    scope: Optional[str] = ""
+    turnaround: Optional[str] = ""
+    revision_limit: Optional[int] = 1
+    sample_reference: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
 class PackageListResponse(BaseModel):
     packages: List[PackageResponse]
+
+class PublicPortfolioItemResponse(BaseModel):
+    """Sanitized public portfolio item DTO."""
+    id: int
+    provider_id: int
+    title: str
+    description: Optional[str] = None
+    media_url: str
+    media_type: str
+    thumbnail_url: Optional[str] = None
+    created_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+class PublicProviderResponse(BaseModel):
+    """Public marketplace talent card & profile DTO."""
+    id: int
+    name: str
+    username: str
+    profile_image: Optional[str] = None
+    user_type: str = "PROVIDER"
+    is_verified: bool = True
+    profile: Optional[PublicProfileResponse] = None
+    portfolio_items: List[PublicPortfolioItemResponse] = []
+    packages: List[PublicPackageResponse] = []
+
+    class Config:
+        from_attributes = True
 
 # Booking schemas
 class BookingCreate(BaseModel):
@@ -342,13 +459,23 @@ class NicheResponse(BaseModel):
 
 # Message schemas
 class MessageCreate(BaseModel):
-    message: str
+    message: str = Field(min_length=1, max_length=5000)
     file_url: Optional[str] = None
 
+    @field_validator('file_url')
+    @classmethod
+    def check_file_url(cls, v):
+        return validate_safe_url(v)
+
 class DirectMessageCreate(BaseModel):
-    message: str
+    message: str = Field(min_length=1, max_length=5000)
     file_url: Optional[str] = None
     booking_id: Optional[int] = None
+
+    @field_validator('file_url')
+    @classmethod
+    def check_file_url(cls, v):
+        return validate_safe_url(v)
 
 class MessageResponse(BaseModel):
     id: int
@@ -380,11 +507,34 @@ class ConversationSummary(BaseModel):
 
 # Portfolio schemas
 class PortfolioItemCreate(BaseModel):
-    title: str
-    description: Optional[str] = None
+    title: str = Field(min_length=2, max_length=120)
+    description: Optional[str] = Field(None, max_length=3000)
     media_url: str
     media_type: Optional[str] = "video"
     thumbnail_url: Optional[str] = None
+
+    @field_validator('media_url')
+    @classmethod
+    def check_media_url(cls, v):
+        return validate_safe_url(v)
+
+    @field_validator('thumbnail_url')
+    @classmethod
+    def check_thumb_url(cls, v):
+        return validate_safe_url(v)
+
+class VettingSubmitRequest(BaseModel):
+    task_id: str
+    submission_url: str
+    notes: Optional[str] = None
+
+    @field_validator('submission_url')
+    @classmethod
+    def check_sub_url(cls, v):
+        return validate_safe_url(v)
+
+class UpdateTierRequest(BaseModel):
+    tier: str # 'beginner', 'intermediate', 'pro'
 
 class PortfolioItemResponse(BaseModel):
     id: int
@@ -445,11 +595,11 @@ class PaymentOrderResponse(BaseModel):
     amount: float
     amount_paise: int
     currency: str = "INR"
-    razorpay_key_id: str
+    razorpay_key_id: Optional[str] = ""
     package_title: str
-    buyer_name: str
+    buyer_name: Optional[str] = "Client"
     buyer_email: Optional[str] = None
-    buyer_phone: str
+    buyer_phone: Optional[str] = ""
 
 class VerifyPaymentRequest(BaseModel):
     booking_id: int
