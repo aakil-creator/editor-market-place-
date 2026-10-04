@@ -1077,13 +1077,9 @@ def switch_user_role(
     current_user: User = Depends(get_current_user),
     db = Depends(get_db)
 ):
-    current_role_str = current_user.user_type.value if hasattr(current_user.user_type, 'value') else str(current_user.user_type)
-    if current_role_str.upper() == "ADMIN":
-        raise HTTPException(status_code=400, detail="Admin accounts cannot switch modes")
-    
     target_role = req.role.strip().upper()
-    if target_role not in ["BUYER", "PROVIDER"]:
-        raise HTTPException(status_code=400, detail="Invalid role. Must be BUYER or PROVIDER")
+    if target_role not in ["BUYER", "PROVIDER", "ADMIN"]:
+        raise HTTPException(status_code=400, detail="Invalid role. Must be BUYER, PROVIDER, or ADMIN")
     
     current_user.user_type = UserType[target_role]
     

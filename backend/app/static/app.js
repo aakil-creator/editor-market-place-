@@ -820,10 +820,6 @@ window.renderLogo = renderLogo;
 // Mode Switcher Function for Users
 async function toggleUserMode() {
     if (!currentUser) return;
-    if (currentUser.user_type === 'ADMIN') {
-        showToast('Admin accounts operate in the Admin Console.', 'info');
-        return;
-    }
 
     const currentRole = currentUser.user_type || 'BUYER';
     const targetRole = currentRole === 'PROVIDER' ? 'BUYER' : 'PROVIDER';
@@ -837,14 +833,14 @@ async function toggleUserMode() {
         });
         if (res.token) {
             currentToken = res.token;
-            localStorage.setItem('access_token', res.token);  // Fixed: was 'token'
+            localStorage.setItem('access_token', res.token);
         }
         if (res.user) {
             currentUser = res.user;
-            localStorage.setItem('current_user', JSON.stringify(currentUser));  // Fixed: was 'user'
+            localStorage.setItem('current_user', JSON.stringify(currentUser));
         } else {
             currentUser.user_type = targetRole;
-            localStorage.setItem('current_user', JSON.stringify(currentUser));  // Fixed: was 'user'
+            localStorage.setItem('current_user', JSON.stringify(currentUser));
         }
         localStorage.setItem('grove_hub_active_mode', targetRole);
         showToast(`Switched to ${targetTitle}!`, 'success');
