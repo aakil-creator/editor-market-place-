@@ -1077,7 +1077,8 @@ def switch_user_role(
     current_user: User = Depends(get_current_user),
     db = Depends(get_db)
 ):
-    if current_user.user_type == UserType.ADMIN:
+    current_role_str = current_user.user_type.value if hasattr(current_user.user_type, 'value') else str(current_user.user_type)
+    if current_role_str.upper() == "ADMIN":
         raise HTTPException(status_code=400, detail="Admin accounts cannot switch modes")
     
     target_role = req.role.strip().upper()
@@ -1086,25 +1087,27 @@ def switch_user_role(
     
     current_user.user_type = UserType[target_role]
     
-    if target_role == "PROVIDER":
-        profile = db.query(Profile).filter(Profile.user_id == current_user.id).first()
-        if not profile:
-            profile = Profile(user_id=current_user.id)
-            db.add(profile)
+    # Ensure profile row exists for both BUYER and PROVIDER modes
+    profile = db.query(Profile).filter(Profile.user_id == current_user.id).first()
+    if not profile:
+        profile = Profile(user_id=current_user.id)
+        db.add(profile)
             
     db.commit()
     db.refresh(current_user)
     
-    new_token = create_access_token(data={"sub": str(current_user.id), "type": current_user.user_type.value})
+    user_role_str = current_user.user_type.value if hasattr(current_user.user_type, 'value') else str(current_user.user_type)
+    new_token = create_access_token(data={"sub": str(current_user.id), "type": user_role_str})
     return {
         "success": True,
-        "role": current_user.user_type.value,
+        "role": user_role_str,
         "token": new_token,
         "user": {
             "id": current_user.id,
             "name": current_user.name,
+            "username": getattr(current_user, 'username', None) or f"user_{current_user.id}",
             "email": current_user.email,
-            "user_type": current_user.user_type.value,
+            "user_type": user_role_str,
             "phone": current_user.phone
         }
     }
@@ -2279,6 +2282,7 @@ def get_public_niches(db = Depends(get_db)):
 
 # Public provider listing for the marketplace
 @api_app.get("/providers", response_model=List[dict])
+@api_app.get("/educators/summary", response_model=List[dict])
 def get_providers(
     niche: Optional[str] = None,
     search: Optional[str] = None,
@@ -2305,11 +2309,12 @@ def get_providers(
     for u in providers:
         profile = db.query(Profile).filter(Profile.user_id == u.id).first()
         portfolio = db.query(PortfolioItem).filter(PortfolioItem.provider_id == u.id).all()
+        u_type_str = u.user_type.value if hasattr(u.user_type, 'value') else str(u.user_type)
         result.append({
             "id": u.id,
             "name": u.name,
             "username": u.username or f"creator_{u.id}",
-            "user_type": u.user_type.value,
+            "user_type": u_type_str,
             "profile": {
                 "niche": profile.niche if profile else None,
                 "service_area": profile.service_area if profile else None,
@@ -2380,6 +2385,36 @@ def get_provider_by_username(username: str, db = Depends(get_db)):
             } for pkg in packages
         ]
     }
+
+@api_app.get("/profile/{provider_id}")
+def get_public_provider_profile_by_id(provider_id: int, db = Depends(get_db)):
+    user = db.query(User).filter(User.id == provider_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Provider not found")
+    profile = db.query(Profile).filter(Profile.user_id == provider_id).first()
+    rev_count = db.query(Review).filter(Review.provider_id == provider_id).count()
+    u_type_str = user.user_type.value if hasattr(user.user_type, 'value') else str(user.user_type)
+    return {
+        "id": user.id,
+        "name": user.name,
+        "username": user.username or f"user_{user.id}",
+        "user_type": u_type_str,
+        "profile": {
+            "niche": profile.niche if profile else "editors_animators",
+            "bio": profile.bio if profile else "",
+            "skills": profile.skills if profile else [],
+            "rating": profile.rating if profile else 5.0,
+            "total_bookings": profile.total_bookings if profile else 0,
+            "review_count": rev_count,
+            "service_area": profile.service_area if profile else "online",
+            "availability": profile.availability if profile else "flexible",
+            "response_time": profile.response_time if profile else "within 2 hours"
+        } if profile else None
+    }
+
+@api_app.get("/profile/{provider_id}/reviews", response_model=List[ReviewResponse])
+def get_provider_public_reviews_by_id(provider_id: int, db = Depends(get_db)):
+    return db.query(Review).filter(Review.provider_id == provider_id).order_by(Review.created_at.desc()).all()
 
 @api_app.get("/admin/niches", response_model=List[NicheResponse])
 def get_admin_niches(current_user = Depends(get_current_user), db = Depends(get_db)):
@@ -3295,15 +3330,21 @@ def get_user_notifications(
     return notifications
 
 @api_app.get("/notifications/unread-count")
+@api_app.get("/unread-count")
 def get_unread_notifications_count(
     current_user: User = Depends(get_current_user),
     db = Depends(get_db)
 ):
-    count = db.query(Notification).filter(
+    notif_count = db.query(Notification).filter(
         Notification.user_id == current_user.id,
         Notification.is_read == False
     ).count()
-    return {"unread_count": count}
+    msg_count = db.query(Message).filter(
+        Message.receiver_id == current_user.id,
+        Message.is_read == False,
+        Message.is_flagged == False
+    ).count()
+    return {"unread_count": notif_count + msg_count, "notifications": notif_count, "messages": msg_count}
 
 @api_app.post("/notifications/{notification_id}/read")
 def mark_notification_read(
