@@ -4182,6 +4182,10 @@ function BuyerDashboard() {
                             <span class="chip-icon-box">${getCategoryPeekIconSvg('editors_animators', 32)}</span>
                             <span class="category-box-label">Video Editors</span>
                         </button>
+                        <button type="button" class="category-box-btn ${activeFilter === 'ads_services' ? 'active' : ''}" onclick="window.__setBuyerFilter('ads_services')">
+                            <span class="chip-icon-box">${getCategoryPeekIconSvg('business_ads', 32)}</span>
+                            <span class="category-box-label">Social Ads &amp; Services</span>
+                        </button>
                         <button type="button" class="category-box-btn ${activeFilter === 'tutors' ? 'active' : ''}" onclick="window.__setBuyerFilter('tutors')">
                             <span class="chip-icon-box">${getCategoryPeekIconSvg('tutors', 32)}</span>
                             <span class="category-box-label">English Tutors</span>
@@ -6374,6 +6378,30 @@ function CreatePackage() {
     }
 
     const SERVICE_CATEGORIES = [
+        {
+            id: 'real_meet_onsite',
+            icon: '📹',
+            label: 'Real-Meet On-Site Videography',
+            badge: '📹 In-Person Shoot',
+            type: 'per_deliverable',
+            title: 'On-Site Videography & In-Person Filming at Shop / Store + Full Edit',
+            price: 3500,
+            turnaround: '48 Hours',
+            revisions: 2,
+            scope: '📹 In-Person Shoot: Creator visits your shop/business venue to shoot 4K raw footage\n🎬 Full Edit & Pacing: Professional editing, color grade, and music sync\n🎁 Free Trial: Includes 1-3 Free Sample Edits for new shop partners\n📲 Export: 1080p / 4K 9:16 vertical reels ready for Meta & Instagram Ads'
+        },
+        {
+            id: 'remote_footage_edit',
+            icon: '📤',
+            label: 'Remote Footage Upload & Edit',
+            badge: '📤 Remote Upload',
+            type: 'per_deliverable',
+            title: 'Remote Media Upload & Edit for Local Businesses & E-Commerce',
+            price: 1800,
+            turnaround: '24-48 Hours',
+            revisions: 2,
+            scope: '📤 Remote Upload: Upload raw videos directly through Groove Hub app / Google Drive\n✨ Professional Editing: Trimming, subtitles, callouts & commercial music sync\n🎁 Free Trial: Includes 1-3 Free Sample Edits for new shop partners\n🎬 Final Master: 1080p 9:16 reels for Instagram Ads & Reels'
+        },
         {
             id: 'starter_reel',
             icon: '⚡',
