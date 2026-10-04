@@ -2059,18 +2059,6 @@ function router(path, pushState = true) {
         rawPath = (path || '/').split('?')[0].split('#')[0] || '/';
     }
 
-    // 1. If admin is logged in, enforce exclusive Admin Console experience (no buyer/provider interference)
-    if (currentToken && currentUser?.user_type === 'ADMIN') {
-        const buyerProviderOnlyRoutes = ['/', '/welcome', '/providers', '/create-package', '/create-booking', '/packages'];
-        if (buyerProviderOnlyRoutes.includes(rawPath)) {
-            rawPath = '/admin';
-        } else if (rawPath === '/messages') {
-            rawPath = '/admin/chats';
-        } else if (rawPath === '/bookings') {
-            rawPath = '/admin/bookings';
-        }
-    }
-
     const routes = {
         '/': (currentToken ? Dashboard : Landing),
         '/dashboard': (currentToken ? Dashboard : Login),
