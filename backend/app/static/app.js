@@ -4522,7 +4522,7 @@ function providerWelcomeCard(profile) {
         <div class="grid grid-2" style="margin-top: 16px; gap: 14px;">
             <div style="background: var(--bg-hover); padding: 16px; border-radius: var(--radius-sm); border: 1px solid var(--border);">
                 <div style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 6px;">Total Bookings</div>
-                <div style="font-size: 1.85rem; font-weight: 800; color: var(--text-primary); line-height: 1;">${profile?.review_count || 0}</div>
+                <div style="font-size: 1.85rem; font-weight: 800; color: var(--text-primary); line-height: 1;">${profile?.total_bookings ?? profile?.review_count ?? 0}</div>
                 <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 4px;">Orders completed</div>
             </div>
             <div style="background: var(--bg-hover); padding: 16px; border-radius: var(--radius-sm); border: 1px solid var(--border);">
@@ -6041,15 +6041,9 @@ function MyPackages() {
     loadPackages();
 
     function renderMyPackages() {
-        return el`<div class="header">
-            ${renderLogo(32, true)}
-            <div class="header-nav">
-                <button class="nav-btn" onclick="router('/')">Dashboard</button>
-                <button class="nav-btn" onclick="router('/profile')">Profile</button>
-                <div class="profile-dropdown-wrapper">${renderProfileAvatar(34)}${renderProfileMenu()}</div>
-            </div>
-        </div>
-        <div class="main">
+        return el`<div>
+            ${renderAppHeader('/packages')}
+            <div class="main">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                 <div class="section-title" style="margin: 0;">My Packages</div>
                 <button class="btn btn-secondary btn-sm" onclick="router('/')">← Back to Dashboard</button>
@@ -11703,7 +11697,9 @@ function formatRelativeTime(dateStr) {
 
 function MessagesInbox() {
     let conversations = [];
-    let activeUserId = window.__selectedChatUserId ? parseInt(window.__selectedChatUserId) : null;
+    const searchParams = typeof window !== 'undefined' && window.location ? new URLSearchParams(window.location.search) : null;
+    const urlUserId = searchParams ? (searchParams.get('user_id') || searchParams.get('user')) : null;
+    let activeUserId = window.__selectedChatUserId ? parseInt(window.__selectedChatUserId) : (urlUserId ? parseInt(urlUserId) : null);
     let activeUserName = window.__selectedChatUserName || '';
     let activeUserRole = 'PROVIDER';
     let messages = [];
