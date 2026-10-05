@@ -89,6 +89,10 @@ class Profile(Base):
     experience_tier = Column(String, default="beginner")
     vetting_status = Column(String, default="pending")
     test_tasks_data = Column(JSON, default=dict)
+    # New provider onboarding gate: new providers must choose their profession
+    # before package creation/profile publishing is unlocked. Existing profiles
+    # are backfilled as selected by the startup migration for backwards compatibility.
+    profession_selected = Column(Boolean, default=False, nullable=False)
 
     # Note: packages relationship is on User, not Profile (foreign key is user_id)
 
@@ -108,6 +112,9 @@ class Package(Base):
     turnaround = Column(String)
     revision_limit = Column(Integer, default=1)
     sample_reference = Column(String)
+    # beginner / intermediate / pro. This drives the platform's 3/2/1 free-sample rule.
+    package_level = Column(String, default="beginner", nullable=False)
+    free_sample_limit = Column(Integer, default=3, nullable=False)
     status = Column(String, default="pending")  # pending, approved, rejected
     admin_notes = Column(Text)
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -136,6 +143,11 @@ class Booking(Base):
     admin_notes = Column(Text)
     onsite_checkin_at = Column(DateTime, nullable=True)
     checkin_token = Column(String, nullable=True)
+    # Client handoff + platform free-sample workflow
+    client_notes = Column(Text, nullable=True)
+    source_file_url = Column(String, nullable=True)
+    is_free_sample = Column(Boolean, default=False, nullable=False)
+    sample_number = Column(Integer, nullable=True)
 
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

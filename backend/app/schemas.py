@@ -158,10 +158,15 @@ class VerifyEmailRequest(BaseModel):
 
 # Profile schemas
 class ProfileCreate(BaseModel):
+    niche: Optional[str] = None
     service_area: str = "online"
     skills: list = []
     availability: str = "flexible"
     response_time: str = "24 hours"
+    bio: Optional[str] = None
+    experience_years: Optional[int] = None
+    experience_tier: Optional[str] = None
+    profession_selected: Optional[bool] = None
 
 class ProfileUpdate(BaseModel):
     niche: Optional[str] = None
@@ -179,6 +184,7 @@ class ProfileUpdate(BaseModel):
     experience_tier: Optional[str] = None
     vetting_status: Optional[str] = None
     test_tasks_data: Optional[dict] = None
+    profession_selected: Optional[bool] = None
 
 class ProfileResponse(BaseModel):
     id: int
@@ -201,6 +207,7 @@ class ProfileResponse(BaseModel):
     experience_tier: Optional[str] = "beginner"
     vetting_status: Optional[str] = "pending"
     test_tasks_data: Optional[dict] = {}
+    profession_selected: Optional[bool] = False
 
     class Config:
         from_attributes = True
@@ -232,6 +239,7 @@ class PackageCreate(BaseModel):
     revision_limit: Optional[int] = Field(1, ge=0, le=30)
     sample_reference: Optional[str] = None
     niche: Optional[str] = None
+    package_level: Optional[str] = "beginner"
 
     @field_validator('sample_reference')
     @classmethod
@@ -247,6 +255,8 @@ class PackageUpdate(BaseModel):
     sample_reference: Optional[str] = None
     package_type: Optional[str] = None
     niche: Optional[str] = None
+    package_level: Optional[str] = None
+    free_sample_limit: Optional[int] = Field(None, ge=0, le=3)
 
     @field_validator('sample_reference')
     @classmethod
@@ -264,6 +274,8 @@ class PackageResponse(BaseModel):
     turnaround: Optional[str] = ""
     revision_limit: Optional[int] = 1
     sample_reference: Optional[str] = None
+    package_level: Optional[str] = "beginner"
+    free_sample_limit: Optional[int] = 3
     status: Optional[str] = "approved"
 
     class Config:
@@ -281,6 +293,8 @@ class PublicPackageResponse(BaseModel):
     turnaround: Optional[str] = ""
     revision_limit: Optional[int] = 1
     sample_reference: Optional[str] = None
+    package_level: Optional[str] = "beginner"
+    free_sample_limit: Optional[int] = 3
 
     class Config:
         from_attributes = True
@@ -323,6 +337,13 @@ class BookingCreate(BaseModel):
     package_id: int
     total_amount: float
     niche: str = "editors_animators"
+    client_notes: Optional[str] = Field(None, max_length=5000)
+    source_file_url: Optional[str] = None
+
+    @field_validator("source_file_url")
+    @classmethod
+    def check_source_file_url(cls, v):
+        return validate_safe_url(v)
 
 class BookingStatusUpdate(BaseModel):
     status: BookingStatus
@@ -351,6 +372,10 @@ class BookingResponse(BaseModel):
     deadline_at: Optional[datetime] = None
     onsite_checkin_at: Optional[datetime] = None
     checkin_token: Optional[str] = None
+    client_notes: Optional[str] = None
+    source_file_url: Optional[str] = None
+    is_free_sample: bool = False
+    sample_number: Optional[int] = None
 
     class Config:
         from_attributes = True
@@ -590,6 +615,12 @@ class CreatePaymentOrderRequest(BaseModel):
     package_id: int
     niche: Optional[str] = "editors_animators"
     notes: Optional[str] = None
+    source_file_url: Optional[str] = None
+
+    @field_validator("source_file_url")
+    @classmethod
+    def check_source_file_url(cls, v):
+        return validate_safe_url(v)
 
 class PaymentOrderResponse(BaseModel):
     booking_id: int

@@ -315,7 +315,8 @@ async function apiFetch(endpoint, options = {}) {
     try { data = text ? JSON.parse(text) : {}; } catch (_) { data = { detail: text }; }
 
     if (!response.ok) {
-        if (response.status === 401 && endpoint.startsWith('/auth/me')) {
+        if (response.status === 401) {
+            console.warn('Authentication token invalid or expired (401). Clearing session...');
             currentToken = null;
             currentUser = null;
             localStorage.removeItem('access_token');
@@ -323,6 +324,9 @@ async function apiFetch(endpoint, options = {}) {
             if (typeof renderAppHeader === 'function') {
                 const header = document.querySelector('.header');
                 if (header) header.replaceWith(renderAppHeader());
+            }
+            if (typeof router === 'function' && !window.location.pathname.includes('/login') && !window.location.pathname.includes('/register')) {
+                setTimeout(() => { router('/login'); }, 100);
             }
         }
         if (response.status === 403 && data.detail && (
@@ -748,13 +752,35 @@ function renderGroveAnimatedLoader(size = 140, showText = true) {
 }
 window.renderGroveAnimatedLoader = renderGroveAnimatedLoader;
 
-// Loading state
-function showLoading() {
-    appEl.innerHTML = `<div class="loading">${renderGroveAnimatedLoader(150, true)}</div>`;
+// Loading state with cold-start wakeup notice & auto-timeout recovery
+let __groveLoadingTimer = null;
+function showLoading(msg = '') {
+    if (__groveLoadingTimer) clearTimeout(__groveLoadingTimer);
+    
+    appEl.innerHTML = `<div class="loading" id="grove-loading-container" style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 55vh; padding: 24px; text-align: center;">
+        ${renderGroveAnimatedLoader(140, true)}
+        <p id="grove-loading-msg" style="margin-top: 14px; font-weight: 600; color: var(--text-secondary, #94a3b8); font-size: 0.9rem;">
+            ${escapeHTML(msg || 'Loading Groove Hub...')}
+        </p>
+    </div>`;
+
+    __groveLoadingTimer = setTimeout(() => {
+        const msgEl = document.getElementById('grove-loading-msg');
+        if (msgEl) {
+            msgEl.innerHTML = `⚡ Waking up server... (If this is your first visit, server takes a few seconds to warm up)<br>
+            <div style="display: flex; gap: 8px; justify-content: center; margin-top: 12px; flex-wrap: wrap;">
+                <button class="btn btn-secondary btn-sm" style="font-size: 0.78rem; padding: 6px 12px;" onclick="window.location.reload()">Reload Page</button>
+                <button class="btn btn-primary btn-sm" style="font-size: 0.78rem; padding: 6px 12px;" onclick="router('/login')">Sign In</button>
+            </div>`;
+        }
+    }, 7000);
 }
 
 function hideLoading() {
-    // No-op, appEl is replaced with content
+    if (__groveLoadingTimer) {
+        clearTimeout(__groveLoadingTimer);
+        __groveLoadingTimer = null;
+    }
 }
 
 // Redirect to login if not authenticated
@@ -771,12 +797,22 @@ async function requireAuth() {
         localStorage.setItem('current_user', JSON.stringify(u));
         return true;
     } catch (e) {
-        // If offline or network unavailable, but token exists in localStorage, maintain session!
-        if (currentToken) {
-            console.warn('Network unavailable during route check, maintaining active session:', e.message || e);
+        // If 401 or invalid token, currentToken was cleared by apiFetch — redirect to login
+        if (!currentToken) {
+            showToast('Session expired. Please login again.', 'error');
+            router('/login');
+            return false;
+        }
+        // Only maintain session if network/browser is offline
+        if (!navigator.onLine || e.name === 'TypeError' || (e.message && e.message.includes('Failed to fetch'))) {
+            console.warn('Network offline during route check, maintaining session:', e.message || e);
             return true;
         }
-        showToast('Please login first', 'error');
+        currentToken = null;
+        currentUser = null;
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('current_user');
+        showToast('Session expired. Please login again.', 'error');
         router('/login');
         return false;
     }
@@ -821,7 +857,7 @@ window.renderLogo = renderLogo;
 async function toggleUserMode() {
     if (!currentUser) return;
 
-    const currentRole = currentUser.user_type || 'BUYER';
+    const currentRole = String(currentUser.user_type || 'BUYER').toUpperCase();
     const targetRole = currentRole === 'PROVIDER' ? 'BUYER' : 'PROVIDER';
     const targetTitle = targetRole === 'PROVIDER' ? 'Provider Mode 💼' : 'Buyer Mode 🛍️';
 
@@ -831,11 +867,11 @@ async function toggleUserMode() {
             method: 'POST',
             body: JSON.stringify({ role: targetRole })
         });
-        if (res.token) {
+        if (res && res.token) {
             currentToken = res.token;
             localStorage.setItem('access_token', res.token);
         }
-        if (res.user) {
+        if (res && res.user) {
             currentUser = res.user;
             localStorage.setItem('current_user', JSON.stringify(currentUser));
         } else {
@@ -844,9 +880,21 @@ async function toggleUserMode() {
         }
         localStorage.setItem('grove_hub_active_mode', targetRole);
         showToast(`Switched to ${targetTitle}!`, 'success');
-        router('/');
+        
+        // Force refresh UI header and current route
+        if (typeof renderApp === 'function') {
+            renderApp();
+        } else {
+            router('/');
+        }
     } catch (e) {
-        showToast(e.message || 'Failed to switch mode', 'error');
+        console.warn('Switch role warning:', e);
+        // Fallback optimistic switch
+        currentUser.user_type = targetRole;
+        localStorage.setItem('current_user', JSON.stringify(currentUser));
+        localStorage.setItem('grove_hub_active_mode', targetRole);
+        showToast(`Switched to ${targetTitle}!`, 'success');
+        if (typeof renderApp === 'function') renderApp(); else router('/');
     } finally {
         hideLoading();
     }
@@ -2229,15 +2277,17 @@ function wireForms(root) {
 }
 
 function render(component) {
+    hideLoading();
     appEl.innerHTML = '';
     const content = component();
     if (content) { appEl.appendChild(content); wireForms(content); }
-    else appEl.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+    else appEl.innerHTML = `<div class="loading">${renderGroveAnimatedLoader(120, true)}</div>`;
 }
 
 window.render = render;
 
 function mount(content) {
+    hideLoading();
     appEl.innerHTML = '';
     if (content) { appEl.appendChild(content); wireForms(content); }
 }
@@ -3614,6 +3664,43 @@ function selectProvider(providerId, packageId = null) {
 }
 window.selectProvider = selectProvider;
 
+async function requestFreeSample() {
+    const packageId = parseInt(document.getElementById('booking-package')?.value);
+    const notes = document.getElementById('booking-notes')?.value?.trim() || '';
+    const sourceFileUrl = document.getElementById('booking-source-url')?.value?.trim() || '';
+    const selectedPkg = packagesForFreeSample?.find?.(p => p.id === packageId);
+    if (!packageId || !selectedPkg) {
+        showToast('Choose a package first.', 'error');
+        return;
+    }
+    if (!notes) {
+        showToast('Tell the creator what you want done with the sample.', 'error');
+        document.getElementById('booking-notes')?.focus();
+        return;
+    }
+    try {
+        showLoading();
+        const booking = await apiFetch('/bookings/free-sample', {
+            method: 'POST',
+            body: JSON.stringify({
+                package_id: packageId,
+                client_notes: notes,
+                source_file_url: sourceFileUrl || null
+            })
+        });
+        sessionStorage.removeItem('selected_provider_id');
+        sessionStorage.removeItem('selected_package_id');
+        showToast(`🎁 Free sample #${booking.sample_number} requested. The creator has been notified.`, 'success');
+        router('/bookings');
+    } catch (e) {
+        showToast(e.message || 'Could not request free sample', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+window.requestFreeSample = requestFreeSample;
+let packagesForFreeSample = [];
+
 // =============== DASHBOARD DISPATCHER ===============
 function Dashboard() {
     if (currentUser?.user_type === 'ADMIN') {
@@ -3624,6 +3711,69 @@ function Dashboard() {
     }
     return BuyerDashboard();
 }
+
+// =============== PROVIDER PROFESSION ONBOARDING ===============
+const PROVIDER_PROFESSIONS = [
+    { id: 'editors_animators', icon: '🎬', title: 'Video Editor', sub: 'Reels, YouTube, VFX & post-production' },
+    { id: 'business_ads', icon: '📢', title: 'Social Ads & Services', sub: 'Ads, local business services & campaign work' },
+    { id: 'videography', icon: '📹', title: 'Real-Meet Videographer', sub: 'Shoot at shops/businesses and deliver edited videos' },
+    { id: 'social_media', icon: '📱', title: 'Social Media Manager', sub: 'Posts, reels, captions & scheduling' },
+    { id: 'writers', icon: '✍️', title: 'Writer & Copywriter', sub: 'Scripts, ad copy, blogs & social copy' },
+    { id: 'tutors', icon: '🗣️', title: 'English Tutor', sub: 'Fluency, IELTS, accent & coaching' }
+];
+
+async function chooseProviderProfession(niche) {
+    try {
+        showLoading();
+        await apiFetch('/profile', {
+            method: 'PATCH',
+            body: JSON.stringify({
+                niche,
+                profession_selected: true,
+                experience_tier: 'beginner'
+            })
+        });
+        window.__providerNiche = niche;
+        hideLoading();
+        showToast('Profession saved. Your profile and package options are now customized.', 'success');
+        router('/');
+    } catch (e) {
+        hideLoading();
+        showToast(e.message || 'Could not save profession', 'error');
+    }
+}
+
+function ProviderProfessionOnboarding() {
+    return el`<div>
+        ${renderAppHeader('/')}
+        <div class="main" style="max-width: 920px; margin: 0 auto; padding-bottom: 60px;">
+            <div class="card" style="padding: 28px; border: 1.5px solid rgba(99,102,241,.35); background: linear-gradient(135deg,var(--bg-card),var(--bg-hover));">
+                <div style="text-align:center; max-width:680px; margin:0 auto 24px;">
+                    <div style="font-size:2.5rem; margin-bottom:8px;">👋</div>
+                    <h1 style="font-size:1.55rem; font-weight:900; margin:0 0 8px;">What service do you provide?</h1>
+                    <p style="color:var(--text-secondary); margin:0; line-height:1.5;">
+                        Choose your main job first. Groove Hub will then show the right profile fields, package examples and client tasks for you.
+                    </p>
+                </div>
+                <div class="grid grid-2" style="gap:12px;">
+                    ${PROVIDER_PROFESSIONS.map(p => `
+                        <button type="button" class="card" onclick="chooseProviderProfession('${p.id}')"
+                            style="text-align:left; padding:16px; cursor:pointer; border:1.5px solid var(--border); background:var(--bg-card); transition:.2s;">
+                            <div style="display:flex; align-items:center; gap:12px;">
+                                <span style="font-size:2rem;">${p.icon}</span>
+                                <span>
+                                    <strong style="display:block; color:var(--text-primary);">${p.title}</strong>
+                                    <small style="color:var(--text-secondary); line-height:1.35;">${p.sub}</small>
+                                </span>
+                            </div>
+                        </button>
+                    `).join('')}
+                </div>
+            </div>
+        </div>
+    </div>`;
+}
+window.chooseProviderProfession = chooseProviderProfession;
 
 // =============== PROVIDER DASHBOARD (CREATOR STUDIO) ===============
 function ProviderDashboard() {
@@ -3636,7 +3786,10 @@ function ProviderDashboard() {
     async function loadData() {
         showLoading();
         try {
-            try { profile = await apiFetch('/profile'); } catch (_) { profile = {}; }
+            try {
+                profile = await apiFetch('/profile');
+                window.__providerNiche = profile?.niche || window.__providerNiche || 'editors_animators';
+            } catch (_) { profile = {}; }
             try { recentPackages = await apiFetch('/packages'); } catch (_) { recentPackages = []; }
             try { bookings = await apiFetch('/bookings'); } catch (_) { bookings = []; }
             if (currentUser?.id) {
@@ -3658,6 +3811,11 @@ function ProviderDashboard() {
                 ${renderAppHeader('/')}
                 <div class="main"><div class="loading"><div class="spinner"></div></div></div>
             </div>`;
+        }
+
+        // New providers must choose their job before profile/package setup is shown.
+        if (profile && profile.profession_selected === false) {
+            return ProviderProfessionOnboarding();
         }
 
         const clientOrders = Array.isArray(bookings) ? bookings : [];
@@ -3741,7 +3899,7 @@ function ProviderDashboard() {
                                 </div>
                                 <div style="font-weight: 700; font-size: 0.92rem; color: var(--text-primary); margin-bottom: 4px;">Complete Profile &amp; Bio</div>
                                 <div style="font-size: 0.78rem; color: var(--text-secondary); line-height: 1.35; margin-bottom: 12px;">
-                                    Add your editor headline, bio, skills, and rates so clients know your expertise.
+                                    Add your service headline, bio, skills, and rates so clients know your expertise.
                                 </div>
                             </div>
                             <button type="button" class="btn ${hasProfile ? 'btn-outline' : 'btn-primary'} btn-sm" onclick="openSettingsTab('profile')" style="width: 100%; font-size: 0.78rem; padding: 6px 10px;">
@@ -3758,7 +3916,7 @@ function ProviderDashboard() {
                                 </div>
                                 <div style="font-weight: 700; font-size: 0.92rem; color: var(--text-primary); margin-bottom: 4px;">Upload 4K Showreel / Video</div>
                                 <div style="font-size: 0.78rem; color: var(--text-secondary); line-height: 1.35; margin-bottom: 12px;">
-                                    Upload your first 4K video reel (up to 1GB) or portfolio samples to attract high-paying buyers.
+                                    Upload your best portfolio samples (video, image or other supported work) to attract buyers.
                                 </div>
                             </div>
                             <button type="button" class="btn ${hasShowreel ? 'btn-outline' : 'btn-primary'} btn-sm" onclick="openSettingsTab('portfolio')" style="width: 100%; font-size: 0.78rem; padding: 6px 10px;">
@@ -3775,7 +3933,7 @@ function ProviderDashboard() {
                                 </div>
                                 <div style="font-weight: 700; font-size: 0.92rem; color: var(--text-primary); margin-bottom: 4px;">Publish Service Package</div>
                                 <div style="font-size: 0.78rem; color: var(--text-secondary); line-height: 1.35; margin-bottom: 12px;">
-                                    Create your fixed-price package (e.g. Reels, Longform, Color Grading) with turn-around time.
+                                    Create your fixed-price package using options matched to your chosen profession.
                                 </div>
                             </div>
                             <button type="button" class="btn ${hasPackages ? 'btn-outline' : 'btn-primary'} btn-sm" onclick="${hasPackages ? "router('/packages')" : "router('/create-package')"}" style="width: 100%; font-size: 0.78rem; padding: 6px 10px;">
@@ -3911,6 +4069,7 @@ function BuyerDashboard() {
 
             if (!matchesQuery) return false;
             if (activeFilter === 'editors') return (pkgNiche && (pkgNiche.includes('editor') || pkgNiche.includes('video'))) || pkgTitle.includes('video') || pkgTitle.includes('edit') || pkgTitle.includes('reel') || pkgTitle.includes('gaming') || pkgTitle.includes('animat');
+            if (activeFilter === 'ads_services') return (pkgNiche && ['business_ads', 'social_ads', 'ads_services', 'videography', 'social_media'].some(k => pkgNiche.includes(k))) || ['ad', 'ads', 'business', 'videograph', 'social media', 'remote footage'].some(k => pkgTitle.includes(k) || pkgDesc.includes(k));
             if (activeFilter === 'tutors') return (pkgNiche && pkgNiche.includes('tutor')) || pkgTitle.includes('english') || pkgTitle.includes('tutor') || pkgTitle.includes('ielts') || pkgTitle.includes('speaking') || pkgTitle.includes('accent') || pkgTitle.includes('interview');
             if (activeFilter === 'writers') return (pkgNiche && pkgNiche.includes('writer')) || pkgTitle.includes('writer') || pkgTitle.includes('copy') || pkgTitle.includes('script') || pkgTitle.includes('seo');
             if (activeFilter === 'express') return (pkgTurnaround && (pkgTurnaround.includes('24') || pkgTurnaround.includes('1 day') || pkgTurnaround.includes('immediate')));
@@ -3931,6 +4090,7 @@ function BuyerDashboard() {
 
             if (!matchesQuery) return false;
             if (activeFilter === 'editors') return prNiche === 'editors_animators' || skillsStr.includes('video') || skillsStr.includes('edit');
+            if (activeFilter === 'ads_services') return ['business_ads', 'social_ads', 'ads_services', 'videography', 'social_media'].some(k => prNiche.includes(k)) || ['ad', 'ads', 'videograph', 'social media', 'business'].some(k => fullText.includes(k));
             if (activeFilter === 'tutors') return prNiche === 'tutors' || skillsStr.includes('english') || skillsStr.includes('tutor') || skillsStr.includes('ielts') || skillsStr.includes('accent');
             if (activeFilter === 'writers') return prNiche === 'writers' || skillsStr.includes('write') || skillsStr.includes('copy') || skillsStr.includes('script');
             if (activeFilter === 'express') return (pr.response_time && pr.response_time.includes('24')) || pr.availability === 'immediate';
@@ -3940,8 +4100,9 @@ function BuyerDashboard() {
         const totalItems = filteredPackages.length + filteredProviders.length;
 
         const placeholders = {
-            all: 'Search video editors, IELTS coaches, YouTube, Premiere Pro...',
-            editors: 'Search Video Ads, Reels & TikTok, YouTube, Gaming, After Effects...',
+            all: 'Search video editors, social ads, videographers, writers...',
+            editors: 'Search Reels, YouTube, Gaming, After Effects, color grading...',
+            ads_services: 'Search Instagram Ads, local business ads, videography, remote editing...',
             tutors: 'Search IELTS speaking, accent reduction, fluency, business English...',
             writers: 'Search social captions, video scripts, ad copy, SEO blog posts...',
             express: 'Search 24-hour rush delivery packages and creators...'
@@ -3964,6 +4125,14 @@ function BuyerDashboard() {
                 { label: 'Gaming Montages', query: 'gaming', filter: 'editors', icon: '🎮' },
                 { label: 'Color Grading', query: 'color', filter: 'editors', icon: '🎨' },
                 { label: '24h Rush Delivery', query: '24', filter: 'editors', icon: '⚡' }
+            ],
+            ads_services: [
+                { label: 'Instagram & Facebook Ads', query: 'instagram ads', filter: 'ads_services', icon: '📢' },
+                { label: 'Local Shop Ads', query: 'local business', filter: 'ads_services', icon: '🏪' },
+                { label: 'On-Site Videography', query: 'videography', filter: 'ads_services', icon: '📹' },
+                { label: 'Remote Video Editing', query: 'remote edit', filter: 'ads_services', icon: '📤' },
+                { label: 'Ad Creatives', query: 'ad creative', filter: 'ads_services', icon: '🎨' },
+                { label: 'Social Media Management', query: 'social media', filter: 'ads_services', icon: '📱' }
             ],
             tutors: [
                 { label: 'IELTS Speaking', query: 'ielts', filter: 'tutors', icon: '🗣️' },
@@ -3993,13 +4162,23 @@ function BuyerDashboard() {
             editors: {
                 badge: '🎬 Video Editing Specialties',
                 items: [
-                    { id: 'ads_social', label: 'Social Ads & Reels', sub: 'TikTok, Reels & UGC hooks', query: 'reel', icon: '📱' },
                     { id: 'gaming', label: 'Gaming Streams & Edits', sub: 'Twitch highlights & stream cuts', query: 'gaming', icon: '🎮' },
                     { id: 'youtube', label: 'YouTube Longform', sub: 'Retention edits & viral pacing', query: 'youtube', icon: '📺' },
                     { id: 'animations', label: '2D & 3D Animations', sub: 'Character animation & 3D models', query: 'animation', icon: '🎨' },
                     { id: 'motion_graphics', label: 'Motion Graphics & VFX', sub: 'After Effects lower thirds & titles', query: 'motion', icon: '✨' },
                     { id: 'music', label: 'Music & Cinematic', sub: 'Beat-sync VFX & color grading', query: 'music', icon: '🎬' },
                     { id: 'express', label: '24h Rush Delivery', sub: 'Same-day express turnaround', query: '24', icon: '⚡' }
+                ]
+            },
+            ads_services: {
+                badge: '📢 Social Ads & Business Services',
+                items: [
+                    { id: 'meta_ads', label: 'Instagram & Facebook Ads', sub: 'Meta campaigns, targeting & optimization', query: 'instagram ads', icon: '📢' },
+                    { id: 'ad_creatives', label: 'Ad Creatives', sub: 'Scroll-stopping video & image ads', query: 'ad creative', icon: '🎨' },
+                    { id: 'local_business', label: 'Local Business Ads', sub: 'Shop, cafe, gym & service promotions', query: 'local business', icon: '🏪' },
+                    { id: 'videography', label: 'On-Site Videography', sub: 'Shoot at the shop + edit the footage', query: 'videography', icon: '📹' },
+                    { id: 'remote_edit', label: 'Remote Video Editing', sub: 'Upload footage and get it edited', query: 'remote edit', icon: '📤' },
+                    { id: 'social_management', label: 'Social Media Management', sub: 'Posts, reels, captions & scheduling', query: 'social media', icon: '📱' }
                 ]
             },
             tutors: {
@@ -4268,7 +4447,8 @@ function BuyerDashboard() {
                         <!-- 1. Render Specific Service Packages (if any) -->
                         ${filteredPackages.map(pkg => {
                             const isTutor = (pkg.niche && pkg.niche.includes('tutor')) || (pkg.title && pkg.title.toLowerCase().includes('english'));
-                            const nicheBadge = isTutor ? '🗣️ English Tutor' : '🎬 Video Editing';
+                            const isAds = pkg.niche && ['business_ads', 'social_ads', 'ads_services', 'videography', 'social_media'].some(k => pkg.niche.includes(k));
+                            const nicheBadge = isTutor ? '🗣️ English Tutor' : (isAds ? '📢 Ads & Services' : '🎬 Video Editing');
                             const providerName = pkg.provider_name || 'Verified Creator';
                             const initial = providerName.charAt(0).toUpperCase();
                             const providerObj = allProviders.find(pr => pr.id === pkg.provider_id);
@@ -4313,7 +4493,7 @@ function BuyerDashboard() {
                                         <!-- Skills chips -->
                                         <div class="fiverr-gig-skills">
                                             ${(pkg.tags || []).slice(0, 3).map(s => `<span class="fiverr-gig-skill">${escapeHTML(s)}</span>`).join('')}
-                                            ${(pkg.tags || []).length === 0 ? '<span class="fiverr-gig-skill">Video Editing</span><span class="fiverr-gig-skill">Post Production</span>' : ''}
+                                            ${(pkg.tags || []).length === 0 ? (isAds ? '<span class="fiverr-gig-skill">Ads & Services</span><span class="fiverr-gig-skill">Business Growth</span>' : '<span class="fiverr-gig-skill">Video Editing</span><span class="fiverr-gig-skill">Post Production</span>') : ''}
                                         </div>
                                     </div>
 
@@ -4325,6 +4505,7 @@ function BuyerDashboard() {
                                         </div>
                                         <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap; min-width: 0;">
                                             <span class="fiverr-gig-delivery">⚡ ${escapeHTML(pkg.turnaround || '24h')}</span>
+                                            <span class="fiverr-gig-delivery" style="color:var(--success);">🎁 ${pkg.free_sample_limit ?? 3} free sample${(pkg.free_sample_limit ?? 3) === 1 ? '' : 's'}</span>
                                             <div style="display: flex; gap: 8px; flex: 1 1 auto; min-width: 0; justify-content: flex-end;">
                                                 <button class="btn btn-outline btn-sm" style="flex: 1 1 80px; min-width: 0; padding: 8px 14px; font-weight: 700; font-size: 0.78rem; min-height: 38px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" onclick="event.stopPropagation(); openPreBookingChat(${pkg.provider_id}, '${escapeJs(providerName)}')">
                                                     💬 Chat
@@ -4344,7 +4525,8 @@ function BuyerDashboard() {
                         ${filteredProviders.map(pr => {
                             const isTutor = pr.niche === 'tutors';
                             const isWriter = pr.niche === 'writers';
-                            const nicheBadge = isTutor ? '🗣️ English Tutor' : (isWriter ? '✍️ Copywriter' : '🎬 Video Editing');
+                            const isAds = pr.niche && ['business_ads', 'social_ads', 'ads_services', 'videography', 'social_media'].some(k => pr.niche.includes(k));
+                            const nicheBadge = isTutor ? '🗣️ English Tutor' : (isWriter ? '✍️ Copywriter' : (isAds ? '📢 Ads & Services' : '🎬 Video Editing'));
                             const initial = (pr.name || 'C').charAt(0).toUpperCase();
                             const startPrice = pr.starting_price || (isTutor ? 799 : (isWriter ? 1199 : 1499));
                             const turnaround = pr.response_time || '24 hours';
@@ -5728,10 +5910,12 @@ function Settings() {
                                 <div class="form-group">
                                     <label class="form-label">Primary Category / Niche</label>
                                     <select class="form-select" id="setting-niche">
-                                        <option value="editors_animators" ${profile?.niche === 'editors_animators' ? 'selected' : ''}>🎬 Video Editors &amp; Animators</option>
-                                        <option value="tutors" ${profile?.niche === 'tutors' ? 'selected' : ''}>🗣️ English Tutors &amp; Coaches</option>
-                                        <option value="writers" ${profile?.niche === 'writers' ? 'selected' : ''}>✍️ Writers &amp; Copywriters</option>
-                                        <option value="social_media" ${profile?.niche === 'social_media' ? 'selected' : ''}>📱 Social Media Managers</option>
+                                        <option value="editors_animators" ${profile?.niche === 'editors_animators' ? 'selected' : ''}>🎬 Video Editor</option>
+                                        <option value="business_ads" ${profile?.niche === 'business_ads' ? 'selected' : ''}>📢 Social Ads &amp; Services</option>
+                                        <option value="videography" ${profile?.niche === 'videography' ? 'selected' : ''}>📹 Real-Meet Videographer</option>
+                                        <option value="social_media" ${profile?.niche === 'social_media' ? 'selected' : ''}>📱 Social Media Manager</option>
+                                        <option value="tutors" ${profile?.niche === 'tutors' ? 'selected' : ''}>🗣️ English Tutor</option>
+                                        <option value="writers" ${profile?.niche === 'writers' ? 'selected' : ''}>✍️ Writer &amp; Copywriter</option>
                                     </select>
                                 </div>
 
@@ -6073,7 +6257,11 @@ function MyPackages() {
                                 </div>
                                 <div class="card-body" style="padding: 0;">
                                     <div class="price" style="font-size: 1.25rem; font-weight: 900; color: var(--text-primary); margin-bottom: 4px;">₹${(pkg.price || 0).toLocaleString()}</div>
-                                    <div class="price-range" style="font-size: 0.78rem; color: var(--text-muted);">${pkg.package_type.replace('_', ' ')} • ⚡ ${escapeHTML(pkg.turnaround || '24h')}</div>
+                                    <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:5px;">
+                                        <span class="badge badge-info" style="font-size:.68rem; text-transform:capitalize;">${escapeHTML(pkg.package_level || 'beginner')}</span>
+                                        <span class="badge badge-success" style="font-size:.68rem;">${pkg.free_sample_limit ?? 3} free sample${(pkg.free_sample_limit ?? 3) === 1 ? '' : 's'}</span>
+                                    </div>
+                                    <div class="price-range" style="font-size: 0.78rem; color: var(--text-muted);">${(pkg.package_type || 'per_deliverable').replace('_', ' ')} • ⚡ ${escapeHTML(pkg.turnaround || '24h')}</div>
                                     <div class="divider" style="margin: 10px 0;"></div>
                                     <div style="font-size: 0.8125rem; color: var(--text-secondary); line-height: 1.45;">${escapeHTML(pkg.scope || 'No description')}</div>
                                 </div>
@@ -6120,12 +6308,12 @@ function MyPackages() {
 const VETTING_TIERS_CONFIG = {
     beginner: {
         id: 'beginner',
-        name: 'Beginner Editor',
+        name: 'Beginner',
         badge: '3 Free Test Edits',
         badgeColor: 'var(--success)',
         reqCount: 3,
         suggestedPrice: '₹500 – ₹1,500',
-        summary: '3 free video editing & brand ad test tasks to qualify for client task assignments.',
+        summary: '3 free sample tasks to qualify for client task assignments.',
         tasks: [
             {
                 id: 'beg_task_1',
@@ -6155,12 +6343,12 @@ const VETTING_TIERS_CONFIG = {
     },
     intermediate: {
         id: 'intermediate',
-        name: 'Intermediate Editor',
+        name: 'Intermediate',
         badge: '2 Free Test Edits',
         badgeColor: 'var(--accent)',
         reqCount: 2,
         suggestedPrice: '₹1,500 – ₹3,500',
-        summary: '2 free video editing & brand ad test tasks to unlock Verified Pro status.',
+        summary: '2 free sample tasks to unlock Verified Pro status.',
         tasks: [
             {
                 id: 'inter_task_1',
@@ -6182,12 +6370,12 @@ const VETTING_TIERS_CONFIG = {
     },
     pro: {
         id: 'pro',
-        name: 'Pro Master Editor',
+        name: 'Pro',
         badge: '1 Benchmark Test Edit',
         badgeColor: '#f59e0b',
         reqCount: 1,
         suggestedPrice: '₹3,500 – ₹15,000+',
-        summary: '1 free benchmark brand ad test task for instant Top-Rated Pro status and high-ticket client jobs.',
+        summary: '1 free sample task for instant Top-Rated Pro status and high-ticket client jobs.',
         tasks: [
             {
                 id: 'pro_task_1',
@@ -6351,7 +6539,7 @@ function CreatePackage() {
     const editId = sessionStorage.getItem('edit_package_id');
     const editData = editId ? JSON.parse(sessionStorage.getItem('edit_package_data') || '{}') : null;
     let selectedType = editData?.package_type || 'per_deliverable';
-    let selectedTier = 'beginner';
+    let selectedTier = editData?.package_level || 'beginner';
     let selectedCategory = 'small_business_ad';
     let error = '';
     let success = '';
@@ -6361,116 +6549,50 @@ function CreatePackage() {
         sessionStorage.removeItem('edit_package_data');
     }
 
-    const SERVICE_CATEGORIES = [
-        {
-            id: 'real_meet_onsite',
-            icon: '📹',
-            label: 'Real-Meet On-Site Videography',
-            badge: '📹 In-Person Shoot',
-            type: 'per_deliverable',
-            title: 'On-Site Videography & In-Person Filming at Shop / Store + Full Edit',
-            price: 3500,
-            turnaround: '48 Hours',
-            revisions: 2,
-            scope: '📹 In-Person Shoot: Creator visits your shop/business venue to shoot 4K raw footage\n🎬 Full Edit & Pacing: Professional editing, color grade, and music sync\n🎁 Free Trial: Includes 1-3 Free Sample Edits for new shop partners\n📲 Export: 1080p / 4K 9:16 vertical reels ready for Meta & Instagram Ads'
-        },
-        {
-            id: 'remote_footage_edit',
-            icon: '📤',
-            label: 'Remote Footage Upload & Edit',
-            badge: '📤 Remote Upload',
-            type: 'per_deliverable',
-            title: 'Remote Media Upload & Edit for Local Businesses & E-Commerce',
-            price: 1800,
-            turnaround: '24-48 Hours',
-            revisions: 2,
-            scope: '📤 Remote Upload: Upload raw videos directly through Groove Hub app / Google Drive\n✨ Professional Editing: Trimming, subtitles, callouts & commercial music sync\n🎁 Free Trial: Includes 1-3 Free Sample Edits for new shop partners\n🎬 Final Master: 1080p 9:16 reels for Instagram Ads & Reels'
-        },
-        {
-            id: 'starter_reel',
-            icon: '⚡',
-            label: 'Quick Reel Cut (Starter ₹500)',
-            badge: '⚡ Starts @ ₹500',
-            type: 'per_deliverable',
-            title: 'Basic Video Editing, Trimming & Subtitles (Per Reel / Shorts)',
-            price: 500,
-            turnaround: '24 Hours',
-            revisions: 1,
-            scope: '⚡ Clean trimming, jump cuts & dead-air removal\n📝 High-contrast subtitles & caption overlay\n🎵 Royalty-free background music level sync\n🎬 1080p 9:16 vertical export ready for Instagram / YouTube'
-        },
-        {
-            id: 'small_business_ad',
-            icon: '🏢',
-            label: 'Small Business Brand Ad',
-            badge: '🔥 High Demand',
-            type: 'per_deliverable',
-            title: 'Small Business & Local Store Promotional Brand Video Ad (30-60s)',
-            price: 2000,
-            turnaround: '24-48 Hours',
-            revisions: 2,
-            scope: '🏢 30-60s High-converting vertical brand ad for local businesses & stores\n⚡ Scroll-stopping 3-second hook & fast retention pacing\n🎨 Color correction & store branding lower-thirds included\n🎵 Licensed commercial background music & sound design\n🎬 1080p / 4K 9:16 vertical export optimized for Instagram & Meta Ads'
-        },
-        {
-            id: 'shorts',
-            icon: '⚡',
-            label: 'Viral Reels & TikTok Ads',
-            badge: '⚡ Viral Hooks',
-            type: 'per_deliverable',
-            title: 'High-Retention Viral Shorts & Reels Edit with Styled Captions',
-            price: 1500,
-            turnaround: '24 Hours',
-            revisions: 2,
-            scope: '⚡ Fast-paced hook pacing & viral retention cuts\n🎨 Premium color grading & sound design (SFX + Music)\n📝 Dynamic animated captions & styled subtitles (Alex Hormozi style)\n🎬 1080p / 4K 9:16 export ready for Instagram, TikTok & YouTube'
-        },
-        {
-            id: 'ugc_product',
-            icon: '🛍️',
-            label: 'E-Commerce UGC Product Ad',
-            badge: '🛍️ Direct Sales',
-            type: 'per_deliverable',
-            title: 'E-Commerce UGC Product Video Ad with Pain-Point Hook & Offer',
-            price: 2500,
-            turnaround: '24-48 Hours',
-            revisions: 3,
-            scope: '🛍️ Problem -> Solution -> Demo -> Offer direct-response structure\n🏷️ 20% OFF animated coupon sticker & pricing badges\n💬 Customer quote / review overlays & trust badges\n🎵 Upbeat commercial music sync & punchy sound design'
-        },
-        {
-            id: 'youtube',
-            icon: '🎬',
-            label: 'YouTube Full Video (10-15m)',
-            badge: '🎬 Long Form',
-            type: 'per_deliverable',
-            title: 'Complete YouTube Video Editing, Sound Design & Custom Thumbnail',
-            price: 4500,
-            turnaround: '48 Hours',
-            revisions: 3,
-            scope: '✂️ Full footage assembly, jump cuts & dead-air cleanup\n🎵 Copyright-free background music & rich SFX audio leveling\n🖼️ B-roll insertions, zoom cuts & smooth transitions\n🎨 Professional color grade and 4K 60fps final master render\n🔥 High-CTR Clickable YouTube Thumbnail included'
-        },
-        {
-            id: 'real_estate',
-            icon: '🏠',
-            label: 'Real Estate & Video Tours',
-            badge: '🏠 Luxury',
-            type: 'per_deliverable',
-            title: 'Cinematic Real Estate Property Walkthrough & Architectural Video Tour',
-            price: 3500,
-            turnaround: '48 Hours',
-            revisions: 2,
-            scope: '🏠 Smooth speed ramps, gimbal stabilization & drone footage integration\n🎨 Luxury architectural color grade & interior lighting enhancement\n📍 Property features callouts, floor plan highlights & agent contact outro\n🎬 4K 60fps cinematic master delivery in 16:9 and 9:16 vertical'
-        },
-        {
-            id: 'script',
-            icon: '✍️',
-            label: 'Video Script & Hooks',
-            badge: '✍️ Copywriting',
-            type: 'per_deliverable',
-            title: 'Viral Brand Video Script with 3 Scroll-Stopping Hook Options',
-            price: 1800,
-            turnaround: '24 Hours',
-            revisions: 2,
-            scope: '🎣 3 High-retention scroll-stopping hook variants\n📜 Full structured video script with visual & audio cues\n🎯 Optimized call-to-action & audience retention triggers'
-        }
-    ];
+    const SERVICE_CATEGORIES_BY_NICHE = {
+        editors_animators: [
+            { id: 'starter_reel', icon: '⚡', label: 'Quick Reel Cut', badge: '⚡ Starter', type: 'per_deliverable', title: 'Basic Video Editing, Trimming & Subtitles (Per Reel / Short)', price: 500, turnaround: '24 Hours', revisions: 1, scope: 'Clean cuts, dead-air removal, captions, music sync and 1080p 9:16 export.' },
+            { id: 'shorts', icon: '📱', label: 'Viral Reels & TikTok', badge: '🔥 High Demand', type: 'per_deliverable', title: 'High-Retention Reels & TikTok Edit', price: 1500, turnaround: '24 Hours', revisions: 2, scope: 'Hook pacing, dynamic captions, color grade, SFX and platform-ready 9:16 export.' },
+            { id: 'youtube', icon: '🎬', label: 'YouTube Full Video', badge: '🎬 Long Form', type: 'per_deliverable', title: 'Complete YouTube Video Editing & Sound Design', price: 4500, turnaround: '48 Hours', revisions: 3, scope: 'Assembly, pacing, B-roll, audio leveling, color grade and final master.' }
+        ],
+        business_ads: [
+            { id: 'meta_ads', icon: '📢', label: 'Instagram & Facebook Ads', badge: '📢 Meta', type: 'per_deliverable', title: 'Instagram & Facebook Ad Campaign Service', price: 2500, turnaround: '48 Hours', revisions: 2, scope: 'Campaign setup, audience targeting, creative guidance and basic performance review.' },
+            { id: 'local_shop_ads', icon: '🏪', label: 'Local Shop Brand Ad', badge: '🏪 Local', type: 'per_deliverable', title: 'Local Shop Promotional Ad Package', price: 2000, turnaround: '48 Hours', revisions: 2, scope: 'Ad concept, hook, branded creative, CTA and platform-ready delivery for a shop or local business.' },
+            { id: 'remote_footage_edit', icon: '📤', label: 'Remote Footage Upload & Edit', badge: '📤 Remote', type: 'per_deliverable', title: 'Remote Video Upload & Professional Edit', price: 1800, turnaround: '24-48 Hours', revisions: 2, scope: 'Customer uploads raw footage through Groove Hub; creator edits, captions, sound and exports the final ad/reel.' },
+            { id: 'real_meet_onsite', icon: '📹', label: 'Real-Meet Shoot + Edit', badge: '📹 On-Site', type: 'per_deliverable', title: 'On-Site Shop Videography + Full Promotional Edit', price: 3500, turnaround: '48 Hours', revisions: 2, scope: 'Creator visits the shop/business, captures footage, edits the promotional video and delivers 9:16 social-ready files.' },
+            { id: 'social_management', icon: '📱', label: 'Social Media Management', badge: '📱 Monthly', type: 'monthly', title: 'Local Business Social Media Management', price: 6000, turnaround: 'Monthly Retainer', revisions: 3, scope: 'Content planning, posts/reels, captions, basic community management and monthly reporting.' }
+        ],
+        videography: [
+            { id: 'real_meet_onsite', icon: '📹', label: 'Real-Meet Shoot + Edit', badge: '📹 On-Site', type: 'per_deliverable', title: 'On-Site Shop Videography + Full Promotional Edit', price: 3500, turnaround: '48 Hours', revisions: 2, scope: 'On-site filming, shot selection, editing, color, music and 9:16 promotional delivery.' },
+            { id: 'product_shoot', icon: '🛍️', label: 'Product Shoot + Edit', badge: '🛍️ Product', type: 'per_deliverable', title: 'Product / Store Shoot + Social Ad Edit', price: 3000, turnaround: '48 Hours', revisions: 2, scope: 'Product/store footage, short promotional edit, captions, CTA and social-ready exports.' }
+        ],
+        social_media: [
+            { id: 'social_management', icon: '📱', label: 'Social Media Management', badge: '📱 Monthly', type: 'monthly', title: 'Local Business Social Media Management', price: 6000, turnaround: 'Monthly Retainer', revisions: 3, scope: 'Content calendar, captions, posts/reels, scheduling support and monthly performance summary.' },
+            { id: 'ad_creatives', icon: '🎨', label: 'Ad Creative Pack', badge: '🎨 Creative', type: 'per_deliverable', title: 'Social Ad Creative Pack', price: 2500, turnaround: '48 Hours', revisions: 2, scope: 'Branded social ad creatives for Instagram/Facebook with multiple hook and CTA variations.' }
+        ],
+        writers: [
+            { id: 'script', icon: '✍️', label: 'Video Script & Hooks', badge: '✍️ Copy', type: 'per_deliverable', title: 'Brand Video Script with Scroll-Stopping Hook Options', price: 1800, turnaround: '24 Hours', revisions: 2, scope: 'Three hooks, structured script, visual cues, CTA and retention-focused messaging.' },
+            { id: 'ad_copy', icon: '📢', label: 'Social Ad Copy', badge: '📢 Ads', type: 'per_deliverable', title: 'Social Ad Copy & Campaign Messaging', price: 1500, turnaround: '24 Hours', revisions: 2, scope: 'Primary text, headlines, CTA variations and audience-focused ad messaging.' }
+        ],
+        tutors: [
+            { id: 'english_session', icon: '🗣️', label: 'English Coaching Session', badge: '🗣️ 1:1', type: 'per_deliverable', title: '1-on-1 English Fluency Coaching Session', price: 800, turnaround: 'Scheduled', revisions: 0, scope: 'One structured coaching session focused on speaking, fluency and personalized feedback.' }
+        ]
+    };
+
+    let SERVICE_CATEGORIES = SERVICE_CATEGORIES_BY_NICHE[window.__providerNiche || currentUser?.profile?.niche || 'editors_animators'] || SERVICE_CATEGORIES_BY_NICHE.editors_animators;
+    let profileHydrated = false;
+    // If this route was opened directly, fetch the saved profession once and refresh the form.
+    apiFetch('/profile').then(p => {
+        if (profileHydrated) return;
+        profileHydrated = true;
+        const niche = p?.niche || 'editors_animators';
+        window.__providerNiche = niche;
+        const next = SERVICE_CATEGORIES_BY_NICHE[niche] || SERVICE_CATEGORIES_BY_NICHE.editors_animators;
+        SERVICE_CATEGORIES = next;
+        if (!editId && !next.some(c => c.id === selectedCategory)) selectedCategory = next[0]?.id || selectedCategory;
+        if (!editId && p?.experience_tier && !sessionStorage.getItem('pkg_create_draft')) selectedTier = p.experience_tier;
+        mount(renderCreatePackage());
+    }).catch(() => { profileHydrated = true; });
 
     window.applyServiceCategory = (catId) => {
         const cat = SERVICE_CATEGORIES.find(c => c.id === catId);
@@ -6660,7 +6782,9 @@ function CreatePackage() {
                 scope: scope || 'Complete video editing & deliverable files included.',
                 turnaround: turnaround || '24-48 hours',
                 revision_limit,
-                sample_reference
+                sample_reference,
+                package_level: selectedTier,
+                niche: window.__providerNiche || undefined
             };
 
             showLoading();
@@ -7220,7 +7344,10 @@ function BookingsList() {
                                     ${new Date(booking.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
                                 </div>
                             </div>
-                            <span class="badge ${statusBadgeClass}">${booking.status.replace('_', ' ')}</span>
+                            <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end;">
+                                ${booking.is_free_sample ? '<span class="badge badge-success">🎁 FREE SAMPLE</span>' : ''}
+                                <span class="badge ${statusBadgeClass}">${booking.status.replace('_', ' ')}</span>
+                            </div>
                         </div>
 
                         ${booking.package ? `
@@ -7230,6 +7357,15 @@ function BookingsList() {
                             <div style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 8px;">
                                 ${booking.package.scope || 'Standard service scope'}
                             </div>
+                        ` : ''}
+
+                        ${booking.is_free_sample ? `
+                            <div style="font-size:.78rem;color:var(--success);background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);padding:9px 11px;border-radius:8px;margin-bottom:10px;">
+                                🎁 Free sample task #${booking.sample_number || 1}. ${booking.client_notes ? escapeHTML(booking.client_notes) : 'Open the project chat for instructions.'}
+                            </div>
+                        ` : ''}
+                        ${booking.source_file_url ? `
+                            <a href="${sanitizeUrl(booking.source_file_url)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm" style="margin-bottom:10px;display:inline-flex;">📎 Open source files</a>
                         ` : ''}
 
                         <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: var(--bg-hover); border-radius: var(--radius-sm); margin-bottom: 12px;">
@@ -7687,6 +7823,7 @@ function CreateBooking() {
         showLoading();
         try {
             packages = await apiFetch('/packages?status=approved');
+            packagesForFreeSample = packages;
             grouped = {};
             packages.forEach(p => {
                 if (!grouped[p.provider_id]) {
@@ -7748,7 +7885,9 @@ function CreateBooking() {
                 method: 'POST',
                 body: JSON.stringify({
                     package_id: packageId,
-                    niche: selectedPkg.niche || 'editors_animators'
+                    niche: selectedPkg.niche || 'editors_animators',
+                    notes: document.getElementById('booking-notes')?.value?.trim() || null,
+                    source_file_url: document.getElementById('booking-source-url')?.value?.trim() || null
                 })
             });
             hideLoading();
@@ -7970,10 +8109,24 @@ function CreateBooking() {
                                 <option value="">Choose a package...</option>
                                 ${packages.map(p => `
                                     <option value="${p.id}" data-provider="${p.provider_id}">
-                                        ${p.title} — ₹${p.price.toLocaleString()} (${p.turnaround})
+                                        ${p.title} — ${p.package_level ? p.package_level.toUpperCase() : 'BEGINNER'} • ₹${p.price.toLocaleString()} (${p.turnaround})
                                     </option>
                                 `).join('')}
                             </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">What should the creator do?</label>
+                            <textarea class="form-textarea" id="booking-notes" rows="4" maxlength="5000" placeholder="Example: Turn my shop footage into a 30-second Instagram ad with our logo and WhatsApp CTA."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Source video / files (optional)</label>
+                            <input class="form-input" id="booking-source-url" type="url" placeholder="Paste your Drive, Dropbox or uploaded Groove Hub file link">
+                            <div style="font-size:.72rem;color:var(--text-muted);margin-top:5px;">For large files, upload them through Groove Hub and paste the returned file link here.</div>
+                        </div>
+                        <div id="free-sample-panel" style="display:none; background:rgba(16,185,129,.08); border:1px solid rgba(16,185,129,.25); border-radius:12px; padding:14px; margin-bottom:14px;">
+                            <div style="font-weight:800;color:var(--text-primary);">🎁 Free sample available</div>
+                            <div id="free-sample-text" style="font-size:.8rem;color:var(--text-secondary);margin-top:4px;"></div>
+                            <button type="button" class="btn btn-success" id="free-sample-btn" style="width:100%;margin-top:10px;">Request Free Sample</button>
                         </div>
                         <div class="form-group" id="total-amount" style="display: none; background: var(--bg-hover); padding: 12px 16px; border-radius: var(--radius-sm);">
                             <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -8028,7 +8181,7 @@ function CreateBooking() {
         if (!provId) {
             pkgSelect.innerHTML = '<option value="">Choose a package...</option>' + packages.map(p => `
                 <option value="${p.id}" data-provider="${p.provider_id}">
-                    ${p.title} — ₹${p.price.toLocaleString()} (${p.turnaround})
+                    ${p.title} — ${p.package_level ? p.package_level.toUpperCase() : 'BEGINNER'} • ₹${p.price.toLocaleString()} (${p.turnaround})
                 </option>
             `).join('');
             return;
@@ -8044,8 +8197,9 @@ function CreateBooking() {
 
     window.updateProviderForPackage = () => {
         const pkgSelect = document.getElementById('booking-package');
+        if (!pkgSelect || pkgSelect.selectedIndex < 0) return;
         const selectedOption = pkgSelect.options[pkgSelect.selectedIndex];
-        const providerId = selectedOption.getAttribute('data-provider');
+        const providerId = selectedOption?.getAttribute('data-provider');
 
         const amountDisplay = document.getElementById('amount-display');
         const submitBtn = document.getElementById('submit-booking');
@@ -8057,6 +8211,16 @@ function CreateBooking() {
                 amountDisplay.textContent = pkg.price.toLocaleString();
                 totalAmountGroup.style.display = 'block';
                 submitBtn.style.display = 'block';
+                const samplePanel = document.getElementById('free-sample-panel');
+                const sampleText = document.getElementById('free-sample-text');
+                const sampleBtn = document.getElementById('free-sample-btn');
+                const level = (pkg.package_level || 'beginner').toLowerCase();
+                const limit = Number(pkg.free_sample_limit || (level === 'pro' ? 1 : level === 'intermediate' ? 2 : 3));
+                if (samplePanel && sampleText && sampleBtn) {
+                    samplePanel.style.display = 'block';
+                    sampleText.textContent = `${level.charAt(0).toUpperCase()+level.slice(1)} providers offer up to ${limit} free sample task${limit === 1 ? '' : 's'} to help a shop test the service.`;
+                    sampleBtn.onclick = requestFreeSample;
+                }
             }
         } else {
             amountDisplay.textContent = '0';
@@ -8711,8 +8875,7 @@ const fiverrCategoryConfigs = {
         types: [
             { id: '', label: 'All Video Types', icon: '✨' },
             { id: 'youtube', label: 'YouTube & Long-form', icon: '📺', keywords: ['youtube', 'long-form', 'vlog', 'retention', 'mrbeast', 'podcast', 'documentary', 'shorts'] },
-            { id: 'ads_social', label: 'Social Ads & Reels', icon: '📱', keywords: ['ads', 'social', 'tiktok', 'reels', 'shorts', 'meta', 'instagram', 'ad', 'ugc', 'hook'] },
-            { id: 'gaming', label: 'Gaming & Stream Edits', icon: '🎮', keywords: ['gaming', 'twitch', 'montage', 'meme', 'stream', 'gameplay', 'valorant', 'gta', 'esports', 'minecraft', 'highlight'] },
+                        { id: 'gaming', label: 'Gaming & Stream Edits', icon: '🎮', keywords: ['gaming', 'twitch', 'montage', 'meme', 'stream', 'gameplay', 'valorant', 'gta', 'esports', 'minecraft', 'highlight'] },
             { id: 'animations', label: '2D/3D Animations', icon: '🎨', keywords: ['animation', '2d', '3d', 'character', 'whiteboard', 'explainer', 'blender', 'animated'] },
             { id: 'motion_graphics', label: 'Motion Graphics & VFX', icon: '✨', keywords: ['motion graphics', 'motion', 'vfx', 'after effects', 'intro', 'titles', 'visual effects'] },
             { id: 'music', label: 'Music Videos & Cinematic', icon: '🎬', keywords: ['music', 'rap', 'beat-sync', 'trippy', 'vfx', 'cinematic', 'band', 'song', 'hip-hop'] },
@@ -8721,7 +8884,7 @@ const fiverrCategoryConfigs = {
         serviceOptions: [
             { id: '', label: 'All Styles & Services' },
             { id: 'youtube_cuts', label: '📺 YouTube Long-form & Retention Cuts', match: ['youtube', 'long-form', 'vlog', 'podcast', 'retention'] },
-            { id: 'social_ads_reels', label: '📱 Social Ads, Reels & TikTok Hooks', match: ['ad', 'social', 'reel', 'short', 'tiktok', 'ugc', 'meta'] },
+            { id: 'reels_tiktok_editing', label: '📱 Reels & TikTok Editing', match: ['reel', 'short', 'tiktok', 'editing'] },
             { id: 'gaming_montages', label: '🎮 Gaming Montages & Stream Highlights', match: ['gaming', 'gameplay', 'montage', 'stream', 'twitch', 'esports'] },
             { id: '2d_3d_animation', label: '🎨 2D & 3D Character Animation', match: ['animation', '2d', '3d', 'animated', 'character', 'explainer'] },
             { id: 'motion_vfx', label: '✨ Motion Graphics, Intros & VFX', match: ['motion', 'after effects', 'vfx', 'visual effects', 'graphics'] },
@@ -8863,7 +9026,7 @@ const providerCategoryOptionsMap = {
         { label: 'Corporate & Brand Story', query: 'corporate' }
     ],
     editors_animators: [
-        { label: 'Social Ads & Reels', query: 'ads' },
+        { label: 'Reels & TikTok Editing', query: 'reels' },
         { label: 'Gaming Montages', query: 'gaming' },
         { label: 'YouTube Longform', query: 'youtube' },
         { label: '2D & 3D Animation', query: 'animation' },
@@ -9810,6 +9973,7 @@ function ProvidersList() {
                     <div class="provider-category-grid">
                         ${[
                     { niche: 'editors_animators', label: 'Video Editors', color: 'linear-gradient(135deg, #7c3aed, #4f46e5)', sub: 'Reels, YouTube, VFX' },
+                    { niche: 'business_ads', label: 'Social Ads & Services', color: 'linear-gradient(135deg, #f59e0b, #ea580c)', sub: 'Ads, Shops, Videography' },
                     { niche: 'tutors', label: 'English Tutors', color: 'linear-gradient(135deg, #10b981, #059669)', sub: 'Fluency, IELTS, Accent' },
                     { niche: 'writers', label: 'Writers', color: 'linear-gradient(135deg, #0284c7, #0369a1)', sub: 'SEO, Scripts, Blogs' },
                     { niche: '', label: 'All Talent', color: 'linear-gradient(135deg, #f59e0b, #d97706)', sub: 'All Verified Creators' },

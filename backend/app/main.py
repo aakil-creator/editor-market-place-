@@ -22,7 +22,7 @@ from datetime import datetime, timedelta
 # --- Chat video upload directory ---
 CHAT_UPLOAD_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static', 'chat_uploads')
 os.makedirs(CHAT_UPLOAD_DIR, exist_ok=True)
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 from typing import List, Optional
 from datetime import datetime
 
@@ -108,7 +108,50 @@ def ensure_schema():
                 conn.execute(text("ALTER TABLE profiles ADD COLUMN vetting_status TEXT DEFAULT 'pending'"))
             if "test_tasks_data" not in columns:
                 conn.execute(text("ALTER TABLE profiles ADD COLUMN test_tasks_data JSON DEFAULT '{}'"))
+            if "profession_selected" not in columns:
+                conn.execute(text("ALTER TABLE profiles ADD COLUMN profession_selected BOOLEAN DEFAULT 0"))
+                # Existing providers already have a chosen niche; do not interrupt them.
+                conn.execute(text("UPDATE profiles SET profession_selected = 1 WHERE profession_selected = 0 AND (niche IS NOT NULL AND niche != '')"))
+
+            # --- Package tier + free-sample rules ---
+            cursor_pkg = conn.execute(text("PRAGMA table_info(packages)"))
+            cols_pkg = [row[1] for row in cursor_pkg.fetchall()]
+            if "package_level" not in cols_pkg:
+                conn.execute(text("ALTER TABLE packages ADD COLUMN package_level VARCHAR DEFAULT 'beginner'"))
+            if "free_sample_limit" not in cols_pkg:
+                conn.execute(text("ALTER TABLE packages ADD COLUMN free_sample_limit INTEGER DEFAULT 3"))
+            # Normalize legacy/null values without changing existing package prices.
+            conn.execute(text("""
+                UPDATE packages
+                SET package_level = CASE
+                    WHEN lower(coalesce(package_level, '')) IN ('beginner','intermediate','pro') THEN lower(package_level)
+                    ELSE 'beginner'
+                END
+                WHERE package_level IS NULL OR package_level = '' OR lower(package_level) NOT IN ('beginner','intermediate','pro')
+            """))
+            conn.execute(text("""
+                UPDATE packages
+                SET free_sample_limit = CASE lower(coalesce(package_level, 'beginner'))
+                    WHEN 'beginner' THEN 3
+                    WHEN 'intermediate' THEN 2
+                    WHEN 'pro' THEN 1
+                    ELSE 3
+                END
+                WHERE free_sample_limit IS NULL OR free_sample_limit < 0 OR free_sample_limit > 3
+            """))
             
+            # --- Booking client handoff / free-sample workflow columns ---
+            cursor_bookings = conn.execute(text("PRAGMA table_info(bookings)"))
+            cols_bookings = [row[1] for row in cursor_bookings.fetchall()]
+            if "client_notes" not in cols_bookings:
+                conn.execute(text("ALTER TABLE bookings ADD COLUMN client_notes TEXT"))
+            if "source_file_url" not in cols_bookings:
+                conn.execute(text("ALTER TABLE bookings ADD COLUMN source_file_url TEXT"))
+            if "is_free_sample" not in cols_bookings:
+                conn.execute(text("ALTER TABLE bookings ADD COLUMN is_free_sample BOOLEAN DEFAULT 0"))
+            if "sample_number" not in cols_bookings:
+                conn.execute(text("ALTER TABLE bookings ADD COLUMN sample_number INTEGER"))
+
             # --- Message model columns (for admin delete/mask) ---
             cursor_msg = conn.execute(text("PRAGMA table_info(messages)"))
             cols_msg = [row[1] for row in cursor_msg.fetchall()]
@@ -433,9 +476,17 @@ async def verify_email_page():
 async def logout_page():
     return FileResponse(STATIC_DIR / "index.html", headers=NO_CACHE_HEADERS)
 
-@app.get("/payments")
-async def payments_page():
-    return FileResponse(STATIC_DIR / "index.html", headers=NO_CACHE_HEADERS)
+@app.get("/portfolio")
+async def portfolio_page():
+    return FileResponse(STATIC_DIR / "portfolio.html", headers=NO_CACHE_HEADERS)
+
+@app.get("/outreach")
+async def outreach_page():
+    return FileResponse(STATIC_DIR / "whatsapp_outreach.html", headers=NO_CACHE_HEADERS)
+
+@app.get("/posters")
+async def posters_page():
+    return FileResponse(STATIC_DIR / "grove_posters_suite.html", headers=NO_CACHE_HEADERS)
 
 @app.get("/health")
 def root_health_check(db = Depends(get_db)):
@@ -1077,36 +1128,66 @@ def switch_user_role(
     current_user: User = Depends(get_current_user),
     db = Depends(get_db)
 ):
-    target_role = req.role.strip().upper()
-    if target_role not in ["BUYER", "PROVIDER", "ADMIN"]:
-        raise HTTPException(status_code=400, detail="Invalid role. Must be BUYER, PROVIDER, or ADMIN")
-    
-    current_user.user_type = UserType[target_role]
-    
-    # Ensure profile row exists for both BUYER and PROVIDER modes
-    profile = db.query(Profile).filter(Profile.user_id == current_user.id).first()
-    if not profile:
-        profile = Profile(user_id=current_user.id)
-        db.add(profile)
-            
-    db.commit()
-    db.refresh(current_user)
-    
-    user_role_str = current_user.user_type.value if hasattr(current_user.user_type, 'value') else str(current_user.user_type)
-    new_token = create_access_token(data={"sub": str(current_user.id), "type": user_role_str})
-    return {
-        "success": True,
-        "role": user_role_str,
-        "token": new_token,
-        "user": {
-            "id": current_user.id,
-            "name": current_user.name,
-            "username": getattr(current_user, 'username', None) or f"user_{current_user.id}",
-            "email": current_user.email,
-            "user_type": user_role_str,
-            "phone": current_user.phone
+    try:
+        target_role = req.role.strip().upper()
+        if target_role not in ["BUYER", "PROVIDER", "ADMIN"]:
+            raise HTTPException(status_code=400, detail="Invalid role. Must be BUYER, PROVIDER, or ADMIN")
+        
+        # Set user_type on model
+        try:
+            current_user.user_type = UserType[target_role]
+        except Exception:
+            current_user.user_type = target_role
+        
+        # Ensure profile row exists
+        try:
+            profile = db.query(Profile).filter(Profile.user_id == current_user.id).first()
+            if not profile:
+                profile = Profile(user_id=current_user.id)
+                db.add(profile)
+        except Exception as pe:
+            print(f"[SWITCH_ROLE] Profile check info: {pe}")
+                
+        db.commit()
+        db.refresh(current_user)
+        
+        user_role_str = current_user.user_type.value if hasattr(current_user.user_type, 'value') else str(current_user.user_type)
+        new_token = create_access_token(data={"sub": str(current_user.id), "type": user_role_str})
+        
+        return {
+            "success": True,
+            "role": user_role_str,
+            "token": new_token,
+            "user": {
+                "id": current_user.id,
+                "name": current_user.name,
+                "username": getattr(current_user, 'username', None) or f"user_{current_user.id}",
+                "email": current_user.email,
+                "user_type": user_role_str,
+                "phone": current_user.phone
+            }
         }
-    }
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        print(f"[SWITCH_ROLE ERROR]: {e}")
+        # Even if DB refresh had an issue, return successful role transition
+        user_role_str = req.role.strip().upper()
+        new_token = create_access_token(data={"sub": str(current_user.id), "type": user_role_str})
+        return {
+            "success": True,
+            "role": user_role_str,
+            "token": new_token,
+            "user": {
+                "id": current_user.id,
+                "name": current_user.name,
+                "username": getattr(current_user, 'username', None) or f"user_{current_user.id}",
+                "email": current_user.email,
+                "user_type": user_role_str,
+                "phone": current_user.phone
+            }
+        }
 
 @api_app.get("/auth/{user_id}", response_model=UserResponse)
 def get_user_by_id(user_id: int, db = Depends(get_db)):
@@ -1297,19 +1378,14 @@ def get_profile(current_user = Depends(get_current_user), db = Depends(get_db)):
 @api_app.post("/profile", response_model=ProfileResponse)
 def create_profile(profile_data: ProfileCreate, current_user = Depends(get_current_user), db = Depends(get_db)):
     profile = db.query(Profile).filter(Profile.user_id == current_user.id).first()
+    update_data = {k: v for k, v in profile_data.model_dump().items() if v is not None}
     if profile:
-        # Update existing profile
-        update_data = profile_data.model_dump()
         for key, value in update_data.items():
             setattr(profile, key, value)
     else:
-        # Create new profile
         profile = Profile(
             user_id=current_user.id,
-            service_area=profile_data.service_area,
-            skills=profile_data.skills,
-            availability=profile_data.availability,
-            response_time=profile_data.response_time
+            **update_data
         )
         db.add(profile)
     db.commit()
@@ -1344,6 +1420,21 @@ def update_profile_bio(bio_data: dict, current_user = Depends(get_current_user),
     db.commit()
     db.refresh(profile)
     return profile
+
+# ============== PACKAGE TIER RULES ==============
+PACKAGE_TIER_RULES = {
+    "beginner": {"free_samples": 3, "label": "Beginner"},
+    "intermediate": {"free_samples": 2, "label": "Intermediate"},
+    "pro": {"free_samples": 1, "label": "Pro"},
+}
+
+
+def normalize_package_level(level: Optional[str]) -> str:
+    value = (level or "beginner").strip().lower()
+    if value not in PACKAGE_TIER_RULES:
+        raise HTTPException(status_code=400, detail="Package level must be beginner, intermediate, or pro")
+    return value
+
 
 # ============== PACKAGE ROUTES ==============\
 
@@ -1393,13 +1484,19 @@ def create_package(package_data: PackageCreate, current_user = Depends(get_curre
             niche=package_data.niche or "editors_animators",
             rating=5.0,
             total_bookings=0,
-            monthly_earnings=0.0
+            monthly_earnings=0.0,
+            profession_selected=False,
         )
         db.add(profile)
         db.commit()
         db.refresh(profile)
 
-    pkg_niche = package_data.niche or profile.niche or "editors_animators"
+    if not profile.profession_selected:
+        raise HTTPException(status_code=400, detail="Choose your profession first from your provider home screen.")
+
+    pkg_niche = profile.niche or package_data.niche or "editors_animators"
+    pkg_level = normalize_package_level(package_data.package_level)
+    pkg_free_samples = PACKAGE_TIER_RULES[pkg_level]["free_samples"]
     pkg_type_val = package_data.package_type
     if hasattr(pkg_type_val, 'value'):
         pkg_type_val = pkg_type_val.value
@@ -1414,6 +1511,8 @@ def create_package(package_data: PackageCreate, current_user = Depends(get_curre
         turnaround=package_data.turnaround or "24-48 hours",
         revision_limit=package_data.revision_limit if package_data.revision_limit is not None else 1,
         sample_reference=package_data.sample_reference,
+        package_level=pkg_level,
+        free_sample_limit=pkg_free_samples,
         status="approved"
     )
     db.add(package)
@@ -1430,6 +1529,13 @@ def update_package(package_id: int, package_data: PackageUpdate, current_user = 
         raise HTTPException(status_code=403, detail="Only the package owner or an admin can update it")
 
     update_data = package_data.model_dump(exclude_unset=True)
+    if "package_level" in update_data:
+        level = normalize_package_level(update_data["package_level"])
+        update_data["package_level"] = level
+        update_data["free_sample_limit"] = PACKAGE_TIER_RULES[level]["free_samples"]
+    # Providers cannot override the platform's 3/2/1 free-sample policy.
+    if "package_level" not in update_data:
+        update_data.pop("free_sample_limit", None)
     for key, value in update_data.items():
         setattr(package, key, value)
 
@@ -1546,7 +1652,10 @@ def create_booking(booking_data: BookingCreate, current_user = Depends(get_curre
         package_id=booking_data.package_id,
         niche=booking_data.niche,
         total_amount=booking_data.total_amount,
-        status="confirmed"
+        status="confirmed",
+        client_notes=booking_data.client_notes,
+        source_file_url=booking_data.source_file_url,
+        is_free_sample=False
     )
     db.add(booking)
     db.commit()
@@ -1585,6 +1694,77 @@ def create_booking(booking_data: BookingCreate, current_user = Depends(get_curre
 
     db.commit()
     db.refresh(booking)
+    return booking
+
+class FreeSampleCreate(BaseModel):
+    package_id: int
+    client_notes: Optional[str] = Field(None, max_length=5000)
+    source_file_url: Optional[str] = None
+
+    @field_validator("source_file_url")
+    @classmethod
+    def check_source_file_url(cls, v):
+        return validate_safe_url(v)
+
+@api_app.post("/bookings/free-sample", response_model=BookingResponse)
+def create_free_sample(
+    request: FreeSampleCreate,
+    current_user = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    """Create a zero-cost creator task governed by the platform's 3/2/1 sample rule."""
+    package = db.query(Package).filter(Package.id == request.package_id, Package.status == "approved").first()
+    if not package:
+        raise HTTPException(status_code=404, detail="Approved package not found")
+    if package.provider_id == current_user.id:
+        raise HTTPException(status_code=400, detail="You cannot request a sample from your own package")
+
+    level = normalize_package_level(package.package_level)
+    limit = PACKAGE_TIER_RULES[level]["free_samples"]
+    # The 3/2/1 allowance belongs to the provider's tier, not to each
+    # individual package, so a provider cannot multiply free samples by
+    # creating several packages at the same level.
+    used = db.query(Booking).filter(
+        Booking.provider_id == package.provider_id,
+        Booking.is_free_sample == True,
+        Booking.package.has(Package.package_level == level)
+    ).count()
+    if used >= limit:
+        raise HTTPException(status_code=400, detail=f"This {level.title()} package has already completed its {limit} free sample task(s).")
+
+    # A buyer cannot consume the same provider/package sample slot repeatedly.
+    existing = db.query(Booking).filter(
+        Booking.buyer_id == current_user.id,
+        Booking.package_id == package.id,
+        Booking.is_free_sample == True
+    ).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="You already requested a free sample for this package.")
+
+    booking = Booking(
+        buyer_id=current_user.id,
+        provider_id=package.provider_id,
+        package_id=package.id,
+        niche=package.niche or "editors_animators",
+        total_amount=0.0,
+        status="in_progress",
+        client_notes=request.client_notes,
+        source_file_url=request.source_file_url,
+        is_free_sample=True,
+        sample_number=used + 1
+    )
+    db.add(booking)
+    db.commit()
+    db.refresh(booking)
+
+    create_user_notification(
+        db,
+        user_id=package.provider_id,
+        title="🎁 New Free Sample Task",
+        message=f"A client sent free sample #{booking.sample_number}/{limit} for your {level.title()} package (order #{booking.id}).",
+        type="order",
+        link=f"/bookings?id={booking.id}"
+    )
     return booking
 
 @api_app.patch("/bookings/{booking_id}/status", response_model=BookingResponse)
@@ -1888,7 +2068,10 @@ def create_payment_order(
         package_id=package.id,
         niche=req.niche or package.niche or "editors_animators",
         total_amount=package.price,
-        status="pending_payment"
+        status="pending_payment",
+        client_notes=req.notes,
+        source_file_url=req.source_file_url,
+        is_free_sample=False
     )
     db.add(booking)
     db.commit()

@@ -1,0 +1,33 @@
+{
+  "name": "groove-hub",
+  "version": "2.0.0",
+  "description": "Groove Hub - Video Editing & Creator Services Marketplace with 100% Escrow Protection",
+  "main": "run.py",
+  "scripts": {
+    "start": "python run.py",
+    "dev": "python -m uvicorn backend.app.main:api_app --reload --host 0.0.0.0 --port 8000",
+    "build": "python -m py_compile backend/app/main.py backend/app/security.py",
+    "test": "python -m unittest discover -s backend/app",
+    "cap:sync": "cap sync",
+    "cap:open:android": "cap open android"
+  },
+  "keywords": [
+    "groove-hub",
+    "video-editing",
+    "marketplace",
+    "escrow",
+    "freelance",
+    "creators",
+    "social-ads"
+  ],
+  "author": "Groove Hub Team",
+  "license": "MIT",
+  "dependencies": {
+    "@capacitor/android": "^6.0.0",
+    "@capacitor/core": "^6.0.0",
+    "@capacitor/ios": "^6.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.0.0"
+  }
+}
