@@ -853,15 +853,28 @@ function renderLogo(size = 28, showText = true) {
 }
 window.renderLogo = renderLogo;
 
+// Helper to resolve active UI mode (BUYER vs PROVIDER vs ADMIN)
+function getActiveUserMode() {
+    if (currentUser?.user_type === 'ADMIN') return 'ADMIN';
+    const activeMode = localStorage.getItem('grove_hub_active_mode');
+    if (activeMode === 'BUYER' || activeMode === 'PROVIDER') {
+        return activeMode;
+    }
+    const roleStr = String(currentUser?.user_type || 'BUYER').toUpperCase();
+    if (roleStr === 'PROVIDER') return 'PROVIDER';
+    return 'BUYER';
+}
+window.getActiveUserMode = getActiveUserMode;
+
 // Mode Switcher Function for Users
 async function toggleUserMode() {
     if (!currentUser) return;
 
-    const currentRole = String(currentUser.user_type || 'BUYER').toUpperCase();
+    const currentRole = getActiveUserMode();
     const targetRole = currentRole === 'PROVIDER' ? 'BUYER' : 'PROVIDER';
     const targetTitle = targetRole === 'PROVIDER' ? 'Provider Mode 💼' : 'Buyer Mode 🛍️';
 
-    showLoading();
+    showLoading('Switching modes...');
     try {
         const res = await apiFetch('/user/switch-role', {
             method: 'POST',
@@ -878,25 +891,15 @@ async function toggleUserMode() {
             currentUser.user_type = targetRole;
             localStorage.setItem('current_user', JSON.stringify(currentUser));
         }
-        localStorage.setItem('grove_hub_active_mode', targetRole);
-        showToast(`Switched to ${targetTitle}!`, 'success');
-        
-        // Force refresh UI header and current route
-        if (typeof renderApp === 'function') {
-            renderApp();
-        } else {
-            router('/');
-        }
     } catch (e) {
         console.warn('Switch role warning:', e);
-        // Fallback optimistic switch
         currentUser.user_type = targetRole;
         localStorage.setItem('current_user', JSON.stringify(currentUser));
-        localStorage.setItem('grove_hub_active_mode', targetRole);
-        showToast(`Switched to ${targetTitle}!`, 'success');
-        if (typeof renderApp === 'function') renderApp(); else router('/');
     } finally {
+        localStorage.setItem('grove_hub_active_mode', targetRole);
         hideLoading();
+        showToast(`Switched to ${targetTitle}!`, 'success');
+        router('/', true);
     }
 }
 window.toggleUserMode = toggleUserMode;
@@ -1380,8 +1383,9 @@ function renderLaunchPromoBanner() {
 window.renderLaunchPromoBanner = renderLaunchPromoBanner;
 
 function renderAppHeader(activeRoute = '') {
-    const isAdmin = currentUser?.user_type === 'ADMIN';
-    const isProvider = currentUser?.user_type === 'PROVIDER';
+    const activeMode = getActiveUserMode();
+    const isAdmin = activeMode === 'ADMIN';
+    const isProvider = activeMode === 'PROVIDER';
 
     // 1. ADMIN EXCLUSIVE HEADER (No buyer or provider interference)
     if (isAdmin) {
@@ -3703,10 +3707,11 @@ let packagesForFreeSample = [];
 
 // =============== DASHBOARD DISPATCHER ===============
 function Dashboard() {
-    if (currentUser?.user_type === 'ADMIN') {
+    const activeMode = getActiveUserMode();
+    if (activeMode === 'ADMIN') {
         return AdminDashboard();
     }
-    if (currentUser?.user_type === 'PROVIDER') {
+    if (activeMode === 'PROVIDER') {
         return ProviderDashboard();
     }
     return BuyerDashboard();
