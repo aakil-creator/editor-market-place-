@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Grove Hub — WhatsApp Portfolio & Outreach Launcher</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --bg: #04060d;
+      --card-bg: rgba(14, 20, 40, 0.75);
+      --border: rgba(255, 255, 255, 0.08);
+      --wa-green: #25D366;
+      --wa-dark: #075E54;
+      --primary-cyan: #00f2fe;
+      --primary-emerald: #10b981;
+      --text: #ffffff;
+      --text-muted: #94a3b8;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      color: var(--text);
+      padding: 30px 15px 80px;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+    }
+
+    /* Header */
+    .header {
+      text-align: center;
+      margin-bottom: 36px;
+    }
+
+    .logo-img {
+      height: 44px;
+      margin-bottom: 12px;
+      filter: drop-shadow(0 0 15px rgba(37, 211, 102, 0.4));
+    }
+
+    .header h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 2.2rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+
+    .header p {
+      color: var(--text-muted);
+      font-size: 1rem;
+    }
+
+    /* Quick Action Bar */
+    .action-bar {
+      background: rgba(37, 211, 102, 0.1);
+      border: 1px solid rgba(37, 211, 102, 0.3);
+      border-radius: 16px;
+      padding: 16px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .action-bar-text {
+      font-size: 0.95rem;
+      color: #e2e8f0;
+    }
+    .action-bar-text strong {
+      color: var(--wa-green);
+    }
+
+    .btn {
+      padding: 10px 20px;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: 0.875rem;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: none;
+      transition: all 0.2s ease;
+    }
+
+    .btn-wa {
+      background: var(--wa-green);
+      color: #04060d;
+      box-shadow: 0 4px 15px rgba(37, 211, 102, 0.35);
+    }
+    .btn-wa:hover {
+      background: #2ee672;
+      transform: translateY(-2px);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    /* Message Cards Grid */
+    .templates-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .msg-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 24px;
+      transition: border-color 0.2s;
+    }
+
+    .msg-card:hover {
+      border-color: rgba(37, 211, 102, 0.35);
+    }
+
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .niche-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .phone-input-wrap {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .phone-input {
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid var(--border);
+      color: #fff;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      width: 170px;
+      outline: none;
+    }
+    .phone-input:focus {
+      border-color: var(--wa-green);
+    }
+
+    /* WhatsApp Styled Message Bubble */
+    .wa-bubble {
+      background: #0b141a;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-left: 4px solid var(--wa-green);
+      border-radius: 12px;
+      padding: 16px;
+      font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+      font-size: 0.92rem;
+      line-height: 1.6;
+      color: #e9edef;
+      white-space: pre-wrap;
+      margin-bottom: 16px;
+      user-select: text;
+    }
+
+    .wa-bubble strong {
+      color: #fff;
+    }
+
+    .card-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #25D366;
+      color: #04060d;
+      padding: 12px 24px;
+      border-radius: 999px;
+      font-weight: 800;
+      font-size: 0.9rem;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      display: none;
+      z-index: 1000;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+
+    <!-- Header -->
+    <div class="header">
+      <img src="/static/icons/grove_hub_logo.png" alt="Grove Hub" class="logo-img" onerror="this.src='/static/icons/grove_hub_emblem.png'" />
+      <h1>WhatsApp Client Outreach Launcher</h1>
+      <p>1-Click WhatsApp pitch messages pre-formatted with your portfolio & case study proof.</p>
+    </div>
+
+    <!-- Quick Action Bar -->
+    <div class="action-bar">
+      <div class="action-bar-text">
+        📁 Portfolio Link: <strong>grovehub.io/portfolio</strong>
+      </div>
+      <div style="display: flex; gap: 8px;">
+        <a href="/static/portfolio.html" target="_blank" class="btn btn-secondary">
+          👁️ Open Live Portfolio
+        </a>
+      </div>
+    </div>
+
+    <!-- Templates List -->
+    <div class="templates-grid">
+
+      <!-- Template 1: General Business Owners -->
+      <div class="msg-card">
+        <div class="card-top">
+          <div class="niche-title">🚀 1. General Business Owners & Founders</div>
+          <div class="phone-input-wrap">
+            <input type="text" id="phone-general" class="phone-input" placeholder="+91 Recipient Phone" />
+          </div>
+        </div>
+
+        <div class="wa-bubble" id="msg-general">Hi there! 👋
+
+I came across your business and really loved what you’re building. 
+
+We run *Grove Hub* — a performance creative agency helping businesses scale 10X with high-converting video reels, Meta/Google ads, and automated sales funnels.
+
+📈 *Recent Client Results:*
+• 5.4X ROAS on local ad campaigns
+• +45,000 new customers generated
+• 24-Hour delivery on 4K viral video edits
+• 100% Escrow Protected
+
+👉 *View Our Live Portfolio & Case Studies:*
+https://grovehub.io/portfolio
+
+Would you be open to a *Free 30-Minute Growth Audit & Roadmap* for your brand? Let me know! 🚀</div>
+
+        <div class="card-actions">
+          <button class="btn btn-secondary" onclick="copyText('msg-general')">📋 Copy Text</button>
+          <button class="btn btn-wa" onclick="sendWhatsApp('phone-general', 'msg-general')">💬 Open in WhatsApp</button>
+        </div>
+      </div>
+
+
+      <!-- Template 2: Home Bakeries & Custom Cakes -->
+      <div class="msg-card">
+        <div class="card-top">
+          <div class="niche-title">🍰 2. Home Bakeries & Custom Cake Artists</div>
+          <div class="phone-input-wrap">
+            <input type="text" id="phone-bakery" class="phone-input" placeholder="+91 Bakery Phone" />
+          </div>
+        </div>
+
+        <div class="wa-bubble" id="msg-bakery">Hi! 👋 
+
+I found your bakery page and your custom cakes and desserts look absolutely delicious! 🎂✨
+
+We help food & home dessert businesses turn raw cake-making, decorating, and unboxing clips into *viral, crave-worthy Instagram reels* and run local ads that bring consistent WhatsApp orders.
+
+🍰 *Case Study Highlight:*
+Scaled a local bakery/cafe from $8.4k to $45.3k monthly sales (5.4X ROAS) using short-form food reels.
+
+👉 *Check out our video & food portfolio:*
+https://grovehub.io/portfolio
+
+I’d love to share 3 easy reel ideas tailored to your page. Would you like me to send them over? 😊</div>
+
+        <div class="card-actions">
+          <button class="btn btn-secondary" onclick="copyText('msg-bakery')">📋 Copy Text</button>
+          <button class="btn btn-wa" onclick="sendWhatsApp('phone-bakery', 'msg-bakery')">💬 Open in WhatsApp</button>
+        </div>
+      </div>
+
+
+      <!-- Template 3: Cafes & Restaurants -->
+      <div class="msg-card">
+        <div class="card-top">
+          <div class="niche-title">☕ 3. Cafes, Restaurants & Dining</div>
+          <div class="phone-input-wrap">
+            <input type="text" id="phone-cafe" class="phone-input" placeholder="+91 Cafe Phone" />
+          </div>
+        </div>
+
+        <div class="wa-bubble" id="msg-cafe">Hi Team! 👋
+
+I came across your cafe and loved the ambience and menu focus on your page! ☕✨
+
+We help Chennai cafés and restaurants create *aesthetic food & ambience reels* paired with geo-targeted local Instagram ads to pack tables on weekdays and weekends.
+
+📊 *Case Study:*
+Generated 45,000+ local diners and 5.4X ad return for local hospitality launches.
+
+👉 *See our Cafe & Food Reel Work:*
+https://grovehub.io/portfolio
+
+We’d love to offer you a *Free Local Footfall & Content Strategy*. Would you be open to seeing a 2-minute breakdown? 🍽️</div>
+
+        <div class="card-actions">
+          <button class="btn btn-secondary" onclick="copyText('msg-cafe')">📋 Copy Text</button>
+          <button class="btn btn-wa" onclick="sendWhatsApp('phone-cafe', 'msg-cafe')">💬 Open in WhatsApp</button>
+        </div>
+      </div>
+
+
+      <!-- Template 4: Salons, Makeup & Bridal Boutiques -->
+      <div class="msg-card">
+        <div class="card-top">
+          <div class="niche-title">💇‍♀️ 4. Salons, Makeup & Bridal Boutiques</div>
+          <div class="phone-input-wrap">
+            <input type="text" id="phone-salon" class="phone-input" placeholder="+91 Salon Phone" />
+          </div>
+        </div>
+
+        <div class="wa-bubble" id="msg-salon">Hi there! 👋
+
+I came across your salon / boutique page. Your bridal makeovers, hair transformations, and collections look stunning! 💄✨
+
+We help beauty brands and salons turn client transformations into *high-converting before-and-after reels* and run appointment-booking campaigns that keep your calendar full.
+
+👉 *Explore our Creative Portfolio:*
+https://grovehub.io/portfolio
+
+Can I share 3 simple reel concepts to help you get more bridal & appointment enquiries this month? 💕</div>
+
+        <div class="card-actions">
+          <button class="btn btn-secondary" onclick="copyText('msg-salon')">📋 Copy Text</button>
+          <button class="btn btn-wa" onclick="sendWhatsApp('phone-salon', 'msg-salon')">💬 Open in WhatsApp</button>
+        </div>
+      </div>
+
+
+      <!-- Template 5: Content Creators & YouTubers -->
+      <div class="msg-card">
+        <div class="card-top">
+          <div class="niche-title">🎬 5. Creators, YouTubers & Podcasters</div>
+          <div class="phone-input-wrap">
+            <input type="text" id="phone-creator" class="phone-input" placeholder="+91 Creator Phone" />
+          </div>
+        </div>
+
+        <div class="wa-bubble" id="msg-creator">Hey! 👋 Love your content.
+
+Quick question: Are you currently looking for a *dedicated, high-speed video editor* for your YouTube Shorts, Reels, or long-form videos?
+
+At *Grove Hub*, we edit viral retention-focused videos with:
+⚡ Alex Hormozi style animated subtitles
+⚡ Sound design, zoom cuts & B-roll
+⚡ 24-Hour turnaround time
+⚡ 100% Escrow Protection
+
+👉 *Watch our video editing portfolio:*
+https://grovehub.io/portfolio
+
+We’d love to edit your *next reel 100% Free* as a test edit to show you the quality. Interested? 🎬🔥</div>
+
+        <div class="card-actions">
+          <button class="btn btn-secondary" onclick="copyText('msg-creator')">📋 Copy Text</button>
+          <button class="btn btn-wa" onclick="sendWhatsApp('phone-creator', 'msg-creator')">💬 Open in WhatsApp</button>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <div class="toast" id="toast">✓ Copied to Clipboard!</div>
+
+  <script>
+    function copyText(elementId) {
+      const text = document.getElementById(elementId).innerText;
+      navigator.clipboard.writeText(text).then(() => {
+        showToast("✓ Copied message to clipboard!");
+      });
+    }
+
+    function sendWhatsApp(phoneInputId, msgId) {
+      let phone = document.getElementById(phoneInputId).value.trim();
+      const text = document.getElementById(msgId).innerText;
+      
+      // Clean phone number
+      phone = phone.replace(/[^0-9]/g, '');
+      
+      let url = `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
+      window.open(url, '_blank');
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.innerText = msg;
+      toast.style.display = 'block';
+      setTimeout(() => {
+        toast.style.display = 'none';
+      }, 2500);
+    }
+  </script>
+
+</body>
+</html>

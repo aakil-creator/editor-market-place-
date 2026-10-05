@@ -221,6 +221,25 @@ function createCategoryCardPlaceholder(niche, title, creatorName) {
 }
 window.createCategoryCardPlaceholder = createCategoryCardPlaceholder;
 
+function getProviderSkillsArray(provider) {
+    if (!provider) return [];
+    const raw = provider.skills || (provider.profile && provider.profile.skills);
+    if (Array.isArray(raw)) return raw;
+    if (typeof raw === 'string' && raw.trim()) {
+        return raw.split(',').map(s => s.trim()).filter(Boolean);
+    }
+    return [];
+}
+window.getProviderSkillsArray = getProviderSkillsArray;
+
+function getProviderPackagesArray(provider) {
+    if (!provider) return [];
+    const pkgs = provider.packages;
+    if (Array.isArray(pkgs)) return pkgs;
+    return [];
+}
+window.getProviderPackagesArray = getProviderPackagesArray;
+
 function renderMediaThumbnailOrVideo(url, options = {}) {
     const safeUrl = sanitizeUrl(url);
     const className = options.className || 'fiverr-gig-thumb-img';
@@ -236,12 +255,13 @@ function renderMediaThumbnailOrVideo(url, options = {}) {
         return `
             <video src="${safeUrl}" ${autoPlay} class="${className} fiverr-gig-thumb-video" onmouseover="try{this.play()}catch(_){}" onmouseout="try{this.pause()}catch(_){}"></video>
             <div style="position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.75); color: #fff; font-size: 0.65rem; font-weight: 800; padding: 2px 7px; border-radius: 4px; backdrop-filter: blur(4px); display: flex; align-items: center; gap: 4px; pointer-events: none; z-index: 2;">
-                <span>🎬</span> Video
+                <span>🎬</span> 4K Reel
             </div>
         `;
     }
 
-    return `<img src="${safeUrl}" alt="${alt}" class="${className}" loading="lazy">`;
+    const fallbackSvg = createCategoryCardPlaceholder(options.niche, options.title, options.alt);
+    return `<img src="${safeUrl}" alt="${alt}" class="${className}" loading="lazy" onerror="this.onerror=null; this.src='${fallbackSvg}';">`;
 }
 window.renderMediaThumbnailOrVideo = renderMediaThumbnailOrVideo;
 
@@ -268,24 +288,26 @@ function getProviderThumbnail(provider, pkg) {
         }
     }
 
-    // 3. Check Provider's uploaded portfolio items
+    // 3. Check Provider's uploaded portfolio items (custom showcase banners / photos / thumbnails)
     const pItems = (provider && Array.isArray(provider.portfolio_items) && provider.portfolio_items.length > 0)
         ? provider.portfolio_items
         : (provider && provider.id === currentUser?.id && typeof portfolioItems !== 'undefined' && Array.isArray(portfolioItems) ? portfolioItems : []);
 
     if (pItems.length > 0) {
+        // Prioritize custom video reels
         const videoItem = pItems.find(i => i.media_type === 'video' || isMediaVideo(i.media_url));
         if (videoItem) {
-            const resolved = resolveMediaThumbnail(videoItem.thumbnail_url || videoItem.media_url);
+            const videoUrl = (!videoItem.thumbnail_url || videoItem.thumbnail_url.includes('ab_pradeep_reel_editor.png')) ? videoItem.media_url : videoItem.thumbnail_url;
+            const resolved = resolveMediaThumbnail(videoUrl || videoItem.media_url);
             if (resolved) return resolved;
         }
-        const imgItem = pItems.find(i => i.media_type === 'image' || i.thumbnail_url);
+        const imgItem = pItems.find(i => i.media_type === 'image' || (i.thumbnail_url && !i.thumbnail_url.includes('unsplash') && !i.thumbnail_url.includes('ab_pradeep_reel_editor.png')));
         if (imgItem) {
             const resolved = resolveMediaThumbnail(imgItem.thumbnail_url || imgItem.media_url);
             if (resolved) return resolved;
         }
         for (const item of pItems) {
-            const itemUrl = item.thumbnail_url || item.media_url;
+            const itemUrl = (!item.thumbnail_url || item.thumbnail_url.includes('ab_pradeep_reel_editor.png')) ? item.media_url : item.thumbnail_url;
             if (itemUrl) {
                 const resolved = resolveMediaThumbnail(itemUrl);
                 if (resolved) return resolved;
@@ -299,18 +321,8 @@ function getProviderThumbnail(provider, pkg) {
         if (resolved) return resolved;
     }
 
-    // 5. Special banner ONLY for AB Pradeep reel editor profile
-    const pName = (provider?.name || pkg?.provider_name || '').toLowerCase();
-    const pUname = (provider?.username || '').toLowerCase();
-    if (pUname === 'ab_pradeep' || pName.includes('ab pradeep') || pName.includes('pradeep')) {
-        return '/static/banners/ab_pradeep_reel_editor.png';
-    }
-
-    // 6. Generate distinct, elegant SVG card tailored to creator niche & title
-    const niche = pkg?.niche || provider?.niche || provider?.profile?.niche || 'editors_animators';
-    const title = pkg?.title || provider?.specialization || 'Verified Professional Services';
-    const creatorName = provider?.name || pkg?.provider_name || 'Verified Creator';
-    return createCategoryCardPlaceholder(niche, title, creatorName);
+    // 5. Fallback to active creator showcase banner if available
+    return '/static/banners/ab_pradeep_reel_editor.png';
 }
 window.getProviderThumbnail = getProviderThumbnail;
 
@@ -378,8 +390,7 @@ async function apiFetch(endpoint, options = {}) {
     try { data = text ? JSON.parse(text) : {}; } catch (_) { data = { detail: text }; }
 
     if (!response.ok) {
-        if (response.status === 401) {
-            console.warn('Authentication token invalid or expired (401). Clearing session...');
+        if (response.status === 401 && endpoint.startsWith('/auth/me')) {
             currentToken = null;
             currentUser = null;
             localStorage.removeItem('access_token');
@@ -387,9 +398,6 @@ async function apiFetch(endpoint, options = {}) {
             if (typeof renderAppHeader === 'function') {
                 const header = document.querySelector('.header');
                 if (header) header.replaceWith(renderAppHeader());
-            }
-            if (typeof router === 'function' && !window.location.pathname.includes('/login') && !window.location.pathname.includes('/register')) {
-                setTimeout(() => { router('/login'); }, 100);
             }
         }
         if (response.status === 403 && data.detail && (
@@ -815,35 +823,13 @@ function renderGroveAnimatedLoader(size = 140, showText = true) {
 }
 window.renderGroveAnimatedLoader = renderGroveAnimatedLoader;
 
-// Loading state with cold-start wakeup notice & auto-timeout recovery
-let __groveLoadingTimer = null;
-function showLoading(msg = '') {
-    if (__groveLoadingTimer) clearTimeout(__groveLoadingTimer);
-    
-    appEl.innerHTML = `<div class="loading" id="grove-loading-container" style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 55vh; padding: 24px; text-align: center;">
-        ${renderGroveAnimatedLoader(140, true)}
-        <p id="grove-loading-msg" style="margin-top: 14px; font-weight: 600; color: var(--text-secondary, #94a3b8); font-size: 0.9rem;">
-            ${escapeHTML(msg || 'Loading Groove Hub...')}
-        </p>
-    </div>`;
-
-    __groveLoadingTimer = setTimeout(() => {
-        const msgEl = document.getElementById('grove-loading-msg');
-        if (msgEl) {
-            msgEl.innerHTML = `⚡ Waking up server... (If this is your first visit, server takes a few seconds to warm up)<br>
-            <div style="display: flex; gap: 8px; justify-content: center; margin-top: 12px; flex-wrap: wrap;">
-                <button class="btn btn-secondary btn-sm" style="font-size: 0.78rem; padding: 6px 12px;" onclick="window.location.reload()">Reload Page</button>
-                <button class="btn btn-primary btn-sm" style="font-size: 0.78rem; padding: 6px 12px;" onclick="router('/login')">Sign In</button>
-            </div>`;
-        }
-    }, 7000);
+// Loading state
+function showLoading() {
+    appEl.innerHTML = `<div class="loading">${renderGroveAnimatedLoader(150, true)}</div>`;
 }
 
 function hideLoading() {
-    if (__groveLoadingTimer) {
-        clearTimeout(__groveLoadingTimer);
-        __groveLoadingTimer = null;
-    }
+    // No-op, appEl is replaced with content
 }
 
 // Redirect to login if not authenticated
@@ -860,22 +846,12 @@ async function requireAuth() {
         localStorage.setItem('current_user', JSON.stringify(u));
         return true;
     } catch (e) {
-        // If 401 or invalid token, currentToken was cleared by apiFetch — redirect to login
-        if (!currentToken) {
-            showToast('Session expired. Please login again.', 'error');
-            router('/login');
-            return false;
-        }
-        // Only maintain session if network/browser is offline
-        if (!navigator.onLine || e.name === 'TypeError' || (e.message && e.message.includes('Failed to fetch'))) {
-            console.warn('Network offline during route check, maintaining session:', e.message || e);
+        // If offline or network unavailable, but token exists in localStorage, maintain session!
+        if (currentToken) {
+            console.warn('Network unavailable during route check, maintaining active session:', e.message || e);
             return true;
         }
-        currentToken = null;
-        currentUser = null;
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('current_user');
-        showToast('Session expired. Please login again.', 'error');
+        showToast('Please login first', 'error');
         router('/login');
         return false;
     }
@@ -916,28 +892,15 @@ function renderLogo(size = 28, showText = true) {
 }
 window.renderLogo = renderLogo;
 
-// Helper to resolve active UI mode (BUYER vs PROVIDER vs ADMIN)
-function getActiveUserMode() {
-    if (currentUser?.user_type === 'ADMIN') return 'ADMIN';
-    const activeMode = localStorage.getItem('grove_hub_active_mode');
-    if (activeMode === 'BUYER' || activeMode === 'PROVIDER') {
-        return activeMode;
-    }
-    const roleStr = String(currentUser?.user_type || 'BUYER').toUpperCase();
-    if (roleStr === 'PROVIDER') return 'PROVIDER';
-    return 'BUYER';
-}
-window.getActiveUserMode = getActiveUserMode;
-
 // Mode Switcher Function for Users
 async function toggleUserMode() {
     if (!currentUser) return;
 
-    const currentRole = getActiveUserMode();
+    const currentRole = String(currentUser.user_type || 'BUYER').toUpperCase();
     const targetRole = currentRole === 'PROVIDER' ? 'BUYER' : 'PROVIDER';
     const targetTitle = targetRole === 'PROVIDER' ? 'Provider Mode 💼' : 'Buyer Mode 🛍️';
 
-    showLoading('Switching modes...');
+    showLoading();
     try {
         const res = await apiFetch('/user/switch-role', {
             method: 'POST',
@@ -954,15 +917,24 @@ async function toggleUserMode() {
             currentUser.user_type = targetRole;
             localStorage.setItem('current_user', JSON.stringify(currentUser));
         }
-    } catch (e) {
-        console.warn('Switch role warning:', e);
-        currentUser.user_type = targetRole;
-        localStorage.setItem('current_user', JSON.stringify(currentUser));
-    } finally {
         localStorage.setItem('grove_hub_active_mode', targetRole);
-        hideLoading();
         showToast(`Switched to ${targetTitle}!`, 'success');
-        router('/', true);
+        
+        // Force refresh UI header and current route
+        if (typeof renderApp === 'function') {
+            renderApp();
+        } else {
+            router('/');
+        }
+    } catch (e) {
+        // Never fake a successful role switch. This was especially confusing on
+        // mobile because a failed API request could leave the UI in a mode that
+        // the server had not actually persisted.
+        console.error('[MODE SWITCH] Failed:', e);
+        const message = (e && e.message) ? e.message : 'Unable to switch mode right now. Please try again.';
+        showToast(message, 'error');
+    } finally {
+        hideLoading();
     }
 }
 window.toggleUserMode = toggleUserMode;
@@ -997,9 +969,8 @@ function renderProfileAvatar(size = 34) {
 function renderProfileMenu() {
     const user = currentUser;
     if (!user) return '';
-    const activeMode = getActiveUserMode();
-    const isProvider = activeMode === 'PROVIDER';
-    const isAdmin = activeMode === 'ADMIN';
+    const isProvider = user.user_type === 'PROVIDER';
+    const isAdmin = user.user_type === 'ADMIN';
     const hasImage = !!(user.profile_image);
     const initial = (user.name || 'U').charAt(0).toUpperCase();
     const handle = user.username ? `@${user.username}` : (user.email || '');
@@ -1447,9 +1418,8 @@ function renderLaunchPromoBanner() {
 window.renderLaunchPromoBanner = renderLaunchPromoBanner;
 
 function renderAppHeader(activeRoute = '') {
-    const activeMode = getActiveUserMode();
-    const isAdmin = activeMode === 'ADMIN';
-    const isProvider = activeMode === 'PROVIDER';
+    const isAdmin = currentUser?.user_type === 'ADMIN';
+    const isProvider = currentUser?.user_type === 'PROVIDER';
 
     // 1. ADMIN EXCLUSIVE HEADER (No buyer or provider interference)
     if (isAdmin) {
@@ -1877,27 +1847,6 @@ async function openFiverrPortfolioModal(providerId, providerName) {
 window.openFiverrPortfolioModal = openFiverrPortfolioModal;
 window.viewProviderPortfolio = openFiverrPortfolioModal;
 window.openEducatorModal = openFiverrPortfolioModal;
-
-function getProviderSkillsArray(provider) {
-    if (!provider) return [];
-    const s = provider.skills || (provider.profile && provider.profile.skills);
-    if (!s) return [];
-    if (Array.isArray(s)) return s;
-    if (typeof s === 'string') {
-        return s.split(',').map(x => x.trim()).filter(Boolean);
-    }
-    return [];
-}
-window.getProviderSkillsArray = getProviderSkillsArray;
-
-function getProviderPackagesArray(provider) {
-    if (!provider) return [];
-    const pkgs = provider.packages || (provider.profile && provider.profile.packages);
-    if (!pkgs) return [];
-    if (Array.isArray(pkgs)) return pkgs;
-    return [];
-}
-window.getProviderPackagesArray = getProviderPackagesArray;
 
 function getCategoryPeekIconSvg(niche, size = 38) {
     if (niche === 'editors_animators' || niche === 'editors') {
@@ -2366,17 +2315,15 @@ function wireForms(root) {
 }
 
 function render(component) {
-    hideLoading();
     appEl.innerHTML = '';
     const content = component();
     if (content) { appEl.appendChild(content); wireForms(content); }
-    else appEl.innerHTML = `<div class="loading">${renderGroveAnimatedLoader(120, true)}</div>`;
+    else appEl.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
 }
 
 window.render = render;
 
 function mount(content) {
-    hideLoading();
     appEl.innerHTML = '';
     if (content) { appEl.appendChild(content); wireForms(content); }
 }
@@ -3792,11 +3739,10 @@ let packagesForFreeSample = [];
 
 // =============== DASHBOARD DISPATCHER ===============
 function Dashboard() {
-    const activeMode = getActiveUserMode();
-    if (activeMode === 'ADMIN') {
+    if (currentUser?.user_type === 'ADMIN') {
         return AdminDashboard();
     }
-    if (activeMode === 'PROVIDER') {
+    if (currentUser?.user_type === 'PROVIDER') {
         return ProviderDashboard();
     }
     return BuyerDashboard();
@@ -4168,10 +4114,8 @@ function BuyerDashboard() {
 
         // Filter providers based on activeFilter and searchQuery
         const filteredProviders = allProviders.filter(pr => {
-            const prSkills = getProviderSkillsArray(pr);
-            const prPackages = getProviderPackagesArray(pr);
-            const skillsStr = prSkills.join(' ').toLowerCase();
-            const packagesStr = prPackages.map(p => `${p.title || ''} ${p.description || ''}`).join(' ').toLowerCase();
+            const skillsStr = (pr.skills || []).join(' ').toLowerCase();
+            const packagesStr = (pr.packages || []).map(p => `${p.title || ''} ${p.description || ''}`).join(' ').toLowerCase();
             const bioStr = (pr.bio || '').toLowerCase();
             const specStr = (pr.specialization || '').toLowerCase();
             const prName = (pr.name || '').toLowerCase();
@@ -4189,9 +4133,7 @@ function BuyerDashboard() {
             return true;
         });
 
-        const providerPackageIds = new Set(filteredPackages.map(pkg => pkg.provider_id));
-        const standaloneProviders = filteredProviders.filter(pr => !providerPackageIds.has(pr.id));
-        const totalItems = filteredPackages.length + standaloneProviders.length;
+        const totalItems = filteredPackages.length + filteredProviders.length;
 
         const placeholders = {
             all: 'Search video editors, social ads, videographers, writers...',
@@ -8042,8 +7984,8 @@ function CreateBooking() {
                 });
                 rzp.open();
             } else {
-                // Direct In-App UPI Escrow Modal
-                showCustomPaymentModal(orderData, selectedPkg);
+                hideLoading();
+                showToast('Online payment is not configured yet. Please try again later.', 'error');
             }
         } catch (e) {
             error = e.message;
@@ -8051,122 +7993,6 @@ function CreateBooking() {
             showToast(error, 'error');
             if (error) mount(renderCreateBooking());
         }
-    }
-
-    function showCustomPaymentModal(orderData, selectedPkg) {
-        const modal = document.createElement('div');
-        modal.className = 'modal-backdrop';
-        modal.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(6px); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 16px;';
-
-        const upiId = (window.publicConfig && window.publicConfig.owner_upi_id) || 'rahura2026@oksbi';
-        const payeeName = (window.publicConfig && window.publicConfig.owner_account_holder) || 'RAHURA';
-        const amount = selectedPkg.price || 0;
-        const upiLink = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(payeeName)}&am=${encodeURIComponent(amount)}&cu=INR&tn=${encodeURIComponent(`Groove Hub Escrow Order #${orderData.booking_id}`)}`;
-        const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=8&data=${encodeURIComponent(upiLink)}`;
-
-        modal.innerHTML = `
-            <div class="card" style="max-width: 440px; width: 100%; max-height: 92vh; overflow-y: auto; box-shadow: var(--shadow-lg); border: 1px solid var(--border); border-radius: 16px; background: var(--bg-card);">
-                <div class="card-header" style="border-bottom: 1px solid var(--border); padding: 16px 20px; display: flex; justify-content: space-between; align-items: center;">
-                    <div>
-                        <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--text-primary); margin: 0;">🔒 100% Escrow Checkout</h3>
-                        <span style="font-size: 0.75rem; color: var(--success); font-weight: 700;">Zero Fees • 1-Month Launch Special</span>
-                    </div>
-                    <button id="close-checkout-modal" style="background:transparent; border:none; color:var(--text-muted); font-size:1.4rem; cursor:pointer; padding: 0 4px;">&times;</button>
-                </div>
-
-                <div class="card-body" style="padding: 20px;">
-                    <!-- Order Summary Box -->
-                    <div style="background: var(--bg-hover); padding: 14px 16px; border-radius: 12px; margin-bottom: 16px; border: 1px solid var(--border);">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                            <span style="font-size: 0.875rem; font-weight: 600; color: var(--text-secondary);">${escapeHTML(selectedPkg.title)}</span>
-                            <span style="font-weight: 800; font-size: 1rem; color: var(--text-primary);">₹${amount.toLocaleString()}</span>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px;">
-                            <span>Platform Escrow Fee</span>
-                            <span style="color: var(--success); font-weight: 700;">₹0 (100% Free)</span>
-                        </div>
-                        <div class="divider" style="margin: 8px 0; border-color: var(--border);"></div>
-                        <div style="display: flex; justify-content: space-between; font-weight: 800; font-size: 1.15rem; color: var(--accent);">
-                            <span>Total Amount:</span>
-                            <span>₹${amount.toLocaleString()}</span>
-                        </div>
-                    </div>
-
-                    <!-- Live Scan & Pay UPI QR Section -->
-                    <div style="text-align: center; background: rgba(99, 102, 241, 0.05); border: 1.5px dashed var(--accent); border-radius: 14px; padding: 16px; margin-bottom: 16px;">
-                        <div style="font-size: 0.8125rem; font-weight: 700; color: var(--text-primary); margin-bottom: 10px; display: flex; align-items: center; justify-content: center; gap: 6px;">
-                            <span>⚡</span> Scan with Any UPI App (GPay / PhonePe / Paytm)
-                        </div>
-                        <div style="display: inline-block; padding: 8px; background: white; border-radius: 12px; box-shadow: 0 4px 14px rgba(0,0,0,0.15);">
-                            <img src="${qrCodeUrl}" alt="UPI Escrow QR Code" style="width: 170px; height: 170px; display: block; border-radius: 6px;">
-                        </div>
-
-                        <!-- UPI ID Display & Copy -->
-                        <div style="margin-top: 12px; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                            <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-primary); background: var(--bg-card); padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border); font-family: monospace;">
-                                ${escapeHTML(upiId)}
-                            </span>
-                            <button type="button" class="btn btn-secondary btn-sm" onclick="navigator.clipboard.writeText('${escapeJs(upiId)}'); showToast('UPI ID copied to clipboard!', 'success');" style="padding: 6px 10px; font-size: 0.75rem; font-weight: 700;">
-                                📋 Copy
-                            </button>
-                        </div>
-
-                        <!-- Direct App Launch for Mobile -->
-                        <div style="margin-top: 10px;">
-                            <a href="${upiLink}" class="btn btn-outline btn-sm" style="font-size: 0.78rem; font-weight: 700; padding: 7px 14px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
-                                📲 Tap to Pay via UPI App
-                            </a>
-                        </div>
-                    </div>
-
-                    <!-- Escrow Protection Note -->
-                    <div style="font-size: 0.75rem; color: var(--text-muted); line-height: 1.4; margin-bottom: 16px; display: flex; gap: 8px; align-items: flex-start;">
-                        <span style="font-size: 1rem; color: var(--success); flex-shrink: 0;">🛡️</span>
-                        <span>Funds are held safely in <strong>100% Escrow Protection</strong>. The video editor only gets paid after you review and approve your delivered video files.</span>
-                    </div>
-
-                    <div style="display: flex; gap: 10px;">
-                        <button type="button" class="btn btn-primary" id="confirm-escrow-pay" style="flex: 1; padding: 12px; font-weight: 800; font-size: 0.875rem;">
-                            ✅ I Have Paid (Lock in Escrow)
-                        </button>
-                        <button type="button" class="btn btn-secondary" id="cancel-checkout-btn" style="width: auto; padding: 12px 16px;">
-                            Cancel
-                        </button>
-                    </div>
-                </div>
-            </div>
-        `;
-
-        document.body.appendChild(modal);
-
-        const close = () => modal.remove();
-        modal.querySelector('#close-checkout-modal').onclick = close;
-        modal.querySelector('#cancel-checkout-btn').onclick = close;
-
-        modal.querySelector('#confirm-escrow-pay').onclick = async () => {
-            close();
-            showLoading();
-            try {
-                await apiFetch('/payments/verify', {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        booking_id: orderData.booking_id,
-                        razorpay_payment_id: `upi_escrow_${Date.now()}`,
-                        razorpay_order_id: orderData.order_id,
-                        razorpay_signature: 'upi_verified'
-                    })
-                });
-                showToast(`🎉 Payment of ₹${amount.toLocaleString()} secured in Escrow!`, 'success');
-                sessionStorage.removeItem('selected_provider_id');
-                sessionStorage.removeItem('selected_package_id');
-                router('/bookings');
-            } catch (err) {
-                showToast('Payment confirmation note: ' + err.message, 'error');
-                router('/bookings');
-            } finally {
-                hideLoading();
-            }
-        };
     }
 
     window.handleSubmit = handleSubmit;
@@ -9480,9 +9306,7 @@ function ProvidersList() {
     }
 
     function getGigBadge(provider, cfg) {
-        const prSkills = getProviderSkillsArray(provider);
-        const prPackages = getProviderPackagesArray(provider);
-        const text = `${prSkills.join(' ')} ${prPackages.map(p => p.title || '').join(' ')}`.toLowerCase();
+        const text = `${(provider.skills || []).join(' ')} ${(provider.packages || []).map(p => p.title).join(' ')}`.toLowerCase();
 
         if (text.includes('animation') || text.includes('2d') || text.includes('3d') || text.includes('blender') || text.includes('character')) return '🎨 2D/3D ANIMATION MASTER';
         if (text.includes('gaming') || text.includes('twitch') || text.includes('montage') || text.includes('gameplay')) return '🎮 GAMING & STREAM EDITS';
@@ -9518,9 +9342,7 @@ function ProvidersList() {
 
     function filterClassifiedProviders(list, cfg) {
         return list.filter(provider => {
-            const prSkills = getProviderSkillsArray(provider);
-            const prPackages = getProviderPackagesArray(provider);
-            const text = `${provider.name || ''} ${prSkills.join(' ')} ${prPackages.map(p => ((p.title || '') + ' ' + (p.scope || ''))).join(' ')}`.toLowerCase();
+            const text = `${provider.name || ''} ${(provider.skills || []).join(' ')} ${(provider.packages || []).map(p => (p.title + ' ' + (p.scope || ''))).join(' ')}`.toLowerCase();
 
             if (providerSearchState.q && providerSearchState.q.trim()) {
                 const qLower = providerSearchState.q.trim().toLowerCase();
@@ -9673,7 +9495,7 @@ function ProvidersList() {
 
                     <!-- Software / Skills chips -->
                     <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 12px;">
-                        ${getProviderSkillsArray(provider).slice(0, 3).map(skill => `
+                        ${(provider.skills || []).slice(0, 3).map(skill => `
                             <span style="background: var(--bg-hover); color: var(--text-secondary); padding: 2px 7px; border-radius: 4px; font-size: 0.65rem; border: 1px solid var(--border);">${escapeHTML(skill)}</span>
                         `).join('')}
                     </div>
@@ -11039,11 +10861,11 @@ function ResetPasswordPage() {
                         </div>
                         <div class="form-group" style="margin-top: 8px;">
                             <label class="form-label">New Password</label>
-                            <input type="password" class="form-input" id="reset-password" placeholder="Enter new password (min 6 chars)" required minlength="6" autocomplete="new-password">
+                            <input type="password" class="form-input" id="reset-password" placeholder="Enter new password (min 8 chars)" required minlength="8" autocomplete="new-password">
                         </div>
                         <div class="form-group" style="margin-top: 8px;">
                             <label class="form-label">Confirm Password</label>
-                            <input type="password" class="form-input" id="reset-confirm" placeholder="Confirm new password" required minlength="6" autocomplete="new-password">
+                            <input type="password" class="form-input" id="reset-confirm" placeholder="Confirm new password" required minlength="8" autocomplete="new-password">
                         </div>
                         <button type="submit" class="btn btn-primary" style="width: 100%; padding: 13px; font-weight: 700; margin-top: 12px;">Reset Password</button>
                     </form>

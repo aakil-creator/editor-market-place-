@@ -673,13 +673,11 @@ async def get_current_user(
     user_id = payload.get("sub")
     if user_id is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token payload")
-    
     user = None
     try:
         user = db.query(User).filter(User.id == int(user_id)).first()
     except (ValueError, TypeError):
         user = db.query(User).filter(or_(User.email == str(user_id), User.username == str(user_id))).first()
-
     if user is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
     if getattr(user, "is_blocked", False):

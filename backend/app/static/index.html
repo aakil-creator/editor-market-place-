@@ -52,7 +52,7 @@
         <!-- App content rendered by JS -->
     </div>
 
-    <script src="/app.js?v=20261005-ads-services-v1"></script>
+    <script src="/app.js?v=20261005-ads-services-v2"></script>
     <script>
         // Force clear legacy service worker caches immediately
         if ('caches' in window) {
@@ -68,7 +68,7 @@
         // Register PWA Service Worker with auto-update
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js?v=7')
+                navigator.serviceWorker.register('/sw.js?v=8')
                     .then((reg) => {
                         reg.update();
                         console.log('PWA Service Worker registered:', reg.scope);

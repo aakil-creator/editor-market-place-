@@ -47,7 +47,7 @@ from .schemas import (
     SocialLoginRequest, RoleSwitchRequest, OtpRequest, OtpResponse, OtpVerifyRequest,
     ForgotPasswordRequest, ForgotPasswordResponse, ResetPasswordWithTokenRequest, VerifyEmailRequest,
     VettingSubmitRequest, UpdateTierRequest,
-    get_current_user, get_current_user_optional, validate_safe_url
+    get_current_user, get_current_user_optional
 )
 from .security import hash_password, verify_password, create_access_token, hash_token
 
@@ -56,9 +56,6 @@ from .routers import educators
 
 # Primary Admin Accounts
 ADMIN_EMAILS = {"rahura2026@gmail.com"}
-_admin_env = os.getenv("ADMIN_EMAIL", "").strip().lower()
-if _admin_env:
-    ADMIN_EMAILS.add(_admin_env)
 
 def get_user_type_str(val) -> str:
     if val is None:
@@ -343,8 +340,7 @@ def ensure_admin_exists():
     db = SessionLocal()
     try:
         # Ensure official owner/admin account exists
-        admin_email = os.getenv("ADMIN_EMAIL", "rahura2026@gmail.com").strip().lower()
-        admin_pass = os.getenv("ADMIN_PASSWORD", "AdminSecure2026!").strip()
+        admin_email = "rahura2026@gmail.com"
         admin = db.query(User).filter(User.email == admin_email).first()
         if not admin:
             admin_user = User(
@@ -352,7 +348,7 @@ def ensure_admin_exists():
                 name="RAHURA Admin",
                 username="rahura_admin",
                 phone="+919999999999",
-                password_hash=hash_password(admin_pass),
+                password_hash=hash_password("AdminSecure2026!"),
                 user_type=UserType.ADMIN,
                 is_verified=True,
                 is_active=True,
@@ -360,13 +356,6 @@ def ensure_admin_exists():
                 tos_accepted_at=datetime.utcnow()
             )
             db.add(admin_user)
-            db.commit()
-        elif os.getenv("ADMIN_PASSWORD"):
-            # Update admin password if provided explicitly via secret
-            admin.password_hash = hash_password(admin_pass)
-            admin.user_type = UserType.ADMIN
-            admin.is_verified = True
-            admin.is_active = True
             db.commit()
     except Exception as e:
         print(f"ensure_admin_exists info: {e}")
@@ -383,43 +372,22 @@ app = FastAPI(title="Groove Hub", version="1.0.0")
 # API app
 api_app = FastAPI(title="Groove Hub API", version="1.0.0")
 
-cors_origins_raw = os.getenv("CORS_ORIGINS", "*").strip()
-if cors_origins_raw == "*" or not cors_origins_raw:
-    cors_allowed = ["*"]
-else:
-    cors_allowed = [o.strip() for o in cors_origins_raw.split(",") if o.strip()]
+_cors_origins = [
+    origin.strip()
+    for origin in os.getenv(
+        "CORS_ORIGINS",
+        "https://syncra-qui2.onrender.com,https://localhost,capacitor://localhost,http://localhost:8000,http://127.0.0.1:8000"
+    ).split(",")
+    if origin.strip()
+]
 
 api_app.add_middleware(
     CORSMiddleware,
-    allow_origins=cors_allowed,
+    allow_origins=_cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-@api_app.exception_handler(Exception)
-async def api_global_exception_handler(request: Request, exc: Exception):
-    if isinstance(exc, HTTPException):
-        return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
-    print(f"[API ERROR] {request.method} {request.url.path}: {exc}")
-    import traceback
-    traceback.print_exc()
-    return JSONResponse(
-        status_code=500,
-        content={"detail": f"Server error: {str(exc)}"}
-    )
-
-@app.exception_handler(Exception)
-async def app_global_exception_handler(request: Request, exc: Exception):
-    if isinstance(exc, HTTPException):
-        return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
-    print(f"[APP ERROR] {request.method} {request.url.path}: {exc}")
-    import traceback
-    traceback.print_exc()
-    return JSONResponse(
-        status_code=500,
-        content={"detail": f"Server error: {str(exc)}"}
-    )
 
 @app.middleware("http")
 async def add_security_headers(request: Request, call_next):
@@ -658,8 +626,7 @@ def register(user_data: UserCreate, db = Depends(get_db)):
 
     hashed_pw = hash_password(user_data.password)
     # Convert Pydantic enum to SQLAlchemy enum (promote designated admin emails)
-    user_type_str = get_user_type_str(user_data.user_type)
-    user_type_enum = UserType.ADMIN if (user_data.email and user_data.email.strip().lower() in ADMIN_EMAILS) else UserType[user_type_str]
+    user_type_enum = UserType.ADMIN if (user_data.email and user_data.email.strip().lower() in ADMIN_EMAILS) else UserType[get_user_type_str(user_data.user_type)]
     user = User(
         name=user_data.name,
         username=raw_username,
@@ -756,38 +723,13 @@ def login(credentials: UserLogin, request: Request, db = Depends(get_db)):
     access_token = create_access_token(data={"sub": str(user.id), "type": get_user_type_str(user.user_type)})
     return {"access_token": access_token, "token_type": "bearer"}
 
-@api_app.post("/auth/reset-password", response_model=Token)
-def reset_password(req: PasswordResetRequest, db = Depends(get_db)):
-    import re
-    from sqlalchemy import or_
-
-    raw_input = req.email_or_phone.strip()
-    digits = re.sub(r'.', '', raw_input)
-    if digits.startswith('91') and len(digits) == 12:
-        digits = digits[2:]
-
-    user = db.query(User).filter(
-        or_(
-            User.phone == raw_input,
-            User.phone == digits,
-            User.email == raw_input.lower()
-        )
-    ).first()
-
-    if not user:
-        raise HTTPException(
-            status_code=404,
-            detail="If an account with these details exists, a reset link has been sent."
-        )
-
-    if len(req.new_password) < 6:
-        raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
-
-    user.password_hash = hash_password(req.new_password)
-    db.commit()
-
-    access_token = create_access_token(data={"sub": str(user.id), "type": get_user_type_str(user.user_type)})
-    return {"access_token": access_token, "token_type": "bearer"}
+@api_app.post("/auth/reset-password")
+def reset_password_legacy():
+    """Deprecated insecure reset endpoint. Password resets require a verified token."""
+    raise HTTPException(
+        status_code=410,
+        detail="This password reset endpoint is deprecated. Request a reset link and use the verification token."
+    )
 
 @api_app.get("/public/config")
 def get_public_config(db = Depends(get_db)):
@@ -906,11 +848,7 @@ def social_login(req: SocialLoginRequest, request: Request, db = Depends(get_db)
     try:
         user = db.query(User).filter(User.email == verified_email).first()
         if not user:
-            req_type_str = get_user_type_str(req.user_type) if req.user_type else "BUYER"
-            try:
-                user_type_enum = UserType.ADMIN if verified_email in ADMIN_EMAILS else UserType[req_type_str.upper()]
-            except Exception:
-                user_type_enum = UserType.BUYER
+            user_type_enum = UserType.ADMIN if verified_email in ADMIN_EMAILS else (UserType[get_user_type_str(req.user_type)] if req.user_type else UserType.BUYER)
             display_name = verified_name if verified_name else verified_email.split("@")[0].capitalize()
             unique_suffix = random.randint(10000000, 99999999)
             temp_phone = f"+9199{unique_suffix}"
@@ -1181,57 +1119,54 @@ def switch_user_role(
     current_user: User = Depends(get_current_user),
     db = Depends(get_db)
 ):
-    target_role = req.role.strip().upper()
-    if target_role not in ["BUYER", "PROVIDER", "ADMIN"]:
-        raise HTTPException(status_code=400, detail="Invalid role. Must be BUYER, PROVIDER, or ADMIN")
-    
-    # Extract properties early before any DB operations to avoid DetachedInstanceError on rollback
-    u_id = current_user.id
-    u_name = current_user.name
-    u_email = current_user.email
-    u_phone = getattr(current_user, 'phone', None)
-    u_username = getattr(current_user, 'username', None) or f"user_{u_id}"
+    """Switch the active account mode without requiring a provider/profile row.
+
+    Role switching is intentionally a small, atomic operation. A missing/invalid
+    Profile must never make Buyer Mode fail, and a database error must never be
+    reported to the client as a successful switch.
+    """
+    target_role = (req.role or "").strip().upper()
+    if target_role not in {"BUYER", "PROVIDER"}:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid role. Choose BUYER or PROVIDER."
+        )
 
     try:
-        try:
-            current_user.user_type = UserType[target_role]
-        except Exception:
-            current_user.user_type = target_role
-        
-        try:
-            profile = db.query(Profile).filter(Profile.user_id == u_id).first()
-            if not profile:
-                profile = Profile(user_id=u_id)
-                db.add(profile)
-        except Exception as pe:
-            print(f"[SWITCH_ROLE] Profile check info: {pe}")
-                
+        current_user.user_type = UserType[target_role]
         db.commit()
+        db.refresh(current_user)
     except Exception as e:
         db.rollback()
-        print(f"[SWITCH_ROLE ERROR]: {e}")
-        
-    new_token = create_access_token(data={"sub": str(u_id), "type": target_role})
+        print(f"[SWITCH_ROLE ERROR] user={getattr(current_user, 'id', None)} target={target_role}: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Unable to switch mode right now. Please try again."
+        )
+
+    user_role_str = current_get_user_type_str(user.user_type)
+    new_token = create_access_token(
+        data={"sub": str(current_user.id), "type": user_role_str}
+    )
+
     return {
         "success": True,
-        "role": target_role,
+        "role": user_role_str,
         "token": new_token,
         "user": {
-            "id": u_id,
-            "name": u_name,
-            "username": u_username,
-            "email": u_email,
-            "user_type": target_role,
-            "phone": u_phone
+            "id": current_user.id,
+            "name": current_user.name,
+            "username": getattr(current_user, 'username', None) or f"user_{current_user.id}",
+            "email": current_user.email,
+            "user_type": user_role_str,
+            "phone": current_user.phone,
+            "is_verified": bool(current_user.is_verified),
+            "is_active": bool(current_user.is_active),
+            "profile_image": getattr(current_user, 'profile_image', None),
+            "last_login_at": current_user.last_login_at.isoformat() if current_user.last_login_at else None,
+            "created_at": current_user.created_at.isoformat() if current_user.created_at else None
         }
     }
-
-@api_app.get("/auth/{user_id}", response_model=UserResponse)
-def get_user_by_id(user_id: int, db = Depends(get_db)):
-    user = db.query(User).filter(User.id == user_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    return user
 
 @api_app.post("/auth/verify-phone", response_model=UserResponse)
 def verify_phone(current_user = Depends(get_current_user), db = Depends(get_db)):
@@ -1415,14 +1350,19 @@ def get_profile(current_user = Depends(get_current_user), db = Depends(get_db)):
 @api_app.post("/profile", response_model=ProfileResponse)
 def create_profile(profile_data: ProfileCreate, current_user = Depends(get_current_user), db = Depends(get_db)):
     profile = db.query(Profile).filter(Profile.user_id == current_user.id).first()
-    update_data = {k: v for k, v in profile_data.model_dump().items() if v is not None}
     if profile:
+        # Update existing profile
+        update_data = profile_data.model_dump()
         for key, value in update_data.items():
             setattr(profile, key, value)
     else:
+        # Create new profile
         profile = Profile(
             user_id=current_user.id,
-            **update_data
+            service_area=profile_data.service_area,
+            skills=profile_data.skills,
+            availability=profile_data.availability,
+            response_time=profile_data.response_time
         )
         db.add(profile)
     db.commit()
@@ -1439,11 +1379,6 @@ def update_profile(profile_data: ProfileUpdate, current_user = Depends(get_curre
     update_data = profile_data.model_dump(exclude_unset=True)
     for key, value in update_data.items():
         setattr(profile, key, value)
-
-    if profile_data.profession_selected is not None:
-        profile.profession_selected = bool(profile_data.profession_selected)
-    elif profile_data.niche is not None:
-        profile.profession_selected = True
 
     db.commit()
     db.refresh(profile)
@@ -2180,6 +2115,13 @@ def create_payment_order(
         except Exception as e:
             print(f"Razorpay API order creation note: {e}")
 
+    payment.gateway_response = {
+        "razorpay_order_id": order_id,
+        "package_id": package.id,
+        "booking_id": booking.id,
+    }
+    db.commit()
+
     return {
         "booking_id": booking.id,
         "order_id": order_id,
@@ -2209,20 +2151,29 @@ def verify_payment(
     settings = db.query(PlatformSettings).first()
     razorpay_key_secret = (settings.razorpay_key_secret if settings else "") or os.environ.get("RAZORPAY_KEY_SECRET", "")
 
-    # If secret is set and signature provided, verify HMAC SHA256 signature
-    if razorpay_key_secret and req.razorpay_signature and req.razorpay_signature != 'upi_verified':
-        import hmac
-        import hashlib
-        msg = f"{req.razorpay_order_id}|{req.razorpay_payment_id}"
-        expected_sig = hmac.new(
-            razorpay_key_secret.encode(),
-            msg.encode(),
-            hashlib.sha256
-        ).hexdigest()
-        if expected_sig != req.razorpay_signature:
-            raise HTTPException(status_code=400, detail="Invalid payment signature")
+    # Payment confirmation must always be backed by a real Razorpay signature.
+    # Never accept client-provided placeholders such as ``upi_verified``.
+    if not razorpay_key_secret:
+        raise HTTPException(status_code=503, detail="Online payment verification is not configured.")
+    if not req.razorpay_signature or req.razorpay_signature == "upi_verified":
+        raise HTTPException(status_code=400, detail="Missing payment signature")
+
+    import hmac
+    import hashlib
+    msg = f"{req.razorpay_order_id}|{req.razorpay_payment_id}"
+    expected_sig = hmac.new(
+        razorpay_key_secret.encode(),
+        msg.encode(),
+        hashlib.sha256
+    ).hexdigest()
+    if not hmac.compare_digest(expected_sig, req.razorpay_signature):
+        raise HTTPException(status_code=400, detail="Invalid payment signature")
 
     payment = db.query(Payment).filter(Payment.booking_id == booking.id).first()
+    if payment and payment.gateway_response:
+        expected_order_id = payment.gateway_response.get("razorpay_order_id") if isinstance(payment.gateway_response, dict) else None
+        if expected_order_id and expected_order_id != req.razorpay_order_id:
+            raise HTTPException(status_code=400, detail="Payment order does not match this booking")
     if not payment:
         is_promo = getattr(settings, 'launch_promo_active', True) if settings else True
         comm_rate = 0.0 if is_promo else (settings.commission_rate if (settings and settings.commission_rate is not None) else 0.20)
@@ -2287,17 +2238,17 @@ async def razorpay_webhook(
     if not signature:
         raise HTTPException(status_code=400, detail="Missing webhook signature")
 
-    if webhook_secret:
-        import hmac
-        import hashlib
-        expected_sig = hmac.new(
-            webhook_secret.encode(),
-            body_bytes,
-            hashlib.sha256
-        ).hexdigest()
-        if not hmac.compare_digest(expected_sig, signature):
-            raise HTTPException(status_code=400, detail="Invalid webhook signature")
-    elif signature == "invalid_sig":
+    if not webhook_secret:
+        raise HTTPException(status_code=503, detail="Payment webhook verification is not configured.")
+
+    import hmac
+    import hashlib
+    expected_sig = hmac.new(
+        webhook_secret.encode(),
+        body_bytes,
+        hashlib.sha256
+    ).hexdigest()
+    if not hmac.compare_digest(expected_sig, signature):
         raise HTTPException(status_code=400, detail="Invalid webhook signature")
 
     import json
@@ -2695,7 +2646,7 @@ def get_public_provider_profile_by_id(provider_id: int, db = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Provider not found")
     profile = db.query(Profile).filter(Profile.user_id == provider_id).first()
     rev_count = db.query(Review).filter(Review.provider_id == provider_id).count()
-    u_type_str = get_user_type_str(user.user_type)
+    u_type_str = get_user_type_str(user.user_type) if hasattr(user.user_type, 'value') else str(user.user_type)
     return {
         "id": user.id,
         "name": user.name,
