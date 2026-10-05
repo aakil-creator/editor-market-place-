@@ -1128,66 +1128,50 @@ def switch_user_role(
     current_user: User = Depends(get_current_user),
     db = Depends(get_db)
 ):
+    target_role = req.role.strip().upper()
+    if target_role not in ["BUYER", "PROVIDER", "ADMIN"]:
+        raise HTTPException(status_code=400, detail="Invalid role. Must be BUYER, PROVIDER, or ADMIN")
+    
+    # Extract properties early before any DB operations to avoid DetachedInstanceError on rollback
+    u_id = current_user.id
+    u_name = current_user.name
+    u_email = current_user.email
+    u_phone = getattr(current_user, 'phone', None)
+    u_username = getattr(current_user, 'username', None) or f"user_{u_id}"
+
     try:
-        target_role = req.role.strip().upper()
-        if target_role not in ["BUYER", "PROVIDER", "ADMIN"]:
-            raise HTTPException(status_code=400, detail="Invalid role. Must be BUYER, PROVIDER, or ADMIN")
-        
-        # Set user_type on model
         try:
             current_user.user_type = UserType[target_role]
         except Exception:
             current_user.user_type = target_role
         
-        # Ensure profile row exists
         try:
-            profile = db.query(Profile).filter(Profile.user_id == current_user.id).first()
+            profile = db.query(Profile).filter(Profile.user_id == u_id).first()
             if not profile:
-                profile = Profile(user_id=current_user.id)
+                profile = Profile(user_id=u_id)
                 db.add(profile)
         except Exception as pe:
             print(f"[SWITCH_ROLE] Profile check info: {pe}")
                 
         db.commit()
-        db.refresh(current_user)
-        
-        user_role_str = current_user.user_type.value if hasattr(current_user.user_type, 'value') else str(current_user.user_type)
-        new_token = create_access_token(data={"sub": str(current_user.id), "type": user_role_str})
-        
-        return {
-            "success": True,
-            "role": user_role_str,
-            "token": new_token,
-            "user": {
-                "id": current_user.id,
-                "name": current_user.name,
-                "username": getattr(current_user, 'username', None) or f"user_{current_user.id}",
-                "email": current_user.email,
-                "user_type": user_role_str,
-                "phone": current_user.phone
-            }
-        }
-    except HTTPException:
-        raise
     except Exception as e:
         db.rollback()
         print(f"[SWITCH_ROLE ERROR]: {e}")
-        # Even if DB refresh had an issue, return successful role transition
-        user_role_str = req.role.strip().upper()
-        new_token = create_access_token(data={"sub": str(current_user.id), "type": user_role_str})
-        return {
-            "success": True,
-            "role": user_role_str,
-            "token": new_token,
-            "user": {
-                "id": current_user.id,
-                "name": current_user.name,
-                "username": getattr(current_user, 'username', None) or f"user_{current_user.id}",
-                "email": current_user.email,
-                "user_type": user_role_str,
-                "phone": current_user.phone
-            }
+        
+    new_token = create_access_token(data={"sub": str(u_id), "type": target_role})
+    return {
+        "success": True,
+        "role": target_role,
+        "token": new_token,
+        "user": {
+            "id": u_id,
+            "name": u_name,
+            "username": u_username,
+            "email": u_email,
+            "user_type": target_role,
+            "phone": u_phone
         }
+    }
 
 @api_app.get("/auth/{user_id}", response_model=UserResponse)
 def get_user_by_id(user_id: int, db = Depends(get_db)):
