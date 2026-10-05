@@ -57,6 +57,13 @@ from .routers import educators
 # Primary Admin Accounts
 ADMIN_EMAILS = {"rahura2026@gmail.com"}
 
+def get_user_type_str(val) -> str:
+    if val is None:
+        return "BUYER"
+    if hasattr(val, 'value'):
+        return str(val.value)
+    return str(val)
+
 # Create tables
 Base.metadata.create_all(bind=engine)
 
@@ -634,7 +641,8 @@ def register(user_data: UserCreate, db = Depends(get_db)):
 
     hashed_pw = hash_password(user_data.password)
     # Convert Pydantic enum to SQLAlchemy enum (promote designated admin emails)
-    user_type_enum = UserType.ADMIN if (user_data.email and user_data.email.strip().lower() in ADMIN_EMAILS) else UserType[user_data.user_type.value]
+    user_type_str = get_user_type_str(user_data.user_type)
+    user_type_enum = UserType.ADMIN if (user_data.email and user_data.email.strip().lower() in ADMIN_EMAILS) else UserType[user_type_str]
     user = User(
         name=user_data.name,
         username=raw_username,
@@ -728,7 +736,7 @@ def login(credentials: UserLogin, request: Request, db = Depends(get_db)):
         db.add(profile)
         db.commit()
 
-    access_token = create_access_token(data={"sub": str(user.id), "type": user.user_type.value})
+    access_token = create_access_token(data={"sub": str(user.id), "type": get_user_type_str(user.user_type)})
     return {"access_token": access_token, "token_type": "bearer"}
 
 @api_app.post("/auth/reset-password", response_model=Token)
@@ -761,7 +769,7 @@ def reset_password(req: PasswordResetRequest, db = Depends(get_db)):
     user.password_hash = hash_password(req.new_password)
     db.commit()
 
-    access_token = create_access_token(data={"sub": str(user.id), "type": user.user_type.value})
+    access_token = create_access_token(data={"sub": str(user.id), "type": get_user_type_str(user.user_type)})
     return {"access_token": access_token, "token_type": "bearer"}
 
 @api_app.get("/public/config")
@@ -881,7 +889,11 @@ def social_login(req: SocialLoginRequest, request: Request, db = Depends(get_db)
     try:
         user = db.query(User).filter(User.email == verified_email).first()
         if not user:
-            user_type_enum = UserType.ADMIN if verified_email in ADMIN_EMAILS else (UserType[req.user_type.value] if req.user_type else UserType.BUYER)
+            req_type_str = get_user_type_str(req.user_type) if req.user_type else "BUYER"
+            try:
+                user_type_enum = UserType.ADMIN if verified_email in ADMIN_EMAILS else UserType[req_type_str.upper()]
+            except Exception:
+                user_type_enum = UserType.BUYER
             display_name = verified_name if verified_name else verified_email.split("@")[0].capitalize()
             unique_suffix = random.randint(10000000, 99999999)
             temp_phone = f"+9199{unique_suffix}"
@@ -922,7 +934,7 @@ def social_login(req: SocialLoginRequest, request: Request, db = Depends(get_db)
             db.add(profile)
             db.commit()
 
-        access_token = create_access_token(data={"sub": str(user.id), "type": user.user_type.value})
+        access_token = create_access_token(data={"sub": str(user.id), "type": get_user_type_str(user.user_type)})
         return {"access_token": access_token, "token_type": "bearer"}
     except HTTPException:
         raise
@@ -1080,7 +1092,7 @@ def verify_otp(req: OtpVerifyRequest, request: Request, db = Depends(get_db)):
             db.add(profile)
             db.commit()
 
-    access_token = create_access_token(data={"sub": str(user.id), "type": user.user_type.value})
+    access_token = create_access_token(data={"sub": str(user.id), "type": get_user_type_str(user.user_type)})
     return {
         "access_token": access_token,
         "token_type": "bearer",
@@ -1311,7 +1323,7 @@ def confirm_reset_password(req: ResetPasswordWithTokenRequest, db = Depends(get_
     db.commit()
 
     # Generate new access token
-    access_token = create_access_token(data={"sub": str(user.id), "type": user.user_type.value})
+    access_token = create_access_token(data={"sub": str(user.id), "type": get_user_type_str(user.user_type)})
     return {"access_token": access_token, "token_type": "bearer"}
 
 @api_app.post("/auth/verify-email", response_model=Token)
@@ -1336,7 +1348,7 @@ def verify_email(req: VerifyEmailRequest, db = Depends(get_db)):
     email_token.used = True
     db.commit()
 
-    access_token = create_access_token(data={"sub": str(user.id), "type": user.user_type.value})
+    access_token = create_access_token(data={"sub": str(user.id), "type": get_user_type_str(user.user_type)})
     return {"access_token": access_token, "token_type": "bearer"}
 
 
@@ -2577,7 +2589,7 @@ def get_providers(
     for u in providers:
         profile = db.query(Profile).filter(Profile.user_id == u.id).first()
         portfolio = db.query(PortfolioItem).filter(PortfolioItem.provider_id == u.id).all()
-        u_type_str = u.user_type.value if hasattr(u.user_type, 'value') else str(u.user_type)
+        u_type_str = get_user_type_str(u.user_type)
         result.append({
             "id": u.id,
             "name": u.name,
@@ -2661,7 +2673,7 @@ def get_public_provider_profile_by_id(provider_id: int, db = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Provider not found")
     profile = db.query(Profile).filter(Profile.user_id == provider_id).first()
     rev_count = db.query(Review).filter(Review.provider_id == provider_id).count()
-    u_type_str = user.user_type.value if hasattr(user.user_type, 'value') else str(user.user_type)
+    u_type_str = get_user_type_str(user.user_type)
     return {
         "id": user.id,
         "name": user.name,
@@ -3431,7 +3443,7 @@ def get_user_conversations(
         result.append(ConversationSummary(
             other_user_id=u.id,
             other_user_name=u.name,
-            other_user_type=u.user_type.value,
+            other_user_type=get_user_type_str(u.user_type),
             last_message=last_m.message,
             last_message_at=last_m.created_at,
             unread_count=data["unread_count"],
@@ -3766,7 +3778,7 @@ def get_admin_all_chats(
                 "name": u1.name,
                 "email": u1.email,
                 "phone": u1.phone,
-                "user_type": u1.user_type.value,
+                "user_type": get_user_type_str(u1.user_type),
                 "is_blocked": u1.is_blocked,
                 "block_reason": u1.block_reason
             },
@@ -3775,7 +3787,7 @@ def get_admin_all_chats(
                 "name": u2.name,
                 "email": u2.email,
                 "phone": u2.phone,
-                "user_type": u2.user_type.value,
+                "user_type": get_user_type_str(u2.user_type),
                 "is_blocked": u2.is_blocked,
                 "block_reason": u2.block_reason
             },
@@ -4062,7 +4074,7 @@ def get_admin_users_list(
                 "username": u.username,
                 "email": u.email,
                 "phone": u.phone,
-                "user_type": u.user_type.value,
+                "user_type": get_user_type_str(u.user_type),
                 "is_verified": u.is_verified,
                 "is_active": u.is_active,
                 "is_blocked": getattr(u, 'is_blocked', False),

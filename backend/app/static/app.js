@@ -167,6 +167,60 @@ function resolveMediaThumbnail(url) {
 }
 window.resolveMediaThumbnail = resolveMediaThumbnail;
 
+function createCategoryCardPlaceholder(niche, title, creatorName) {
+    const safeNiche = String(niche || '').toLowerCase();
+    const safeName = String(creatorName || 'Verified Creator').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    const rawTitle = String(title || 'Professional Service');
+    const safeTitle = (rawTitle.length > 40 ? rawTitle.substring(0, 40) + '...' : rawTitle).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    
+    let g1 = '#6366f1', g2 = '#4338ca', icon = '🎬', badge = 'Video Editing';
+    if (safeNiche.includes('tutor') || safeNiche.includes('english')) {
+        g1 = '#10b981'; g2 = '#047857'; icon = '🗣️'; badge = 'English Tutor';
+    } else if (safeNiche.includes('writer') || safeNiche.includes('copy') || safeNiche.includes('script')) {
+        g1 = '#38bdf8'; g2 = '#0284c7'; icon = '✍️'; badge = 'Scripts & Copy';
+    } else if (safeNiche.includes('ads') || safeNiche.includes('business') || safeNiche.includes('commercial')) {
+        g1 = '#f59e0b'; g2 = '#b45309'; icon = '📢'; badge = 'Business Ads';
+    } else if (safeNiche.includes('photo')) {
+        g1 = '#ec4899'; g2 = '#be185d'; icon = '📸'; badge = 'Photography';
+    } else if (safeNiche.includes('social')) {
+        g1 = '#8b5cf6'; g2 = '#6d28d9'; icon = '📱'; badge = 'Social Media';
+    }
+
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="100%" height="100%">
+        <defs>
+            <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#090d16" />
+                <stop offset="50%" stop-color="#0f172a" />
+                <stop offset="100%" stop-color="${g2}" />
+            </linearGradient>
+            <radialGradient id="glow" cx="85%" cy="15%" r="65%">
+                <stop offset="0%" stop-color="${g1}" stop-opacity="0.38" />
+                <stop offset="100%" stop-color="${g1}" stop-opacity="0" />
+            </radialGradient>
+        </defs>
+        <rect width="800" height="450" fill="url(#bg)" />
+        <rect width="800" height="450" fill="url(#glow)" />
+        <circle cx="720" cy="90" r="140" fill="${g1}" fill-opacity="0.12" />
+        <g transform="translate(48, 48)">
+            <rect width="210" height="40" rx="20" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.2)" stroke-width="1.5" />
+            <text x="24" y="26" fill="#ffffff" font-size="15" font-weight="700" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif">${icon} ${badge}</text>
+        </g>
+        <g transform="translate(680, 225)">
+            <circle r="44" fill="rgba(255,255,255,0.06)" stroke="${g1}" stroke-width="2" />
+            <text text-anchor="middle" dominant-baseline="central" font-size="32" fill="#ffffff">${icon}</text>
+        </g>
+        <text x="48" y="240" fill="#ffffff" font-size="32" font-weight="800" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif">${safeName}</text>
+        <text x="48" y="286" fill="rgba(255,255,255,0.72)" font-size="18" font-weight="500" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif">${safeTitle}</text>
+        <g transform="translate(48, 360)">
+            <rect width="180" height="32" rx="8" fill="rgba(16,185,129,0.15)" stroke="rgba(16,185,129,0.4)" stroke-width="1" />
+            <text x="14" y="21" fill="#34d399" font-size="13" font-weight="700" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif">🛡️ 100% ESCROW</text>
+        </g>
+    </svg>`;
+    
+    return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+}
+window.createCategoryCardPlaceholder = createCategoryCardPlaceholder;
+
 function renderMediaThumbnailOrVideo(url, options = {}) {
     const safeUrl = sanitizeUrl(url);
     const className = options.className || 'fiverr-gig-thumb-img';
@@ -174,19 +228,20 @@ function renderMediaThumbnailOrVideo(url, options = {}) {
     const autoPlay = options.autoplay !== false ? 'playsinline muted loop autoplay preload="metadata"' : 'playsinline preload="metadata"';
 
     if (!url || safeUrl === '#') {
-        return `<img src="/static/banners/ab_pradeep_reel_editor.png" alt="${alt}" class="${className}" loading="lazy">`;
+        const fallbackSvg = createCategoryCardPlaceholder(options.niche, options.title, options.alt);
+        return `<img src="${fallbackSvg}" alt="${alt}" class="${className}" loading="lazy">`;
     }
 
     if (isMediaVideo(url)) {
         return `
             <video src="${safeUrl}" ${autoPlay} class="${className} fiverr-gig-thumb-video" onmouseover="try{this.play()}catch(_){}" onmouseout="try{this.pause()}catch(_){}"></video>
             <div style="position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.75); color: #fff; font-size: 0.65rem; font-weight: 800; padding: 2px 7px; border-radius: 4px; backdrop-filter: blur(4px); display: flex; align-items: center; gap: 4px; pointer-events: none; z-index: 2;">
-                <span>🎬</span> 4K Reel
+                <span>🎬</span> Video
             </div>
         `;
     }
 
-    return `<img src="${safeUrl}" alt="${alt}" class="${className}" loading="lazy" onerror="this.onerror=null; this.src='/static/banners/ab_pradeep_reel_editor.png';">`;
+    return `<img src="${safeUrl}" alt="${alt}" class="${className}" loading="lazy">`;
 }
 window.renderMediaThumbnailOrVideo = renderMediaThumbnailOrVideo;
 
@@ -213,26 +268,24 @@ function getProviderThumbnail(provider, pkg) {
         }
     }
 
-    // 3. Check Provider's uploaded portfolio items (custom showcase banners / photos / thumbnails)
+    // 3. Check Provider's uploaded portfolio items
     const pItems = (provider && Array.isArray(provider.portfolio_items) && provider.portfolio_items.length > 0)
         ? provider.portfolio_items
         : (provider && provider.id === currentUser?.id && typeof portfolioItems !== 'undefined' && Array.isArray(portfolioItems) ? portfolioItems : []);
 
     if (pItems.length > 0) {
-        // Prioritize custom video reels
         const videoItem = pItems.find(i => i.media_type === 'video' || isMediaVideo(i.media_url));
         if (videoItem) {
-            const videoUrl = (!videoItem.thumbnail_url || videoItem.thumbnail_url.includes('ab_pradeep_reel_editor.png')) ? videoItem.media_url : videoItem.thumbnail_url;
-            const resolved = resolveMediaThumbnail(videoUrl || videoItem.media_url);
+            const resolved = resolveMediaThumbnail(videoItem.thumbnail_url || videoItem.media_url);
             if (resolved) return resolved;
         }
-        const imgItem = pItems.find(i => i.media_type === 'image' || (i.thumbnail_url && !i.thumbnail_url.includes('unsplash') && !i.thumbnail_url.includes('ab_pradeep_reel_editor.png')));
+        const imgItem = pItems.find(i => i.media_type === 'image' || i.thumbnail_url);
         if (imgItem) {
             const resolved = resolveMediaThumbnail(imgItem.thumbnail_url || imgItem.media_url);
             if (resolved) return resolved;
         }
         for (const item of pItems) {
-            const itemUrl = (!item.thumbnail_url || item.thumbnail_url.includes('ab_pradeep_reel_editor.png')) ? item.media_url : item.thumbnail_url;
+            const itemUrl = item.thumbnail_url || item.media_url;
             if (itemUrl) {
                 const resolved = resolveMediaThumbnail(itemUrl);
                 if (resolved) return resolved;
@@ -246,8 +299,18 @@ function getProviderThumbnail(provider, pkg) {
         if (resolved) return resolved;
     }
 
-    // 5. Fallback to active creator showcase banner if available
-    return '/static/banners/ab_pradeep_reel_editor.png';
+    // 5. Special banner ONLY for AB Pradeep reel editor profile
+    const pName = (provider?.name || pkg?.provider_name || '').toLowerCase();
+    const pUname = (provider?.username || '').toLowerCase();
+    if (pUname === 'ab_pradeep' || pName.includes('ab pradeep') || pName.includes('pradeep')) {
+        return '/static/banners/ab_pradeep_reel_editor.png';
+    }
+
+    // 6. Generate distinct, elegant SVG card tailored to creator niche & title
+    const niche = pkg?.niche || provider?.niche || provider?.profile?.niche || 'editors_animators';
+    const title = pkg?.title || provider?.specialization || 'Verified Professional Services';
+    const creatorName = provider?.name || pkg?.provider_name || 'Verified Creator';
+    return createCategoryCardPlaceholder(niche, title, creatorName);
 }
 window.getProviderThumbnail = getProviderThumbnail;
 
@@ -4126,7 +4189,9 @@ function BuyerDashboard() {
             return true;
         });
 
-        const totalItems = filteredPackages.length + filteredProviders.length;
+        const providerPackageIds = new Set(filteredPackages.map(pkg => pkg.provider_id));
+        const standaloneProviders = filteredProviders.filter(pr => !providerPackageIds.has(pr.id));
+        const totalItems = filteredPackages.length + standaloneProviders.length;
 
         const placeholders = {
             all: 'Search video editors, social ads, videographers, writers...',
