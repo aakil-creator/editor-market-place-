@@ -47,7 +47,7 @@ from .schemas import (
     SocialLoginRequest, RoleSwitchRequest, OtpRequest, OtpResponse, OtpVerifyRequest,
     ForgotPasswordRequest, ForgotPasswordResponse, ResetPasswordWithTokenRequest, VerifyEmailRequest,
     VettingSubmitRequest, UpdateTierRequest,
-    get_current_user, get_current_user_optional
+    get_current_user, get_current_user_optional, validate_safe_url
 )
 from .security import hash_password, verify_password, create_access_token, hash_token
 
@@ -1439,6 +1439,11 @@ def update_profile(profile_data: ProfileUpdate, current_user = Depends(get_curre
     update_data = profile_data.model_dump(exclude_unset=True)
     for key, value in update_data.items():
         setattr(profile, key, value)
+
+    if profile_data.profession_selected is not None:
+        profile.profession_selected = bool(profile_data.profession_selected)
+    elif profile_data.niche is not None:
+        profile.profession_selected = True
 
     db.commit()
     db.refresh(profile)
