@@ -934,8 +934,9 @@ function renderProfileAvatar(size = 34) {
 function renderProfileMenu() {
     const user = currentUser;
     if (!user) return '';
-    const isProvider = user.user_type === 'PROVIDER';
-    const isAdmin = user.user_type === 'ADMIN';
+    const activeMode = getActiveUserMode();
+    const isProvider = activeMode === 'PROVIDER';
+    const isAdmin = activeMode === 'ADMIN';
     const hasImage = !!(user.profile_image);
     const initial = (user.name || 'U').charAt(0).toUpperCase();
     const handle = user.username ? `@${user.username}` : (user.email || '');
@@ -1813,6 +1814,27 @@ async function openFiverrPortfolioModal(providerId, providerName) {
 window.openFiverrPortfolioModal = openFiverrPortfolioModal;
 window.viewProviderPortfolio = openFiverrPortfolioModal;
 window.openEducatorModal = openFiverrPortfolioModal;
+
+function getProviderSkillsArray(provider) {
+    if (!provider) return [];
+    const s = provider.skills || (provider.profile && provider.profile.skills);
+    if (!s) return [];
+    if (Array.isArray(s)) return s;
+    if (typeof s === 'string') {
+        return s.split(',').map(x => x.trim()).filter(Boolean);
+    }
+    return [];
+}
+window.getProviderSkillsArray = getProviderSkillsArray;
+
+function getProviderPackagesArray(provider) {
+    if (!provider) return [];
+    const pkgs = provider.packages || (provider.profile && provider.profile.packages);
+    if (!pkgs) return [];
+    if (Array.isArray(pkgs)) return pkgs;
+    return [];
+}
+window.getProviderPackagesArray = getProviderPackagesArray;
 
 function getCategoryPeekIconSvg(niche, size = 38) {
     if (niche === 'editors_animators' || niche === 'editors') {
@@ -4083,8 +4105,10 @@ function BuyerDashboard() {
 
         // Filter providers based on activeFilter and searchQuery
         const filteredProviders = allProviders.filter(pr => {
-            const skillsStr = (pr.skills || []).join(' ').toLowerCase();
-            const packagesStr = (pr.packages || []).map(p => `${p.title || ''} ${p.description || ''}`).join(' ').toLowerCase();
+            const prSkills = getProviderSkillsArray(pr);
+            const prPackages = getProviderPackagesArray(pr);
+            const skillsStr = prSkills.join(' ').toLowerCase();
+            const packagesStr = prPackages.map(p => `${p.title || ''} ${p.description || ''}`).join(' ').toLowerCase();
             const bioStr = (pr.bio || '').toLowerCase();
             const specStr = (pr.specialization || '').toLowerCase();
             const prName = (pr.name || '').toLowerCase();
@@ -9391,7 +9415,9 @@ function ProvidersList() {
     }
 
     function getGigBadge(provider, cfg) {
-        const text = `${(provider.skills || []).join(' ')} ${(provider.packages || []).map(p => p.title).join(' ')}`.toLowerCase();
+        const prSkills = getProviderSkillsArray(provider);
+        const prPackages = getProviderPackagesArray(provider);
+        const text = `${prSkills.join(' ')} ${prPackages.map(p => p.title || '').join(' ')}`.toLowerCase();
 
         if (text.includes('animation') || text.includes('2d') || text.includes('3d') || text.includes('blender') || text.includes('character')) return '🎨 2D/3D ANIMATION MASTER';
         if (text.includes('gaming') || text.includes('twitch') || text.includes('montage') || text.includes('gameplay')) return '🎮 GAMING & STREAM EDITS';
@@ -9427,7 +9453,9 @@ function ProvidersList() {
 
     function filterClassifiedProviders(list, cfg) {
         return list.filter(provider => {
-            const text = `${provider.name || ''} ${(provider.skills || []).join(' ')} ${(provider.packages || []).map(p => (p.title + ' ' + (p.scope || ''))).join(' ')}`.toLowerCase();
+            const prSkills = getProviderSkillsArray(provider);
+            const prPackages = getProviderPackagesArray(provider);
+            const text = `${provider.name || ''} ${prSkills.join(' ')} ${prPackages.map(p => ((p.title || '') + ' ' + (p.scope || ''))).join(' ')}`.toLowerCase();
 
             if (providerSearchState.q && providerSearchState.q.trim()) {
                 const qLower = providerSearchState.q.trim().toLowerCase();
@@ -9580,7 +9608,7 @@ function ProvidersList() {
 
                     <!-- Software / Skills chips -->
                     <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 12px;">
-                        ${(provider.skills || []).slice(0, 3).map(skill => `
+                        ${getProviderSkillsArray(provider).slice(0, 3).map(skill => `
                             <span style="background: var(--bg-hover); color: var(--text-secondary); padding: 2px 7px; border-radius: 4px; font-size: 0.65rem; border: 1px solid var(--border);">${escapeHTML(skill)}</span>
                         `).join('')}
                     </div>
