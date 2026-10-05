@@ -28,5 +28,6 @@ async def catch_all(full_path: str):
         return FileResponse(f)
     return FileResponse(STATIC_DIR / 'index.html')
 
-print('Starting on 127.0.0.1:9984...', flush=True)
-uvicorn.run(app, host='127.0.0.1', port=9984, log_level='info')
+if __name__ == '__main__':
+    print('Starting on 127.0.0.1:9984...', flush=True)
+    uvicorn.run(app, host='127.0.0.1', port=9984, log_level='info')

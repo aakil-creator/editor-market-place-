@@ -9,7 +9,7 @@ import json
 
 BASE = "http://localhost:8000"
 
-async def test():
+async def run_e2e():
     async with httpx.AsyncClient(base_url=BASE) as client:
         steps = []
         def check(name, resp, expected=200):
@@ -137,5 +137,5 @@ async def test():
         return all_ok
 
 if __name__ == '__main__':
-    success = asyncio.run(test())
+    success = asyncio.run(run_e2e())
     sys.exit(0 if success else 1)

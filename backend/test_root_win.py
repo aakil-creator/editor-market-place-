@@ -34,5 +34,6 @@ async def spa_fallback(full_path: str):
         return FileResponse(file_path)
     return FileResponse(STATIC_DIR / 'index.html')
 
-print('Starting on 127.0.0.1:9988...', flush=True)
-uvicorn.run(app, host='127.0.0.1', port=9988, log_level='debug')
+if __name__ == '__main__':
+    print('Starting on 127.0.0.1:9988...', flush=True)
+    uvicorn.run(app, host='127.0.0.1', port=9988, log_level='debug')

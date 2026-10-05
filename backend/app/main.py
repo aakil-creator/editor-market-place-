@@ -56,6 +56,9 @@ from .routers import educators
 
 # Primary Admin Accounts
 ADMIN_EMAILS = {"rahura2026@gmail.com"}
+_admin_env = os.getenv("ADMIN_EMAIL", "").strip().lower()
+if _admin_env:
+    ADMIN_EMAILS.add(_admin_env)
 
 def get_user_type_str(val) -> str:
     if val is None:
@@ -340,7 +343,8 @@ def ensure_admin_exists():
     db = SessionLocal()
     try:
         # Ensure official owner/admin account exists
-        admin_email = "rahura2026@gmail.com"
+        admin_email = os.getenv("ADMIN_EMAIL", "rahura2026@gmail.com").strip().lower()
+        admin_pass = os.getenv("ADMIN_PASSWORD", "AdminSecure2026!").strip()
         admin = db.query(User).filter(User.email == admin_email).first()
         if not admin:
             admin_user = User(
@@ -348,7 +352,7 @@ def ensure_admin_exists():
                 name="RAHURA Admin",
                 username="rahura_admin",
                 phone="+919999999999",
-                password_hash=hash_password("AdminSecure2026!"),
+                password_hash=hash_password(admin_pass),
                 user_type=UserType.ADMIN,
                 is_verified=True,
                 is_active=True,
@@ -356,6 +360,13 @@ def ensure_admin_exists():
                 tos_accepted_at=datetime.utcnow()
             )
             db.add(admin_user)
+            db.commit()
+        elif os.getenv("ADMIN_PASSWORD"):
+            # Update admin password if provided explicitly via secret
+            admin.password_hash = hash_password(admin_pass)
+            admin.user_type = UserType.ADMIN
+            admin.is_verified = True
+            admin.is_active = True
             db.commit()
     except Exception as e:
         print(f"ensure_admin_exists info: {e}")
@@ -372,9 +383,15 @@ app = FastAPI(title="Groove Hub", version="1.0.0")
 # API app
 api_app = FastAPI(title="Groove Hub API", version="1.0.0")
 
+cors_origins_raw = os.getenv("CORS_ORIGINS", "*").strip()
+if cors_origins_raw == "*" or not cors_origins_raw:
+    cors_allowed = ["*"]
+else:
+    cors_allowed = [o.strip() for o in cors_origins_raw.split(",") if o.strip()]
+
 api_app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=cors_allowed,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
