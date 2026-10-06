@@ -221,6 +221,54 @@ function createCategoryCardPlaceholder(niche, title, creatorName) {
 }
 window.createCategoryCardPlaceholder = createCategoryCardPlaceholder;
 
+function getYouTubeEmbedUrl(url) {
+    if (!url || typeof url !== 'string') return '';
+    const safe = url.trim();
+    try {
+        const parsed = new URL(safe.startsWith('http') ? safe : `https://${safe}`);
+        const host = parsed.hostname.toLowerCase();
+        let videoId = '';
+        if (host === 'youtu.be') videoId = parsed.pathname.slice(1).split('?')[0];
+        else if (host.includes('youtube.com')) {
+            if (parsed.pathname === '/watch') videoId = parsed.searchParams.get('v') || '';
+            else if (parsed.pathname.startsWith('/shorts/')) videoId = parsed.pathname.split('/')[2] || '';
+            else if (parsed.pathname.startsWith('/embed/')) videoId = parsed.pathname.split('/')[2] || '';
+        }
+        if (videoId && /^[A-Za-z0-9_-]{6,20}$/.test(videoId)) {
+            return `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1`;
+        }
+    } catch (_) {}
+    return '';
+}
+window.getYouTubeEmbedUrl = getYouTubeEmbedUrl;
+
+function renderModalMediaElement(mediaUrl, thumbUrl, providerName, niche, title) {
+    const safeUrl = mediaUrl ? sanitizeUrl(mediaUrl) : '';
+    const safeThumb = thumbUrl ? sanitizeUrl(thumbUrl) : '';
+    const fallbackSvg = createCategoryCardPlaceholder(niche || 'editors', title || 'Creator Showcase', providerName || 'Verified Creator');
+    
+    // 1. YouTube video or reel
+    const ytEmbed = getYouTubeEmbedUrl(mediaUrl || thumbUrl);
+    if (ytEmbed) {
+        return `<iframe id="modal-active-iframe-player" src="${ytEmbed}" style="position: absolute; top:0; left:0; width:100%; height:100%; border: 0;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+    }
+
+    // 2. Direct Video file
+    if (safeUrl && isMediaVideo(safeUrl)) {
+        return `<video id="modal-active-video-player" controls autoplay playsinline preload="auto" src="${safeUrl}" poster="${safeThumb || ''}" style="position: absolute; top:0; left:0; width:100%; height:100%; object-fit: contain; background: #0f172a;" onerror="this.onerror=null; this.parentElement.innerHTML='<img src=\\'${fallbackSvg}\\' style=\\'position: absolute; top:0; left:0; width:100%; height:100%; object-fit: cover;\\' alt=\\'${escapeHTML(providerName || 'Creator')}\\'>'"></video>`;
+    }
+
+    // 3. Direct Image (photo / portfolio graphic)
+    const targetImg = safeThumb || safeUrl;
+    if (targetImg && targetImg !== '#' && !targetImg.includes('undefined') && !targetImg.startsWith('javascript:')) {
+        return `<img src="${targetImg}" style="position: absolute; top:0; left:0; width:100%; height:100%; object-fit: cover;" alt="${escapeHTML(providerName || 'Creator')}" onerror="this.onerror=null; this.src='${fallbackSvg}';">`;
+    }
+
+    // 4. Guaranteed dynamic SVG placeholder with creator branding
+    return `<img src="${fallbackSvg}" style="position: absolute; top:0; left:0; width:100%; height:100%; object-fit: cover;" alt="${escapeHTML(providerName || 'Creator')}">`;
+}
+window.renderModalMediaElement = renderModalMediaElement;
+
 function getProviderSkillsArray(provider) {
     if (!provider) return [];
     const raw = provider.skills || (provider.profile && provider.profile.skills);
@@ -321,8 +369,12 @@ function getProviderThumbnail(provider, pkg) {
         if (resolved) return resolved;
     }
 
-    // 5. Fallback to active creator showcase banner if available
-    return '/static/banners/ab_pradeep_reel_editor.png';
+    // 5. Fallback to dynamic vector SVG placeholder tailored to provider
+    return createCategoryCardPlaceholder(
+        provider?.niche || provider?.category || provider?.profile?.niche || 'editors',
+        pkg?.title || provider?.packages?.[0]?.title || 'Creator Showcase',
+        provider?.name || 'Verified Creator'
+    );
 }
 window.getProviderThumbnail = getProviderThumbnail;
 
@@ -1701,9 +1753,15 @@ async function openFiverrPortfolioModal(providerId, providerName) {
         const cardEl = modal.querySelector('.fiverr-escrow-card');
         if (!cardEl) return;
 
+        const niche = provider.niche || provider.category || provider.profile?.niche || 'editors';
         const videoItems = items.filter(i => i.media_type === 'video' || (i.media_url && isMediaVideo(i.media_url)) || (i.media_url && (i.media_url.includes('youtube') || i.media_url.includes('youtu.be'))));
         const activeMedia = videoItems[0] || items[0];
-        const activeMediaUrl = activeMedia?.media_url ? sanitizeUrl(activeMedia.media_url) : (thumb && isMediaVideo(thumb) ? sanitizeUrl(thumb) : '');
+        const activeMediaUrl = activeMedia?.media_url || (thumb && isMediaVideo(thumb) ? thumb : '');
+        const activeThumbUrl = activeMedia?.thumbnail_url || (!isMediaVideo(thumb) ? thumb : '');
+        const activeTitle = activeMedia?.title || 'Creator Portfolio Showcase';
+        const activeDesc = activeMedia?.description || 'High-retention editing, sound design, and color grading deliverables with 100% Escrow Protection.';
+
+        const initialMediaHtml = renderModalMediaElement(activeMediaUrl, activeThumbUrl, name, niche, activeTitle);
 
         cardEl.innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
@@ -1736,20 +1794,14 @@ async function openFiverrPortfolioModal(providerId, providerName) {
                     </span>
                     <span style="font-size: 0.72rem; color: var(--success); font-weight: 700;">✓ In-App Native Playback</span>
                 </div>
-                <div id="provider-modal-media-wrap" style="position: relative; width: 100%; padding-top: 56.25%; border-radius: 12px; overflow: hidden; background: #000; box-shadow: 0 6px 24px rgba(0,0,0,0.5); border: 1px solid var(--border);">
-                    ${activeMediaUrl && isMediaVideo(activeMediaUrl) ? `
-                        <video id="modal-active-video-player" controls autoplay playsinline preload="auto" src="${activeMediaUrl}" style="position: absolute; top:0; left:0; width:100%; height:100%; object-fit: contain; background: #000;"></video>
-                    ` : activeMediaUrl && (activeMediaUrl.includes('youtube') || activeMediaUrl.includes('youtu.be')) ? `
-                        <iframe id="modal-active-iframe-player" src="${activeMediaUrl.replace('watch?v=', 'embed/').split('&')[0]}?autoplay=1" style="position: absolute; top:0; left:0; width:100%; height:100%; border: 0;" allow="autoplay; encrypted-media" allowfullscreen></iframe>
-                    ` : `
-                        <img src="${sanitizeUrl(activeMedia?.thumbnail_url || activeMediaUrl || thumb)}" style="position: absolute; top:0; left:0; width:100%; height:100%; object-fit: cover;" alt="${escapeHTML(name)}">
-                    `}
+                <div id="provider-modal-media-wrap" style="position: relative; width: 100%; padding-top: 56.25%; border-radius: 12px; overflow: hidden; background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%); box-shadow: 0 6px 24px rgba(0,0,0,0.5); border: 1px solid var(--border);">
+                    ${initialMediaHtml}
                 </div>
                 <div id="modal-active-reel-title" style="font-size: 0.85rem; font-weight: 700; color: var(--text-primary); margin-top: 8px;">
-                    ${escapeHTML(activeMedia?.title || 'Creator Portfolio Showcase')}
+                    ${escapeHTML(activeTitle)}
                 </div>
                 <div id="modal-active-reel-desc" style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px;">
-                    ${escapeHTML(activeMedia?.description || 'High-retention editing, sound design, and color grading deliverables with 100% Escrow Protection.')}
+                    ${escapeHTML(activeDesc)}
                 </div>
             </div>
 
@@ -1761,15 +1813,15 @@ async function openFiverrPortfolioModal(providerId, providerName) {
                     </div>
                     <div style="display: flex; gap: 8px; overflow-x: auto; padding-bottom: 6px; scrollbar-width: thin;">
                         ${items.map((item, idx) => `
-                            <div class="sample-reel-tab" onclick="window.__switchModalShowcaseItem(${JSON.stringify(escapeHTML(item.media_url || '')).replace(/"/g, '&quot;')}, ${JSON.stringify(escapeHTML(item.title || '')).replace(/"/g, '&quot;')}, ${JSON.stringify(escapeHTML(item.description || '')).replace(/"/g, '&quot;')})" style="flex-shrink: 0; width: 120px; cursor: pointer; background: var(--bg-hover); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; transition: transform 0.15s ease;">
-                                <div style="width: 100%; height: 65px; background: #000; position: relative;">
+                            <div class="sample-reel-tab" onclick="window.__switchModalShowcaseItem(${JSON.stringify(escapeHTML(item.media_url || '')).replace(/"/g, '&quot;')}, ${JSON.stringify(escapeHTML(item.title || '')).replace(/"/g, '&quot;')}, ${JSON.stringify(escapeHTML(item.description || '')).replace(/"/g, '&quot;')}, ${JSON.stringify(escapeHTML(item.thumbnail_url || '')).replace(/"/g, '&quot;')})" style="flex-shrink: 0; width: 120px; cursor: pointer; background: var(--bg-hover); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; transition: transform 0.15s ease;">
+                                <div style="width: 100%; height: 65px; background: #0f172a; position: relative;">
                                     ${item.thumbnail_url && !isMediaVideo(item.thumbnail_url) ? `
-                                        <img src="${sanitizeUrl(item.thumbnail_url)}" style="width: 100%; height: 100%; object-fit: cover;" alt="${escapeHTML(item.title)}">
+                                        <img src="${sanitizeUrl(item.thumbnail_url)}" style="width: 100%; height: 100%; object-fit: cover;" alt="${escapeHTML(item.title)}" onerror="this.onerror=null; this.src='${createCategoryCardPlaceholder(niche, item.title, name)}';">
                                     ` : isMediaVideo(item.media_url) ? `
                                         <video src="${sanitizeUrl(item.media_url)}" preload="metadata" muted playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>
                                         <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.3); color: #fff; font-size: 1rem;">▶</div>
                                     ` : `
-                                        <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; background: #1e1b4b; color: #fff;">🎬</div>
+                                        <img src="${createCategoryCardPlaceholder(niche, item.title, name)}" style="width: 100%; height: 100%; object-fit: cover;" alt="${escapeHTML(item.title)}">
                                     `}
                                     <span style="position: absolute; bottom: 3px; right: 3px; background: rgba(0,0,0,0.7); font-size: 0.6rem; color: #fff; padding: 1px 4px; border-radius: 3px;">▶ #${idx + 1}</span>
                                 </div>
@@ -1812,21 +1864,15 @@ async function openFiverrPortfolioModal(providerId, providerName) {
             </div>
         `;
 
-        window.__switchModalShowcaseItem = (url, title, desc) => {
+        window.__switchModalShowcaseItem = (url, title, desc, itemThumb) => {
             const wrap = document.getElementById('provider-modal-media-wrap');
             const titleEl = document.getElementById('modal-active-reel-title');
             const descEl = document.getElementById('modal-active-reel-desc');
-            if (titleEl) titleEl.textContent = title;
-            if (descEl) descEl.textContent = desc;
+            if (titleEl) titleEl.textContent = title || 'Creator Portfolio Showcase';
+            if (descEl) descEl.textContent = desc || 'High-retention deliverables with 100% Escrow Protection.';
             if (!wrap) return;
 
-            if (url && isMediaVideo(url)) {
-                wrap.innerHTML = `<video controls autoplay playsinline preload="auto" src="${sanitizeUrl(url)}" style="position: absolute; top:0; left:0; width:100%; height:100%; object-fit: contain; background: #000;"></video>`;
-            } else if (url && (url.includes('youtube') || url.includes('youtu.be'))) {
-                wrap.innerHTML = `<iframe src="${url.replace('watch?v=', 'embed/').split('&')[0]}?autoplay=1" style="position: absolute; top:0; left:0; width:100%; height:100%; border: 0;" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
-            } else if (url) {
-                wrap.innerHTML = `<img src="${sanitizeUrl(url)}" style="position: absolute; top:0; left:0; width:100%; height:100%; object-fit: cover;">`;
-            }
+            wrap.innerHTML = renderModalMediaElement(url, itemThumb, name, niche, title);
         };
 
         cardEl.querySelector('.modal-close').onclick = () => modal.remove();
