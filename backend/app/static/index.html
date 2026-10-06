@@ -22,7 +22,7 @@
     <link rel="icon" type="image/png" href="/static/icons/favicon.png">
     <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
     <link rel="manifest" href="/manifest.json">
-    <link rel="stylesheet" href="/styles.css?v=20261006-button-fix">
+    <link rel="stylesheet" href="/styles.css?v=20261006-ui-audit-v2">
     <!-- Google Identity Services (GIS) for real Google Single Sign-On -->
     <script src="https://accounts.google.com/gsi/client" async defer onload="if(window.__refreshGoogleBtn) window.__refreshGoogleBtn();"></script>
     <!-- Razorpay Checkout for live UPI / Cards / Net Banking Payments -->
@@ -52,13 +52,13 @@
         <!-- App content rendered by JS -->
     </div>
 
-    <script src="/app.js?v=20261006-button-fix"></script>
+    <script src="/app.js?v=20261006-ui-audit-v2"></script>
     <script>
         // Force clear legacy service worker caches immediately
         if ('caches' in window) {
             caches.keys().then(keys => {
                 keys.forEach(k => {
-                    if (k !== 'groove-hub-v7-button-fix' && k !== 'groove-hub-v4-upload-fix') {
+                    if (k !== 'groove-hub-v8-ui-audit' && k !== 'groove-hub-v4-upload-fix') {
                         caches.delete(k);
                     }
                 });
@@ -68,7 +68,7 @@
         // Register PWA Service Worker with auto-update
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js?v=9')
+                navigator.serviceWorker.register('/sw.js?v=10')
                     .then((reg) => {
                         reg.update();
                         console.log('PWA Service Worker registered:', reg.scope);

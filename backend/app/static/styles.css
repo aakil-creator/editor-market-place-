@@ -7326,10 +7326,24 @@ textarea::placeholder,
         margin-bottom: 14px !important;
     }
 
-    .btn, .btn-primary, .btn-secondary, .btn-outline {
+    .btn, .btn-primary, .btn-secondary, .btn-outline, .btn-danger, .btn-success, .btn-sm, button[type="button"], button[type="submit"] {
         min-height: 42px !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        box-sizing: border-box !important;
+        white-space: normal !important;
+        word-break: break-word !important;
+        text-align: center !important;
         border-radius: 10px !important;
-        font-size: 0.875rem !important;
+    }
+
+    @media (max-width: 480px) {
+        .modal-card > div[style*="display: flex"],
+        .modal-body > div[style*="display: flex"],
+        .card > div[style*="display: flex"],
+        .form-row {
+            flex-wrap: wrap !important;
+        }
     }
 
     /* Mobile toast notification banner */

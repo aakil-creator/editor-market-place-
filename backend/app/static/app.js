@@ -493,9 +493,9 @@ function showSuspendedModal(detail) {
             <p style="font-size: 0.8125rem; color: var(--text-secondary); line-height: 1.5; margin: 0 0 20px;">
                 To protect buyers and creators under our <strong>100% Escrow Guarantee</strong>, Groove Hub strictly prohibits sharing phone numbers, WhatsApp, UPI, or external channels. All transactions and chats must remain on the platform.
             </p>
-            <div style="display: flex; gap: 10px;">
-                <button class="btn btn-secondary" onclick="document.getElementById('security-suspended-modal').remove(); router('/')" style="flex: 1;">Close</button>
-                <a href="mailto:rahura2026@gmail.com?subject=Groove Hub Account Suspension Appeal" class="btn btn-primary" style="flex: 1.5; text-decoration: none; display: flex; align-items: center; justify-content: center;">Contact Admin Support</a>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <button class="btn btn-secondary" onclick="document.getElementById('security-suspended-modal').remove(); router('/')" style="flex: 1 1 120px;">Close</button>
+                <a href="mailto:rahura2026@gmail.com?subject=Groove Hub Account Suspension Appeal" class="btn btn-primary" style="flex: 1.5 1 180px; text-decoration: none; display: flex; align-items: center; justify-content: center;">Contact Admin Support</a>
             </div>
         </div>
     `;
@@ -1854,11 +1854,11 @@ async function openFiverrPortfolioModal(providerId, providerName) {
             </div>
 
             <!-- Call to Actions -->
-            <div style="display: flex; gap: 10px;">
-                <button class="btn btn-outline" onclick="this.closest('.fiverr-escrow-modal').remove(); openPreBookingChat(${providerId})" style="flex: 1; min-height: 46px; font-weight: 700; border-color: var(--accent); color: var(--accent); display: flex; align-items: center; justify-content: center; gap: 6px;">
+            <div style="display: flex; gap: 10px; flex-wrap: wrap; width: 100%; box-sizing: border-box;">
+                <button class="btn btn-outline" onclick="this.closest('.fiverr-escrow-modal').remove(); openPreBookingChat(${providerId})" style="flex: 1 1 140px; min-height: 46px; font-weight: 700; border-color: var(--accent); color: var(--accent); display: flex; align-items: center; justify-content: center; gap: 6px;">
                     💬 Chat with ${escapeHTML(name)}
                 </button>
-                <button class="btn btn-primary" onclick="this.closest('.fiverr-escrow-modal').remove(); selectProvider(${providerId})" style="flex: 1.4; font-weight: 700; min-height: 46px; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                <button class="btn btn-primary" onclick="this.closest('.fiverr-escrow-modal').remove(); selectProvider(${providerId})" style="flex: 1.4 1 160px; font-weight: 700; min-height: 46px; display: flex; align-items: center; justify-content: center; gap: 6px;">
                     📦 View Packages / Hire
                 </button>
             </div>

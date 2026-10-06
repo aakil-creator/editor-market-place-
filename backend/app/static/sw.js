@@ -1,5 +1,5 @@
 // Service Worker for Groove Hub Mobile PWA
-const CACHE_NAME = 'groove-hub-v7-button-fix';
+const CACHE_NAME = 'groove-hub-v8-ui-audit';
 const PRECACHE_ASSETS = [
   '/static/icons/icon-192.png',
   '/static/icons/icon-512.png',
