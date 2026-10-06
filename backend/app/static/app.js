@@ -6344,12 +6344,14 @@ function MyPackages() {
 const VETTING_TIERS_CONFIG = {
     beginner: {
         id: 'beginner',
-        name: 'Beginner',
-        badge: '3 Free Test Edits',
+        name: 'Beginner Editor',
+        tagline: 'Level 1 • Starter',
+        badge: 'Level 1',
         badgeColor: 'var(--success)',
         reqCount: 3,
         suggestedPrice: '₹500 – ₹1,500',
-        summary: '3 free sample tasks to qualify for client task assignments.',
+        requirementText: 'You selected <strong>Beginner Editor</strong> — You will need to complete <strong>3 free sample edits</strong> for incoming clients to build your verified portfolio and unlock paid tasks.',
+        summary: 'Requires 3 free sample edits to qualify for client task assignments.',
         tasks: [
             {
                 id: 'beg_task_1',
@@ -6379,12 +6381,14 @@ const VETTING_TIERS_CONFIG = {
     },
     intermediate: {
         id: 'intermediate',
-        name: 'Intermediate',
-        badge: '2 Free Test Edits',
+        name: 'Intermediate Editor',
+        tagline: 'Level 2 • Commercial',
+        badge: 'Level 2',
         badgeColor: 'var(--accent)',
         reqCount: 2,
         suggestedPrice: '₹1,500 – ₹3,500',
-        summary: '2 free sample tasks to unlock Verified Pro status.',
+        requirementText: 'You selected <strong>Intermediate Editor</strong> — You will need to complete <strong>2 free sample edits</strong> to demonstrate commercial grade quality and unlock higher-paying client jobs.',
+        summary: 'Requires 2 free sample edits to unlock commercial tier assignments.',
         tasks: [
             {
                 id: 'inter_task_1',
@@ -6406,12 +6410,14 @@ const VETTING_TIERS_CONFIG = {
     },
     pro: {
         id: 'pro',
-        name: 'Pro',
-        badge: '1 Benchmark Test Edit',
+        name: 'Pro Master Editor',
+        tagline: 'Level 3 • Top Rated',
+        badge: 'Level 3',
         badgeColor: '#f59e0b',
         reqCount: 1,
         suggestedPrice: '₹3,500 – ₹15,000+',
-        summary: '1 free sample task for instant Top-Rated Pro status and high-ticket client jobs.',
+        requirementText: 'You selected <strong>Pro Master Editor</strong> — You will need to complete <strong>1 benchmark test edit</strong> to qualify for instant Top-Rated status and high-ticket client jobs.',
+        summary: 'Requires 1 benchmark test edit to qualify for high-ticket clients.',
         tasks: [
             {
                 id: 'pro_task_1',
@@ -6667,14 +6673,19 @@ function CreatePackage() {
 
         const infoEl = document.getElementById('tier-rule-info');
         if (infoEl) {
+            infoEl.style.borderColor = tier.badgeColor;
             infoEl.innerHTML = `
-                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                     <div>
-                        <strong style="color: var(--text-primary); font-size: 0.85rem;">${tier.name} Requirement:</strong>
-                        <span style="color: var(--text-secondary); font-size: 0.825rem; margin-left: 6px;">${tier.summary}</span>
+                        <div style="font-weight: 800; font-size: 0.88rem; color: var(--text-primary); display: flex; align-items: center; gap: 6px;">
+                            <span>🎯</span> Selected Tier: <span style="color: ${tier.badgeColor};">${tier.name}</span>
+                        </div>
+                        <div style="color: var(--text-secondary); font-size: 0.825rem; margin-top: 4px; line-height: 1.4;">
+                            ${tier.requirementText}
+                        </div>
                     </div>
-                    <button type="button" class="btn btn-secondary btn-sm" onclick="openVettingTestModal('${tier.id}')" style="font-weight: 800; font-size: 0.75rem; border-color: ${tier.badgeColor}; color: ${tier.badgeColor};">
-                        📋 View ${tier.badge} Briefs
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="openVettingTestModal('${tier.id}')" style="font-weight: 800; font-size: 0.78rem; border-color: ${tier.badgeColor}; color: ${tier.badgeColor}; white-space: nowrap;">
+                        📋 View Test Briefs (${tier.reqCount} Task${tier.reqCount > 1 ? 's' : ''})
                     </button>
                 </div>
             `;
@@ -7032,12 +7043,12 @@ function CreatePackage() {
                         <div style="display: flex; align-items: center; gap: 8px;">
                             <span style="font-size: 1.25rem;">🎖️</span>
                             <div>
-                                <span style="font-weight: 900; font-size: 1rem; color: var(--text-primary);">Step 2: Select Your Experience & Vetting Tier</span>
-                                <div style="font-size: 0.75rem; color: var(--text-secondary);">We test editors with free sample tasks before assigning high-ticket small business clients:</div>
+                                <span style="font-weight: 900; font-size: 1rem; color: var(--text-primary);">Step 2: Select Your Experience Tier</span>
+                                <div style="font-size: 0.75rem; color: var(--text-secondary);">Choose the level matching your video editing capabilities:</div>
                             </div>
                         </div>
                         <button type="button" class="btn btn-secondary btn-sm" onclick="openVettingTestModal(selectedTier)" style="font-weight: 800; font-size: 0.75rem;">
-                            📋 View Assigned Test Briefs
+                            📋 View Test Briefs
                         </button>
                     </div>
 
@@ -7046,44 +7057,48 @@ function CreatePackage() {
                         <div class="vetting-tier-card ${selectedTier === 'beginner' ? 'active' : ''}" data-tier="beginner" onclick="selectExperienceTier('beginner')" style="border: 2px solid ${selectedTier === 'beginner' ? 'var(--success)' : 'var(--border)'}; background: ${selectedTier === 'beginner' ? 'var(--bg-hover)' : 'var(--bg-card)'}; border-radius: 14px; padding: 14px; cursor: pointer; transition: all 0.2s ease;">
                             <div style="display: flex; justify-content: space-between; align-items: center;">
                                 <span style="font-size: 1.2rem;">🟢</span>
-                                <span style="font-size: 0.68rem; font-weight: 800; color: var(--success); background: rgba(34, 197, 94, 0.15); padding: 2px 8px; border-radius: 6px;">3 Free Edits</span>
+                                <span style="font-size: 0.7rem; font-weight: 800; color: var(--success); background: rgba(34, 197, 94, 0.15); padding: 2px 8px; border-radius: 6px;">Level 1</span>
                             </div>
-                            <div style="font-weight: 800; font-size: 0.9rem; color: var(--text-primary); margin-top: 6px;">Beginner Editor</div>
-                            <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px;">Assigned: <strong>3 Free Test Edits</strong> (Local Ad, E-Comm, Captions)</div>
-                            <div style="font-size: 0.72rem; color: var(--success); font-weight: 700; margin-top: 6px;">Target: ₹500 – ₹1,500/video</div>
+                            <div style="font-weight: 800; font-size: 0.95rem; color: var(--text-primary); margin-top: 6px;">Beginner Editor</div>
+                            <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 3px; min-height: 32px;">For reels, dynamic captions, simple cuts &amp; basic promo videos.</div>
+                            <div style="font-size: 0.75rem; color: var(--success); font-weight: 800; margin-top: 6px;">Target: ₹500 – ₹1,500/video</div>
                         </div>
 
                         <!-- Intermediate Tier -->
                         <div class="vetting-tier-card ${selectedTier === 'intermediate' ? 'active' : ''}" data-tier="intermediate" onclick="selectExperienceTier('intermediate')" style="border: 2px solid ${selectedTier === 'intermediate' ? 'var(--accent)' : 'var(--border)'}; background: ${selectedTier === 'intermediate' ? 'var(--bg-hover)' : 'var(--bg-card)'}; border-radius: 14px; padding: 14px; cursor: pointer; transition: all 0.2s ease;">
                             <div style="display: flex; justify-content: space-between; align-items: center;">
                                 <span style="font-size: 1.2rem;">🟡</span>
-                                <span style="font-size: 0.68rem; font-weight: 800; color: var(--accent); background: rgba(108, 92, 231, 0.15); padding: 2px 8px; border-radius: 6px;">2 Free Edits</span>
+                                <span style="font-size: 0.7rem; font-weight: 800; color: var(--accent); background: rgba(108, 92, 231, 0.15); padding: 2px 8px; border-radius: 6px;">Level 2</span>
                             </div>
-                            <div style="font-weight: 800; font-size: 0.9rem; color: var(--text-primary); margin-top: 6px;">Intermediate Editor</div>
-                            <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px;">Assigned: <strong>2 Free Test Edits</strong> (Commercial & Color Grade)</div>
-                            <div style="font-size: 0.72rem; color: var(--accent); font-weight: 700; margin-top: 6px;">Target: ₹1,500 – ₹3,500/video</div>
+                            <div style="font-weight: 800; font-size: 0.95rem; color: var(--text-primary); margin-top: 6px;">Intermediate Editor</div>
+                            <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 3px; min-height: 32px;">For commercial storytelling, multi-track audio &amp; color grading.</div>
+                            <div style="font-size: 0.75rem; color: var(--accent); font-weight: 800; margin-top: 6px;">Target: ₹1,500 – ₹3,500/video</div>
                         </div>
 
                         <!-- Pro Tier -->
                         <div class="vetting-tier-card ${selectedTier === 'pro' ? 'active' : ''}" data-tier="pro" onclick="selectExperienceTier('pro')" style="border: 2px solid ${selectedTier === 'pro' ? '#f59e0b' : 'var(--border)'}; background: ${selectedTier === 'pro' ? 'var(--bg-hover)' : 'var(--bg-card)'}; border-radius: 14px; padding: 14px; cursor: pointer; transition: all 0.2s ease;">
                             <div style="display: flex; justify-content: space-between; align-items: center;">
                                 <span style="font-size: 1.2rem;">👑</span>
-                                <span style="font-size: 0.68rem; font-weight: 800; color: #f59e0b; background: rgba(245, 158, 11, 0.15); padding: 2px 8px; border-radius: 6px;">1 Benchmark Edit</span>
+                                <span style="font-size: 0.7rem; font-weight: 800; color: #f59e0b; background: rgba(245, 158, 11, 0.15); padding: 2px 8px; border-radius: 6px;">Level 3</span>
                             </div>
-                            <div style="font-weight: 800; font-size: 0.9rem; color: var(--text-primary); margin-top: 6px;">Pro Master Editor</div>
-                            <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px;">Assigned: <strong>1 Benchmark Test</strong> (High-Ticket Master Ad)</div>
-                            <div style="font-size: 0.72rem; color: #f59e0b; font-weight: 700; margin-top: 6px;">Target: ₹3,500 – ₹15,000+/video</div>
+                            <div style="font-weight: 800; font-size: 0.95rem; color: var(--text-primary); margin-top: 6px;">Pro Master Editor</div>
+                            <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 3px; min-height: 32px;">For cinematic high-ticket brand ads &amp; bespoke motion graphics.</div>
+                            <div style="font-size: 0.75rem; color: #f59e0b; font-weight: 800; margin-top: 6px;">Target: ₹3,500 – ₹15,000+/video</div>
                         </div>
                     </div>
 
-                    <div id="tier-rule-info" style="background: var(--bg-hover); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                    <div id="tier-rule-info" style="background: var(--bg-hover); border: 1.5px solid ${VETTING_TIERS_CONFIG[selectedTier].badgeColor}; border-radius: 12px; padding: 12px 16px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                             <div>
-                                <strong style="color: var(--text-primary); font-size: 0.85rem;">${VETTING_TIERS_CONFIG[selectedTier].name} Requirement:</strong>
-                                <span style="color: var(--text-secondary); font-size: 0.825rem; margin-left: 6px;">${VETTING_TIERS_CONFIG[selectedTier].summary}</span>
+                                <div style="font-weight: 800; font-size: 0.88rem; color: var(--text-primary); display: flex; align-items: center; gap: 6px;">
+                                    <span>🎯</span> Selected Tier: <span style="color: ${VETTING_TIERS_CONFIG[selectedTier].badgeColor};">${VETTING_TIERS_CONFIG[selectedTier].name}</span>
+                                </div>
+                                <div style="color: var(--text-secondary); font-size: 0.825rem; margin-top: 4px; line-height: 1.4;">
+                                    ${VETTING_TIERS_CONFIG[selectedTier].requirementText}
+                                </div>
                             </div>
-                            <button type="button" class="btn btn-secondary btn-sm" onclick="openVettingTestModal('${selectedTier}')" style="font-weight: 800; font-size: 0.75rem; border-color: ${VETTING_TIERS_CONFIG[selectedTier].badgeColor}; color: ${VETTING_TIERS_CONFIG[selectedTier].badgeColor};">
-                                📋 View ${VETTING_TIERS_CONFIG[selectedTier].badge} Briefs
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="openVettingTestModal('${selectedTier}')" style="font-weight: 800; font-size: 0.78rem; border-color: ${VETTING_TIERS_CONFIG[selectedTier].badgeColor}; color: ${VETTING_TIERS_CONFIG[selectedTier].badgeColor}; white-space: nowrap;">
+                                📋 View Test Briefs (${VETTING_TIERS_CONFIG[selectedTier].reqCount} Task${VETTING_TIERS_CONFIG[selectedTier].reqCount > 1 ? 's' : ''})
                             </button>
                         </div>
                     </div>
