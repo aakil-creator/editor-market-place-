@@ -6517,9 +6517,8 @@ window.openVettingTestModal = (tierKey = 'beginner') => {
                         Complete ${tier.reqCount} Free Test Sample Edit${tier.reqCount > 1 ? 's' : ''}
                     </div>
                 </div>
-                <div style="text-align: right;">
-                    <div style="font-size: 0.75rem; color: var(--text-muted);">Recommended Client Pricing</div>
-                    <div style="font-size: 0.95rem; font-weight: 900; color: var(--success);">${tier.suggestedPrice}</div>
+                <div style="font-size: 0.8rem; font-weight: 700; color: var(--accent);">
+                    ⚡ Unlocks Verified Creator Status
                 </div>
             </div>
 
@@ -6737,13 +6736,7 @@ function CreatePackage() {
             `;
         }
 
-        // Adjust suggested price if not manually customized
-        const priceEl = document.getElementById('pkg-price');
-        if (priceEl) {
-            if (tierKey === 'beginner' && parseFloat(priceEl.value) > 2000) priceEl.value = 1200;
-            else if (tierKey === 'intermediate' && parseFloat(priceEl.value) < 1500) priceEl.value = 2500;
-            else if (tierKey === 'pro' && parseFloat(priceEl.value) < 3000) priceEl.value = 4500;
-        }
+
 
         // Inform backend of tier selection if logged in
         apiFetch('/provider/update-tier', {
@@ -7107,7 +7100,6 @@ function CreatePackage() {
                             </div>
                             <div style="font-weight: 800; font-size: 0.95rem; color: var(--text-primary); margin-top: 6px;">Beginner Editor</div>
                             <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 3px; min-height: 32px;">For reels, dynamic captions, simple cuts &amp; basic promo videos.</div>
-                            <div style="font-size: 0.75rem; color: var(--success); font-weight: 800; margin-top: 6px;">Target: ₹500 – ₹1,500/video</div>
                         </div>
 
                         <!-- Intermediate Tier -->
@@ -7118,7 +7110,6 @@ function CreatePackage() {
                             </div>
                             <div style="font-weight: 800; font-size: 0.95rem; color: var(--text-primary); margin-top: 6px;">Intermediate Editor</div>
                             <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 3px; min-height: 32px;">For commercial storytelling, multi-track audio &amp; color grading.</div>
-                            <div style="font-size: 0.75rem; color: var(--accent); font-weight: 800; margin-top: 6px;">Target: ₹1,500 – ₹3,500/video</div>
                         </div>
 
                         <!-- Pro Tier -->
@@ -7129,7 +7120,6 @@ function CreatePackage() {
                             </div>
                             <div style="font-weight: 800; font-size: 0.95rem; color: var(--text-primary); margin-top: 6px;">Pro Master Editor</div>
                             <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 3px; min-height: 32px;">For cinematic high-ticket brand ads &amp; bespoke motion graphics.</div>
-                            <div style="font-size: 0.75rem; color: #f59e0b; font-weight: 800; margin-top: 6px;">Target: ₹3,500 – ₹15,000+/video</div>
                         </div>
                     </div>
 
@@ -7150,7 +7140,7 @@ function CreatePackage() {
                     </div>
                 </div>
 
-                <div style="display: grid; grid-template-columns: 1fr 340px; gap: 24px; align-items: start;">
+                <div class="responsive-form-preview-grid">
                     <!-- Main Creation Form -->
                     <div class="card" style="padding: 24px;">
                         <form id="create-pkg-form" onsubmit="handleSubmit(event)">
@@ -7161,7 +7151,7 @@ function CreatePackage() {
                                     <span>1. Package Format</span>
                                     <span style="font-weight: 500; font-size: 0.75rem; color: var(--text-muted);">How you will deliver this gig</span>
                                 </label>
-                                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 6px;">
+                                <div class="pkg-format-grid">
                                     <button type="button" class="pkg-type-btn btn btn-outline ${selectedType === 'per_deliverable' ? 'active' : ''}" data-type="per_deliverable" onclick="selectPackageType('per_deliverable')" style="padding: 10px 8px; text-align: center; border-radius: 10px; font-weight: 700; font-size: 0.8125rem;">
                                         📦 Single Project<br><span style="font-size: 0.7rem; font-weight: 400; color: var(--text-muted);">Per video / delivery</span>
                                     </button>
@@ -7285,14 +7275,14 @@ function CreatePackage() {
                                 <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px;">
                                     <div style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 800; opacity: 0.9;">100% Escrow Protected</div>
                                     <span id="preview-pkg-tier-badge" style="background: rgba(255,255,255,0.25); backdrop-filter: blur(4px); font-size: 0.7rem; font-weight: 800; padding: 2px 8px; border-radius: 6px; white-space: nowrap; border: 1px solid rgba(255,255,255,0.4);">
-                                        Beginner (3 Free Tests)
+                                        Level 1 (Beginner)
                                     </span>
                                 </div>
                                 <h3 id="preview-pkg-title" style="font-size: 1.05rem; font-weight: 800; margin: 4px 0 0 0; color: white; line-height: 1.3;">
                                     ${escapeHTML(initialTitle || 'Your Package Title')}
                                 </h3>
                             </div>
-                            <div id="preview-pkg-media-wrap" style="position: relative; width: 100%; padding-top: 56.25%; background: #000; overflow: hidden; ${initialSample ? '' : 'display: none;'}">
+                            <div id="preview-pkg-media-wrap" style="position: relative; width: 100%; padding-top: 56.25%; background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%); overflow: hidden; ${initialSample ? '' : 'display: none;'}">
                                 ${initialSample && isMediaVideo(initialSample) ? `
                                     <video src="${sanitizeUrl(initialSample)}" controls autoplay muted playsinline preload="metadata" style="position: absolute; top:0; left:0; width:100%; height:100%; object-fit: contain; background: #000;"></video>
                                 ` : initialSample ? `
