@@ -7254,11 +7254,11 @@ function CreatePackage() {
                             </div>
 
                             <!-- Submit Action -->
-                            <div style="display: flex; gap: 12px;">
-                                <button type="submit" class="btn btn-primary" style="flex: 1; padding: 14px; font-size: 1rem; font-weight: 800; border-radius: 12px; box-shadow: 0 6px 20px rgba(108, 92, 231, 0.35);">
+                            <div style="display: flex; gap: 12px; flex-wrap: wrap; width: 100%; box-sizing: border-box;">
+                                <button type="submit" class="btn btn-primary" style="flex: 1 1 200px; padding: 14px; font-size: 0.95rem; font-weight: 800; border-radius: 12px; box-shadow: 0 6px 20px rgba(108, 92, 231, 0.35);">
                                     ${isEdit ? '💾 Save Package Changes' : '🚀 Publish Service Package'}
                                 </button>
-                                <button type="button" class="btn btn-secondary" onclick="router('/packages')" style="padding: 14px 20px; font-weight: 700; border-radius: 12px;">
+                                <button type="button" class="btn btn-secondary" onclick="router('/packages')" style="flex: 0 0 auto; padding: 14px 20px; font-weight: 700; border-radius: 12px;">
                                     Cancel
                                 </button>
                             </div>
