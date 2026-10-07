@@ -3058,6 +3058,47 @@ def get_admin_stats(current_user = Depends(get_current_user), db = Depends(get_d
 def get_public_niches(db = Depends(get_db)):
     return db.query(Niche).filter(Niche.is_active == True).all()
 
+# Creator Level Badge helper
+def get_creator_level_badge_data(total_bookings: int = 0, rating: float = 5.0) -> dict:
+    tb = total_bookings or 0
+    r = rating if rating is not None else 5.0
+    if tb >= 50 and r >= 4.7:
+        return {
+            "level": 4,
+            "key": "diamond_elite",
+            "title": "💎 Diamond Elite",
+            "badge_label": "💎 Level 4: Diamond Elite",
+            "icon": "💎",
+            "color": "#9333ea"
+        }
+    elif tb >= 25 and r >= 4.5:
+        return {
+            "level": 3,
+            "key": "gold_master",
+            "title": "🥇 Gold Master",
+            "badge_label": "🥇 Level 3: Gold Master",
+            "icon": "🥇",
+            "color": "#eab308"
+        }
+    elif tb >= 10 and r >= 4.0:
+        return {
+            "level": 2,
+            "key": "silver_creator",
+            "title": "🥈 Silver Creator",
+            "badge_label": "🥈 Level 2: Silver Creator",
+            "icon": "🥈",
+            "color": "#9ca3af"
+        }
+    else:
+        return {
+            "level": 1,
+            "key": "rising_creator",
+            "title": "🥉 Rising Creator",
+            "badge_label": "🥉 Level 1: Rising Creator",
+            "icon": "🥉",
+            "color": "#cd7f32"
+        }
+
 # Public provider listing for the marketplace
 @api_app.get("/providers", response_model=List[dict])
 @api_app.get("/educators/summary", response_model=List[dict])
@@ -3088,11 +3129,15 @@ def get_providers(
         profile = db.query(Profile).filter(Profile.user_id == u.id).first()
         portfolio = db.query(PortfolioItem).filter(PortfolioItem.provider_id == u.id).all()
         u_type_str = get_user_type_str(u.user_type)
+        tb = profile.total_bookings if profile else 0
+        r = profile.rating if profile else 5.0
+        lvl_badge = get_creator_level_badge_data(tb, r)
         result.append({
             "id": u.id,
             "name": u.name,
             "username": u.username or f"creator_{u.id}",
             "user_type": u_type_str,
+            "creator_level": lvl_badge,
             "profile": {
                 "niche": profile.niche if profile else None,
                 "service_area": profile.service_area if profile else None,
@@ -3100,6 +3145,7 @@ def get_providers(
                 "availability": profile.availability if profile else None,
                 "rating": profile.rating if profile else 0,
                 "total_bookings": profile.total_bookings if profile else 0,
+                "creator_level": lvl_badge
             } if profile else None,
             "portfolio_items": [
                 {
@@ -3113,6 +3159,32 @@ def get_providers(
             ]
         })
     return result
+
+@api_app.get("/marketplace/best-editors")
+def get_best_editors(limit: int = 5, db = Depends(get_db)):
+    providers = db.query(User).filter(
+        User.user_type == UserType.PROVIDER,
+        User.is_active == True,
+        User.is_verified == True
+    ).all()
+    results = []
+    for u in providers:
+        profile = db.query(Profile).filter(Profile.user_id == u.id).first()
+        tb = profile.total_bookings if profile and profile.total_bookings else 0
+        r = profile.rating if profile and profile.rating else 0.0
+        badge = get_creator_level_badge_data(tb, r)
+        results.append({
+            "id": u.id,
+            "name": u.name,
+            "username": u.username or f"creator_{u.id}",
+            "profile_image": getattr(u, 'profile_image', None),
+            "niche": profile.niche if profile else "editors_animators",
+            "rating": r,
+            "total_bookings": tb,
+            "creator_level": badge
+        })
+    results.sort(key=lambda x: (x["creator_level"]["level"], x["rating"], x["total_bookings"]), reverse=True)
+    return results[:limit]
 
 @api_app.get("/providers/by-username/{username}")
 def get_provider_by_username(username: str, db = Depends(get_db)):
@@ -3128,10 +3200,14 @@ def get_provider_by_username(username: str, db = Depends(get_db)):
     profile = db.query(Profile).filter(Profile.user_id == user.id).first()
     portfolio = db.query(PortfolioItem).filter(PortfolioItem.provider_id == user.id).all()
     packages = db.query(Package).filter(Package.provider_id == user.id, Package.status == "approved").all()
+    tb = profile.total_bookings if profile else 0
+    r = profile.rating if profile else 5.0
+    lvl_badge = get_creator_level_badge_data(tb, r)
     return {
         "id": user.id,
         "name": user.name,
         "username": user.username,
+        "creator_level": lvl_badge,
         "profile": {
             "niche": profile.niche if profile else "editors_animators",
             "bio": profile.bio if profile else "",
@@ -3140,6 +3216,7 @@ def get_provider_by_username(username: str, db = Depends(get_db)):
             "total_bookings": profile.total_bookings if profile else 0,
             "service_area": profile.service_area if profile else "online",
             "availability": profile.availability if profile else "flexible",
+            "creator_level": lvl_badge
         } if profile else None,
         "portfolio_items": [
             {
@@ -3172,11 +3249,15 @@ def get_public_provider_profile_by_id(provider_id: int, db = Depends(get_db)):
     profile = db.query(Profile).filter(Profile.user_id == provider_id).first()
     rev_count = db.query(Review).filter(Review.provider_id == provider_id).count()
     u_type_str = get_user_type_str(user.user_type) if hasattr(user.user_type, 'value') else str(user.user_type)
+    tb = profile.total_bookings if profile else 0
+    r = profile.rating if profile else 5.0
+    lvl_badge = get_creator_level_badge_data(tb, r)
     return {
         "id": user.id,
         "name": user.name,
         "username": user.username or f"user_{user.id}",
         "user_type": u_type_str,
+        "creator_level": lvl_badge,
         "profile": {
             "niche": profile.niche if profile else "editors_animators",
             "bio": profile.bio if profile else "",
@@ -3186,7 +3267,8 @@ def get_public_provider_profile_by_id(provider_id: int, db = Depends(get_db)):
             "review_count": rev_count,
             "service_area": profile.service_area if profile else "online",
             "availability": profile.availability if profile else "flexible",
-            "response_time": profile.response_time if profile else "within 2 hours"
+            "response_time": profile.response_time if profile else "within 2 hours",
+            "creator_level": lvl_badge
         } if profile else None
     }
 

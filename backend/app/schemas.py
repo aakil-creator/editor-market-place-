@@ -212,6 +212,14 @@ class ProfileResponse(BaseModel):
     class Config:
         from_attributes = True
 
+class CreatorLevelBadge(BaseModel):
+    level: int = 1
+    key: str = "rising_creator"
+    title: str = "🥉 Rising Creator"
+    badge_label: str = "🥉 Rising Creator"
+    icon: str = "🥉"
+    color: str = "#cd7f32"
+
 class PublicProfileResponse(BaseModel):
     """Sanitized public profile DTO excluding banking, earnings, and contact info."""
     niche: Optional[str] = "editors_animators"
@@ -225,6 +233,7 @@ class PublicProfileResponse(BaseModel):
     looking_for: Optional[str] = ""
     experience_tier: Optional[str] = "beginner"
     vetting_status: Optional[str] = "pending"
+    creator_level: Optional[CreatorLevelBadge] = None
 
     class Config:
         from_attributes = True
@@ -327,6 +336,7 @@ class PublicProviderResponse(BaseModel):
     profile: Optional[PublicProfileResponse] = None
     portfolio_items: List[PublicPortfolioItemResponse] = []
     packages: List[PublicPackageResponse] = []
+    creator_level: Optional[CreatorLevelBadge] = None
 
     class Config:
         from_attributes = True

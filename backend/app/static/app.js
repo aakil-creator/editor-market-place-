@@ -128,6 +128,120 @@ function getYouTubeEmbedUrl(rawUrl) {
 }
 window.getYouTubeEmbedUrl = getYouTubeEmbedUrl;
 
+// --- Creator Level Badge Helpers ---
+function getCreatorLevelBadge(totalBookings = 0, rating = 5.0) {
+    const tb = Number(totalBookings) || 0;
+    const r = rating !== null && rating !== undefined ? Number(rating) : 5.0;
+    if (tb >= 50 && r >= 4.7) {
+        return {
+            level: 4,
+            key: 'diamond_elite',
+            title: '💎 Diamond Elite',
+            badge_label: '💎 Level 4: Diamond Elite',
+            icon: '💎',
+            color: '#9333ea',
+            bg: 'rgba(147, 51, 234, 0.15)',
+            border: '#a855f7'
+        };
+    } else if (tb >= 25 && r >= 4.5) {
+        return {
+            level: 3,
+            key: 'gold_master',
+            title: '🥇 Gold Master',
+            badge_label: '🥇 Level 3: Gold Master',
+            icon: '🥇',
+            color: '#d97706',
+            bg: 'rgba(217, 119, 6, 0.15)',
+            border: '#f59e0b'
+        };
+    } else if (tb >= 10 && r >= 4.0) {
+        return {
+            level: 2,
+            key: 'silver_creator',
+            title: '🥈 Silver Creator',
+            badge_label: '🥈 Level 2: Silver Creator',
+            icon: '🥈',
+            color: '#4b5563',
+            bg: 'rgba(75, 85, 99, 0.15)',
+            border: '#9ca3af'
+        };
+    } else {
+        return {
+            level: 1,
+            key: 'rising_creator',
+            title: '🥉 Rising Creator',
+            badge_label: '🥉 Level 1: Rising Creator',
+            icon: '🥉',
+            color: '#b45309',
+            bg: 'rgba(180, 83, 9, 0.12)',
+            border: '#cd7f32'
+        };
+    }
+}
+window.getCreatorLevelBadge = getCreatorLevelBadge;
+
+function renderCreatorLevelBadgeTag(badge, size = 'md') {
+    if (!badge) return '';
+    const fontSize = size === 'sm' ? '0.72rem' : '0.8rem';
+    const padding = size === 'sm' ? '2px 6px' : '3px 10px';
+    return `<span class="creator-level-badge-pill" style="display: inline-flex; align-items: center; gap: 4px; padding: ${padding}; font-size: ${fontSize}; font-weight: 700; border-radius: 20px; background: ${badge.bg || 'rgba(147, 51, 234, 0.12)'}; color: ${badge.color || '#9333ea'}; border: 1px solid ${badge.border || badge.color || '#a855f7'}; box-shadow: 0 1px 3px rgba(0,0,0,0.05);" title="${escapeHTML(badge.badge_label || badge.title)}">
+        <span>${badge.icon}</span>
+        <span>${escapeHTML(badge.title || badge.badge_label)}</span>
+    </span>`;
+}
+window.renderCreatorLevelBadgeTag = renderCreatorLevelBadgeTag;
+
+function renderBestEditorsSidebar(allProviders = []) {
+    const creators = (Array.isArray(allProviders) ? allProviders : []).map(p => {
+        const tb = p.total_bookings ?? p.profile?.total_bookings ?? 0;
+        const r = p.rating ?? p.profile?.rating ?? 5.0;
+        const lvl = p.creator_level || p.profile?.creator_level || getCreatorLevelBadge(tb, r);
+        return {
+            id: p.id,
+            name: p.name || 'Verified Creator',
+            username: p.username || `creator_${p.id}`,
+            rating: r,
+            total_bookings: tb,
+            creator_level: lvl
+        };
+    });
+
+    creators.sort((a, b) => (b.creator_level.level - a.creator_level.level) || (b.rating - a.rating) || (b.total_bookings - a.total_bookings));
+    const topEditors = creators.slice(0, 5);
+    if (!topEditors.length) return '';
+
+    return `
+    <div class="card" style="padding: 16px; margin-bottom: 24px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-card); box-shadow: var(--shadow-sm);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid var(--border); padding-bottom: 8px;">
+            <strong style="font-size: 0.95rem; color: var(--text-primary); display: flex; align-items: center; gap: 6px;">
+                🏆 Top Rated Best Editors
+            </strong>
+            <span class="badge badge-success" style="font-size: 0.7rem; font-weight: 700;">Level Badges</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+            ${topEditors.map((ed, idx) => `
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; background: var(--bg-hover); border-radius: var(--radius-sm); border: 1px solid var(--border); gap: 8px; cursor: pointer; transition: transform 0.2s ease;" onclick="openPreBookingChat(${ed.id}, '${escapeJs(ed.name)}')">
+                    <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
+                        <span style="font-weight: 800; font-size: 0.85rem; color: var(--text-muted); width: 14px;">#${idx+1}</span>
+                        <div style="width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #a855f7); color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.85rem; flex-shrink: 0;">
+                            ${(ed.name || 'C').charAt(0).toUpperCase()}
+                        </div>
+                        <div style="min-width: 0;">
+                            <div style="font-weight: 700; font-size: 0.88rem; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHTML(ed.name)}</div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">★ ${(Number(ed.rating) || 5.0).toFixed(1)} &bull; ${ed.total_bookings} edits</div>
+                        </div>
+                    </div>
+                    <div>
+                        ${renderCreatorLevelBadgeTag(ed.creator_level, 'sm')}
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+    </div>
+    `;
+}
+window.renderBestEditorsSidebar = renderBestEditorsSidebar;
+
 function isMediaVideo(url) {
     if (!url || typeof url !== 'string') return false;
     const clean = url.trim().toLowerCase().split('?')[0];
@@ -4616,7 +4730,10 @@ function BuyerDashboard() {
                             `;
                         }).join('')}
 
-                        <!-- 2. Render Verified Creators Showcase -->
+                        <!-- 2. Render Top Rated Best Editors Sidebar Showcase -->
+                        ${renderBestEditorsSidebar(allProviders)}
+
+                        <!-- 3. Render Verified Creators Showcase -->
                         ${filteredProviders.map(pr => {
                             const isTutor = pr.niche === 'tutors';
                             const isWriter = pr.niche === 'writers';
@@ -4627,6 +4744,7 @@ function BuyerDashboard() {
                             const turnaround = pr.response_time || '24 hours';
                             const headline = pr.specialization || (isTutor ? 'Conversational English & Fluency Coaching' : (isWriter ? 'High-Converting Copy & Content' : 'Professional Video Editing & Motion Graphics'));
                             const prThumb = getProviderThumbnail(pr, null);
+                            const levelBadge = pr.creator_level || pr.profile?.creator_level || getCreatorLevelBadge(pr.total_bookings || pr.profile?.total_bookings, pr.rating || pr.profile?.rating);
 
                             return `
                             <div class="card fiverr-gig-card" style="display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg-card); transition: all 0.25s ease;">
@@ -4646,14 +4764,14 @@ function BuyerDashboard() {
                                                 ${initial}
                                             </div>
                                             <div>
-                                                <div style="font-weight: 700; font-size: 0.92rem; color: var(--text-primary); display: flex; align-items: center; gap: 4px;">
+                                                <div style="font-weight: 700; font-size: 0.92rem; color: var(--text-primary); display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
                                                     ${escapeHTML(pr.name)}
                                                     <span title="Verified Talent" style="color: var(--accent); font-size: 0.8rem;">✓</span>
                                                 </div>
-                                                <div style="font-size: 0.72rem; color: var(--success); font-weight: 600;">🟢 Online now</div>
+                                                <div style="font-size: 0.72rem; color: var(--success); font-weight: 600; margin-top: 2px;">🟢 Online now</div>
                                             </div>
                                         </div>
-                                        <span class="badge badge-info" style="font-size: 0.7rem; padding: 4px 8px;">${nicheBadge}</span>
+                                        ${renderCreatorLevelBadgeTag(levelBadge, 'sm')}
                                     </div>
 
                                     <h4 style="font-size: 1rem; font-weight: 700; margin-bottom: 8px; color: var(--text-primary); line-height: 1.4;">${escapeHTML(headline)}</h4>
@@ -4663,7 +4781,7 @@ function BuyerDashboard() {
 
                                     <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 10px;">
                                         <span>⚡ ${escapeHTML(turnaround)} turnaround</span>
-                                        <span style="color: var(--warning); font-weight: 700;">★ 5.0 (Verified)</span>
+                                        <span style="color: var(--warning); font-weight: 700;">★ ${(Number(pr.rating || pr.profile?.rating || 5.0)).toFixed(1)} (Verified)</span>
                                     </div>
                                 </div>
 
@@ -13470,6 +13588,7 @@ window.showProviderIdCardModal = function(provider) {
     const initial = name.charAt(0).toUpperCase();
     const handle = provider?.username ? `@${provider.username}` : '';
     const provId = `GH-PROV-${String(provider?.id || 100).padStart(5, '0')}`;
+    const levelBadge = provider?.creator_level || getCreatorLevelBadge(provider?.total_bookings || provider?.profile?.total_bookings, provider?.rating || provider?.profile?.rating);
     
     const modal = document.createElement('div');
     modal.className = 'modal-backdrop';
@@ -13491,9 +13610,12 @@ window.showProviderIdCardModal = function(provider) {
                     ${provider?.profile_image ? `<img src="${provider.profile_image}" alt="${name}" style="width:100%;height:100%;object-fit:cover;" />` : initial}
                 </div>
                 <h3 style="font-size:1.3rem;font-weight:800;color:#fff;margin-bottom:2px;display:flex;align-items:center;justify-content:center;gap:6px;">
-                    ${escapeHTML(name)} <span style="color:#38bdf8;font-size:1.1rem;" title="Verified On-Site Creator">Verified Creator Badge</span>
+                    ${escapeHTML(name)} <span style="color:#38bdf8;font-size:1.1rem;" title="Verified On-Site Creator">✓</span>
                 </h3>
-                <div style="font-size:0.85rem;color:#94a3b8;font-weight:600;">${escapeHTML(handle)} &bull; ${provId}</div>
+                <div style="font-size:0.85rem;color:#94a3b8;font-weight:600;margin-bottom:6px;">${escapeHTML(handle)} &bull; ${provId}</div>
+                <div style="display:flex;justify-content:center;">
+                    ${renderCreatorLevelBadgeTag(levelBadge, 'md')}
+                </div>
             </div>
 
             <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px;margin-bottom:18px;">
