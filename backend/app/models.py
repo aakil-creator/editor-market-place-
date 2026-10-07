@@ -143,6 +143,18 @@ class Booking(Base):
     admin_notes = Column(Text)
     onsite_checkin_at = Column(DateTime, nullable=True)
     checkin_token = Column(String, nullable=True)
+
+    # Shoot verification, draft watermark, and multi-event fields
+    shoot_pin = Column(String(6), nullable=True, index=True)
+    shoot_status = Column(String, default="SCHEDULED", nullable=False) # SCHEDULED, LIVE_SHOOT, SHOOT_COMPLETED, EDITING, DRAFT_SUBMITTED, APPROVED_COMPLETED
+    shoot_verified_at = Column(DateTime, nullable=True)
+    event_count = Column(Integer, default=1, nullable=False) # 1, 2, or 3 events in a day
+    event_details = Column(JSON, default=list) # [{ location: "Mall", time: "10:00 AM" }]
+    watermarked_draft_url = Column(String, nullable=True)
+    clean_final_url = Column(String, nullable=True)
+    is_watermark_removed = Column(Boolean, default=False, nullable=False)
+    per_reel_payout_rate = Column(Float, default=0.0)
+
     # Client handoff + platform free-sample workflow
     client_notes = Column(Text, nullable=True)
     source_file_url = Column(String, nullable=True)
@@ -373,4 +385,42 @@ class Notification(Base):
     link = Column(String(500), nullable=True)
     is_read = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+# Provider Schedule & Calendar occupied slots
+class ProviderSchedule(Base):
+    __tablename__ = "provider_schedules"
+
+    id = Column(Integer, primary_key=True, index=True)
+    provider_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    provider = relationship("User", foreign_keys=[provider_id])
+
+    date = Column(String(10), nullable=False, index=True) # YYYY-MM-DD
+    start_time = Column(String(10), default="09:00")
+    end_time = Column(String(10), default="18:00")
+    title = Column(String, nullable=False) # e.g. "On-site Event Shoot", "Video Editing Day"
+    location = Column(String, nullable=True)
+    event_count = Column(Integer, default=1)
+    is_occupied = Column(Boolean, default=True)
+    booking_id = Column(Integer, ForeignKey("bookings.id"), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+# Prior Availability Request system (Buyers inquiring prior to booking)
+class AvailabilityRequest(Base):
+    __tablename__ = "availability_requests"
+
+    id = Column(Integer, primary_key=True, index=True)
+    buyer_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    buyer = relationship("User", foreign_keys=[buyer_id])
+
+    provider_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    provider = relationship("User", foreign_keys=[provider_id])
+
+    requested_date = Column(String(10), nullable=False) # YYYY-MM-DD
+    event_count = Column(Integer, default=1) # 1, 2, or 3 events in a day
+    locations_summary = Column(Text, nullable=True)
+    custom_proposed_price = Column(Float, nullable=True)
+    status = Column(String(20), default="PENDING") # PENDING, ACCEPTED, DECLINED
+    provider_notes = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
 

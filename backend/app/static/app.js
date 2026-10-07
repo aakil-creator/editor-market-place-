@@ -13213,3 +13213,425 @@ window.openBitmojiStudioModal = () => {
         }
     };
 };
+
+// ============== WEBRTC REAL-TIME AUDIO CALLING SYSTEM ==============
+window.GroveAudioCall = {
+    peerConnection: null,
+    localStream: null,
+    remoteStream: null,
+    isMuted: false,
+    targetUserId: null,
+    bookingId: null,
+    callTimer: null,
+    callSeconds: 0,
+    audioCtx: null,
+
+    async startCall(targetUserId, targetName, bookingId = null) {
+        this.targetUserId = targetUserId;
+        this.bookingId = bookingId;
+        showToast(`📞 Dialing HD Audio Call to ${targetName}...`, 'info');
+        this.playRingbackSound();
+        this.renderActiveCallModal(targetName, 'Dialing...');
+
+        try {
+            this.localStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }, video: false });
+            this.initPeerConnection();
+            this.localStream.getTracks().forEach(track => this.peerConnection.addTrack(track, this.localStream));
+
+            const offer = await this.peerConnection.createOffer();
+            await this.peerConnection.setLocalDescription(offer);
+
+            await apiFetch('/chat/call/signal', {
+                method: 'POST',
+                body: JSON.stringify({ target_user_id: targetUserId, signal_type: 'offer', data: offer, booking_id: bookingId })
+            });
+        } catch (err) {
+            console.error('[WEBRTC CALL] Call error:', err);
+            showToast('Unable to access microphone. Please check browser permissions.', 'error');
+            this.endCall();
+        }
+    },
+
+    async handleIncomingOffer(senderId, senderName, offerData, bookingId) {
+        this.targetUserId = senderId;
+        this.bookingId = bookingId;
+        this.playIncomingRingSound();
+
+        const modal = document.createElement('div');
+        modal.id = 'incoming-call-modal';
+        modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(15,23,42,0.85);backdrop-filter:blur(8px);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
+        modal.innerHTML = `
+            <div style="background:var(--bg-card);border:2px solid var(--accent);border-radius:20px;padding:32px 24px;width:100%;max-width:380px;text-align:center;box-shadow:0 20px 40px rgba(0,0,0,0.4);">
+                <div style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#3b82f6,#6366f1);margin:0 auto 16px;display:flex;align-items:center;justify-content:center;font-size:2.2rem;box-shadow:0 0 20px rgba(99,102,241,0.5);">
+                    📞
+                </div>
+                <h3 style="font-size:1.4rem;font-weight:800;color:var(--text-primary);margin-bottom:4px;">Incoming HD Audio Call</h3>
+                <p style="font-size:1rem;color:var(--accent);font-weight:700;margin-bottom:24px;">${escapeHTML(senderName)} is calling...</p>
+                <div style="display:flex;gap:16px;">
+                    <button class="btn btn-danger" style="flex:1;padding:14px;border-radius:12px;font-weight:700;" onclick="GroveAudioCall.declineCall()">
+                        📵 Decline
+                    </button>
+                    <button class="btn btn-success" style="flex:1;padding:14px;border-radius:12px;font-weight:700;" id="accept-call-btn">
+                        📞 Accept
+                    </button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+
+        modal.querySelector('#accept-call-btn').onclick = async () => {
+            this.stopRingtone();
+            modal.remove();
+            this.renderActiveCallModal(senderName, 'Connected');
+            try {
+                this.localStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }, video: false });
+                this.initPeerConnection();
+                this.localStream.getTracks().forEach(track => this.peerConnection.addTrack(track, this.localStream));
+
+                await this.peerConnection.setRemoteDescription(new RTCSessionDescription(offerData));
+                const answer = await this.peerConnection.createAnswer();
+                await this.peerConnection.setLocalDescription(answer);
+
+                await apiFetch('/chat/call/signal', {
+                    method: 'POST',
+                    body: JSON.stringify({ target_user_id: senderId, signal_type: 'answer', data: answer, booking_id: bookingId })
+                });
+
+                this.startTimer();
+            } catch (e) {
+                console.error('[WEBRTC CALL] Accept error:', e);
+                showToast('Mic access error.', 'error');
+                this.endCall();
+            }
+        };
+    },
+
+    initPeerConnection() {
+        this.peerConnection = new RTCPeerConnection({
+            iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+        });
+
+        this.peerConnection.onicecandidate = (e) => {
+            if (e.candidate) {
+                apiFetch('/chat/call/signal', {
+                    method: 'POST',
+                    body: JSON.stringify({ target_user_id: this.targetUserId, signal_type: 'ice_candidate', data: e.candidate, booking_id: this.bookingId })
+                });
+            }
+        };
+
+        this.peerConnection.ontrack = (e) => {
+            this.remoteStream = e.streams[0];
+            let remoteAudio = document.getElementById('remote-audio-elem');
+            if (!remoteAudio) {
+                remoteAudio = document.createElement('audio');
+                remoteAudio.id = 'remote-audio-elem';
+                document.body.appendChild(remoteAudio);
+            }
+            remoteAudio.srcObject = this.remoteStream;
+            remoteAudio.autoplay = true;
+            this.stopRingtone();
+            this.startTimer();
+            const statusElem = document.getElementById('call-status-label');
+            if (statusElem) statusElem.innerText = 'Connected HD Audio 🎙️';
+        };
+    },
+
+    toggleMute() {
+        if (!this.localStream) return;
+        this.isMuted = !this.isMuted;
+        this.localStream.getAudioTracks().forEach(track => track.enabled = !this.isMuted);
+        const muteBtn = document.getElementById('call-mute-btn');
+        if (muteBtn) {
+            muteBtn.innerHTML = this.isMuted ? '🔇 Unmute' : '🎙️ Mute';
+            muteBtn.style.background = this.isMuted ? '#ef4444' : 'var(--bg-card)';
+        }
+    },
+
+    endCall() {
+        this.stopRingtone();
+        if (this.peerConnection) {
+            this.peerConnection.close();
+            this.peerConnection = null;
+        }
+        if (this.localStream) {
+            this.localStream.getTracks().forEach(t => t.stop());
+            this.localStream = null;
+        }
+        if (this.targetUserId) {
+            apiFetch('/chat/call/signal', {
+                method: 'POST',
+                body: JSON.stringify({ target_user_id: this.targetUserId, signal_type: 'call_ended', booking_id: this.bookingId })
+            }).catch(() => {});
+        }
+        clearInterval(this.callTimer);
+        this.callSeconds = 0;
+        const callModal = document.getElementById('active-call-modal');
+        if (callModal) callModal.remove();
+        const incomingModal = document.getElementById('incoming-call-modal');
+        if (incomingModal) incomingModal.remove();
+        showToast('Audio call ended.', 'info');
+    },
+
+    declineCall() {
+        this.endCall();
+    },
+
+    renderActiveCallModal(name, status) {
+        let modal = document.getElementById('active-call-modal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'active-call-modal';
+            modal.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:9999;width:320px;background:var(--bg-card);border:2px solid var(--accent);border-radius:16px;padding:18px;box-shadow:0 12px 30px rgba(0,0,0,0.3);';
+            document.body.appendChild(modal);
+        }
+        modal.innerHTML = `
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+                <div style="width:44px;height:44px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:1.3rem;color:#fff;font-weight:700;">
+                    ${(name || 'U').charAt(0).toUpperCase()}
+                </div>
+                <div style="flex:1;overflow:hidden;">
+                    <div style="font-weight:800;font-size:0.95rem;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHTML(name)}</div>
+                    <div id="call-status-label" style="font-size:0.75rem;color:var(--accent);font-weight:600;">${status}</div>
+                </div>
+                <div id="call-timer-display" style="font-size:0.8rem;font-weight:700;color:var(--text-muted);background:var(--bg-body);padding:4px 8px;border-radius:6px;">00:00</div>
+            </div>
+            <div style="display:flex;gap:8px;">
+                <button id="call-mute-btn" class="btn btn-secondary btn-sm" style="flex:1;font-weight:700;" onclick="GroveAudioCall.toggleMute()">
+                    🎙️ Mute
+                </button>
+                <button class="btn btn-danger btn-sm" style="flex:1;font-weight:700;" onclick="GroveAudioCall.endCall()">
+                    断 End Call
+                </button>
+            </div>
+        `;
+    },
+
+    startTimer() {
+        clearInterval(this.callTimer);
+        this.callSeconds = 0;
+        this.callTimer = setInterval(() => {
+            this.callSeconds++;
+            const mins = String(Math.floor(this.callSeconds / 60)).padStart(2, '0');
+            const secs = String(this.callSeconds % 60).padStart(2, '0');
+            const timerElem = document.getElementById('call-timer-display');
+            if (timerElem) timerElem.innerText = `${mins}:${secs}`;
+        }, 1000);
+    },
+
+    playRingbackSound() {
+        try {
+            this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = this.audioCtx.createOscillator();
+            const gain = this.audioCtx.createGain();
+            osc.frequency.value = 440;
+            gain.gain.value = 0.05;
+            osc.connect(gain);
+            gain.connect(this.audioCtx.destination);
+            osc.start();
+            setTimeout(() => { try { osc.stop(); } catch(e){} }, 1500);
+        } catch(e) {}
+    },
+
+    playIncomingRingSound() {
+        try {
+            this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = this.audioCtx.createOscillator();
+            const gain = this.audioCtx.createGain();
+            osc.frequency.value = 587.33;
+            gain.gain.value = 0.1;
+            osc.connect(gain);
+            gain.connect(this.audioCtx.destination);
+            osc.start();
+            setTimeout(() => { try { osc.stop(); } catch(e){} }, 2000);
+        } catch(e) {}
+    },
+
+    stopRingtone() {
+        if (this.audioCtx) {
+            try { this.audioCtx.close(); } catch(e){}
+            this.audioCtx = null;
+        }
+    }
+};
+window.GroveAudioCall = GroveAudioCall;
+
+
+// ============== DIGITAL PROVIDER IDENTITY CARD ==============
+window.showProviderIdCardModal = function(provider) {
+    const name = provider?.name || 'Verified Creator';
+    const initial = name.charAt(0).toUpperCase();
+    const handle = provider?.username ? `@${provider.username}` : '';
+    const provId = `GH-PROV-${String(provider?.id || 100).padStart(5, '0')}`;
+    
+    const modal = document.createElement('div');
+    modal.className = 'modal-backdrop';
+    modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(15,23,42,0.85);backdrop-filter:blur(10px);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;';
+    modal.innerHTML = `
+        <div class="modal-card" style="max-width:380px;width:100%;background:linear-gradient(145deg, #1e293b, #0f172a);border:2px solid var(--accent);border-radius:24px;padding:24px;color:#fff;box-shadow:0 25px 50px rgba(0,0,0,0.5);position:relative;overflow:hidden;">
+            <div style="position:absolute;top:-40px;right:-40px;width:140px;height:140px;background:rgba(99,102,241,0.15);border-radius:50%;pointer-events:none;"></div>
+            
+            <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,0.15);padding-bottom:14px;margin-bottom:18px;">
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <img src="/static/icons/grove_hub_logo_dark.png" alt="Grove Hub" style="height:28px;width:auto;" onerror="this.style.display='none';" />
+                    <span style="font-weight:900;font-size:0.9rem;letter-spacing:1px;color:#f8fafc;">GROOVE HUB CREATOR ID</span>
+                </div>
+                <button type="button" onclick="this.closest('.modal-backdrop').remove()" style="background:none;border:none;color:#94a3b8;font-size:1.4rem;cursor:pointer;line-height:1;">&times;</button>
+            </div>
+
+            <div style="text-align:center;margin-bottom:18px;">
+                <div style="width:88px;height:88px;border-radius:50%;margin:0 auto 12px;border:3px solid var(--accent);box-shadow:0 4px 15px rgba(0,0,0,0.3);overflow:hidden;background:#334155;display:flex;align-items:center;justify-content:center;font-size:2.2rem;font-weight:800;color:#fff;">
+                    ${provider?.profile_image ? `<img src="${provider.profile_image}" alt="${name}" style="width:100%;height:100%;object-fit:cover;" />` : initial}
+                </div>
+                <h3 style="font-size:1.3rem;font-weight:800;color:#fff;margin-bottom:2px;display:flex;align-items:center;justify-content:center;gap:6px;">
+                    ${escapeHTML(name)} <span style="color:#38bdf8;font-size:1.1rem;" title="Verified On-Site Creator">Verified Creator Badge</span>
+                </h3>
+                <div style="font-size:0.85rem;color:#94a3b8;font-weight:600;">${escapeHTML(handle)} &bull; ${provId}</div>
+            </div>
+
+            <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px;margin-bottom:18px;">
+                <div style="font-size:0.75rem;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Authorized Skills & Roles</div>
+                <div style="display:flex;flex-wrap:wrap;gap:6px;">
+                    <span class="badge" style="background:rgba(59,130,246,0.2);color:#60a5fa;border:1px solid rgba(59,130,246,0.4);font-size:0.75rem;padding:4px 8px;border-radius:6px;font-weight:700;">🎥 Videography & Shooting</span>
+                    <span class="badge" style="background:rgba(168,85,247,0.2);color:#c084fc;border:1px solid rgba(168,85,247,0.4);font-size:0.75rem;padding:4px 8px;border-radius:6px;font-weight:700;">🎬 Video Editing & Reels</span>
+                    <span class="badge" style="background:rgba(245,158,11,0.2);color:#fbbf24;border:1px solid rgba(245,158,11,0.4);font-size:0.75rem;padding:4px 8px;border-radius:6px;font-weight:700;">✍️ Script Writing</span>
+                    <span class="badge" style="background:rgba(236,72,153,0.2);color:#f472b6;border:1px solid rgba(236,72,153,0.4);font-size:0.75rem;padding:4px 8px;border-radius:6px;font-weight:700;">📱 Social Media Management</span>
+                </div>
+            </div>
+
+            <div style="display:flex;align-items:center;gap:12px;background:rgba(0,0,0,0.3);padding:12px;border-radius:14px;border:1px dashed rgba(255,255,255,0.2);">
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=70x70&data=grove_hub_id_${provId}" alt="QR ID" style="width:60px;height:60px;border-radius:8px;background:#fff;padding:4px;" />
+                <div style="flex:1;font-size:0.75rem;color:#cbd5e1;line-height:1.4;">
+                    <strong>Official Escrow Verified ID</strong><br/> Present this digital badge to the venue/shop owner to receive your 6-digit Shoot PIN.
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+};
+
+
+// ============== WATERMARKED DRAFT VIDEO PLAYER & APPROVAL ==============
+window.renderWatermarkedVideoPlayer = function(videoUrl, isApproved = false, bookingId = null) {
+    if (!videoUrl) return '';
+    const watermarkedTag = isApproved ? '' : `
+        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-25deg);pointer-events:none;z-index:10;user-select:none;opacity:0.45;text-align:center;">
+            <div style="font-size:1.6rem;font-weight:900;color:#ffffff;text-shadow:0 0 10px rgba(0,0,0,0.9);letter-spacing:3px;background:rgba(239,68,68,0.85);padding:8px 24px;border-radius:8px;border:2px solid #ffffff;">
+                GROOVE HUB DRAFT
+            </div>
+            <div style="font-size:0.85rem;font-weight:800;color:#ffffff;text-shadow:0 0 8px rgba(0,0,0,0.9);margin-top:4px;">WATERMARKED PROOF OF WORK</div>
+        </div>
+    `;
+
+    return `
+        <div class="video-watermark-container" style="position:relative;width:100%;max-width:500px;margin:12px 0;border-radius:14px;overflow:hidden;background:#000;box-shadow:0 8px 24px rgba(0,0,0,0.3);border:2px solid var(--accent);">
+            <video src="${sanitizeUrl(videoUrl)}" controls style="width:100%;max-height:360px;display:block;object-fit:contain;"></video>
+            ${watermarkedTag}
+            <div style="padding:10px 14px;background:var(--bg-card);border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;font-size:0.8rem;">
+                <span style="font-weight:700;color:${isApproved ? '#10b981' : '#f59e0b'};">
+                    ${isApproved ? '✅ Clean Original Unlocked' : '🎬 Draft Edit (Watermarked Preview)'}
+                </span>
+                ${isApproved ? `
+                    <a href="${sanitizeUrl(videoUrl)}" download target="_blank" class="btn btn-success btn-sm" style="padding:4px 10px;font-weight:700;">
+                        ⬇️ Download Original
+                    </a>
+                ` : (bookingId && currentUser?.user_type === 'BUYER' ? `
+                    <button class="btn btn-success btn-sm" style="font-weight:700;" onclick="approveWatermarkedVideo(${bookingId})">
+                        ✅ Approve & Remove Watermark
+                    </button>
+                ` : '')}
+            </div>
+        </div>
+    `;
+};
+
+window.approveWatermarkedVideo = async function(bookingId) {
+    if (!confirm("Are you satisfied with this video edit? Approving will remove the watermark, unlock the clean high-res video, and release payment to the creator.")) return;
+    try {
+        showLoading();
+        await apiFetch(`/projects/${bookingId}/approve-watermark`, { method: 'POST' });
+        showToast("🎉 Video approved! Watermark removed and payment released.", "success");
+        router(`/bookings?id=${bookingId}`);
+    } catch (e) {
+        showToast(e.message || "Failed to approve video", "error");
+    } finally {
+        hideLoading();
+    }
+};
+
+
+// ============== PRIOR AVAILABILITY REQUEST MODAL ==============
+window.showAvailabilityRequestModal = function(providerId, providerName) {
+    const modal = document.createElement('div');
+    modal.className = 'modal-backdrop';
+    modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(15,23,42,0.8);backdrop-filter:blur(6px);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;';
+    modal.innerHTML = `
+        <div class="modal-card" style="max-width:440px;width:100%;background:var(--bg-card);border:1px solid var(--border);border-radius:20px;padding:24px;box-shadow:var(--shadow-xl);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+                <h3 style="font-size:1.2rem;font-weight:800;color:var(--text-primary);margin:0;">📅 Request Availability</h3>
+                <button type="button" onclick="this.closest('.modal-backdrop').remove()" style="background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--text-muted);">&times;</button>
+            </div>
+            <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:16px;">Check if <strong>${escapeHTML(providerName)}</strong> is free on your target date prior to booking.</p>
+            
+            <form id="avail-req-form" onsubmit="return false;">
+                <div class="form-group" style="margin-bottom:12px;">
+                    <label class="form-label">Shooting Date</label>
+                    <input type="date" id="avail-req-date" class="form-input" required value="${new Date().toISOString().split('T')[0]}" />
+                </div>
+                
+                <div class="form-group" style="margin-bottom:12px;">
+                    <label class="form-label">Number of Events in a Day</label>
+                    <select id="avail-req-events" class="form-input">
+                        <option value="1">1 Event / Shoot</option>
+                        <option value="2">2 Events in a Day (Multi-venue)</option>
+                        <option value="3">3 Events in a Day (Full Day Blitz)</option>
+                    </select>
+                </div>
+
+                <div class="form-group" style="margin-bottom:12px;">
+                    <label class="form-label">Venue / Event Locations Summary</label>
+                    <input type="text" id="avail-req-locations" class="form-input" placeholder="e.g. Phoenix Mall & MG Road Outlet" />
+                </div>
+
+                <div class="form-group" style="margin-bottom:18px;">
+                    <label class="form-label">Custom Proposed Offer Rate (Optional ₹)</label>
+                    <input type="number" id="avail-req-price" class="form-input" placeholder="e.g. 2500 (extra rush charges if occupied)" />
+                </div>
+
+                <div style="display:flex;gap:10px;">
+                    <button type="button" class="btn btn-secondary" style="flex:1;" onclick="this.closest('.modal-backdrop').remove()">Cancel</button>
+                    <button type="submit" class="btn btn-primary" style="flex:1;font-weight:700;">Send Request</button>
+                </div>
+            </form>
+        </div>
+    `;
+    document.body.appendChild(modal);
+
+    modal.querySelector('#avail-req-form').onsubmit = async () => {
+        const date = modal.querySelector('#avail-req-date').value;
+        const events = parseInt(modal.querySelector('#avail-req-events').value || 1);
+        const locations = modal.querySelector('#avail-req-locations').value;
+        const price = parseFloat(modal.querySelector('#avail-req-price').value || 0);
+
+        try {
+            showLoading();
+            await apiFetch('/provider/availability-request', {
+                method: 'POST',
+                body: JSON.stringify({
+                    provider_id: providerId,
+                    requested_date: date,
+                    event_count: events,
+                    locations_summary: locations,
+                    custom_proposed_price: price > 0 ? price : null
+                })
+            });
+            modal.remove();
+            showToast(`📅 Prior availability request sent to ${providerName}!`, 'success');
+        } catch(e) {
+            showToast(e.message || "Failed to send availability request", "error");
+        } finally {
+            hideLoading();
+        }
+    };
+};
+

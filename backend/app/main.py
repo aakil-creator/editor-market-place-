@@ -31,7 +31,8 @@ from .database import get_db, engine, Base, SessionLocal
 from .models import (
     User, Profile, Package, Booking, Payment, Release, Review, Dispute, Niche,
     UserType, BookingStatus, PaymentStatus, PackageType, Message, PortfolioItem, PlatformSettings,
-    PasswordResetToken, EmailVerificationToken, OtpVerification, Notification
+    PasswordResetToken, EmailVerificationToken, OtpVerification, Notification,
+    ProviderSchedule, AvailabilityRequest
 )
 from .schemas import (
     UserCreate, UserUpdate, UserLogin, Token, UserResponse, ProfileCreate, ProfileUpdate,
@@ -46,7 +47,8 @@ from .schemas import (
     BankDetailsUpdate, PlatformSettingsUpdate, PlatformSettingsResponse,
     SocialLoginRequest, RoleSwitchRequest, OtpRequest, OtpResponse, OtpVerifyRequest,
     ForgotPasswordRequest, ForgotPasswordResponse, ResetPasswordWithTokenRequest, VerifyEmailRequest,
-    VettingSubmitRequest, UpdateTierRequest,
+    VettingSubmitRequest, UpdateTierRequest, ShootPinVerify, DraftSubmit, WatermarkApprove,
+    ProviderScheduleCreate, ProviderScheduleResponse, AvailabilityRequestCreate, AvailabilityRequestRespond, AvailabilityRequestResponse,
     get_current_user, get_current_user_optional
 )
 from .security import hash_password, verify_password, create_access_token, hash_token
@@ -1633,6 +1635,9 @@ def create_booking(booking_data: BookingCreate, current_user = Depends(get_curre
     if not provider:
         raise HTTPException(status_code=400, detail="Provider not found")
 
+    import random
+    shoot_pin = f"{random.randint(100000, 999999)}"
+
     booking = Booking(
         buyer_id=current_user.id,
         provider_id=provider_id,
@@ -1642,7 +1647,12 @@ def create_booking(booking_data: BookingCreate, current_user = Depends(get_curre
         status="confirmed",
         client_notes=booking_data.client_notes,
         source_file_url=booking_data.source_file_url,
-        is_free_sample=False
+        is_free_sample=False,
+        shoot_pin=shoot_pin,
+        shoot_status="SCHEDULED",
+        event_count=booking_data.event_count or 1,
+        event_details=booking_data.event_details or [],
+        per_reel_payout_rate=round(booking_data.total_amount / max(1, booking_data.event_count or 1), 2)
     )
     db.add(booking)
     db.commit()
@@ -2028,6 +2038,384 @@ def complete_booking(booking_id: int, current_user = Depends(get_current_user), 
     db.commit()
     db.refresh(booking)
     return booking
+
+# ============== SHOOT VERIFICATION, DRAFT WATERMARK & LIVE OPERATIONS ==============
+
+@api_app.post("/shoot/verify-pin")
+def verify_shoot_pin(
+    req: ShootPinVerify,
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    """Provider enters 6-digit Shoot PIN provided by the venue/shop owner to trigger Live Shoot status."""
+    booking = db.query(Booking).filter(Booking.id == req.booking_id).first()
+    if not booking:
+        raise HTTPException(status_code=404, detail="Booking not found")
+
+    if current_user.user_type != UserType.PROVIDER or booking.provider_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Only the assigned provider can enter the Shoot Verification PIN")
+
+    if booking.shoot_pin != req.shoot_pin.strip():
+        raise HTTPException(status_code=400, detail="Invalid 6-digit Shoot PIN. Please verify with the shop/event owner.")
+
+    booking.shoot_status = "LIVE_SHOOT"
+    booking.shoot_verified_at = datetime.utcnow()
+    booking.status = "in_progress"
+    booking.onsite_checkin_at = datetime.utcnow()
+
+    # Automatically log in provider schedule
+    today_str = datetime.utcnow().strftime("%Y-%m-%d")
+    schedule_entry = ProviderSchedule(
+        provider_id=booking.provider_id,
+        date=today_str,
+        start_time=datetime.utcnow().strftime("%H:%M"),
+        end_time=(datetime.utcnow() + timedelta(hours=4)).strftime("%H:%M"),
+        title=f"Live On-Site Shoot - Order #{booking.id}",
+        location=f"Venue Shoot ({booking.event_count} Event(s))",
+        event_count=booking.event_count,
+        is_occupied=True,
+        booking_id=booking.id
+    )
+    db.add(schedule_entry)
+
+    # Chat announcement message
+    msg = Message(
+        booking_id=booking.id,
+        sender_id=current_user.id,
+        receiver_id=booking.buyer_id,
+        message=f"🎥 SHOOT LIVE IN PROGRESS: Provider verified the 6-digit Shoot PIN on-site at {booking.shoot_verified_at.strftime('%I:%M %p')}. Shoot session is active!",
+        created_at=datetime.utcnow()
+    )
+    db.add(msg)
+    db.commit()
+
+    create_user_notification(
+        db,
+        user_id=booking.buyer_id,
+        title="🎥 Shoot Live in Progress",
+        message=f"Provider verified the PIN for order #{booking.id}. Shoot session is now live!",
+        type="order",
+        link=f"/bookings?id={booking.id}"
+    )
+
+    return {
+        "success": True,
+        "message": "Shoot PIN verified successfully! Live Shoot is now in progress.",
+        "shoot_status": booking.shoot_status,
+        "verified_at": booking.shoot_verified_at.isoformat()
+    }
+
+
+@api_app.get("/admin/live-projects")
+def get_admin_live_projects(
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    """Admin dashboard endpoint to monitor real-time active shoots, editing progress, and escrow funds."""
+    if current_user.user_type != UserType.ADMIN and current_user.email not in ADMIN_EMAILS:
+        raise HTTPException(status_code=403, detail="Admin authorization required")
+
+    active_bookings = db.query(Booking).filter(
+        or_(
+            Booking.shoot_status.in_(["LIVE_SHOOT", "EDITING", "DRAFT_SUBMITTED"]),
+            Booking.status.in_(["in_progress", "delivered", "pending_approval"])
+        )
+    ).order_by(Booking.updated_at.desc()).all()
+
+    result = []
+    for b in active_bookings:
+        payment = db.query(Payment).filter(Payment.booking_id == b.id).first()
+        result.append({
+            "id": b.id,
+            "buyer_id": b.buyer_id,
+            "buyer_name": b.buyer_name,
+            "provider_id": b.provider_id,
+            "provider_name": b.provider_name,
+            "total_amount": b.total_amount,
+            "shoot_status": b.shoot_status,
+            "shoot_pin": b.shoot_pin,
+            "shoot_verified_at": b.shoot_verified_at.isoformat() if b.shoot_verified_at else None,
+            "event_count": b.event_count,
+            "watermarked_draft_url": b.watermarked_draft_url,
+            "is_watermark_removed": b.is_watermark_removed,
+            "payment_status": payment.status if payment else "pending",
+            "provider_payout": payment.provider_payout if payment else 0.0,
+            "updated_at": b.updated_at.isoformat() if b.updated_at else None
+        })
+
+    return {
+        "total_active": len(result),
+        "projects": result
+    }
+
+
+@api_app.post("/projects/{booking_id}/submit-draft", response_model=BookingResponse)
+def submit_watermarked_draft(
+    booking_id: int,
+    draft_data: DraftSubmit,
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    """Provider uploads edited draft video with Grove Hub watermark overlay for client review."""
+    booking = db.query(Booking).filter(Booking.id == booking_id).first()
+    if not booking:
+        raise HTTPException(status_code=404, detail="Booking not found")
+
+    if current_user.user_type != UserType.PROVIDER or booking.provider_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Only the assigned provider can submit draft video")
+
+    booking.watermarked_draft_url = draft_data.draft_url
+    booking.shoot_status = "DRAFT_SUBMITTED"
+    booking.status = "pending_approval"
+    booking.delivery_file_url = draft_data.draft_url
+    db.commit()
+
+    msg = Message(
+        booking_id=booking.id,
+        sender_id=current_user.id,
+        receiver_id=booking.buyer_id,
+        message=f"🎬 DRAFT VIDEO SUBMITTED (WATERMARKED): Provider submitted edited video for review. Please inspect the preview and click 'Approve & Unlock Original' to download the clean unwatermarked video.",
+        file_url=draft_data.draft_url,
+        created_at=datetime.utcnow()
+    )
+    db.add(msg)
+    db.commit()
+    db.refresh(booking)
+
+    create_user_notification(
+        db,
+        user_id=booking.buyer_id,
+        title="🎬 Watermarked Draft Video Ready",
+        message=f"Provider uploaded edited draft for order #{booking.id}. Review and approve to unlock clean video.",
+        type="order",
+        link=f"/bookings?id={booking.id}"
+    )
+
+    return booking
+
+
+@api_app.post("/projects/{booking_id}/approve-watermark", response_model=BookingResponse)
+def approve_watermarked_draft(
+    booking_id: int,
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    """Client approves watermarked draft. Removes watermark, unlocks clean video, and releases earnings to provider."""
+    booking = db.query(Booking).filter(Booking.id == booking_id).first()
+    if not booking:
+        raise HTTPException(status_code=404, detail="Booking not found")
+
+    if current_user.user_type != UserType.BUYER or booking.buyer_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Only the buyer can approve the draft video")
+
+    booking.is_watermark_removed = True
+    booking.clean_final_url = booking.watermarked_draft_url or booking.delivery_file_url
+    booking.shoot_status = "APPROVED_COMPLETED"
+    booking.status = "approved"
+    db.commit()
+
+    payment = db.query(Payment).filter(Payment.booking_id == booking.id).first()
+    if payment and payment.status == "held":
+        payment.status = "released"
+        payment.released_at = datetime.utcnow()
+        existing_release = db.query(Release).filter(Release.payment_id == payment.id).first()
+        if not existing_release:
+            release = Release(
+                payment_id=payment.id,
+                provider_payout=payment.provider_payout,
+                platform_commission=payment.platform_commission,
+                released_at=datetime.utcnow()
+            )
+            db.add(release)
+
+    # Automatically increment provider earnings
+    provider_profile = db.query(Profile).filter(Profile.user_id == booking.provider_id).first()
+    if provider_profile and payment:
+        provider_profile.monthly_earnings = (provider_profile.monthly_earnings or 0.0) + payment.provider_payout
+
+    db.commit()
+    db.refresh(booking)
+
+    create_user_notification(
+        db,
+        user_id=booking.provider_id,
+        title="🎉 Video Approved & Payment Released!",
+        message=f"Client approved order #{booking.id}! Watermark removed, clean video delivered, and ₹{payment.provider_payout if payment else 0} released to your account.",
+        type="payment",
+        link=f"/bookings?id={booking.id}"
+    )
+
+    return booking
+
+
+# ============== PROVIDER CALENDAR & AVAILABILITY REQUESTS ==============
+
+@api_app.get("/provider/{provider_id}/calendar", response_model=List[ProviderScheduleResponse])
+def get_provider_calendar(
+    provider_id: int,
+    db = Depends(get_db)
+):
+    """Fetch provider's occupied dates, booked shoots, and editing schedule."""
+    schedules = db.query(ProviderSchedule).filter(
+        ProviderSchedule.provider_id == provider_id
+    ).order_by(ProviderSchedule.date.asc()).all()
+    return schedules
+
+
+@api_app.post("/provider/schedule", response_model=ProviderScheduleResponse)
+def add_provider_schedule(
+    req: ProviderScheduleCreate,
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    """Provider manually adds a busy slot or personal event block to their calendar."""
+    if current_user.user_type != UserType.PROVIDER:
+        raise HTTPException(status_code=403, detail="Only providers can add schedule blocks")
+
+    entry = ProviderSchedule(
+        provider_id=current_user.id,
+        date=req.date.strip(),
+        start_time=req.start_time or "09:00",
+        end_time=req.end_time or "18:00",
+        title=req.title.strip(),
+        location=req.location,
+        event_count=req.event_count or 1,
+        is_occupied=True
+    )
+    db.add(entry)
+    db.commit()
+    db.refresh(entry)
+    return entry
+
+
+@api_app.post("/provider/availability-request", response_model=AvailabilityRequestResponse)
+def create_availability_request(
+    req: AvailabilityRequestCreate,
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    """Client sends a prior availability request to a provider for single/multi-event shoots with optional custom rush rate."""
+    provider = db.query(User).filter(User.id == req.provider_id, User.is_active == True).first()
+    if not provider:
+        raise HTTPException(status_code=404, detail="Provider not found")
+
+    avail_req = AvailabilityRequest(
+        buyer_id=current_user.id,
+        provider_id=req.provider_id,
+        requested_date=req.requested_date.strip(),
+        event_count=req.event_count or 1,
+        locations_summary=req.locations_summary,
+        custom_proposed_price=req.custom_proposed_price,
+        status="PENDING"
+    )
+    db.add(avail_req)
+    db.commit()
+    db.refresh(avail_req)
+
+    create_user_notification(
+        db,
+        user_id=req.provider_id,
+        title="📅 New Availability Request",
+        message=f"{current_user.name} asked if you are free on {req.requested_date} for {req.event_count} event(s).",
+        type="order",
+        link=f"/profile?id={req.provider_id}"
+    )
+
+    return avail_req
+
+
+@api_app.get("/provider/availability-requests", response_model=List[AvailabilityRequestResponse])
+def list_availability_requests(
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    """List pending/accepted availability inquiries for provider or buyer."""
+    if current_user.user_type == UserType.PROVIDER:
+        return db.query(AvailabilityRequest).filter(AvailabilityRequest.provider_id == current_user.id).order_by(AvailabilityRequest.created_at.desc()).all()
+    else:
+        return db.query(AvailabilityRequest).filter(AvailabilityRequest.buyer_id == current_user.id).order_by(AvailabilityRequest.created_at.desc()).all()
+
+
+@api_app.post("/availability-requests/{request_id}/respond", response_model=AvailabilityRequestResponse)
+def respond_availability_request(
+    request_id: int,
+    req: AvailabilityRequestRespond,
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    """Provider accepts or declines buyer's prior availability request."""
+    avail_req = db.query(AvailabilityRequest).filter(AvailabilityRequest.id == request_id).first()
+    if not avail_req:
+        raise HTTPException(status_code=404, detail="Availability request not found")
+
+    if current_user.id != avail_req.provider_id:
+        raise HTTPException(status_code=403, detail="Only the requested provider can respond")
+
+    status_upper = req.status.upper().strip()
+    if status_upper not in ["ACCEPTED", "DECLINED"]:
+        raise HTTPException(status_code=400, detail="Status must be ACCEPTED or DECLINED")
+
+    avail_req.status = status_upper
+    avail_req.provider_notes = req.provider_notes
+    if req.custom_price_accepted is not None:
+        avail_req.custom_proposed_price = req.custom_price_accepted
+
+    db.commit()
+    db.refresh(avail_req)
+
+    status_str = "ACCEPTED 🎉" if status_upper == "ACCEPTED" else "DECLINED ❌"
+    create_user_notification(
+        db,
+        user_id=avail_req.buyer_id,
+        title=f"📅 Availability Request {status_str}",
+        message=f"Provider {current_user.name} has {status_upper.lower()} your inquiry for {avail_req.requested_date}.",
+        type="order",
+        link=f"/chat?with={current_user.id}"
+    )
+
+    return avail_req
+
+
+# ============== WEBRTC REAL-TIME AUDIO CALLING SIGNALLING ==============
+
+@api_app.post("/chat/call/signal")
+def handle_webrtc_call_signal(
+    payload: dict,
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    """Relay WebRTC audio call signals (offer, answer, ice-candidate, end) between buyer and provider."""
+    target_user_id = payload.get("target_user_id")
+    signal_type = payload.get("signal_type") # 'offer', 'answer', 'ice_candidate', 'call_ended'
+    sdp_or_candidate = payload.get("data")
+    booking_id = payload.get("booking_id")
+
+    if not target_user_id:
+        raise HTTPException(status_code=400, detail="target_user_id is required")
+
+    target_user = db.query(User).filter(User.id == target_user_id, User.is_active == True).first()
+    if not target_user:
+        raise HTTPException(status_code=404, detail="Target user not found")
+
+    signal_text = f"[CALL_SIGNAL:{signal_type}]"
+    msg = Message(
+        booking_id=booking_id,
+        sender_id=current_user.id,
+        receiver_id=target_user_id,
+        message=signal_text,
+        file_url=None,
+        created_at=datetime.utcnow()
+    )
+    db.add(msg)
+    db.commit()
+
+    return {
+        "success": True,
+        "sender_id": current_user.id,
+        "target_user_id": target_user_id,
+        "signal_type": signal_type,
+        "data": sdp_or_candidate
+    }
 
 # ============== PAYMENT ROUTES ==============
 

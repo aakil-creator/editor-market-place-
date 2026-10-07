@@ -339,6 +339,8 @@ class BookingCreate(BaseModel):
     niche: str = "editors_animators"
     client_notes: Optional[str] = Field(None, max_length=5000)
     source_file_url: Optional[str] = None
+    event_count: Optional[int] = 1 # 1, 2, or 3 events in a day
+    event_details: Optional[List[Any]] = []
 
     @field_validator("source_file_url")
     @classmethod
@@ -351,6 +353,17 @@ class BookingStatusUpdate(BaseModel):
 class BookingDeliveryUpdate(BaseModel):
     delivery_file_url: Optional[str] = None
     delivery_file_link: Optional[str] = None
+
+class ShootPinVerify(BaseModel):
+    booking_id: int
+    shoot_pin: str = Field(min_length=4, max_length=6)
+
+class DraftSubmit(BaseModel):
+    booking_id: int
+    draft_url: str
+
+class WatermarkApprove(BaseModel):
+    booking_id: int
 
 class BookingResponse(BaseModel):
     id: int
@@ -376,9 +389,72 @@ class BookingResponse(BaseModel):
     source_file_url: Optional[str] = None
     is_free_sample: bool = False
     sample_number: Optional[int] = None
+    shoot_pin: Optional[str] = None
+    shoot_status: Optional[str] = "SCHEDULED"
+    shoot_verified_at: Optional[datetime] = None
+    event_count: Optional[int] = 1
+    event_details: Optional[List[Any]] = []
+    watermarked_draft_url: Optional[str] = None
+    clean_final_url: Optional[str] = None
+    is_watermark_removed: Optional[bool] = False
+    per_reel_payout_rate: Optional[float] = 0.0
 
     class Config:
         from_attributes = True
+
+# Provider Schedule Schemas
+class ProviderScheduleCreate(BaseModel):
+    date: str # YYYY-MM-DD
+    start_time: Optional[str] = "09:00"
+    end_time: Optional[str] = "18:00"
+    title: str
+    location: Optional[str] = None
+    event_count: Optional[int] = 1
+
+class ProviderScheduleResponse(BaseModel):
+    id: int
+    provider_id: int
+    date: str
+    start_time: str
+    end_time: str
+    title: str
+    location: Optional[str] = None
+    event_count: int
+    is_occupied: bool
+    booking_id: Optional[int] = None
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+# Prior Availability Request Schemas
+class AvailabilityRequestCreate(BaseModel):
+    provider_id: int
+    requested_date: str # YYYY-MM-DD
+    event_count: Optional[int] = 1 # 1, 2, or 3 events in a day
+    locations_summary: Optional[str] = None
+    custom_proposed_price: Optional[float] = None
+
+class AvailabilityRequestRespond(BaseModel):
+    status: str # ACCEPTED, DECLINED
+    provider_notes: Optional[str] = None
+    custom_price_accepted: Optional[float] = None
+
+class AvailabilityRequestResponse(BaseModel):
+    id: int
+    buyer_id: int
+    provider_id: int
+    requested_date: str
+    event_count: int
+    locations_summary: Optional[str] = None
+    custom_proposed_price: Optional[float] = None
+    status: str
+    provider_notes: Optional[str] = None
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
 
 # Payment schemas
 class PaymentCreate(BaseModel):
