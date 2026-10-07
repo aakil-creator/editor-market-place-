@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GROOVE HUB — Official Service & Pricing Brochure</title>
+  <meta name="description" content="Groove Hub Official Rate Card & Packages Brochure - Single reel edits, monthly growth retainers, and quarterly brand dominance packages." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #070913;
+      --bg-card: rgba(15, 23, 42, 0.85);
+      --card-border: rgba(99, 102, 241, 0.25);
+      --accent-indigo: #6366f1;
+      --accent-violet: #8b5cf6;
+      --accent-cyan: #06b6d4;
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: #030712;
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(139, 92, 246, 0.15) 0px, transparent 50%);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      color: var(--text-main);
+      min-height: 100vh;
+      padding: 30px 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      justify-content: center;
+      position: sticky;
+      top: 12px;
+      z-index: 100;
+      background: rgba(3, 7, 18, 0.8);
+      padding: 10px 18px;
+      border-radius: 999px;
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    }
+
+    .btn {
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+      color: #ffffff;
+      border: none;
+      font-weight: 700;
+      font-size: 13px;
+      padding: 9px 20px;
+      border-radius: 999px;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(99, 102, 241, 0.35);
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      text-decoration: none;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
+    }
+
+    .btn-outline {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-main);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow: none;
+    }
+
+    .btn-outline:hover {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: rgba(255, 255, 255, 0.4);
+    }
+
+    .brochure-container {
+      width: 100%;
+      max-width: 900px;
+      background: #0b0f19;
+      border: 1px solid rgba(99, 102, 241, 0.25);
+      border-radius: 24px;
+      padding: 48px;
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.8), 0 0 40px rgba(99, 102, 241, 0.15);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .brochure-container::before {
+      content: '';
+      position: absolute;
+      top: -120px;
+      right: -120px;
+      width: 300px;
+      height: 300px;
+      background: radial-gradient(circle, rgba(139, 92, 246, 0.25) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .brochure-container::after {
+      content: '';
+      position: absolute;
+      bottom: -120px;
+      left: -120px;
+      width: 300px;
+      height: 300px;
+      background: radial-gradient(circle, rgba(6, 182, 212, 0.2) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    /* Header */
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+      position: relative;
+      padding-bottom: 30px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .brand-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(99, 102, 241, 0.15);
+      border: 1px solid rgba(99, 102, 241, 0.4);
+      color: #a5b4fc;
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      padding: 6px 14px;
+      border-radius: 999px;
+      margin-bottom: 14px;
+    }
+
+    .brand-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 42px;
+      font-weight: 900;
+      letter-spacing: 1px;
+      background: linear-gradient(135deg, #ffffff 30%, #a5b4fc 70%, #6366f1 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 8px;
+    }
+
+    .brand-subtitle {
+      font-size: 18px;
+      font-weight: 600;
+      color: #94a3b8;
+      letter-spacing: 0.5px;
+    }
+
+    /* Section Styling */
+    .section-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 20px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+      padding-left: 4px;
+    }
+
+    .section-title .icon {
+      font-size: 24px;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+      margin-bottom: 36px;
+    }
+
+    @media (max-width: 768px) {
+      .grid-2 {
+        grid-template-columns: 1fr;
+      }
+      .brochure-container {
+        padding: 24px 18px;
+      }
+      .brand-title {
+        font-size: 32px;
+      }
+    }
+
+    /* Cards */
+    .service-card {
+      background: rgba(15, 23, 42, 0.65);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 18px;
+      padding: 24px;
+      transition: all 0.25s ease;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .service-card:hover {
+      border-color: rgba(99, 102, 241, 0.5);
+      transform: translateY(-3px);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+    }
+
+    .service-card.featured {
+      background: linear-gradient(145deg, rgba(30, 27, 75, 0.7) 0%, rgba(15, 23, 42, 0.8) 100%);
+      border: 2px solid rgba(139, 92, 246, 0.5);
+      box-shadow: 0 15px 35px rgba(139, 92, 246, 0.15);
+    }
+
+    .service-card.featured-cyan {
+      background: linear-gradient(145deg, rgba(8, 47, 73, 0.7) 0%, rgba(15, 23, 42, 0.8) 100%);
+      border: 2px solid rgba(6, 182, 212, 0.5);
+      box-shadow: 0 15px 35px rgba(6, 182, 212, 0.15);
+    }
+
+    .card-badge {
+      position: absolute;
+      top: -12px;
+      right: 20px;
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: #000;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 3px 10px;
+      border-radius: 999px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 12px;
+    }
+
+    .card-name {
+      font-size: 18px;
+      font-weight: 800;
+      color: #ffffff;
+      line-height: 1.3;
+    }
+
+    .price-box {
+      text-align: right;
+    }
+
+    .price-main {
+      font-family: 'Outfit', sans-serif;
+      font-size: 26px;
+      font-weight: 900;
+      color: #38bdf8;
+      line-height: 1;
+    }
+
+    .price-sub {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-dim);
+      margin-top: 4px;
+    }
+
+    .card-desc {
+      font-size: 13.5px;
+      color: #94a3b8;
+      line-height: 1.5;
+      margin-bottom: 16px;
+    }
+
+    .feature-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .feature-item {
+      font-size: 13px;
+      color: #cbd5e1;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      line-height: 1.4;
+    }
+
+    .feature-item .check {
+      color: #10b981;
+      font-weight: 800;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    .addon-tag {
+      margin-top: 14px;
+      padding: 8px 12px;
+      background: rgba(245, 158, 11, 0.1);
+      border: 1px dashed rgba(245, 158, 11, 0.4);
+      border-radius: 8px;
+      font-size: 12px;
+      color: #fcd34d;
+      font-weight: 600;
+    }
+
+    /* Value Pillars */
+    .pillars-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-bottom: 36px;
+    }
+
+    @media (max-width: 680px) {
+      .pillars-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .pillar-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 14px;
+      padding: 16px;
+      text-align: center;
+    }
+
+    .pillar-icon {
+      font-size: 26px;
+      margin-bottom: 8px;
+    }
+
+    .pillar-title {
+      font-size: 14px;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 4px;
+    }
+
+    .pillar-desc {
+      font-size: 12px;
+      color: #94a3b8;
+      line-height: 1.4;
+    }
+
+    /* Terms & Conditions */
+    .terms-box {
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      border-radius: 18px;
+      padding: 26px;
+      margin-top: 10px;
+    }
+
+    .terms-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 16px;
+      font-weight: 800;
+      color: #fca5a5;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 16px;
+    }
+
+    .terms-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px 20px;
+    }
+
+    @media (max-width: 768px) {
+      .terms-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .term-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      font-size: 12.5px;
+      color: #cbd5e1;
+      line-height: 1.45;
+    }
+
+    .term-bullet {
+      color: #f87171;
+      font-weight: 800;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    /* Footer */
+    .footer {
+      margin-top: 36px;
+      padding-top: 24px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .footer-left {
+      font-size: 13px;
+      color: #94a3b8;
+    }
+
+    .footer-left strong {
+      color: #ffffff;
+    }
+
+    .footer-right {
+      display: flex;
+      gap: 12px;
+    }
+
+    /* Print styling */
+    @media print {
+      body {
+        background: #ffffff !important;
+        color: #000000 !important;
+        padding: 0 !important;
+      }
+      .toolbar {
+        display: none !important;
+      }
+      .brochure-container {
+        border: none !important;
+        box-shadow: none !important;
+        max-width: 100% !important;
+        background: #ffffff !important;
+        color: #000000 !important;
+        padding: 20px !important;
+      }
+      .brand-title {
+        background: none !important;
+        -webkit-text-fill-color: #000000 !important;
+        color: #000000 !important;
+      }
+      .service-card, .service-card.featured, .service-card.featured-cyan, .pillar-card, .terms-box {
+        background: #f8fafc !important;
+        border: 1px solid #cbd5e1 !important;
+        color: #000000 !important;
+        break-inside: avoid;
+      }
+      .card-name, .price-main, .section-title, .pillar-title, .footer-left strong {
+        color: #0f172a !important;
+      }
+      .card-desc, .feature-item, .pillar-desc, .term-item, .brand-subtitle, .footer-left {
+        color: #334155 !important;
+      }
+      .price-main {
+        color: #4338ca !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Action Toolbar -->
+  <div class="toolbar">
+    <button class="btn" onclick="window.print()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9V2h12v7"></path><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+      Print / Save as PDF
+    </button>
+    <a href="/" class="btn btn-outline">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+      Back to Marketplace
+    </a>
+    <button class="btn btn-outline" onclick="navigator.clipboard.writeText(window.location.href); alert('Brochure Link Copied!')">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+      Share Rate Card
+    </button>
+  </div>
+
+  <!-- Main Brochure Document -->
+  <div class="brochure-container">
+
+    <!-- Header Section -->
+    <header class="header">
+      <div class="brand-tag">⚡ Official Rate Card &amp; Production Suite</div>
+      <h1 class="brand-title">G R O V E _ H U B</h1>
+      <p class="brand-subtitle">Elevate Your Brand. Own Your Niche.</p>
+    </header>
+
+    <!-- 1. Single Services -->
+    <section>
+      <div class="section-title">
+        <span class="icon">🎬</span> Single Services (Per Reel)
+      </div>
+      <div class="grid-2">
+        
+        <!-- Remote Video Editing -->
+        <div class="service-card">
+          <div>
+            <div class="card-header">
+              <div class="card-name">Remote Video Editing Only</div>
+              <div class="price-box">
+                <div class="price-main">₹599</div>
+                <div class="price-sub">per reel</div>
+              </div>
+            </div>
+            <p class="card-desc">Designed for brands with existing raw footage needing viral post-production.</p>
+            <ul class="feature-list">
+              <li class="feature-item"><span class="check">✓</span> Dynamic jump cuts &amp; pacing mastery</li>
+              <li class="feature-item"><span class="check">✓</span> Viral animated subtitle captions &amp; emoji popups</li>
+              <li class="feature-item"><span class="check">✓</span> Trend-focused audio syncing &amp; SFX layering</li>
+              <li class="feature-item"><span class="check">✓</span> 9:16 high-retention vertical optimization</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Editing + Videography -->
+        <div class="service-card featured">
+          <div class="card-badge">Most Popular</div>
+          <div>
+            <div class="card-header">
+              <div class="card-name">Video Editing + Videography</div>
+              <div class="price-box">
+                <div class="price-main">₹899</div>
+                <div class="price-sub">per reel</div>
+              </div>
+            </div>
+            <p class="card-desc">Complete end-to-end service: Professional on-location shoot plus expert editing.</p>
+            <ul class="feature-list">
+              <li class="feature-item"><span class="check">✓</span> Pro on-location shoot with multi-angle coverage</li>
+              <li class="feature-item"><span class="check">✓</span> Cinematic gimbal stabilization &amp; lighting setup</li>
+              <li class="feature-item"><span class="check">✓</span> Full post-production edit with color grading</li>
+              <li class="feature-item"><span class="check">✓</span> Ready-to-post deliverable with zero client effort</li>
+            </ul>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- 2. Monthly Combo Packages -->
+    <section>
+      <div class="section-title">
+        <span class="icon">📅</span> Monthly Combo Packages
+      </div>
+      <div class="grid-2">
+
+        <!-- Basic Account Maintenance -->
+        <div class="service-card">
+          <div>
+            <div class="card-header">
+              <div class="card-name">Basic Account Maintenance + Editing + Shoot</div>
+              <div class="price-box">
+                <div class="price-main">₹25,000</div>
+                <div class="price-sub">per month</div>
+              </div>
+            </div>
+            <p class="card-desc">Essential monthly retainer covering your continuous brand presence and on-ground production.</p>
+            <ul class="feature-list">
+              <li class="feature-item"><span class="check">✓</span> Dedicated monthly account maintenance</li>
+              <li class="feature-item"><span class="check">✓</span> Scheduled on-location shoot sessions</li>
+              <li class="feature-item"><span class="check">✓</span> Full post-production editing pipeline</li>
+              <li class="feature-item"><span class="check">✓</span> Extra reels discounted at ₹899 / reel</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Full Account Handling Growth Suite -->
+        <div class="service-card featured-cyan">
+          <div class="card-badge" style="background: linear-gradient(135deg, #06b6d4, #0284c7); color: #fff;">Best Value</div>
+          <div>
+            <div class="card-header">
+              <div class="card-name">Full Account Growth &amp; Content Suite</div>
+              <div class="price-box">
+                <div class="price-main">₹30,000</div>
+                <div class="price-sub">per month</div>
+              </div>
+            </div>
+            <p class="card-desc">Complete hands-off social media dominance designed to scale your reach and sales.</p>
+            <ul class="feature-list">
+              <li class="feature-item"><span class="check">✓</span> <strong>15 High-Quality Commercial Reels</strong> included</li>
+              <li class="feature-item"><span class="check">✓</span> On-location video shoots &amp; cinema editing</li>
+              <li class="feature-item"><span class="check">✓</span> Script writing &amp; high-converting hook ideation</li>
+              <li class="feature-item"><span class="check">✓</span> Trendy audio curation &amp; custom captions</li>
+              <li class="feature-item"><span class="check">✓</span> Bio optimization &amp; profile branding</li>
+              <li class="feature-item"><span class="check">✓</span> Scheduled posting at peak scrolling hours</li>
+              <li class="feature-item"><span class="check">✓</span> Active Instagram engagement &amp; community presence</li>
+            </ul>
+            <div class="addon-tag">
+              ⚡ Multi-tasking / custom brand requests separately charged at ₹499
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- 3. Quarterly Power Packages -->
+    <section>
+      <div class="section-title">
+        <span class="icon">🚀</span> Quarterly Power Packages (3 Months)
+      </div>
+      
+      <div class="service-card featured" style="background: linear-gradient(135deg, rgba(30, 27, 75, 0.85) 0%, rgba(15, 23, 42, 0.95) 100%); border: 2px solid rgba(139, 92, 246, 0.6); margin-bottom: 36px;">
+        <div class="card-badge" style="background: linear-gradient(135deg, #ec4899, #8b5cf6); color: #fff;">Enterprise Grade</div>
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px; margin-bottom: 16px;">
+          <div>
+            <div class="card-name" style="font-size: 22px;">Quarterly Brand Dominance Retainer</div>
+            <div style="font-size: 13.5px; color: #a5b4fc; margin-top: 4px; font-weight: 600;">Complete 90-Day Production, Shoot &amp; Social Omnipresence</div>
+          </div>
+          <div class="price-box">
+            <div class="price-main" style="font-size: 34px; color: #a78bfa;">₹89,999</div>
+            <div class="price-sub">for full 3 months (₹29,999/mo)</div>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin-top: 14px;">
+          <div class="feature-item"><span class="check">✓</span> <strong>30 Premium Reels / Month</strong> (90 Total Reels)</div>
+          <div class="feature-item"><span class="check">✓</span> <strong>90 Days Complete Page Maintenance</strong></div>
+          <div class="feature-item"><span class="check">✓</span> <strong>9 Showroom Spotlights</strong></div>
+          <div class="feature-item"><span class="check">✓</span> <strong>12 Event Clips</strong> (Launches / Promotions)</div>
+          <div class="feature-item"><span class="check">✓</span> <strong>9 Backstage Behind-The-Scenes Videos</strong></div>
+          <div class="feature-item"><span class="check">✓</span> Priority Dedicated Editor &amp; Videographer Team</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. Why Groove Hub -->
+    <section>
+      <div class="section-title">
+        <span class="icon">✨</span> Why Groove Hub?
+      </div>
+      <div class="pillars-grid">
+        <div class="pillar-card">
+          <div class="pillar-icon">🎯</div>
+          <div class="pillar-title">High-Retention Editing</div>
+          <div class="pillar-desc">Pacing, sound design, and visual hooks engineered to stop the scroll and keep attention.</div>
+        </div>
+        <div class="pillar-card">
+          <div class="pillar-icon">🎥</div>
+          <div class="pillar-title">Pro On-Location Shoots</div>
+          <div class="pillar-desc">Commercial-grade videography with lighting and gimbal setups that make your brand stand out.</div>
+        </div>
+        <div class="pillar-card">
+          <div class="pillar-icon">🛡️</div>
+          <div class="pillar-title">Hands-Off Management</div>
+          <div class="pillar-desc">From scripts to posting at peak times, we manage your social presence so you can focus on business.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. Terms & Conditions -->
+    <section>
+      <div class="terms-box">
+        <div class="terms-header">
+          <span>⚖️</span> Platform Terms &amp; Production Policies
+        </div>
+        <div class="terms-grid">
+          <div class="term-item">
+            <span class="term-bullet">°</span>
+            <div><strong>Strict Anti-Poaching Rule:</strong> All creator engagements and transactions must remain strictly on-platform with Escrow protection.</div>
+          </div>
+          <div class="term-item">
+            <span class="term-bullet">°</span>
+            <div><strong>Advance Editor Scheduling:</strong> Shoots and delivery dates must be scheduled in advance with assigned creators.</div>
+          </div>
+          <div class="term-item">
+            <span class="term-bullet">°</span>
+            <div><strong>Pre-Approved Shoots Only:</strong> Location, timing, and shot lists must be confirmed prior to creator dispatch.</div>
+          </div>
+          <div class="term-item">
+            <span class="term-bullet">°</span>
+            <div><strong>Script &amp; Hook Approval:</strong> Client reviews and signs off on hooks and scripts prior to final production.</div>
+          </div>
+          <div class="term-item">
+            <span class="term-bullet">°</span>
+            <div><strong>Revision Policy:</strong> Up to <strong>2 revisions included</strong> (text coloring, captions, music sync). Beyond 2 revisions: <strong>₹199 per reel</strong>.</div>
+          </div>
+          <div class="term-item">
+            <span class="term-bullet">°</span>
+            <div><strong>Travel &amp; Distance Surcharges:</strong> Shoots beyond 15 KM incur a surcharge of <strong>₹19 per KM</strong> directly payable to the editor.</div>
+          </div>
+          <div class="term-item" style="grid-column: 1 / -1;">
+            <span class="term-bullet">°</span>
+            <div><strong>Outstation Shoots:</strong> Minimum <strong>2 days advance notice</strong> required via platform request button (Surge: <strong>₹1,999</strong> including travel allowance).</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="footer-left">
+        <strong>GROOVE HUB</strong> • Direct-to-Creator Video Marketplace &amp; Production Studio<br>
+        <span style="font-size: 11.5px; color: var(--text-dim);">100% Escrow Protected Deliverables • Verified Professional Editors &amp; Videographers</span>
+      </div>
+      <div class="footer-right">
+        <a href="/" class="btn btn-sm">Hire a Creator Now</a>
+      </div>
+    </footer>
+
+  </div>
+
+</body>
+</html>
