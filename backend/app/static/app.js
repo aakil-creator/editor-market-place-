@@ -5072,7 +5072,7 @@ function adminSection() {
             </svg>
             Admin Controls
         </div>
-        <div class="grid grid-2">
+        <div class="grid grid-3">
             <button class="card" onclick="router('/admin')" style="cursor: pointer; border-color: var(--accent);">
                 <div class="card-header">
                     <div class="card-title">Admin Dashboard</div>
@@ -5082,6 +5082,13 @@ function adminSection() {
                     </svg>
                 </div>
                 <div class="card-body">Manage providers, bookings, and platform settings</div>
+            </button>
+            <button class="card" onclick="renderAdminSearchAnalytics()" style="cursor: pointer; border-color: #38bdf8;">
+                <div class="card-header">
+                    <div class="card-title" style="color: #38bdf8;">🔍 Search Demand Analytics</div>
+                    <span style="font-size: 1.2rem;">📈</span>
+                </div>
+                <div class="card-body">View real-time buyer search trends & zero-result demand queries</div>
             </button>
             <button class="card" onclick="router('/admin/niches')" style="cursor: pointer;">
                 <div class="card-header">
@@ -13634,4 +13641,121 @@ window.showAvailabilityRequestModal = function(providerId, providerName) {
         }
     };
 };
+
+// ============== ADMIN BUYER SEARCH TRENDS & MARKET DEMAND ANALYTICS ==============
+window.renderAdminSearchAnalytics = async function() {
+    const modal = document.createElement('div');
+    modal.className = 'modal-backdrop';
+    modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(15,23,42,0.85);backdrop-filter:blur(8px);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;';
+    modal.innerHTML = `
+        <div class="modal-card" style="max-width:820px;width:100%;max-height:90vh;overflow-y:auto;background:var(--bg-card);border:2px solid var(--accent);border-radius:20px;padding:24px;box-shadow:0 20px 50px rgba(0,0,0,0.5);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;border-bottom:1px solid var(--border);padding-bottom:14px;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <span style="font-size:1.6rem;">🔍</span>
+                    <div>
+                        <h2 style="font-size:1.3rem;font-weight:900;color:var(--text-primary);margin:0;">Buyer Search Trends & Market Demand Analytics</h2>
+                        <div style="font-size:0.8rem;color:var(--text-secondary);margin-top:2px;">Real-time intelligence on what clients are searching for on Groove Hub</div>
+                    </div>
+                </div>
+                <button type="button" onclick="this.closest('.modal-backdrop').remove()" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--text-muted);">&times;</button>
+            </div>
+
+            <div id="admin-search-analytics-content" style="min-height:200px;display:flex;align-items:center;justify-content:center;">
+                <div style="color:var(--text-muted);font-weight:600;">Loading buyer search analytics...</div>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+
+    try {
+        const data = await apiFetch('/admin/search-analytics');
+        const content = modal.querySelector('#admin-search-analytics-content');
+
+        content.style.display = 'block';
+        content.innerHTML = `
+            <!-- Overview KPI Cards -->
+            <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:14px;margin-bottom:24px;">
+                <div style="background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.3);padding:16px;border-radius:14px;">
+                    <div style="font-size:0.75rem;font-weight:700;color:var(--accent);text-transform:uppercase;">Total Buyer Searches</div>
+                    <div style="font-size:1.8rem;font-weight:900;color:var(--text-primary);margin-top:4px;">${data.total_searches}</div>
+                </div>
+                <div style="background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);padding:16px;border-radius:14px;">
+                    <div style="font-size:0.75rem;font-weight:700;color:#10b981;text-transform:uppercase;">Top Keywords Tracked</div>
+                    <div style="font-size:1.8rem;font-weight:900;color:var(--text-primary);margin-top:4px;">${data.top_trending_queries.length}</div>
+                </div>
+                <div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);padding:16px;border-radius:14px;">
+                    <div style="font-size:0.75rem;font-weight:700;color:#ef4444;text-transform:uppercase;">Unmet Demand (0 Results)</div>
+                    <div style="font-size:1.8rem;font-weight:900;color:var(--text-primary);margin-top:4px;">${data.zero_results_demands.length}</div>
+                </div>
+            </div>
+
+            <!-- Top Trending Queries & Unmet Demands Grid -->
+            <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(340px, 1fr));gap:18px;margin-bottom:24px;">
+                <!-- Top Searched Keywords -->
+                <div class="card" style="padding:16px;background:var(--bg-hover);">
+                    <h3 style="font-size:1rem;font-weight:800;color:var(--text-primary);margin-bottom:12px;display:flex;align-items:center;gap:6px;">
+                        <span>🔥</span> Top Most Searched Keywords
+                    </h3>
+                    ${data.top_trending_queries.length === 0 ? '<div style="font-size:0.85rem;color:var(--text-muted);padding:12px;">No search data recorded yet.</div>' : `
+                        <div style="display:flex;flex-direction:column;gap:8px;">
+                            ${data.top_trending_queries.map((item, idx) => `
+                                <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--bg-card);border-radius:8px;border:1px solid var(--border);">
+                                    <div style="display:flex;align-items:center;gap:8px;">
+                                        <span style="font-size:0.8rem;font-weight:800;color:var(--accent);width:20px;">#${idx + 1}</span>
+                                        <span style="font-weight:700;font-size:0.9rem;color:var(--text-primary);">${escapeHTML(item.query)}</span>
+                                    </div>
+                                    <span class="badge badge-primary" style="font-weight:800;font-size:0.75rem;">${item.search_count} search${item.search_count > 1 ? 'es' : ''}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `}
+                </div>
+
+                <!-- Unmet Market Demand (0 Results) -->
+                <div class="card" style="padding:16px;background:var(--bg-hover);border-color:rgba(239,68,68,0.3);">
+                    <h3 style="font-size:1rem;font-weight:800;color:#ef4444;margin-bottom:12px;display:flex;align-items:center;gap:6px;">
+                        <span>⚠️</span> Unmet Market Demand (0 Results)
+                    </h3>
+                    <p style="font-size:0.78rem;color:var(--text-muted);margin-bottom:10px;">Things buyers searched for that returned zero active creators or packages:</p>
+                    ${data.zero_results_demands.length === 0 ? '<div style="font-size:0.85rem;color:var(--text-muted);padding:12px;">No zero-result searches. All buyer searches returned results!</div>' : `
+                        <div style="display:flex;flex-direction:column;gap:8px;">
+                            ${data.zero_results_demands.map(item => `
+                                <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--bg-card);border-radius:8px;border:1px solid rgba(239,68,68,0.3);">
+                                    <span style="font-weight:700;font-size:0.88rem;color:var(--text-primary);">${escapeHTML(item.query)}</span>
+                                    <span class="badge badge-danger" style="font-weight:800;font-size:0.75rem;">${item.search_count} missing request${item.search_count > 1 ? 's' : ''}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `}
+                </div>
+            </div>
+
+            <!-- Recent Real-Time Search Log Feed -->
+            <div class="card" style="padding:16px;">
+                <h3 style="font-size:1rem;font-weight:800;color:var(--text-primary);margin-bottom:12px;display:flex;align-items:center;gap:6px;">
+                    <span>⚡</span> Recent Live Buyer Searches Ticker
+                </h3>
+                <div style="max-height:260px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;">
+                    ${data.recent_searches.map(log => `
+                        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--bg-hover);border-radius:6px;font-size:0.82rem;">
+                            <div style="display:flex;align-items:center;gap:10px;">
+                                <span style="font-weight:700;color:var(--text-primary);">"${escapeHTML(log.query)}"</span>
+                                <span style="font-size:0.75rem;color:var(--text-muted);">by ${escapeHTML(log.user_name)}</span>
+                            </div>
+                            <div style="display:flex;align-items:center;gap:10px;">
+                                <span style="font-size:0.75rem;color:${log.results_count > 0 ? '#10b981' : '#ef4444'};font-weight:700;">
+                                    ${log.results_count > 0 ? `${log.results_count} result(s)` : '0 results'}
+                                </span>
+                                <span style="font-size:0.72rem;color:var(--text-muted);">${new Date(log.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    } catch(err) {
+        showToast(err.message || "Failed to load search analytics", "error");
+    }
+};
+
 

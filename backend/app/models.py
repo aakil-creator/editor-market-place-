@@ -423,4 +423,20 @@ class AvailabilityRequest(Base):
     provider_notes = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
+# Search Analytics & Buyer Demand Logging System
+class SearchLog(Base):
+    __tablename__ = "search_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+    user = relationship("User", foreign_keys=[user_id])
+
+    query = Column(String(255), nullable=False, index=True)
+    clean_query = Column(String(255), nullable=False, index=True) # Normalized lowercased query for grouping
+    niche_filter = Column(String(100), nullable=True)
+    results_count = Column(Integer, default=0)
+    ip_address = Column(String(50), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+
+
 

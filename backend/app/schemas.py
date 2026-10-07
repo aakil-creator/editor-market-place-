@@ -792,3 +792,32 @@ async def get_current_user_optional(
         return user
     except Exception:
         return None
+
+# Search Analytics Schemas
+class SearchLogCreate(BaseModel):
+    query: str = Field(min_length=1, max_length=255)
+    niche_filter: Optional[str] = None
+    results_count: Optional[int] = 0
+
+class SearchTrendItem(BaseModel):
+    query: str
+    search_count: int
+    last_searched_at: Optional[datetime] = None
+
+class SearchLogItem(BaseModel):
+    id: int
+    query: str
+    niche_filter: Optional[str] = None
+    results_count: int
+    created_at: datetime
+    user_name: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+class SearchAnalyticsResponse(BaseModel):
+    total_searches: int
+    top_trending_queries: List[SearchTrendItem]
+    recent_searches: List[SearchLogItem]
+    zero_results_demands: List[SearchTrendItem]
+

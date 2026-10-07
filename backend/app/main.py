@@ -32,7 +32,7 @@ from .models import (
     User, Profile, Package, Booking, Payment, Release, Review, Dispute, Niche,
     UserType, BookingStatus, PaymentStatus, PackageType, Message, PortfolioItem, PlatformSettings,
     PasswordResetToken, EmailVerificationToken, OtpVerification, Notification,
-    ProviderSchedule, AvailabilityRequest
+    ProviderSchedule, AvailabilityRequest, SearchLog
 )
 from .schemas import (
     UserCreate, UserUpdate, UserLogin, Token, UserResponse, ProfileCreate, ProfileUpdate,
@@ -49,6 +49,7 @@ from .schemas import (
     ForgotPasswordRequest, ForgotPasswordResponse, ResetPasswordWithTokenRequest, VerifyEmailRequest,
     VettingSubmitRequest, UpdateTierRequest, ShootPinVerify, DraftSubmit, WatermarkApprove,
     ProviderScheduleCreate, ProviderScheduleResponse, AvailabilityRequestCreate, AvailabilityRequestRespond, AvailabilityRequestResponse,
+    SearchLogCreate, SearchTrendItem, SearchLogItem, SearchAnalyticsResponse,
     get_current_user, get_current_user_optional
 )
 from .security import hash_password, verify_password, create_access_token, hash_token
@@ -2416,6 +2417,132 @@ def handle_webrtc_call_signal(
         "signal_type": signal_type,
         "data": sdp_or_candidate
     }
+
+# ============== SEARCH ANALYTICS & BUYER DEMAND LOGGING ==============
+
+def log_buyer_search(
+    db,
+    query_str: str,
+    user_id: Optional[int] = None,
+    niche_filter: Optional[str] = None,
+    results_count: int = 0,
+    ip_address: Optional[str] = None
+):
+    clean = query_str.strip().lower()
+    if not clean:
+        return
+    search_log = SearchLog(
+        user_id=user_id,
+        query=query_str.strip(),
+        clean_query=clean,
+        niche_filter=niche_filter,
+        results_count=results_count,
+        ip_address=ip_address,
+        created_at=datetime.utcnow()
+    )
+    db.add(search_log)
+    db.commit()
+
+@api_app.post("/search/log")
+def log_search_query(
+    req: SearchLogCreate,
+    request: Request,
+    current_user: Optional[User] = Depends(get_current_user_optional),
+    db = Depends(get_db)
+):
+    """Log a search query typed by a buyer or guest user to track market demand."""
+    log_buyer_search(
+        db=db,
+        query_str=req.query,
+        user_id=current_user.id if current_user else None,
+        niche_filter=req.niche_filter,
+        results_count=req.results_count or 0,
+        ip_address=_client_ip(request)
+    )
+    return {"success": True}
+
+@api_app.get("/search/trending-terms", response_model=List[SearchTrendItem])
+def get_trending_search_terms(db = Depends(get_db)):
+    """Public/Provider endpoint displaying top 10 search terms buyers are actively searching for."""
+    results = db.query(
+        SearchLog.clean_query.label("query"),
+        func.count(SearchLog.id).label("search_count"),
+        func.max(SearchLog.created_at).label("last_searched_at")
+    ).group_by(SearchLog.clean_query).order_by(func.count(SearchLog.id).desc()).limit(10).all()
+
+    return [
+        SearchTrendItem(
+            query=r.query,
+            search_count=r.search_count,
+            last_searched_at=r.last_searched_at
+        ) for r in results
+    ]
+
+@api_app.get("/admin/search-analytics", response_model=SearchAnalyticsResponse)
+def get_admin_search_analytics(
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    """Admin endpoint displaying complete analytics on what buyers are searching for on Groove Hub."""
+    if current_user.user_type != UserType.ADMIN and current_user.email not in ADMIN_EMAILS:
+        raise HTTPException(status_code=403, detail="Admin authorization required")
+
+    total_searches = db.query(SearchLog).count()
+
+    # Top trending queries
+    top_results = db.query(
+        SearchLog.clean_query.label("query"),
+        func.count(SearchLog.id).label("search_count"),
+        func.max(SearchLog.created_at).label("last_searched_at")
+    ).group_by(SearchLog.clean_query).order_by(func.count(SearchLog.id).desc()).limit(20).all()
+
+    top_trending = [
+        SearchTrendItem(
+            query=r.query,
+            search_count=r.search_count,
+            last_searched_at=r.last_searched_at
+        ) for r in top_results
+    ]
+
+    # Unmet market demand: queries that returned 0 results
+    zero_results = db.query(
+        SearchLog.clean_query.label("query"),
+        func.count(SearchLog.id).label("search_count"),
+        func.max(SearchLog.created_at).label("last_searched_at")
+    ).filter(SearchLog.results_count == 0).group_by(SearchLog.clean_query).order_by(func.count(SearchLog.id).desc()).limit(15).all()
+
+    zero_demands = [
+        SearchTrendItem(
+            query=r.query,
+            search_count=r.search_count,
+            last_searched_at=r.last_searched_at
+        ) for r in zero_results
+    ]
+
+    # Recent searches feed
+    recent_logs = db.query(SearchLog).order_by(SearchLog.created_at.desc()).limit(50).all()
+
+    recent_items = []
+    for log in recent_logs:
+        user_name = log.user.name if log.user else "Guest Visitor"
+        recent_items.append(
+            SearchLogItem(
+                id=log.id,
+                query=log.query,
+                niche_filter=log.niche_filter,
+                results_count=log.results_count,
+                created_at=log.created_at,
+                user_name=user_name
+            )
+        )
+
+    return SearchAnalyticsResponse(
+        total_searches=total_searches,
+        top_trending_queries=top_trending,
+        recent_searches=recent_items,
+        zero_results_demands=zero_demands
+    )
+
 
 # ============== PAYMENT ROUTES ==============
 
