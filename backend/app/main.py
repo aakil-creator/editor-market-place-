@@ -1144,7 +1144,17 @@ def switch_user_role(
             detail="Unable to switch mode right now. Please try again."
         )
 
-    user_role_str = current_get_user_type_str(user.user_type)
+    user_role_str = get_user_type_str(current_user.user_type)
+    if user_role_str == "PROVIDER":
+        profile = db.query(Profile).filter(Profile.user_id == current_user.id).first()
+        if not profile:
+            profile = Profile(user_id=current_user.id, niche="editors_animators", profession_selected=True)
+            db.add(profile)
+            try:
+                db.commit()
+            except Exception as pe:
+                db.rollback()
+                print(f"[SWITCH_ROLE PROFILE WARNING]: {pe}")
     new_token = create_access_token(
         data={"sub": str(current_user.id), "type": user_role_str}
     )
