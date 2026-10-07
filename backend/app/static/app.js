@@ -944,11 +944,24 @@ function renderLogo(size = 28, showText = true) {
 }
 window.renderLogo = renderLogo;
 
+// Helper to resolve active UI mode (BUYER vs PROVIDER vs ADMIN)
+function getActiveUserMode() {
+    if (currentUser?.user_type === 'ADMIN') return 'ADMIN';
+    const activeMode = localStorage.getItem('grove_hub_active_mode');
+    if (activeMode === 'BUYER' || activeMode === 'PROVIDER') {
+        return activeMode;
+    }
+    const roleStr = String(currentUser?.user_type || 'BUYER').toUpperCase();
+    if (roleStr === 'PROVIDER') return 'PROVIDER';
+    return 'BUYER';
+}
+window.getActiveUserMode = getActiveUserMode;
+
 // Mode Switcher Function for Users
 async function toggleUserMode() {
     if (!currentUser) return;
 
-    const currentRole = String(currentUser.user_type || 'BUYER').toUpperCase();
+    const currentRole = getActiveUserMode();
     const targetRole = currentRole === 'PROVIDER' ? 'BUYER' : 'PROVIDER';
     const targetTitle = targetRole === 'PROVIDER' ? 'Provider Mode 💼' : 'Buyer Mode 🛍️';
 
@@ -979,9 +992,6 @@ async function toggleUserMode() {
             router('/');
         }
     } catch (e) {
-        // Never fake a successful role switch. This was especially confusing on
-        // mobile because a failed API request could leave the UI in a mode that
-        // the server had not actually persisted.
         console.error('[MODE SWITCH] Failed:', e);
         const message = (e && e.message) ? e.message : 'Unable to switch mode right now. Please try again.';
         showToast(message, 'error');
@@ -998,11 +1008,12 @@ function renderProfileAvatar(size = 34) {
     const user = currentUser;
     if (!user) return '';
     const initial = (user.name || 'U').charAt(0).toUpperCase();
-    const isProvider = user.user_type === 'PROVIDER';
+    const activeMode = getActiveUserMode();
+    const isProvider = activeMode === 'PROVIDER';
     const gradient = isProvider
         ? 'linear-gradient(135deg, #f97316, #ef4444)'
         : 'linear-gradient(135deg, #3b82f6, #6366f1)';
-    const label = isProvider ? 'PROVIDER' : (user.user_type === 'ADMIN' ? 'ADMIN' : 'BUYER');
+    const label = activeMode;
     const imgTag = user.profile_image
         ? `<img src="${user.profile_image}" alt="${user.name}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;" onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'flex\';" />`
         : '';
@@ -1021,8 +1032,9 @@ function renderProfileAvatar(size = 34) {
 function renderProfileMenu() {
     const user = currentUser;
     if (!user) return '';
-    const isProvider = user.user_type === 'PROVIDER';
-    const isAdmin = user.user_type === 'ADMIN';
+    const activeMode = getActiveUserMode();
+    const isProvider = activeMode === 'PROVIDER';
+    const isAdmin = activeMode === 'ADMIN';
     const hasImage = !!(user.profile_image);
     const initial = (user.name || 'U').charAt(0).toUpperCase();
     const handle = user.username ? `@${user.username}` : (user.email || '');
@@ -1470,8 +1482,9 @@ function renderLaunchPromoBanner() {
 window.renderLaunchPromoBanner = renderLaunchPromoBanner;
 
 function renderAppHeader(activeRoute = '') {
-    const isAdmin = currentUser?.user_type === 'ADMIN';
-    const isProvider = currentUser?.user_type === 'PROVIDER';
+    const activeMode = getActiveUserMode();
+    const isAdmin = activeMode === 'ADMIN';
+    const isProvider = activeMode === 'PROVIDER';
 
     // 1. ADMIN EXCLUSIVE HEADER (No buyer or provider interference)
     if (isAdmin) {
