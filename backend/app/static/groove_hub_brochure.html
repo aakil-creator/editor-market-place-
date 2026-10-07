@@ -6,7 +6,7 @@
   <title>GROOVE HUB — Official Rate Card & Production Packages</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     @page {
       size: A4 portrait;
@@ -14,17 +14,17 @@
     }
 
     :root {
-      --bg-dark: #030712;
-      --card-bg: rgba(15, 23, 42, 0.88);
-      --card-border: rgba(99, 102, 241, 0.25);
-      --accent-indigo: #6366f1;
-      --accent-violet: #8b5cf6;
-      --accent-cyan: #06b6d4;
-      --accent-emerald: #10b981;
-      --accent-amber: #f59e0b;
-      --accent-rose: #f43f5e;
-      --text-white: #ffffff;
-      --text-muted: #94a3b8;
+      --bg-light: #ffffff;
+      --card-bg: #ffffff;
+      --card-border: #e2e8f0;
+      --primary-indigo: #4f46e5;
+      --primary-violet: #7c3aed;
+      --primary-cyan: #0284c7;
+      --accent-emerald: #059669;
+      --accent-amber: #d97706;
+      --accent-rose: #e11d48;
+      --text-dark: #0f172a;
+      --text-muted: #475569;
       --text-dim: #64748b;
     }
 
@@ -35,9 +35,9 @@
     }
 
     body {
-      background: #030712;
+      background: #f1f5f9;
       font-family: 'Plus Jakarta Sans', sans-serif;
-      color: var(--text-white);
+      color: var(--text-dark);
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -53,15 +53,16 @@
       position: sticky;
       top: 10px;
       z-index: 100;
-      background: rgba(3, 7, 18, 0.85);
-      padding: 8px 16px;
+      background: rgba(255, 255, 255, 0.95);
+      padding: 8px 18px;
       border-radius: 999px;
       backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 255, 255, 0.12);
+      border: 1px solid #cbd5e1;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
     }
 
     .btn {
-      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+      background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
       color: #ffffff;
       border: none;
       font-weight: 700;
@@ -74,33 +75,40 @@
       gap: 6px;
       text-decoration: none;
       transition: all 0.2s ease;
+      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
     }
 
     .btn:hover {
       transform: translateY(-1px);
-      box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);
+      box-shadow: 0 6px 16px rgba(79, 70, 229, 0.35);
     }
 
     .btn-outline {
-      background: rgba(255, 255, 255, 0.06);
-      color: var(--text-white);
-      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: #ffffff;
+      color: var(--text-dark);
+      border: 1px solid #cbd5e1;
+      box-shadow: none;
     }
 
-    /* Fixed 1-Page A4 Sheet Canvas */
+    .btn-outline:hover {
+      background: #f8fafc;
+      border-color: #94a3b8;
+    }
+
+    /* Fixed 1-Page A4 Sheet Canvas - Bright Theme */
     .a4-page {
       width: 210mm;
       height: 297mm;
       max-height: 297mm;
-      background: #070b16;
+      background: #ffffff;
       background-image: 
-        radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.18) 0px, transparent 45%),
-        radial-gradient(at 100% 100%, rgba(139, 92, 246, 0.18) 0px, transparent 45%),
-        radial-gradient(at 50% 50%, rgba(6, 182, 212, 0.08) 0px, transparent 55%);
-      border: 1px solid rgba(99, 102, 241, 0.35);
+        radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.08) 0px, transparent 40%),
+        radial-gradient(at 100% 100%, rgba(124, 58, 237, 0.08) 0px, transparent 40%),
+        radial-gradient(at 100% 0%, rgba(2, 132, 199, 0.06) 0px, transparent 40%);
+      border: 1px solid #cbd5e1;
       border-radius: 12px;
-      padding: 24px 28px;
-      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.9), 0 0 30px rgba(99, 102, 241, 0.15);
+      padding: 26px 30px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.12), 0 0 20px rgba(79, 70, 229, 0.05);
       position: relative;
       overflow: hidden;
       display: flex;
@@ -112,7 +120,7 @@
     .header {
       text-align: center;
       padding-bottom: 12px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      border-bottom: 2px solid #f1f5f9;
       position: relative;
     }
 
@@ -120,100 +128,95 @@
       display: inline-flex;
       align-items: center;
       gap: 5px;
-      background: rgba(99, 102, 241, 0.15);
-      border: 1px solid rgba(99, 102, 241, 0.4);
-      color: #a5b4fc;
-      font-size: 10px;
+      background: #eef2ff;
+      border: 1px solid #c7d2fe;
+      color: #4338ca;
+      font-size: 10.5px;
       font-weight: 800;
       text-transform: uppercase;
       letter-spacing: 2px;
-      padding: 3px 10px;
+      padding: 4px 12px;
       border-radius: 999px;
       margin-bottom: 6px;
     }
 
     .brand-title {
       font-family: 'Outfit', sans-serif;
-      font-size: 32px;
+      font-size: 34px;
       font-weight: 900;
       letter-spacing: 1.5px;
       line-height: 1.1;
-      background: linear-gradient(135deg, #ffffff 30%, #c7d2fe 70%, #818cf8 100%);
+      background: linear-gradient(135deg, #1e1b4b 0%, #4338ca 60%, #7c3aed 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
-      margin-bottom: 3px;
+      margin-bottom: 4px;
     }
 
     .brand-subtitle {
       font-size: 13.5px;
-      font-weight: 600;
-      color: #94a3b8;
+      font-weight: 700;
+      color: #475569;
       letter-spacing: 0.5px;
     }
 
     /* Section Headings */
     .section-title {
       font-family: 'Outfit', sans-serif;
-      font-size: 14px;
+      font-size: 14.5px;
       font-weight: 800;
       text-transform: uppercase;
       letter-spacing: 1px;
-      color: #ffffff;
+      color: #0f172a;
       display: flex;
       align-items: center;
       gap: 6px;
-      margin: 10px 0 8px 0;
+      margin: 12px 0 9px 0;
     }
 
-    /* Packages Grid: Monthly, Quarterly & Half-Yearly */
-    .packages-grid {
+    /* Packages Layout */
+    .monthly-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 12px;
-      margin-bottom: 10px;
+      margin-bottom: 12px;
     }
 
     .pkg-card {
-      background: rgba(15, 23, 42, 0.75);
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: #ffffff;
+      border: 1.5px solid #e2e8f0;
       border-radius: 12px;
-      padding: 14px 16px;
+      padding: 16px 18px;
       position: relative;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.04);
+    }
+
+    .pkg-card.featured-blue {
+      background: #f0fdf4;
+      background: linear-gradient(145deg, #f8fafc 0%, #eff6ff 100%);
+      border: 2px solid #3b82f6;
+      box-shadow: 0 10px 20px -5px rgba(59, 130, 246, 0.15);
     }
 
     .pkg-card.featured-purple {
-      background: linear-gradient(145deg, rgba(30, 27, 75, 0.8) 0%, rgba(15, 23, 42, 0.9) 100%);
-      border: 1.5px solid rgba(139, 92, 246, 0.6);
-      box-shadow: 0 8px 24px rgba(139, 92, 246, 0.15);
-    }
-
-    .pkg-card.featured-cyan {
-      background: linear-gradient(145deg, rgba(8, 47, 73, 0.8) 0%, rgba(15, 23, 42, 0.9) 100%);
-      border: 1.5px solid rgba(6, 182, 212, 0.6);
-      box-shadow: 0 8px 24px rgba(6, 182, 212, 0.15);
-    }
-
-    .pkg-card.featured-gold {
-      grid-column: span 2;
-      background: linear-gradient(135deg, rgba(30, 27, 75, 0.85) 0%, rgba(15, 23, 42, 0.95) 100%);
-      border: 1.5px solid rgba(245, 158, 11, 0.6);
-      box-shadow: 0 8px 24px rgba(245, 158, 11, 0.15);
-      padding: 12px 16px;
+      background: linear-gradient(145deg, #faf5ff 0%, #f3e8ff 100%);
+      border: 2px solid #8b5cf6;
+      box-shadow: 0 10px 25px -5px rgba(139, 92, 246, 0.18);
     }
 
     .card-badge {
       position: absolute;
-      top: -9px;
+      top: -10px;
       right: 14px;
-      font-size: 9px;
+      font-size: 9.5px;
       font-weight: 800;
-      padding: 2px 8px;
+      padding: 3px 10px;
       border-radius: 999px;
       text-transform: uppercase;
       letter-spacing: 0.5px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     }
 
     .card-header {
@@ -224,32 +227,32 @@
     }
 
     .card-name {
-      font-size: 14.5px;
+      font-size: 15px;
       font-weight: 800;
-      color: #ffffff;
+      color: #0f172a;
       line-height: 1.25;
     }
 
     .card-timeline {
-      font-size: 10.5px;
-      color: #a5b4fc;
+      font-size: 11px;
+      color: #4f46e5;
       font-weight: 700;
       text-transform: uppercase;
-      margin-top: 1px;
+      margin-top: 2px;
     }
 
     .price-main {
       font-family: 'Outfit', sans-serif;
-      font-size: 21px;
+      font-size: 24px;
       font-weight: 900;
       line-height: 1;
       text-align: right;
     }
 
     .price-sub {
-      font-size: 9.5px;
-      font-weight: 600;
-      color: var(--text-muted);
+      font-size: 10px;
+      font-weight: 700;
+      color: #64748b;
       text-align: right;
       margin-top: 2px;
     }
@@ -258,12 +261,12 @@
       list-style: none;
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 5px;
     }
 
     .feature-item {
-      font-size: 11px;
-      color: #cbd5e1;
+      font-size: 11.5px;
+      color: #334155;
       display: flex;
       align-items: flex-start;
       gap: 6px;
@@ -271,65 +274,76 @@
     }
 
     .feature-item .check {
-      color: #10b981;
+      color: #059669;
       font-weight: 800;
-      font-size: 11px;
+      font-size: 12px;
       flex-shrink: 0;
     }
 
     .addon-banner {
-      margin-top: 6px;
-      padding: 4px 8px;
-      background: rgba(245, 158, 11, 0.1);
-      border: 1px dashed rgba(245, 158, 11, 0.35);
+      margin-top: 8px;
+      padding: 5px 10px;
+      background: #fffbeb;
+      border: 1px dashed #f59e0b;
       border-radius: 6px;
-      font-size: 10px;
-      color: #fcd34d;
-      font-weight: 600;
+      font-size: 10.5px;
+      color: #b45309;
+      font-weight: 700;
       display: flex;
       justify-content: space-between;
+    }
+
+    /* Quarterly Power Card */
+    .quarterly-card {
+      background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 50%, #ede9fe 100%);
+      border: 2px solid #7c3aed;
+      border-radius: 12px;
+      padding: 16px 20px;
+      position: relative;
+      margin-bottom: 12px;
+      box-shadow: 0 10px 25px -5px rgba(124, 58, 237, 0.15);
     }
 
     /* Pillars */
     .pillars-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
-      margin-bottom: 10px;
+      gap: 10px;
+      margin-bottom: 12px;
     }
 
     .pillar-card {
-      background: rgba(255, 255, 255, 0.03);
-      border: 1px solid rgba(255, 255, 255, 0.06);
-      border-radius: 8px;
-      padding: 8px 10px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 10px 12px;
       text-align: center;
     }
 
     .pillar-icon {
-      font-size: 16px;
-      margin-bottom: 2px;
+      font-size: 18px;
+      margin-bottom: 3px;
     }
 
     .pillar-title {
-      font-size: 11px;
+      font-size: 11.5px;
       font-weight: 800;
-      color: #ffffff;
-      margin-bottom: 1px;
+      color: #0f172a;
+      margin-bottom: 2px;
     }
 
     .pillar-desc {
-      font-size: 9.5px;
-      color: #94a3b8;
-      line-height: 1.25;
+      font-size: 10px;
+      color: #64748b;
+      line-height: 1.3;
     }
 
     /* Terms */
     .terms-box {
-      background: rgba(15, 23, 42, 0.95);
-      border: 1px solid rgba(244, 63, 94, 0.35);
+      background: #fff1f2;
+      border: 1.5px solid #fecdd3;
       border-radius: 10px;
-      padding: 10px 14px;
+      padding: 12px 16px;
     }
 
     .terms-header {
@@ -337,9 +351,9 @@
       align-items: center;
       gap: 6px;
       font-family: 'Outfit', sans-serif;
-      font-size: 11.5px;
+      font-size: 12px;
       font-weight: 800;
-      color: #fca5a5;
+      color: #be123c;
       text-transform: uppercase;
       letter-spacing: 0.5px;
       margin-bottom: 6px;
@@ -348,38 +362,42 @@
     .terms-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 4px 14px;
+      gap: 5px 16px;
     }
 
     .term-item {
       display: flex;
       align-items: flex-start;
       gap: 5px;
-      font-size: 9.5px;
-      color: #cbd5e1;
+      font-size: 10px;
+      color: #475569;
       line-height: 1.35;
     }
 
+    .term-item strong {
+      color: #0f172a;
+    }
+
     .term-bullet {
-      color: #f87171;
+      color: #e11d48;
       font-weight: 800;
-      font-size: 10px;
+      font-size: 11px;
       flex-shrink: 0;
     }
 
     /* Footer */
     .footer {
-      padding-top: 8px;
-      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      padding-top: 10px;
+      border-top: 2px solid #f1f5f9;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-size: 10px;
-      color: #94a3b8;
+      font-size: 10.5px;
+      color: #64748b;
     }
 
     .footer strong {
-      color: #ffffff;
+      color: #0f172a;
     }
 
     /* Print Override for 1 Page A4 Exact */
@@ -401,32 +419,8 @@
         box-shadow: none !important;
         background: #ffffff !important;
         color: #000000 !important;
-        padding: 16mm 18mm !important;
+        padding: 14mm 16mm !important;
         border-radius: 0 !important;
-      }
-      .brand-title {
-        background: none !important;
-        -webkit-text-fill-color: #000000 !important;
-        color: #000000 !important;
-      }
-      .pkg-card, .pillar-card, .terms-box {
-        background: #f8fafc !important;
-        border: 1px solid #cbd5e1 !important;
-        color: #000000 !important;
-      }
-      .card-name, .section-title, .pillar-title, .footer strong {
-        color: #0f172a !important;
-      }
-      .card-desc, .feature-item, .pillar-desc, .term-item, .brand-subtitle, .footer, .price-sub {
-        color: #334155 !important;
-      }
-      .price-main {
-        color: #4338ca !important;
-      }
-      .addon-banner {
-        background: #fef3c7 !important;
-        color: #92400e !important;
-        border-color: #f59e0b !important;
       }
     }
   </style>
@@ -437,34 +431,35 @@
   <div class="toolbar">
     <button class="btn" onclick="window.print()">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9V2h12v7"></path><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
-      Print A4 / PDF
+      Print A4 / Save PDF
     </button>
     <a href="/Groove_Hub_Official_Brochure.pdf" target="_blank" class="btn btn-outline">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
       Open Downloaded PDF
     </a>
-    <a href="/" class="btn btn-outline">
-      Back to App
+    <a href="/Groove_Hub_Official_Brochure.png" target="_blank" class="btn btn-outline">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+      View Image
     </a>
   </div>
 
-  <!-- Single A4 Sheet Canvas -->
+  <!-- Single A4 Sheet Canvas - Bright Aesthetic -->
   <div class="a4-page">
 
     <!-- Header Section -->
     <header class="header">
       <div class="brand-tag">⚡ OFFICIAL SERVICE &amp; RETAINER RATE CARD</div>
       <h1 class="brand-title">G R O V E _ H U B</h1>
-      <p class="brand-subtitle">Elevate Your Brand. Own Your Niche. • Full-Scale Video Production</p>
+      <p class="brand-subtitle">Elevate Your Brand. Own Your Niche. • Complete Video Production &amp; Account Handling</p>
     </header>
 
-    <!-- Production Packages Section -->
+    <!-- Monthly & Quarterly Packages Section -->
     <div>
       <div class="section-title">
-        <span>🚀</span> Monthly &amp; Quarterly Retainer Packages
+        <span>🚀</span> Monthly Retainer Packages
       </div>
 
-      <div class="packages-grid">
+      <div class="monthly-grid">
 
         <!-- Monthly Retainer A -->
         <div class="pkg-card">
@@ -475,22 +470,22 @@
                 <div class="card-timeline">Maintenance + Editing + Shoot</div>
               </div>
               <div>
-                <div class="price-main" style="color: #38bdf8;">₹25,000</div>
+                <div class="price-main" style="color: #0284c7;">₹25,000</div>
                 <div class="price-sub">per month</div>
               </div>
             </div>
             <ul class="feature-list">
               <li class="feature-item"><span class="check">✓</span> Dedicated monthly account maintenance</li>
               <li class="feature-item"><span class="check">✓</span> Scheduled on-location shoot sessions</li>
-              <li class="feature-item"><span class="check">✓</span> Complete post-production editing pipeline</li>
+              <li class="feature-item"><span class="check">✓</span> Full post-production editing pipeline</li>
               <li class="feature-item"><span class="check">✓</span> Extra reels discounted at <strong>₹899 / reel</strong></li>
             </ul>
           </div>
         </div>
 
         <!-- Monthly Retainer B (Full Suite) -->
-        <div class="pkg-card featured-cyan">
-          <div class="card-badge" style="background: linear-gradient(135deg, #06b6d4, #0284c7); color: #fff;">Most Popular</div>
+        <div class="pkg-card featured-blue">
+          <div class="card-badge" style="background: linear-gradient(135deg, #0284c7, #2563eb); color: #fff;">Most Popular</div>
           <div>
             <div class="card-header">
               <div>
@@ -498,7 +493,7 @@
                 <div class="card-timeline">Complete Hands-Off Omnipresence</div>
               </div>
               <div>
-                <div class="price-main" style="color: #22d3ee;">₹30,000</div>
+                <div class="price-main" style="color: #2563eb;">₹30,000</div>
                 <div class="price-sub">per month</div>
               </div>
             </div>
@@ -515,56 +510,34 @@
           </div>
         </div>
 
-        <!-- Quarterly Power Package (3 Months) -->
-        <div class="pkg-card featured-purple">
-          <div class="card-badge" style="background: linear-gradient(135deg, #a855f7, #6366f1); color: #fff;">Quarterly (3 Months)</div>
+      </div>
+
+      <!-- Quarterly Power Package (3 Months) -->
+      <div class="section-title">
+        <span>👑</span> Quarterly Power Package (3 Months)
+      </div>
+
+      <div class="quarterly-card">
+        <div class="card-badge" style="background: linear-gradient(135deg, #7c3aed, #4f46e5); color: #fff;">Quarterly Flagship (90 Days)</div>
+        <div class="card-header" style="margin-bottom: 12px;">
           <div>
-            <div class="card-header">
-              <div>
-                <div class="card-name">Quarterly Brand Power Package</div>
-                <div class="card-timeline">90-Day Production &amp; Omnipresence Retainer</div>
-              </div>
-              <div>
-                <div class="price-main" style="color: #c084fc;">₹89,999</div>
-                <div class="price-sub">3 Months (₹29,999/mo)</div>
-              </div>
-            </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px 10px;">
-              <div class="feature-item"><span class="check">✓</span> <strong>30 Premium Reels / Mo</strong> (90 Total)</div>
-              <div class="feature-item"><span class="check">✓</span> <strong>90 Days Page Maintenance</strong></div>
-              <div class="feature-item"><span class="check">✓</span> <strong>9 Showroom Spotlights</strong></div>
-              <div class="feature-item"><span class="check">✓</span> <strong>12 Event Clips</strong> (Promos/Launches)</div>
-              <div class="feature-item"><span class="check">✓</span> <strong>9 Backstage Videos</strong> (BTS Content)</div>
-              <div class="feature-item"><span class="check">✓</span> Priority Dedicated Production Crew</div>
-            </div>
+            <div class="card-name" style="font-size: 17px; color: #4338ca;">Quarterly Brand Omnipresence Retainer</div>
+            <div class="card-timeline" style="color: #6366f1;">Complete 90-Day Production, Studio Shoots &amp; Total Page Dominance</div>
+          </div>
+          <div>
+            <div class="price-main" style="color: #6d28d9; font-size: 28px;">₹89,999</div>
+            <div class="price-sub" style="color: #581c87;">3 Months (Effective ₹29,999/mo)</div>
           </div>
         </div>
-
-        <!-- Half-Yearly Enterprise Dominance (6 Months) -->
-        <div class="pkg-card featured-gold">
-          <div class="card-badge" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: #000;">Half-Yearly (6 Months)</div>
-          <div>
-            <div class="card-header">
-              <div>
-                <div class="card-name">Half-Yearly Enterprise Market Leader Suite</div>
-                <div class="card-timeline">180-Day Complete Market Dominance &amp; Video Omnipresence Retainer</div>
-              </div>
-              <div>
-                <div class="price-main" style="color: #fbbf24;">₹1,69,999</div>
-                <div class="price-sub">6 Months (Save ₹10,000)</div>
-              </div>
-            </div>
-            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px 10px;">
-              <div class="feature-item"><span class="check">✓</span> <strong>180 Total Premium Reels</strong> (30/Mo)</div>
-              <div class="feature-item"><span class="check">✓</span> <strong>18 Showroom Spotlights</strong></div>
-              <div class="feature-item"><span class="check">✓</span> <strong>24 Event &amp; Launch Clips</strong></div>
-              <div class="feature-item"><span class="check">✓</span> <strong>18 Backstage / Founder BTS</strong></div>
-              <div class="feature-item"><span class="check">✓</span> <strong>180 Days Full Account Growth</strong></div>
-              <div class="feature-item"><span class="check">✓</span> Dedicated Lead Producer &amp; Priority SLA</div>
-            </div>
-          </div>
+        
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px 14px;">
+          <div class="feature-item"><span class="check">✓</span> <strong>30 Premium Reels / Month</strong> (90 Total)</div>
+          <div class="feature-item"><span class="check">✓</span> <strong>90 Days Full Page Maintenance</strong></div>
+          <div class="feature-item"><span class="check">✓</span> <strong>9 Showroom Spotlights</strong></div>
+          <div class="feature-item"><span class="check">✓</span> <strong>12 Event Clips</strong> (Launches / Promos)</div>
+          <div class="feature-item"><span class="check">✓</span> <strong>9 Backstage Videos</strong> (BTS Content)</div>
+          <div class="feature-item"><span class="check">✓</span> <strong>Priority Dedicated Production Team</strong></div>
         </div>
-
       </div>
     </div>
 
@@ -635,7 +608,7 @@
         <strong>GROOVE HUB</strong> • Direct-to-Creator Video Marketplace &amp; Production Studio
       </div>
       <div>
-        100% Escrow Protected • Verified Professional Editors &amp; Videographers
+        100% Escrow Protected Deliverables • Verified Commercial Creators &amp; Videographers
       </div>
     </footer>
 
