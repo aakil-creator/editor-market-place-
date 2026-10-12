@@ -518,6 +518,7 @@ async def logout_page():
 
 @app.get("/portfolio")
 @app.get("/showcase")
+@app.get("/work")
 async def portfolio_page():
     return FileResponse(STATIC_DIR / "portfolio.html", headers=NO_CACHE_HEADERS)
 
