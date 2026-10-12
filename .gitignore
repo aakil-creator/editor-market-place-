@@ -30,3 +30,5 @@ backend/nul
 .idea/
 .DS_Store
 Thumbs.db
+backend/app/static/frames_carrara/
+backend/app/static/carrara.mp4

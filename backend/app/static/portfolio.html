@@ -1,882 +1,3918 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="scroll-smooth">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Grove Hub — Performance Creative & Growth Agency</title>
-  <meta name="description" content="Turn views into customers & content into cash flow. High-converting video editing & performance ads." />
+  <title>Grove Hub — Performance Video Production & Creative Scaling Studio</title>
+  <meta name="description" content="Elevate your brand with high-retention viral video editing, performance Meta & Google ads, and 100% escrow-backed creative production." />
   
-  <!-- WhatsApp & Social Rich Preview Cards (Open Graph) -->
-  <meta property="og:title" content="Grove Hub — Performance Creative & Growth Portfolio" />
-  <meta property="og:description" content="See our case studies: 5.4X ROAS food launches, 10M+ viral video views, and full-funnel lead scaling. 100% Escrow Protected." />
+  <!-- Open Graph / Meta -->
+  <meta property="og:title" content="Grove Hub — Performance Creative & Growth Studio" />
+  <meta property="og:description" content="Turn views into customers & content into cash flow. Explore our interactive portfolio, live ROI estimator, and case studies." />
   <meta property="og:image" content="/static/images/portfolio/hero_showcase.jpg" />
   <meta property="og:type" content="website" />
   <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Grove Hub — Performance Creative & Growth Studio" />
+  <meta name="twitter:description" content="High-retention video editing, performance ads, and 100% escrow protected creative solutions." />
   <meta name="twitter:image" content="/static/images/portfolio/hero_showcase.jpg" />
-  
+
+  <!-- Google Fonts: Plus Jakarta Sans, Outfit & Instrument Serif -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
 
   <style>
     :root {
-      --bg-dark: #04060d;
-      --card-bg: rgba(12, 17, 34, 0.75);
-      --border: rgba(255, 255, 255, 0.08);
-      --primary-emerald: #10b981;
-      --primary-cyan: #00f2fe;
+      /* Warm Beige & Luxury Champagne Editorial Palette */
+      --bg-warm: #FAF7F2;
+      --bg-cream: #F4EFE6;
+      --bg-sand: #EDE5D8;
+      --bg-card: rgba(255, 255, 255, 0.92);
+      --bg-card-elevated: #FFFFFF;
+      --border-warm: rgba(180, 160, 140, 0.32);
+      --border-accent: rgba(217, 119, 6, 0.45);
+      --text-main: #1C1917;
+      --text-body: #44403C;
+      --text-muted: #78716C;
+      --text-dim: #A8A29E;
+      
+      /* Vibrant Jewel & Earth Tone Accents */
+      --amber-gold: #D97706;
+      --amber-light: #FEF3C7;
+      --amber-glow: rgba(217, 119, 6, 0.2);
+      --terracotta: #EA580C;
+      --terracotta-light: #FFEDD5;
+      --emerald-ivy: #059669;
+      --emerald-light: #D1FAE5;
+      --sapphire: #2563EB;
+      --sapphire-light: #DBEAFE;
+      --amethyst: #7C3AED;
+      --amethyst-light: #EDE9FE;
       --whatsapp-green: #25D366;
-      --text-white: #ffffff;
-      --text-muted: #94a3b8;
-      --text-secondary: #cbd5e1;
-      --font-heading: 'Outfit', sans-serif;
+      
+      /* Fonts */
+      --font-display: 'Outfit', sans-serif;
+      --font-serif: 'Instrument Serif', serif;
       --font-body: 'Plus Jakarta Sans', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+      
+      --mouse-x: 50%;
+      --mouse-y: 50%;
     }
 
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
+      -webkit-font-smoothing: antialiased;
     }
 
     body {
-      background-color: var(--bg-dark);
+      background-color: var(--bg-warm);
       font-family: var(--font-body);
-      color: var(--text-white);
+      color: var(--text-body);
       overflow-x: hidden;
       line-height: 1.6;
+      cursor: default;
     }
 
-    /* Ambient animated background glows */
-    .ambient-glow {
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      z-index: 0;
-      background: 
-        radial-gradient(circle at 10% 20%, rgba(16, 185, 129, 0.12) 0%, transparent 45%),
-        radial-gradient(circle at 90% 30%, rgba(0, 242, 254, 0.12) 0%, transparent 45%),
-        radial-gradient(circle at 50% 85%, rgba(37, 211, 102, 0.08) 0%, transparent 50%);
-    }
-
-    /* Infinite Scrolling Marquee in Background */
-    .bg-marquee-container {
+    /* WebGL Liquid Silk Beige Shader Canvas */
+    #webgl-canvas {
       position: fixed;
       top: 0;
       left: 0;
-      right: 0;
-      bottom: 0;
-      overflow: hidden;
-      z-index: 1;
+      width: 100vw;
+      height: 100vh;
       pointer-events: none;
-      opacity: 0.15;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-around;
-      gap: 60px;
+      z-index: 0;
+      opacity: 0.9;
     }
 
-    .marquee-track {
-      display: flex;
-      gap: 30px;
-      white-space: nowrap;
-      width: max-content;
-      will-change: transform;
+    /* Ambient Warm Lighting Vignette */
+    .ambient-texture {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 1;
+      background: radial-gradient(circle at 50% 15%, rgba(254, 243, 199, 0.45) 0%, transparent 60%),
+                  radial-gradient(circle at 85% 70%, rgba(255, 237, 213, 0.4) 0%, transparent 50%),
+                  radial-gradient(circle at 15% 85%, rgba(209, 250, 229, 0.35) 0%, transparent 50%);
     }
 
-    .marquee-left {
-      animation: scrollLeft 45s linear infinite;
+    .bg-grid-warm {
+      position: fixed;
+      inset: 0;
+      background-image: linear-gradient(rgba(180, 160, 140, 0.12) 1px, transparent 1px),
+                        linear-gradient(90deg, rgba(180, 160, 140, 0.12) 1px, transparent 1px);
+      background-size: 56px 56px;
+      pointer-events: none;
+      z-index: 1;
+      mask-image: radial-gradient(ellipse at center, black 45%, transparent 85%);
     }
 
-    .marquee-right {
-      animation: scrollRight 50s linear infinite;
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 9px;
+    }
+    ::-webkit-scrollbar-track {
+      background: var(--bg-warm);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #D6CEBE;
+      border-radius: 999px;
+      border: 2px solid var(--bg-warm);
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--amber-gold);
     }
 
-    .marquee-item {
-      font-family: var(--font-heading);
-      font-size: 3.5rem;
-      font-weight: 900;
-      text-transform: uppercase;
-      letter-spacing: 2px;
-      color: rgba(255, 255, 255, 0.35);
-      display: flex;
-      align-items: center;
-      gap: 20px;
+    /* Top Scroll Progress Line */
+    #scroll-progress {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 3.5px;
+      width: 0%;
+      background: linear-gradient(90deg, #D97706, #EA580C, #2563EB, #059669);
+      box-shadow: 0 0 12px rgba(217, 119, 6, 0.6);
+      z-index: 1000;
+      transition: width 0.08s ease-out;
     }
 
-    .marquee-item span {
-      color: var(--primary-emerald);
-    }
-
-    @keyframes scrollLeft {
-      0% { transform: translateX(0); }
-      100% { transform: translateX(-50%); }
-    }
-
-    @keyframes scrollRight {
-      0% { transform: translateX(-50%); }
-      100% { transform: translateX(0); }
-    }
-
+    /* Container */
     .container {
       width: 100%;
-      max-width: 1140px;
+      max-width: 1260px;
       margin: 0 auto;
-      padding: 0 20px;
+      padding: 0 24px;
       position: relative;
       z-index: 10;
     }
 
-    /* Navigation Header */
-    .navbar {
-      padding: 24px 0;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      position: relative;
-      z-index: 20;
+    /* Typography Classes */
+    .font-serif { font-family: var(--font-serif); }
+    .font-display { font-family: var(--font-display); }
+    .font-mono { font-family: var(--font-mono); }
+
+    .serif-italic {
+      font-family: var(--font-serif);
+      font-style: italic;
+      font-weight: 400;
     }
 
-    .brand-logo {
+    .gradient-text-warm {
+      background: linear-gradient(135deg, #1C1917 15%, #D97706 60%, #EA580C 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .gradient-text-emerald {
+      background: linear-gradient(135deg, #059669 0%, #10B981 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    /* Standard Icon System */
+    .svg-icon {
+      display: inline-block;
+      width: 1.25em;
+      height: 1.25em;
+      vertical-align: -0.2em;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      flex-shrink: 0;
+    }
+
+    .icon-badge-box {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+
+    .icon-gold-box {
+      background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
+      color: #B45309;
+      border: 1px solid rgba(217, 119, 6, 0.35);
+      box-shadow: 0 4px 14px rgba(217, 119, 6, 0.15);
+    }
+    .icon-emerald-box {
+      background: linear-gradient(135deg, #D1FAE5 0%, #A7F3D0 100%);
+      color: #047857;
+      border: 1px solid rgba(5, 150, 105, 0.35);
+      box-shadow: 0 4px 14px rgba(5, 150, 105, 0.15);
+    }
+    .icon-sapphire-box {
+      background: linear-gradient(135deg, #DBEAFE 0%, #BFDBFE 100%);
+      color: #1D4ED8;
+      border: 1px solid rgba(37, 99, 235, 0.35);
+      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.15);
+    }
+    .icon-terracotta-box {
+      background: linear-gradient(135deg, #FFEDD5 0%, #FED7AA 100%);
+      color: #C2410C;
+      border: 1px solid rgba(234, 88, 12, 0.35);
+      box-shadow: 0 4px 14px rgba(234, 88, 12, 0.15);
+    }
+    .icon-purple-box {
+      background: linear-gradient(135deg, #EDE9FE 0%, #DDD6FE 100%);
+      color: #6D28D9;
+      border: 1px solid rgba(124, 58, 237, 0.35);
+      box-shadow: 0 4px 14px rgba(124, 58, 237, 0.15);
+    }
+
+    /* Navigation */
+    .navbar {
+      position: sticky;
+      top: 16px;
+      z-index: 100;
+      margin-top: 16px;
+      margin-bottom: 30px;
+    }
+
+    .nav-glass {
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--border-warm);
+      border-radius: 999px;
+      padding: 10px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 10px 30px -10px rgba(70, 50, 30, 0.08);
+      transition: all 0.3s ease;
+    }
+
+    .nav-glass:hover {
+      border-color: rgba(217, 119, 6, 0.45);
+      box-shadow: 0 15px 40px -10px rgba(70, 50, 30, 0.14);
+    }
+
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: var(--text-main);
+    }
+
+    .nav-brand img {
+      height: 38px;
+      width: auto;
+      object-fit: contain;
+    }
+
+    .nav-brand-title {
+      font-family: var(--font-display);
+      font-size: 1.3rem;
+      font-weight: 900;
+      letter-spacing: -0.5px;
+      color: var(--text-main);
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 26px;
+      list-style: none;
+    }
+
+    .nav-links a {
+      color: var(--text-body);
+      text-decoration: none;
+      font-size: 0.92rem;
+      font-weight: 600;
+      transition: color 0.2s ease;
+      position: relative;
+    }
+
+    .nav-links a:hover {
+      color: var(--amber-gold);
+    }
+
+    .nav-links a::after {
+      content: '';
+      position: absolute;
+      bottom: -4px;
+      left: 0;
+      width: 0%;
+      height: 2px;
+      background: var(--amber-gold);
+      transition: width 0.25s ease;
+      border-radius: 999px;
+    }
+
+    .nav-links a:hover::after {
+      width: 100%;
+    }
+
+    .nav-actions {
       display: flex;
       align-items: center;
       gap: 14px;
-      text-decoration: none;
     }
 
-    .brand-logo img {
-      height: 48px;
-      width: auto;
-      max-width: 180px;
-      object-fit: contain;
-      filter: drop-shadow(0 0 15px rgba(16, 185, 129, 0.4));
-    }
-
-    .wa-badge-top {
+    .live-status-pill {
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      background: rgba(37, 211, 102, 0.12);
-      border: 1px solid rgba(37, 211, 102, 0.4);
-      padding: 10px 20px;
-      border-radius: 999px;
-      color: #25D366;
-      text-decoration: none;
+      font-size: 0.76rem;
       font-weight: 700;
-      font-size: 0.9rem;
+      color: #065F46;
+      background: var(--emerald-light);
+      border: 1px solid rgba(5, 150, 105, 0.3);
+      padding: 6px 14px;
+      border-radius: 999px;
+    }
+
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #059669;
+      box-shadow: 0 0 10px #059669;
+      animation: blink 1.6s infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.35; transform: scale(0.75); }
+    }
+
+    .btn-nav-wa {
+      background: #1C1917;
+      color: #FAF7F2;
+      font-weight: 700;
+      font-size: 0.86rem;
+      padding: 9px 20px;
+      border-radius: 999px;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.12);
       transition: all 0.25s ease;
-      box-shadow: 0 4px 20px rgba(37, 211, 102, 0.2);
     }
 
-    .wa-badge-top:hover {
-      background: #25D366;
-      color: #04060d;
+    .btn-nav-wa:hover {
+      background: var(--emerald-ivy);
+      color: #fff;
       transform: translateY(-2px);
-      box-shadow: 0 8px 30px rgba(37, 211, 102, 0.45);
+      box-shadow: 0 8px 25px rgba(5, 150, 105, 0.3);
     }
 
-    .wa-badge-top svg {
-      width: 18px;
-      height: 18px;
-      fill: currentColor;
+    /* Kinetic Marquee */
+    .marquee-wrapper {
+      overflow: hidden;
+      white-space: nowrap;
+      padding: 18px 0;
+      border-top: 1px solid var(--border-warm);
+      border-bottom: 1px solid var(--border-warm);
+      background: rgba(255, 255, 255, 0.65);
+      backdrop-filter: blur(10px);
+      margin: 40px 0 70px;
+      position: relative;
+      z-index: 10;
+    }
+
+    .marquee-track {
+      display: inline-flex;
+      gap: 36px;
+      animation: marqueeScroll 32s linear infinite;
+    }
+
+    .marquee-track:hover {
+      animation-play-state: paused;
+    }
+
+    .marquee-item {
+      font-family: var(--font-display);
+      font-size: 1.05rem;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--text-body);
+      display: inline-flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .marquee-item span.highlight {
+      color: var(--amber-gold);
+    }
+    .marquee-item span.dot {
+      color: var(--terracotta);
+    }
+
+    @keyframes marqueeScroll {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
     }
 
     /* Hero Section */
     .hero {
-      padding: 60px 0 80px;
+      padding: 50px 0 70px;
       text-align: center;
+      position: relative;
     }
 
     .hero-badge {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      padding: 6px 18px;
-      background: rgba(16, 185, 129, 0.12);
-      border: 1px solid rgba(16, 185, 129, 0.35);
+      gap: 10px;
+      padding: 8px 22px;
+      background: var(--amber-light);
+      border: 1px solid rgba(217, 119, 6, 0.4);
       border-radius: 999px;
-      color: #34d399;
-      font-size: 0.82rem;
+      font-size: 0.85rem;
       font-weight: 800;
+      color: #92400E;
       text-transform: uppercase;
-      letter-spacing: 1.5px;
-      margin-bottom: 20px;
+      letter-spacing: 1.8px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 15px rgba(217, 119, 6, 0.12);
+      animation: floatBadge 4s ease-in-out infinite;
     }
 
-    .hero-title {
-      font-family: var(--font-heading);
-      font-size: 3.8rem;
+    @keyframes floatBadge {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-4px); }
+    }
+
+    .hero-heading {
+      font-family: var(--font-display);
+      font-size: clamp(2.8rem, 6.2vw, 5.2rem);
       font-weight: 900;
-      line-height: 1.1;
-      letter-spacing: -1.5px;
-      max-width: 900px;
-      margin: 0 auto 18px;
+      line-height: 1.08;
+      letter-spacing: -2px;
+      max-width: 1060px;
+      margin: 0 auto 24px;
+      color: var(--text-main);
     }
 
-    .gradient-text {
-      background: linear-gradient(135deg, #ffffff 15%, #10b981 60%, #00f2fe 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+    .hero-subheading {
+      font-size: clamp(1.1rem, 2vw, 1.35rem);
+      color: var(--text-body);
+      max-width: 760px;
+      margin: 0 auto 40px;
+      line-height: 1.6;
+      font-weight: 400;
     }
 
-    .hero-sub {
-      font-size: 1.15rem;
-      color: var(--text-secondary);
-      max-width: 640px;
-      margin: 0 auto 36px;
+    .hero-cta-group {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 18px;
+      flex-wrap: wrap;
+      margin-bottom: 60px;
     }
 
-    /* Big Hero Graphic */
-    .hero-media-wrap {
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: 24px;
-      padding: 10px;
-      box-shadow: 0 25px 80px rgba(0, 0, 0, 0.6), 0 0 40px rgba(16, 185, 129, 0.2);
-      margin-bottom: 50px;
-      overflow: hidden;
+    .btn-primary-warm {
+      background: linear-gradient(135deg, #D97706 0%, #EA580C 100%);
+      color: #FFFFFF;
+      font-family: var(--font-display);
+      font-size: 1.05rem;
+      font-weight: 800;
+      padding: 16px 36px;
+      border-radius: 999px;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 10px 30px rgba(217, 119, 6, 0.35);
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
       cursor: pointer;
-      transition: transform 0.3s ease;
+      border: none;
     }
 
-    .hero-media-wrap:hover {
-      transform: scale(1.01);
-      border-color: rgba(0, 242, 254, 0.3);
+    .btn-primary-warm:hover {
+      transform: translateY(-3px) scale(1.02);
+      box-shadow: 0 15px 40px rgba(217, 119, 6, 0.45);
     }
 
-    .hero-media-wrap img {
-      width: 100%;
-      height: auto;
-      border-radius: 16px;
-      display: block;
-    }
-
-    /* Live Stats Row */
-    .stats-row {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 16px;
-      margin-bottom: 80px;
-    }
-
-    .stat-box {
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 20px 14px;
-      text-align: center;
-      backdrop-filter: blur(12px);
-    }
-
-    .stat-box h3 {
-      font-family: var(--font-heading);
-      font-size: 2rem;
-      font-weight: 800;
-      color: #00f2fe;
-      margin-bottom: 2px;
-    }
-
-    .stat-box p {
-      color: var(--text-muted);
-      font-size: 0.8rem;
+    .btn-secondary-warm {
+      background: #FFFFFF;
+      color: var(--text-main);
+      font-family: var(--font-display);
+      font-size: 1.05rem;
       font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
+      padding: 16px 32px;
+      border-radius: 999px;
+      border: 1px solid var(--border-warm);
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 4px 20px rgba(70, 50, 30, 0.06);
+      transition: all 0.3s ease;
+      cursor: pointer;
     }
 
-    /* Section Title */
-    .section-title-wrap {
-      text-align: center;
-      margin-bottom: 40px;
+    .btn-secondary-warm:hover {
+      background: #FAF7F2;
+      border-color: rgba(217, 119, 6, 0.45);
+      transform: translateY(-2px);
     }
 
-    .section-tag {
-      font-size: 0.8rem;
-      text-transform: uppercase;
-      letter-spacing: 2px;
-      color: var(--primary-emerald);
-      font-weight: 800;
-      display: block;
-      margin-bottom: 8px;
-    }
-
-    .section-title {
-      font-family: var(--font-heading);
-      font-size: 2.6rem;
-      font-weight: 900;
-      letter-spacing: -0.5px;
-    }
-
-    /* Visual Showcase Cards (Click to WhatsApp) */
-    .showcase-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 24px;
+    /* Graphical Workstation Mockup */
+    .mockup-container {
+      perspective: 1200px;
       margin-bottom: 70px;
     }
 
-    .showcase-card {
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      overflow: hidden;
-      display: block;
-      text-decoration: none;
-      color: inherit;
-      transition: all 0.3s ease;
+    .mockup-window {
+      background: #FFFFFF;
+      border: 1px solid var(--border-warm);
+      border-radius: 28px;
+      padding: 16px;
+      box-shadow: 0 30px 80px -20px rgba(70, 50, 30, 0.15), 0 0 40px rgba(217, 119, 6, 0.08);
+      transform: rotateX(5deg) scale(0.99);
+      transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.6s ease;
       position: relative;
-    }
-
-    .showcase-card:hover {
-      transform: translateY(-6px);
-      border-color: rgba(37, 211, 102, 0.4);
-      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 30px rgba(37, 211, 102, 0.2);
-    }
-
-    .card-img-wrap {
-      position: relative;
-      height: 280px;
       overflow: hidden;
-      background: #090e1c;
     }
 
-    .card-img-wrap img {
+    .mockup-window:hover {
+      transform: rotateX(0deg) scale(1);
+      box-shadow: 0 40px 100px -20px rgba(70, 50, 30, 0.2), 0 0 50px rgba(217, 119, 6, 0.15);
+    }
+
+    .window-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 20px;
+      background: var(--bg-cream);
+      border-radius: 18px 18px 0 0;
+      border-bottom: 1px solid var(--border-warm);
+      font-size: 0.82rem;
+    }
+
+    .dot-group {
+      display: flex;
+      gap: 7px;
+    }
+    .w-dot { width: 11px; height: 11px; border-radius: 50%; }
+    .w-dot-red { background: #EF4444; }
+    .w-dot-yellow { background: #F59E0B; }
+    .w-dot-green { background: #10B981; }
+
+    .window-body {
+      display: grid;
+      grid-template-columns: 280px 1fr 280px;
+      gap: 16px;
+      padding: 16px;
+      background: #FAF7F2;
+      min-height: 460px;
+      border-radius: 0 0 18px 18px;
+    }
+
+    .work-panel {
+      background: #FFFFFF;
+      border: 1px solid var(--border-warm);
+      border-radius: 16px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      box-shadow: 0 4px 15px rgba(70, 50, 30, 0.03);
+    }
+
+    .work-panel-title {
+      font-size: 0.76rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--amber-gold);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .work-clip-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 12px;
+      background: var(--bg-warm);
+      border: 1px solid var(--border-warm);
+      border-radius: 12px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .work-clip-item:hover, .work-clip-item.active {
+      background: var(--amber-light);
+      border-color: var(--amber-gold);
+      color: #92400E;
+    }
+
+    /* Center Viewport */
+    .viewport-box {
+      position: relative;
+      background: #1C1917;
+      border-radius: 16px;
+      overflow: hidden;
+      aspect-ratio: 16 / 9;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    }
+
+    .viewport-box img {
       width: 100%;
       height: 100%;
       object-fit: cover;
-      transition: transform 0.4s ease;
+      transition: filter 0.3s ease;
     }
 
-    .showcase-card:hover .card-img-wrap img {
-      transform: scale(1.04);
-    }
-
-    .card-badge {
+    .viewport-badge-rec {
       position: absolute;
       top: 14px;
       left: 14px;
-      background: rgba(4, 6, 13, 0.85);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      padding: 5px 12px;
-      border-radius: 999px;
-      font-size: 0.72rem;
-      font-weight: 700;
-      color: #34d399;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .wa-tap-hint {
-      position: absolute;
-      bottom: 14px;
-      right: 14px;
-      background: #25D366;
-      color: #04060d;
-      padding: 6px 14px;
-      border-radius: 999px;
-      font-size: 0.75rem;
+      background: rgba(255, 255, 255, 0.95);
+      color: #1C1917;
       font-weight: 800;
+      font-size: 0.72rem;
+      padding: 4px 12px;
+      border-radius: 999px;
+      text-transform: uppercase;
       display: flex;
       align-items: center;
       gap: 6px;
-      box-shadow: 0 4px 15px rgba(37, 211, 102, 0.4);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
 
-    .card-content {
-      padding: 22px;
+    .viewport-caption-pop {
+      position: absolute;
+      bottom: 24px;
+      background: #FFFFFF;
+      border: 2px solid var(--amber-gold);
+      color: #1C1917;
+      font-family: var(--font-display);
+      font-size: 1.25rem;
+      font-weight: 900;
+      padding: 6px 20px;
+      border-radius: 12px;
+      text-transform: uppercase;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+      animation: captionBounce 1.8s infinite;
+      letter-spacing: 1px;
     }
 
-    .card-content h3 {
-      font-family: var(--font-heading);
+    @keyframes captionBounce {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+
+    .viewport-bottom-bar {
+      position: absolute;
+      bottom: 8px;
+      left: 12px;
+      right: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(8px);
+      padding: 6px 14px;
+      border-radius: 10px;
+      font-size: 0.78rem;
+      color: var(--text-main);
+      font-weight: 700;
+      border: 1px solid rgba(0, 0, 0, 0.08);
+    }
+
+    /* Timeline & Tracks */
+    .timeline-wrap {
+      background: #FFFFFF;
+      border: 1px solid var(--border-warm);
+      border-radius: 16px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      position: relative;
+    }
+
+    .time-ruler {
+      display: flex;
+      justify-content: space-between;
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      padding: 0 4px;
+    }
+
+    .track-line {
+      height: 28px;
+      background: var(--bg-cream);
+      border-radius: 6px;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+    }
+
+    .track-seg {
+      position: absolute;
+      height: 80%;
+      border-radius: 5px;
+      display: flex;
+      align-items: center;
+      padding: 0 10px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #fff;
+      gap: 6px;
+    }
+
+    .seg-video {
+      left: 5%;
+      width: 75%;
+      background: linear-gradient(90deg, #D97706, #EA580C);
+    }
+
+    .seg-audio {
+      left: 10%;
+      width: 85%;
+      background: linear-gradient(90deg, #059669, #10B981);
+    }
+
+    .seg-sfx {
+      left: 20%;
+      width: 30%;
+      background: linear-gradient(90deg, #2563EB, #60A5FA);
+    }
+
+    .playhead-needle {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 38%;
+      width: 2.5px;
+      background: #EA580C;
+      box-shadow: 0 0 8px #EA580C;
+      z-index: 20;
+      cursor: ew-resize;
+      animation: playheadRun 5s linear infinite;
+    }
+
+    @keyframes playheadRun {
+      0% { left: 5%; }
+      100% { left: 95%; }
+    }
+
+    /* Stat Cards Row */
+    .stat-row-warm {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+      margin-bottom: 90px;
+    }
+
+    .stat-card-warm {
+      background: #FFFFFF;
+      border: 1px solid var(--border-warm);
+      border-radius: 20px;
+      padding: 26px 20px;
+      text-align: center;
+      box-shadow: 0 10px 30px rgba(70, 50, 30, 0.05);
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat-card-warm:hover {
+      transform: translateY(-5px);
+      border-color: var(--amber-gold);
+      box-shadow: 0 18px 40px rgba(217, 119, 6, 0.15);
+    }
+
+    .stat-num-warm {
+      font-family: var(--font-display);
+      font-size: 2.7rem;
+      font-weight: 900;
+      line-height: 1;
+      margin-bottom: 6px;
+      color: var(--text-main);
+    }
+
+    .stat-label-warm {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    /* Section Headers */
+    .sec-header-warm {
+      text-align: center;
+      margin-bottom: 50px;
+    }
+
+    .sec-tag-warm {
+      font-size: 0.8rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: #92400E;
+      background: var(--amber-light);
+      padding: 6px 18px;
+      border-radius: 999px;
+      border: 1px solid rgba(217, 119, 6, 0.35);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 14px;
+    }
+
+    .sec-title-warm {
+      font-family: var(--font-display);
+      font-size: clamp(2.2rem, 4.5vw, 3.4rem);
+      font-weight: 900;
+      letter-spacing: -1px;
+      color: var(--text-main);
+      line-height: 1.15;
+    }
+
+    /* Before & After Dual Video Comparison Slider */
+    .slider-section-warm {
+      margin-bottom: 110px;
+    }
+
+    .slider-box-warm {
+      position: relative;
+      width: 100%;
+      height: 520px;
+      border-radius: 28px;
+      overflow: hidden;
+      border: 1px solid var(--border-warm);
+      box-shadow: 0 25px 70px rgba(70, 50, 30, 0.15), 0 0 50px rgba(217, 119, 6, 0.08);
+      user-select: none;
+      background: #09090B;
+    }
+
+    .slide-video-wrap {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #000;
+    }
+
+    .slide-video-wrap video {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .slide-before {
+      z-index: 1;
+    }
+
+    .slide-after {
+      width: 50%;
+      border-right: 3px solid #D97706;
+      box-shadow: 4px 0 35px rgba(217, 119, 6, 0.65);
+      z-index: 5;
+    }
+
+    .slide-after video {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .slide-badge {
+      position: absolute;
+      top: 20px;
+      padding: 8px 18px;
+      border-radius: 999px;
+      font-weight: 800;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .badge-before {
+      right: 20px;
+      background: rgba(18, 16, 20, 0.85);
+      color: #FAF7F2;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+
+    .badge-after {
+      left: 20px;
+      background: linear-gradient(135deg, #D97706 0%, #EA580C 100%);
+      color: #FFFFFF;
+      box-shadow: 0 4px 20px rgba(217, 119, 6, 0.5);
+    }
+
+    .slider-grabber {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: #D97706;
+      color: #FFFFFF;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 25px rgba(217, 119, 6, 0.8), 0 0 0 4px #FFFFFF;
+      cursor: ew-resize;
+      z-index: 20;
+      transition: transform 0.1s ease;
+    }
+
+    .slider-grabber:hover, .slider-grabber:active {
+      transform: translate(-50%, -50%) scale(1.12);
+      background: #EA580C;
+    }
+
+    .slider-video-controls {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      z-index: 25;
+      flex-wrap: wrap;
+    }
+
+    .slider-ctrl-btn {
+      background: rgba(18, 16, 20, 0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #FAF7F2;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.76rem;
+      font-weight: 700;
+      padding: 7px 15px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.35);
+    }
+
+    .slider-ctrl-btn:hover {
+      background: #D97706;
+      border-color: #D97706;
+      color: #FFFFFF;
+      transform: translateY(-2px);
+    }
+
+    @media (max-width: 960px) {
+      .slider-box-warm { height: 360px; }
+      .slider-video-controls { bottom: 12px; left: 12px; }
+      .slider-ctrl-btn { font-size: 0.7rem; padding: 5px 10px; }
+      .slide-badge { font-size: 0.7rem; padding: 5px 12px; top: 12px; }
+      .badge-before { right: 12px; }
+      .badge-after { left: 12px; }
+    }
+
+    /* Graphical Infographics: Retention Curve Chart */
+    .infographic-box-warm {
+      background: #FFFFFF;
+      border: 1px solid var(--border-warm);
+      border-radius: 24px;
+      padding: 30px;
+      margin-bottom: 90px;
+      box-shadow: 0 15px 40px rgba(70, 50, 30, 0.06);
+    }
+
+    .retention-grid {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 30px;
+      align-items: center;
+    }
+
+    .chart-container {
+      position: relative;
+      height: 220px;
+      width: 100%;
+    }
+
+    /* Bento Grid Ecosystem (Warm Aesthetics) */
+    .bento-warm-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      margin-bottom: 110px;
+    }
+
+    .bento-box-warm {
+      background: #FFFFFF;
+      border: 1px solid var(--border-warm);
+      border-radius: 24px;
+      padding: 34px;
+      box-shadow: 0 10px 35px rgba(70, 50, 30, 0.05);
+      transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+    }
+
+    .bento-box-warm:hover {
+      transform: translateY(-6px);
+      border-color: rgba(217, 119, 6, 0.45);
+      box-shadow: 0 20px 50px rgba(217, 119, 6, 0.12);
+    }
+
+    .bento-box-warm.span-2 {
+      grid-column: span 2;
+    }
+
+    .bento-box-warm h3 {
+      font-family: var(--font-display);
+      font-size: 1.45rem;
+      font-weight: 800;
+      color: var(--text-main);
+      margin: 16px 0 10px;
+    }
+
+    .bento-box-warm p {
+      color: var(--text-body);
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+
+    /* Interactive Client ROI Calculator */
+    .calc-section-warm {
+      margin-bottom: 110px;
+    }
+
+    .calc-card-warm {
+      background: #FFFFFF;
+      border: 1px solid var(--border-warm);
+      border-radius: 32px;
+      padding: 42px;
+      box-shadow: 0 25px 70px rgba(70, 50, 30, 0.08);
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 40px;
+      align-items: center;
+    }
+
+    .calc-slider-item {
+      margin-bottom: 28px;
+    }
+
+    .calc-slider-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      font-weight: 700;
+      color: var(--text-main);
+      font-size: 0.98rem;
+    }
+
+    .calc-badge-val {
+      font-family: var(--font-mono);
+      background: var(--amber-light);
+      color: #92400E;
+      border: 1px solid rgba(217, 119, 6, 0.3);
+      padding: 4px 12px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 800;
+    }
+
+    .range-warm {
+      width: 100%;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--bg-cream);
+      outline: none;
+      -webkit-appearance: none;
+      cursor: pointer;
+    }
+
+    .range-warm::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: #D97706;
+      border: 3px solid #FFFFFF;
+      box-shadow: 0 2px 10px rgba(217, 119, 6, 0.5);
+      cursor: pointer;
+      transition: transform 0.15s ease;
+    }
+
+    .range-warm::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+    }
+
+    .calc-out-box {
+      background: linear-gradient(135deg, #FAF7F2 0%, #F4EFE6 100%);
+      border: 1px solid var(--border-warm);
+      border-radius: 24px;
+      padding: 32px;
+      text-align: center;
+    }
+
+    .out-item {
+      margin-bottom: 22px;
+    }
+
+    .out-label {
+      font-size: 0.8rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .out-num {
+      font-family: var(--font-display);
+      font-size: 2.5rem;
+      font-weight: 900;
+      line-height: 1.1;
+    }
+
+    /* Selected Case Studies */
+    .case-section-warm {
+      margin-bottom: 110px;
+    }
+
+    .filter-tabs-warm {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 40px;
+    }
+
+    .btn-tab-warm {
+      background: #FFFFFF;
+      border: 1px solid var(--border-warm);
+      color: var(--text-body);
+      font-size: 0.88rem;
+      font-weight: 700;
+      padding: 10px 22px;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: all 0.25s ease;
+    }
+
+    .btn-tab-warm:hover, .btn-tab-warm.active {
+      background: #1C1917;
+      color: #FAF7F2;
+      border-color: #1C1917;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+    }
+
+    .case-grid-warm {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 30px;
+    }
+
+    .case-card-warm {
+      background: #FFFFFF;
+      border: 1px solid var(--border-warm);
+      border-radius: 24px;
+      overflow: hidden;
+      box-shadow: 0 15px 40px rgba(70, 50, 30, 0.06);
+      transition: all 0.35s ease;
+      cursor: pointer;
+    }
+
+    .case-card-warm:hover {
+      transform: translateY(-6px);
+      border-color: var(--amber-gold);
+      box-shadow: 0 25px 60px rgba(217, 119, 6, 0.15);
+    }
+
+    .case-media-box {
+      position: relative;
+      aspect-ratio: 16 / 9;
+      background: #1C1917;
+      overflow: hidden;
+    }
+
+    .case-media-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.5s ease;
+    }
+
+    .case-card-warm:hover .case-media-box img {
+      transform: scale(1.05);
+    }
+
+    .case-tag-top {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(8px);
+      color: var(--text-main);
+      font-weight: 800;
+      font-size: 0.75rem;
+      padding: 5px 14px;
+      border-radius: 999px;
+      text-transform: uppercase;
+      z-index: 10;
+    }
+
+    .case-play-ring {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.25);
+      transition: background 0.3s ease;
+    }
+
+    .case-card-warm:hover .case-play-ring {
+      background: rgba(0, 0, 0, 0.4);
+    }
+
+    .play-circle-warm {
+      width: 58px;
+      height: 58px;
+      border-radius: 50%;
+      background: #FFFFFF;
+      color: var(--amber-gold);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+      transition: transform 0.3s ease;
+    }
+
+    .case-card-warm:hover .play-circle-warm {
+      transform: scale(1.15);
+    }
+
+    .case-info-box {
+      padding: 26px;
+    }
+
+    .case-info-box h3 {
+      font-family: var(--font-display);
       font-size: 1.35rem;
       font-weight: 800;
+      color: var(--text-main);
       margin-bottom: 8px;
     }
 
-    .card-content p {
+    .case-info-box p {
+      color: var(--text-body);
+      font-size: 0.92rem;
+      line-height: 1.55;
+      margin-bottom: 20px;
+    }
+
+    .case-stats-strip {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border-warm);
+    }
+
+    .stat-mini-item h4 {
+      font-family: var(--font-display);
+      font-size: 1.25rem;
+      font-weight: 900;
+      color: #D97706;
+    }
+
+    .stat-mini-item span {
+      font-size: 0.72rem;
       color: var(--text-muted);
-      font-size: 0.9rem;
-      line-height: 1.45;
-      margin-bottom: 16px;
-    }
-
-    .card-stats-mini {
-      display: flex;
-      gap: 16px;
-      background: rgba(255, 255, 255, 0.03);
-      padding: 10px 14px;
-      border-radius: 10px;
-      border: 1px solid rgba(255, 255, 255, 0.05);
-    }
-
-    .mini-stat h4 {
-      font-family: var(--font-heading);
-      font-size: 1.1rem;
-      color: #00f2fe;
-      font-weight: 800;
-    }
-
-    .mini-stat span {
-      font-size: 0.7rem;
-      color: var(--text-muted);
+      font-weight: 700;
       text-transform: uppercase;
     }
 
-    /* Core Services Grid (Seeing & WhatsApp Tap) */
-    .services-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 20px;
-      margin-bottom: 80px;
+    /* Knowledge Hub & Blog (Editorial Style) */
+    .blog-section-warm {
+      margin-bottom: 110px;
     }
 
-    .service-card {
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: 18px;
+    .blog-grid-warm {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+
+    .blog-card-warm {
+      background: #FFFFFF;
+      border: 1px solid var(--border-warm);
+      border-radius: 20px;
       padding: 26px;
-      text-decoration: none;
-      color: inherit;
-      transition: all 0.25s ease;
+      cursor: pointer;
+      box-shadow: 0 10px 30px rgba(70, 50, 30, 0.05);
+      transition: all 0.3s ease;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
     }
 
-    .service-card:hover {
-      transform: translateY(-4px);
-      border-color: rgba(16, 185, 129, 0.4);
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    .blog-card-warm:hover {
+      transform: translateY(-6px);
+      border-color: var(--amber-gold);
+      box-shadow: 0 20px 45px rgba(217, 119, 6, 0.12);
     }
 
-    .service-icon {
-      font-size: 28px;
-      margin-bottom: 14px;
+    .blog-tag-warm {
+      font-size: 0.74rem;
+      font-weight: 800;
+      color: #92400E;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 12px;
+      display: inline-block;
     }
 
-    .service-card h4 {
-      font-family: var(--font-heading);
+    .blog-card-warm h3 {
+      font-family: var(--font-display);
       font-size: 1.25rem;
       font-weight: 800;
-      margin-bottom: 8px;
+      color: var(--text-main);
+      margin-bottom: 10px;
+      line-height: 1.35;
     }
 
-    .service-card p {
-      color: var(--text-muted);
-      font-size: 0.875rem;
-      line-height: 1.45;
-      margin-bottom: 14px;
+    .blog-card-warm p {
+      color: var(--text-body);
+      font-size: 0.9rem;
+      line-height: 1.55;
+      margin-bottom: 18px;
     }
 
-    .service-wa-link {
+    .blog-foot-warm {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
       font-size: 0.8rem;
-      color: #25D366;
+      color: var(--text-muted);
+      border-top: 1px solid var(--border-warm);
+      padding-top: 12px;
+    }
+
+    .blog-link-warm {
+      color: var(--amber-gold);
       font-weight: 700;
       display: flex;
       align-items: center;
       gap: 6px;
     }
 
-    /* Big WhatsApp Action Banner */
-    .cta-banner {
-      background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(37, 211, 102, 0.15) 100%),
-                  rgba(12, 17, 34, 0.9);
-      border: 1.5px dashed rgba(37, 211, 102, 0.5);
-      border-radius: 24px;
-      padding: 50px 30px;
+    /* Big Action CTA Banner */
+    .big-cta-warm {
+      background: linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 50%, #FFEDD5 100%);
+      border: 2px dashed rgba(217, 119, 6, 0.45);
+      border-radius: 32px;
+      padding: 65px 40px;
       text-align: center;
-      margin-bottom: 80px;
+      margin-bottom: 100px;
+      box-shadow: 0 20px 60px rgba(217, 119, 6, 0.1);
       position: relative;
-      overflow: hidden;
     }
 
-    .cta-banner h2 {
-      font-family: var(--font-heading);
-      font-size: 2.4rem;
+    .big-cta-warm h2 {
+      font-family: var(--font-display);
+      font-size: clamp(2.2rem, 4.2vw, 3.4rem);
       font-weight: 900;
-      margin-bottom: 12px;
+      color: var(--text-main);
+      margin-bottom: 16px;
     }
 
-    .cta-banner p {
-      color: var(--text-secondary);
-      max-width: 600px;
-      margin: 0 auto 28px;
-      font-size: 1.05rem;
+    .big-cta-warm p {
+      color: var(--text-body);
+      max-width: 680px;
+      margin: 0 auto 36px;
+      font-size: 1.15rem;
     }
 
-    .wa-big-btn {
+    .wa-button-huge-warm {
       display: inline-flex;
       align-items: center;
-      gap: 12px;
+      gap: 14px;
       background: #25D366;
-      color: #04060d;
-      font-weight: 800;
-      font-size: 1.15rem;
-      padding: 16px 36px;
+      color: #04060D;
+      font-family: var(--font-display);
+      font-size: 1.25rem;
+      font-weight: 900;
+      padding: 18px 42px;
       border-radius: 999px;
       text-decoration: none;
-      box-shadow: 0 10px 35px rgba(37, 211, 102, 0.4);
+      box-shadow: 0 10px 40px rgba(37, 211, 102, 0.35);
       transition: all 0.25s ease;
     }
 
-    .wa-big-btn:hover {
-      transform: scale(1.04);
-      box-shadow: 0 15px 45px rgba(37, 211, 102, 0.6);
-      background: #2ee672;
+    .wa-button-huge-warm:hover {
+      transform: scale(1.04) translateY(-3px);
+      box-shadow: 0 15px 50px rgba(37, 211, 102, 0.5);
+      background: #2EE672;
     }
 
-    .wa-big-btn svg {
-      width: 24px;
-      height: 24px;
-      fill: currentColor;
+    /* Modal Reader */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(28, 25, 23, 0.7);
+      backdrop-filter: blur(14px);
+      z-index: 1000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
     }
 
-    /* Floating WhatsApp Button on Bottom Right */
-    .floating-wa {
+    .modal-box-warm {
+      background: #FFFFFF;
+      border: 1px solid var(--border-warm);
+      border-radius: 24px;
+      max-width: 760px;
+      width: 100%;
+      max-height: 85vh;
+      overflow-y: auto;
+      padding: 38px;
+      position: relative;
+      box-shadow: 0 30px 90px rgba(0, 0, 0, 0.25);
+      animation: modalSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes modalSlideUp {
+      from { opacity: 0; transform: translateY(30px) scale(0.95); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .modal-close-btn {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: var(--bg-cream);
+      border: none;
+      color: var(--text-main);
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      transition: all 0.2s ease;
+    }
+
+    .modal-close-btn:hover {
+      background: #FEE2E2;
+      color: #EF4444;
+    }
+
+    /* Floating Quick Actions Dock */
+    .floating-dock-warm {
       position: fixed;
       bottom: 24px;
-      right: 24px;
-      background: #25D366;
-      color: #04060d;
-      padding: 14px 22px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(255, 255, 255, 0.94);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--border-warm);
+      padding: 8px 18px;
       border-radius: 999px;
       display: flex;
       align-items: center;
-      gap: 10px;
-      font-weight: 800;
-      font-size: 0.95rem;
+      gap: 14px;
+      box-shadow: 0 15px 45px rgba(70, 50, 30, 0.15);
+      z-index: 100;
+    }
+
+    .dock-btn-warm {
+      color: var(--text-body);
       text-decoration: none;
-      box-shadow: 0 10px 30px rgba(37, 211, 102, 0.45);
-      z-index: 1000;
-      transition: all 0.25s ease;
-      animation: pulseBtn 2.5s infinite;
+      font-size: 0.86rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      transition: all 0.2s ease;
+      cursor: pointer;
+      background: transparent;
+      border: none;
     }
 
-    .floating-wa:hover {
-      transform: translateY(-3px) scale(1.05);
-      box-shadow: 0 15px 40px rgba(37, 211, 102, 0.6);
+    .dock-btn-warm:hover {
+      color: var(--amber-gold);
+      background: var(--amber-light);
     }
 
-    .floating-wa svg {
-      width: 20px;
-      height: 20px;
-      fill: currentColor;
+    .dock-btn-warm.highlight {
+      background: #1C1917;
+      color: #FAF7F2;
+      font-weight: 800;
     }
 
-    @keyframes pulseBtn {
-      0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.03); }
+    .dock-btn-warm.highlight:hover {
+      background: var(--emerald-ivy);
+      color: #fff;
     }
 
     /* Footer */
     footer {
-      border-top: 1px solid var(--border);
-      padding: 40px 0;
+      border-top: 1px solid var(--border-warm);
+      padding: 50px 0 100px;
       text-align: center;
       color: var(--text-muted);
-      font-size: 0.85rem;
+      font-size: 0.88rem;
     }
 
-    .footer-logo {
-      height: 40px;
-      width: auto;
-      margin-bottom: 14px;
-      opacity: 0.85;
+    footer a {
+      color: var(--text-main);
+      text-decoration: none;
+      font-weight: 600;
     }
 
-    @media (max-width: 860px) {
-      .hero-title { font-size: 2.6rem; }
-      .stats-row { grid-template-columns: repeat(2, 1fr); }
-      .showcase-grid { grid-template-columns: 1fr; }
-      .services-grid { grid-template-columns: 1fr; }
-      .cta-banner { padding: 36px 20px; }
-      .cta-banner h2 { font-size: 1.8rem; }
-      .floating-wa span { display: none; }
-      .floating-wa { padding: 14px; }
+    footer a:hover {
+      color: var(--amber-gold);
+    }
+
+    /* Responsive */
+    @media (max-width: 960px) {
+      .window-body { grid-template-columns: 1fr; }
+      .work-panel { display: none; }
+      .bento-warm-grid { grid-template-columns: 1fr; }
+      .bento-box-warm.span-2 { grid-column: span 1; }
+      .calc-card-warm { grid-template-columns: 1fr; }
+      .retention-grid { grid-template-columns: 1fr; }
+      .case-grid-warm { grid-template-columns: 1fr; }
+      .blog-grid-warm { grid-template-columns: 1fr; }
+      .stat-row-warm { grid-template-columns: repeat(2, 1fr); }
+      .nav-links { display: none; }
+    }
+  
+    /* ==========================================================
+       GROVE HUB 360° CINEMATIC STUDIO & MARKETPLACE ENGINE
+       ========================================================== */
+    .carrara-experience-wrapper {
+      position: relative;
+      width: 100vw;
+      left: 50%;
+      right: 50%;
+      margin-left: -50vw;
+      margin-right: -50vw;
+      height: 440vh;
+      background: #09090B;
+      color: #FAF7F2;
+      z-index: 50;
+      box-shadow: 0 30px 100px rgba(0,0,0,0.95);
+      margin-bottom: 60px;
+    }
+
+    .carrara-sticky-viewport {
+      position: sticky;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle at 50% 35%, #18161A 0%, #0C0B0E 60%, #050507 100%);
+    }
+
+    /* Cinematic Volumetric Spotlight */
+    .carrara-lighting {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background: radial-gradient(ellipse at 50% 15%, rgba(217, 119, 6, 0.22) 0%, transparent 60%),
+                  radial-gradient(circle at 80% 75%, rgba(37, 99, 235, 0.12) 0%, transparent 50%),
+                  radial-gradient(circle at 20% 80%, rgba(5, 150, 105, 0.12) 0%, transparent 50%);
+      z-index: 2;
+    }
+
+    .carrara-vignette {
+      position: absolute;
+      inset: 0;
+      box-shadow: inset 0 0 150px 60px rgba(0, 0, 0, 0.88);
+      pointer-events: none;
+      z-index: 3;
+    }
+
+    /* Giant Background Typographic Title */
+    .carrara-bg-title-layer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      z-index: 1;
+      overflow: hidden;
+    }
+
+    .carrara-giant-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: clamp(5.5rem, 18vw, 20rem);
+      font-weight: 900;
+      letter-spacing: -0.04em;
+      text-transform: uppercase;
+      color: rgba(250, 247, 242, 0.88);
+      line-height: 0.85;
+      text-align: center;
+      transform: translateY(-8%);
+      user-select: none;
+      transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.45s ease;
+      white-space: nowrap;
+    }
+
+    /* 360 & Multi-Perspective Studio Canvas */
+    #carrara-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: 2;
+      cursor: grab;
+      touch-action: none;
+    }
+
+    #carrara-canvas:active {
+      cursor: grabbing;
+    }
+
+    /* Editorial Header Overlay */
+    .carrara-top-bar {
+      position: absolute;
+      top: 26px;
+      left: 40px;
+      right: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 10;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: rgba(250, 247, 242, 0.85);
+      pointer-events: auto;
+    }
+
+    .carrara-brand-tag {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #FAF7F2;
+      font-weight: 800;
+      letter-spacing: 2px;
+      text-decoration: none;
+    }
+
+    .carrara-brand-tag .gem {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #059669;
+      box-shadow: 0 0 12px #059669;
+    }
+
+    .carrara-volume-tag {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      padding: 5px 14px;
+      border-radius: 999px;
+      font-size: 0.72rem;
+    }
+
+    .carrara-tagline-tag {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .carrara-hire-btn {
+      background: #D97706;
+      color: #FFFFFF;
+      border: none;
+      padding: 7px 18px;
+      border-radius: 999px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      text-decoration: none;
+      box-shadow: 0 4px 15px rgba(217, 119, 6, 0.4);
+      transition: all 0.25s ease;
+    }
+
+    .carrara-hire-btn:hover {
+      background: #EA580C;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(234, 88, 12, 0.5);
+    }
+
+    /* Bottom Meta Bar & Initial Ticker */
+    .carrara-bottom-bar {
+      position: absolute;
+      bottom: 32px;
+      left: 40px;
+      right: 40px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    .carrara-initial-ticker {
+      max-width: 360px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.74rem;
+      line-height: 1.6;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      color: rgba(250, 247, 242, 0.75);
+      transition: opacity 0.4s ease, transform 0.4s ease;
+      background: rgba(18, 16, 20, 0.75);
+      backdrop-filter: blur(14px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      padding: 12px 18px;
+      border-radius: 14px;
+    }
+
+    .carrara-initial-ticker strong {
+      display: block;
+      color: #FBBF24;
+      margin-bottom: 3px;
+    }
+
+    /* Milestone Informational Cards */
+    .carrara-story-card {
+      position: absolute;
+      z-index: 12;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(24px) scale(0.96);
+      transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1), transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .carrara-story-card.active {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0) scale(1);
+    }
+
+    .carrara-card-box {
+      background: rgba(18, 16, 20, 0.88);
+      backdrop-filter: blur(28px);
+      -webkit-backdrop-filter: blur(28px);
+      border: 1px solid rgba(217, 119, 6, 0.4);
+      border-radius: 22px;
+      padding: 26px 30px;
+      max-width: 440px;
+      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.8), 0 0 40px rgba(217, 119, 6, 0.12);
+    }
+
+    .carrara-card-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.74rem;
+      font-weight: 800;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #D97706;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .carrara-card-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: #FAF7F2;
+      margin-bottom: 12px;
+      line-height: 1.25;
+    }
+
+    .carrara-card-features {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 16px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .carrara-card-features li {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 0.88rem;
+      line-height: 1.5;
+      color: rgba(250, 247, 242, 0.9);
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .carrara-card-features li span.chk {
+      color: #10B981;
+      font-weight: 800;
+      font-size: 0.95rem;
+      line-height: 1.2;
+    }
+
+    .carrara-card-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .carrara-blog-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(217, 119, 6, 0.18);
+      border: 1px solid rgba(217, 119, 6, 0.45);
+      color: #FBBF24;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 7px 16px;
+      border-radius: 999px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.2s ease;
+    }
+
+    .carrara-blog-link:hover {
+      background: #D97706;
+      color: #FFFFFF;
+      transform: translateX(3px);
+    }
+
+    .carrara-card-left {
+      left: 6vw;
+      top: 50%;
+      transform: translateY(-50%) translateY(24px);
+    }
+    .carrara-card-left.active {
+      transform: translateY(-50%) translateY(0);
+    }
+
+    .carrara-card-right {
+      right: 6vw;
+      top: 50%;
+      transform: translateY(-50%) translateY(24px);
+    }
+    .carrara-card-right.active {
+      transform: translateY(-50%) translateY(0);
+    }
+
+    /* Finale Milestone (88% - 100%) */
+    .carrara-finale-card {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      padding: 0 6vw 8vh;
+      z-index: 15;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(24px);
+      transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .carrara-finale-card.active {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0);
+    }
+
+    .carrara-finale-heading {
+      font-family: 'Outfit', sans-serif;
+      font-size: clamp(3.2rem, 7.5vw, 6.8rem);
+      font-weight: 900;
+      line-height: 0.92;
+      letter-spacing: -0.04em;
+      color: #FAF7F2;
+      text-transform: none;
+    }
+
+    .carrara-finale-heading span.gradient-gold {
+      background: linear-gradient(135deg, #FBBF24 0%, #EA580C 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .carrara-finale-cta-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 12px;
+      max-width: 480px;
+    }
+
+    .carrara-stats-mini-row {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 6px;
+    }
+
+    .carrara-stat-mini {
+      background: rgba(18, 16, 20, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 12px;
+      padding: 8px 14px;
+      text-align: right;
+    }
+
+    .carrara-stat-mini strong {
+      display: block;
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.15rem;
+      color: #FBBF24;
+      line-height: 1.1;
+    }
+
+    .carrara-stat-mini span {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.65rem;
+      color: rgba(250, 247, 242, 0.65);
+      text-transform: uppercase;
+    }
+
+    .btn-carrara-commission {
+      background: linear-gradient(135deg, #D97706 0%, #EA580C 100%);
+      color: #FFFFFF;
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 800;
+      padding: 16px 38px;
+      border-radius: 999px;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 10px 35px rgba(217, 119, 6, 0.45);
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      cursor: pointer;
+      border: none;
+    }
+
+    .btn-carrara-commission:hover {
+      transform: translateY(-3px) scale(1.03);
+      box-shadow: 0 15px 45px rgba(217, 119, 6, 0.6);
+    }
+
+    .carrara-finale-sub {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      color: rgba(250, 247, 242, 0.7);
+      text-align: right;
+    }
+
+    /* Floating Interactive Controls HUD */
+    .carrara-hud {
+      position: absolute;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(18, 16, 20, 0.88);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(217, 119, 6, 0.35);
+      border-radius: 999px;
+      padding: 8px 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      z-index: 20;
+      box-shadow: 0 15px 45px rgba(0, 0, 0, 0.7);
+      pointer-events: auto;
+    }
+
+    .carrara-hud-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.74rem;
+      letter-spacing: 1px;
+      color: rgba(250, 247, 242, 0.8);
+    }
+
+    .carrara-scrub-track {
+      width: 130px;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 999px;
+      overflow: hidden;
+      position: relative;
+      cursor: pointer;
+    }
+
+    .carrara-scrub-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #D97706, #EA580C);
+      border-radius: 999px;
+      transition: width 0.05s linear;
+    }
+
+    .carrara-hud-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      color: #FAF7F2;
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+
+    .carrara-hud-btn:hover {
+      background: #D97706;
+      color: #FFFFFF;
+      border-color: #D97706;
+    }
+
+    .carrara-drag-hint {
+      position: absolute;
+      top: 68%;
+      left: 50%;
+      transform: translateX(-50%);
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(217, 119, 6, 0.3);
+      color: rgba(250, 247, 242, 0.9);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      padding: 6px 18px;
+      border-radius: 999px;
+      pointer-events: none;
+      z-index: 10;
+      animation: pulseHint 3s ease-in-out infinite;
+      transition: opacity 0.4s ease;
+    }
+
+    @media (max-width: 960px) {
+      .carrara-top-bar { left: 18px; right: 18px; top: 16px; font-size: 0.68rem; }
+      .carrara-bottom-bar { left: 18px; right: 18px; bottom: 18px; }
+      .carrara-volume-tag { display: none; }
+      .carrara-tagline-tag span:first-child { display: none; }
+      .carrara-story-card { left: 16px !important; right: 16px !important; width: auto !important; max-width: none !important; }
+      .carrara-card-box { padding: 20px 22px; }
+      .carrara-card-features li { font-size: 0.82rem; }
+      .carrara-finale-card { padding: 0 18px 6vh; flex-direction: column; align-items: flex-start; gap: 20px; }
+      .carrara-finale-cta-wrap { align-items: flex-start; }
+      .carrara-stats-mini-row { width: 100%; justify-content: space-between; }
+      .carrara-stat-mini { text-align: left; }
+      .carrara-hud { bottom: 16px; padding: 6px 14px; gap: 10px; width: 92%; justify-content: space-between; }
+      .carrara-scrub-track { width: 80px; }
+      .carrara-initial-ticker { max-width: 220px; font-size: 0.65rem; padding: 8px 12px; }
     }
   </style>
 </head>
 <body>
 
-  <!-- Ambient Glow Background -->
-  <div class="ambient-glow"></div>
+  <!-- Top Glowing Scroll Progress Indicator -->
+  <div id="scroll-progress"></div>
 
-  <!-- Background Animated Infinite Scrolling Marquee -->
-  <div class="bg-marquee-container">
-    <div class="marquee-track marquee-left">
-      <div class="marquee-item">VIRAL VIDEO EDITING <span>•</span> PERFORMANCE MARKETING <span>•</span> HIGH-ROI FUNNELS <span>•</span> REELS & TIKTOKS <span>•</span> 100% ESCROW <span>•</span></div>
-      <div class="marquee-item">VIRAL VIDEO EDITING <span>•</span> PERFORMANCE MARKETING <span>•</span> HIGH-ROI FUNNELS <span>•</span> REELS & TIKTOKS <span>•</span> 100% ESCROW <span>•</span></div>
-    </div>
-    <div class="marquee-track marquee-right">
-      <div class="marquee-item">SCALE YOUR BUSINESS 10X <span>•</span> GOOGLE & META ADS <span>•</span> LOCAL BAKERY & CAFE GROWTH <span>•</span> CONTENT STRATEGY <span>•</span></div>
-      <div class="marquee-item">SCALE YOUR BUSINESS 10X <span>•</span> GOOGLE & META ADS <span>•</span> LOCAL BAKERY & CAFE GROWTH <span>•</span> CONTENT STRATEGY <span>•</span></div>
-    </div>
-    <div class="marquee-track marquee-left">
-      <div class="marquee-item">GROVE HUB AGENCY <span>•</span> PROVEN RESULTS <span>•</span> 5.4X AVERAGE ROAS <span>•</span> 24H DELIVERY <span>•</span> DIRECT WHATSAPP BOOKING <span>•</span></div>
-      <div class="marquee-item">GROVE HUB AGENCY <span>•</span> PROVEN RESULTS <span>•</span> 5.4X AVERAGE ROAS <span>•</span> 24H DELIVERY <span>•</span> DIRECT WHATSAPP BOOKING <span>•</span></div>
-    </div>
-  </div>
+  <!-- Dual-Engine Background: 3D Raymarched Liquid Silk Caustic Shader + Synaptic Particle Constellation -->
+  <canvas id="webgl-canvas"></canvas>
+  <canvas id="particle-canvas" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 2; opacity: 0.95;"></canvas>
+  <div class="ambient-texture"></div>
+  <div class="bg-grid-warm"></div>
 
-  <!-- Main Container -->
+  <!-- Main View Container -->
   <div class="container">
 
-    <!-- Top Navigation with App Logo -->
-    <header class="navbar">
-      <a href="https://wa.me/918005554768?text=Hi%20Grove%20Hub!%20I%20saw%20your%20portfolio%20and%20want%20to%20know%20more." class="brand-logo" target="_blank">
-        <img src="/static/icons/grove_hub_logo.png" alt="Grove Hub Logo" onerror="this.onerror=null; this.src='/static/icons/grove_hub_emblem.png';" />
-      </a>
+    <!-- ==========================================================
+         GROVE HUB 360° CINEMATIC STUDIO & MARKETPLACE ENGINE
+         ========================================================== -->
+    <div class="carrara-experience-wrapper" id="carrara-stage">
+      <div class="carrara-sticky-viewport" id="carrara-viewport">
+        
+        <!-- Ambient Volumetric Lighting & Depth Vignette -->
+        <div class="carrara-lighting"></div>
+        <div class="carrara-vignette"></div>
 
-      <a href="https://wa.me/918005554768?text=Hi%20Grove%20Hub!%20I%20want%20to%20chat%20about%20your%20services." class="wa-badge-top" target="_blank">
-        <svg viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
-        Message on WhatsApp
-      </a>
-    </header>
+        <!-- Giant Backdrop Typographic Header -->
+        <div class="carrara-bg-title-layer">
+          <div class="carrara-giant-title" id="carrara-giant-text">ESCROW</div>
+        </div>
 
-    <!-- Hero Section -->
-    <section class="hero">
-      <div class="hero-badge">⚡ Performance Creative & Scaling Agency</div>
-      <h1 class="hero-title">
-        WE TURN VIEWS INTO CUSTOMERS &<br />
-        <span class="gradient-text">CONTENT INTO CASH FLOW</span>
+        <!-- Multi-Perspective Cinematic Video Workstation Canvas -->
+        <canvas id="carrara-canvas"></canvas>
+
+        <!-- Top Minimal Editorial Header Overlay -->
+        <div class="carrara-top-bar">
+          <a href="/" class="carrara-brand-tag">
+            <span class="gem"></span>
+            <span>GROVE HUB ©</span>
+          </a>
+
+          <div class="carrara-volume-tag">
+            <span style="color:#10B981; font-weight:800;">● 18 EDITORS ONLINE</span>
+            <span style="opacity: 0.4;">|</span>
+            <span>100% ESCROW PROTECTED</span>
+          </div>
+
+          <div class="carrara-tagline-tag">
+            <a href="https://wa.me/918005554768?text=Hi%20Grove%20Hub!%20I%20want%20to%20hire%20a%20vetted%20video%20editor." target="_blank" class="carrara-hire-btn">
+              <span>HIRE AN EDITOR</span>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </a>
+          </div>
+        </div>
+
+        <!-- Bottom Initial Ticker (Milestone 1: 0% - 20%) -->
+        <div class="carrara-bottom-bar">
+          <div class="carrara-initial-ticker" id="carrara-ticker">
+            <strong>ZERO-RISK VIDEO PLATFORM:</strong>
+            100% ESCROW VAULT • 4K DRAFT APPROVAL • 24-48H GUARANTEED DELIVERY.
+          </div>
+        </div>
+
+        <!-- Milestone 2: SPECIALIZED CREATIVE FORMATS (~20% - 44%) -->
+        <div class="carrara-story-card carrara-card-left" id="card-origin">
+          <div class="carrara-card-box">
+            <div class="carrara-card-tag">— 01. CREATIVE PRODUCTION FORMATS</div>
+            <h3 class="carrara-card-title">Tailored For Viral Scale & Conversions</h3>
+            <ul class="carrara-card-features">
+              <li><span class="chk">✓</span> <strong>Viral Short-Form:</strong> 3-Sec Hooks, Kinetic Captions, Sound FX (Shorts, Reels, TikTok)</li>
+              <li><span class="chk">✓</span> <strong>Story & Documentary:</strong> Deep pacing, motion graphics, and narrative sound design</li>
+              <li><span class="chk">✓</span> <strong>Paid Ad Creatives:</strong> Direct-response Meta & TikTok ads tested for 5.4X ROAS</li>
+            </ul>
+            <div class="carrara-card-actions">
+              <button onclick="openWarmModal('hook')" class="carrara-blog-link">
+                <span>The 3-Second Hook Strategy ↗</span>
+              </button>
+              <a href="#showcase" class="carrara-blog-link" style="background:rgba(255,255,255,0.08); color:#FAF7F2; border-color:rgba(255,255,255,0.2);">
+                <span>Explore 50+ Samples ↓</span>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Milestone 3: PRODUCTION SPEED & QUALITY (~46% - 68%) -->
+        <div class="carrara-story-card carrara-card-right" id="card-premise">
+          <div class="carrara-card-box">
+            <div class="carrara-card-tag">— 02. SPEED & REVISION ACCELERATION</div>
+            <h3 class="carrara-card-title">24-48h Delivery & Precision Tooling</h3>
+            <ul class="carrara-card-features">
+              <li><span class="chk">✓</span> <strong>Top 3% Vetted Talent:</strong> Rigorous timing, audio mixing & pacing qualification tests</li>
+              <li><span class="chk">✓</span> <strong>Timecode Annotations:</strong> Click anywhere on a video frame to drop exact timestamp notes</li>
+              <li><span class="chk">✓</span> <strong>Lossless 4K Renders:</strong> Master ProRes / H.264 exports optimized for mobile feeds</li>
+            </ul>
+            <div class="carrara-card-actions">
+              <a href="#showcase" class="carrara-blog-link">
+                <span>Calculate Your Video ROI ↗</span>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Milestone 4: 100% ESCROW VAULT (~70% - 86%) -->
+        <div class="carrara-story-card carrara-card-left" id="card-process">
+          <div class="carrara-card-box">
+            <div class="carrara-card-tag">— 03. ESCROW QUALITY GUARANTEE</div>
+            <h3 class="carrara-card-title">Approve Every Cut Before Payment Release</h3>
+            <ul class="carrara-card-features">
+              <li><span class="chk">✓</span> <strong>Vaulted Milestone Protection:</strong> Funds stay secure in escrow while edits are crafted</li>
+              <li><span class="chk">✓</span> <strong>Full 4K Draft Inspection:</strong> Review complete pacing, color grades & audio risk-free</li>
+              <li><span class="chk">✓</span> <strong>1-Click Approval:</strong> Release funds only when you are 100% satisfied with the export</li>
+            </ul>
+            <div class="carrara-card-actions">
+              <button onclick="openWarmModal('escrow')" class="carrara-blog-link">
+                <span>How Escrow Protection Works ↗</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Milestone 5: FINALE (Front View ~88% - 100%) -->
+        <div class="carrara-finale-card" id="card-finale">
+          <div class="carrara-finale-heading">
+            Scale your<br><span class="gradient-gold">content.</span>
+          </div>
+          <div class="carrara-finale-cta-wrap">
+            <div class="carrara-stats-mini-row">
+              <div class="carrara-stat-mini">
+                <strong>10M+</strong>
+                <span>Views Scaled</span>
+              </div>
+              <div class="carrara-stat-mini">
+                <strong>5.4X</strong>
+                <span>Avg Paid ROAS</span>
+              </div>
+              <div class="carrara-stat-mini">
+                <strong>100%</strong>
+                <span>Escrow Safe</span>
+              </div>
+            </div>
+            <a href="https://wa.me/918005554768?text=Hi%20Grove%20Hub!%20I%20am%20ready%20to%20start%20with%20a%20vetted%20video%20editor." target="_blank" class="btn-carrara-commission">
+              <span>Hire a Master Editor</span>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+            </a>
+            <div class="carrara-finale-sub">
+              100% ESCROW PROTECTED • 24-48H TURNAROUND • UNLIMITED REVISIONS
+            </div>
+          </div>
+        </div>
+
+        <!-- Drag to Rotate 360 Hint -->
+        <div class="carrara-drag-hint" id="carrara-hint">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+          <span>Drag to Orbit or Scroll Down</span>
+        </div>
+
+        <!-- Floating HUD Interactive Scrubber & Autoplay Controls -->
+        <div class="carrara-hud">
+          <button class="carrara-hud-btn" id="carrara-play-toggle" onclick="toggleCarraraAutoplay()">
+            <span id="carrara-play-icon">▶</span>
+            <span id="carrara-play-text">Auto Orbit</span>
+          </button>
+
+          <div class="carrara-hud-item">
+            <span id="carrara-angle-text">0°</span>
+            <div class="carrara-scrub-track" id="carrara-scrub-bar" onclick="seekCarraraFromTrack(event)">
+              <div class="carrara-scrub-fill" id="carrara-scrub-fill"></div>
+            </div>
+          </div>
+
+          <button class="carrara-hud-btn" onclick="document.getElementById('studio').scrollIntoView({behavior:'smooth'})">
+            <span>Showcase ↓</span>
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Kinetic Hero Section -->
+    <section class="hero" id="hero">
+      <div class="hero-badge">
+        <svg class="svg-icon" viewBox="0 0 24 24" style="color: #D97706;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        <span>Performance Creative & Growth Engine</span>
+      </div>
+
+      <h1 class="hero-heading">
+        WE TURN BORING CONTENT INTO<br />
+        <span class="serif-italic gradient-text-warm">High-Converting Cash Flow.</span>
       </h1>
-      <p class="hero-sub">
-        High-retention viral video editing, Meta/Google ads, and conversion funnels engineered to scale businesses predictably.
+
+      <p class="hero-subheading">
+        Kinetic viral video editing, algorithmic retention formulas, and full-funnel Meta & Google ad campaigns engineered to scale creator channels & brands 10X.
       </p>
 
-      <!-- Hero Visual Card (Click to WhatsApp) -->
-      <a href="https://wa.me/918005554768?text=Hi%20Grove%20Hub!%20I%20saw%20your%20agency%20showcase%20and%20want%20to%20discuss%20a%20project." target="_blank" class="hero-media-wrap">
-        <img src="/static/images/portfolio/hero_showcase.jpg" alt="Grove Hub Agency Creative Showcase" />
-      </a>
+      <div class="hero-cta-group">
+        <a href="#showcase" class="btn-primary-warm">
+          <span>Calculate Your Projected ROI</span>
+          <svg class="svg-icon" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </a>
+        <a href="#showcase" class="btn-secondary-warm">
+          <svg class="svg-icon" viewBox="0 0 24 24" style="color: #D97706; fill: currentColor;"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          <span>Watch Case Studies</span>
+        </a>
+      </div>
 
-      <!-- Live Performance Metrics -->
-      <div class="stats-row">
-        <div class="stat-box">
-          <h3>$14.2M+</h3>
-          <p>Client Revenue</p>
+      <!-- Live Interactive Workstation Mockup -->
+      <div class="mockup-container" id="studio">
+        <div class="mockup-window">
+          
+          <div class="window-header">
+            <div class="dot-group">
+              <span class="w-dot w-dot-red"></span>
+              <span class="w-dot w-dot-yellow"></span>
+              <span class="w-dot w-dot-green"></span>
+            </div>
+            <div class="font-mono" style="color: var(--text-muted); font-size: 0.8rem; display: flex; align-items: center; gap: 8px;">
+              <svg class="svg-icon" viewBox="0 0 24 24" style="color: #D97706;"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/></svg>
+              <span>Groove_Hub_Studio_v2.4_MasterCut.proj [4K HDR 60FPS]</span>
+            </div>
+            <div class="font-mono" style="color: #059669; font-weight: 700; font-size: 0.78rem; display: flex; align-items: center; gap: 6px;">
+              <svg class="svg-icon" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              <span>100% ESCROW SECURED</span>
+            </div>
+          </div>
+
+          <div class="window-body">
+            
+            <!-- Left Media Panel -->
+            <div class="work-panel">
+              <div class="work-panel-title">
+                <span>Active Footage Bins</span>
+                <svg class="svg-icon" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+              </div>
+              
+              <div class="work-clip-item active" onclick="switchClip('viral', event)">
+                <div class="icon-badge-box icon-gold-box" style="width:34px; height:34px;">
+                  <svg class="svg-icon" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                </div>
+                <div>
+                  <div style="font-weight: 700;">Hook_Retention_A1.mp4</div>
+                  <div style="font-size: 0.7rem; color: var(--text-muted);">1080x1920 • 94% Retention</div>
+                </div>
+              </div>
+
+              <div class="work-clip-item" onclick="switchClip('broll', event)">
+                <div class="icon-badge-box icon-emerald-box" style="width:34px; height:34px;">
+                  <svg class="svg-icon" viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                </div>
+                <div>
+                  <div style="font-weight: 700;">4K_Food_Macro_Broll.mov</div>
+                  <div style="font-size: 0.7rem; color: var(--text-muted);">3840x2160 • 60 FPS HDR</div>
+                </div>
+              </div>
+
+              <div class="work-clip-item" onclick="switchClip('sound', event)">
+                <div class="icon-badge-box icon-sapphire-box" style="width:34px; height:34px;">
+                  <svg class="svg-icon" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                </div>
+                <div>
+                  <div style="font-weight: 700;">Whoosh_Bass_Impact.wav</div>
+                  <div style="font-size: 0.7rem; color: var(--text-muted);">Stereo • Subconscious Hit</div>
+                </div>
+              </div>
+
+              <div class="work-clip-item" onclick="switchClip('captions', event)">
+                <div class="icon-badge-box icon-terracotta-box" style="width:34px; height:34px;">
+                  <svg class="svg-icon" viewBox="0 0 24 24"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+                </div>
+                <div>
+                  <div style="font-weight: 700;">Hormozi_Word_Pop.json</div>
+                  <div style="font-size: 0.7rem; color: var(--text-muted);">Auto-Synced • Gold Pop</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Center Viewport & Scrubber -->
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+              <div class="viewport-box">
+                <video id="main-sim-video" src="/static/groove_viral_cut.mp4" playsinline autoplay muted loop style="width:100%; height:100%; object-fit:cover;"></video>
+                <img id="main-sim-img" src="/static/images/portfolio/hero_showcase.jpg" alt="Video Timeline Simulator" style="display:none;" />
+                <div class="viewport-badge-rec">
+                  <span style="width: 8px; height: 8px; border-radius: 50%; background: #EF4444; display: inline-block;"></span>
+                  <span>4K UHD MASTER</span>
+                </div>
+                <div class="viewport-caption-pop" id="main-sim-caption">
+                  "THE SECRET TO 10M+ VIEWS!"
+                </div>
+                
+                <div class="viewport-bottom-bar">
+                  <div style="display: flex; gap: 12px; align-items: center;">
+                    <button onclick="togglePlayback()" style="background: none; border: none; color: #1C1917; cursor: pointer; display: flex; align-items: center;">
+                      <svg id="play-pause-icon" class="svg-icon" viewBox="0 0 24 24" style="fill: currentColor;"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+                    </button>
+                    <span class="font-mono">00:04:18 / 00:30:00</span>
+                  </div>
+                  <div style="color: #D97706; font-weight: 800; display: flex; align-items: center; gap: 6px;">
+                    <svg class="svg-icon" viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+                    <span>+5.4X AVERAGE ROAS</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Timeline -->
+              <div class="timeline-wrap">
+                <div class="time-ruler">
+                  <span>00:00</span>
+                  <span>00:05</span>
+                  <span>00:10</span>
+                  <span>00:15</span>
+                  <span>00:20</span>
+                  <span>00:25</span>
+                  <span>00:30</span>
+                </div>
+
+                <div class="track-line">
+                  <div class="track-seg seg-video">
+                    <svg class="svg-icon" viewBox="0 0 24 24" style="width:14px; height:14px;"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+                    <span>Video 1: 4K Master Cut</span>
+                  </div>
+                  <div class="playhead-needle"></div>
+                </div>
+
+                <div class="track-line">
+                  <div class="track-seg seg-audio">
+                    <svg class="svg-icon" viewBox="0 0 24 24" style="width:14px; height:14px;"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                    <span>Audio 1: Voice EQ + Bass Clarifier</span>
+                  </div>
+                </div>
+
+                <div class="track-line">
+                  <div class="track-seg seg-sfx">
+                    <svg class="svg-icon" viewBox="0 0 24 24" style="width:14px; height:14px;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                    <span>Kinetic Captions & SFX</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right Controls Panel -->
+            <div class="work-panel">
+              <div class="work-panel-title">
+                <span>Active Enhancements</span>
+                <svg class="svg-icon" viewBox="0 0 24 24"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+              </div>
+
+              <div style="display: flex; flex-direction: column; gap: 8px;">
+                <label style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; background: var(--bg-warm); padding: 8px 10px; border-radius: 8px; cursor: pointer;">
+                  <span>Kinetic Dynamic Zooms</span>
+                  <input type="checkbox" checked style="accent-color: #D97706;" />
+                </label>
+                <label style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; background: var(--bg-warm); padding: 8px 10px; border-radius: 8px; cursor: pointer;">
+                  <span>Subconscious Sound Hits</span>
+                  <input type="checkbox" checked style="accent-color: #D97706;" />
+                </label>
+                <label style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; background: var(--bg-warm); padding: 8px 10px; border-radius: 8px; cursor: pointer;">
+                  <span>Cinema Warm Gold Grade</span>
+                  <input type="checkbox" checked style="accent-color: #D97706;" />
+                </label>
+                <label style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; background: var(--bg-warm); padding: 8px 10px; border-radius: 8px; cursor: pointer;">
+                  <span>3-Sec Hook Optimization</span>
+                  <input type="checkbox" checked style="accent-color: #D97706;" />
+                </label>
+              </div>
+
+              <div style="margin-top: auto; padding: 12px; background: var(--amber-light); border-radius: 12px; border: 1px solid rgba(217, 119, 6, 0.35); font-size: 0.78rem; text-align: center;">
+                <div style="font-weight: 800; color: #92400E; margin-bottom: 2px; display: flex; align-items: center; justify-content: center; gap: 4px;">
+                  <svg class="svg-icon" viewBox="0 0 24 24" style="width:14px; height:14px;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                  <span>RAPID TURNAROUND</span>
+                </div>
+                <div style="color: var(--text-body);">Average delivery: <strong>24 Hours</strong></div>
+              </div>
+            </div>
+
+          </div>
+
         </div>
-        <div class="stat-box">
-          <h3>4.8x</h3>
-          <p>Average ROAS</p>
+      </div>
+
+      <!-- Live Performance Stat Counters -->
+      <div class="stat-row-warm">
+        <div class="stat-card-warm">
+          <div class="stat-num-warm gradient-text-warm">$14.2M+</div>
+          <div class="stat-label-warm">Client Revenue Scaled</div>
         </div>
-        <div class="stat-box">
-          <h3>5,000+</h3>
-          <p>Viral Edits</p>
+        <div class="stat-card-warm">
+          <div class="stat-num-warm" style="color: #D97706;">5.4x</div>
+          <div class="stat-label-warm">Average Ad ROAS</div>
         </div>
-        <div class="stat-box">
-          <h3>100%</h3>
-          <p>Escrow Protected</p>
+        <div class="stat-card-warm">
+          <div class="stat-num-warm" style="color: #EA580C;">5,200+</div>
+          <div class="stat-label-warm">Viral Edits Shipped</div>
+        </div>
+        <div class="stat-card-warm">
+          <div class="stat-num-warm gradient-text-emerald">100%</div>
+          <div class="stat-label-warm">Escrow Protected</div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- Infinite Scrolling Brand Marquee -->
+    <div class="marquee-wrapper">
+      <div class="marquee-track">
+        <div class="marquee-item"><span class="highlight">VIRAL VIDEO PRODUCTION</span> <span class="dot">•</span></div>
+        <div class="marquee-item">HIGH-RETENTION HOOKS <span class="dot">•</span></div>
+        <div class="marquee-item"><span class="highlight">META & GOOGLE ADS</span> <span class="dot">•</span></div>
+        <div class="marquee-item">LOCAL FOOD & CAFE GROWTH <span class="dot">•</span></div>
+        <div class="marquee-item"><span class="highlight">100% ESCROW GUARANTEED</span> <span class="dot">•</span></div>
+        <div class="marquee-item">24H RAPID TURNAROUND <span class="dot">•</span></div>
+        <div class="marquee-item"><span class="highlight">ALEX HORMOZI CAPTIONS</span> <span class="dot">•</span></div>
+        <div class="marquee-item">SOUND DESIGN & SFX <span class="dot">•</span></div>
+      </div>
+    </div>
+
+    <!-- Before & After Interactive Comparison -->
+    <section class="slider-section-warm" id="comparison">
+      <div class="sec-header-warm">
+        <span class="sec-tag-warm">
+          <svg class="svg-icon" viewBox="0 0 24 24"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>
+          <span>Live Dual-Video Split Comparison</span>
+        </span>
+        <h2 class="sec-title-warm">Raw Creator Footage vs. <span class="gradient-text-warm">Groove Hub Master Cut</span></h2>
+        <p style="color: var(--text-body); max-width: 620px; margin: 12px auto 0;">
+          Drag the center split handle to compare real-time raw footage with our color graded, audio-engineered 4K master edit.
+        </p>
+      </div>
+
+      <div class="slider-box-warm" id="dual-slider">
+        <!-- Background Video: Raw Footage -->
+        <div class="slide-video-wrap slide-before">
+          <video id="vid-comp-before" src="/static/raw_creator_footage.mp4" playsinline autoplay muted loop preload="auto"></video>
+        </div>
+
+        <!-- Foreground Video: Groove Hub 4K Master (Clipped) -->
+        <div class="slide-video-wrap slide-after" id="slide-after-view">
+          <video id="vid-comp-after" src="/static/groove_viral_cut.mp4" playsinline autoplay muted loop preload="auto"></video>
+        </div>
+
+        <!-- Badges -->
+        <div class="slide-badge badge-before">
+          <svg class="svg-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+          <span>Raw Creator Footage</span>
+        </div>
+        <div class="slide-badge badge-after">
+          <svg class="svg-icon" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          <span>Groove Hub Viral Cut (4K + Audio EQ)</span>
+        </div>
+
+        <!-- Split Grabber Handle -->
+        <div class="slider-grabber" id="slider-grabber">
+          <svg class="svg-icon" viewBox="0 0 24 24" style="width: 24px; height: 24px;"><polyline points="7 8 3 12 7 16"/><polyline points="17 8 21 12 17 16"/><line x1="3" y1="12" x2="21" y2="12"/></svg>
+        </div>
+
+        <!-- Live Controls & Video Uploader -->
+        <div class="slider-video-controls">
+          <button class="slider-ctrl-btn" id="comp-play-btn" onclick="toggleCompPlay()">
+            <span id="comp-play-icon">⏸</span>
+            <span id="comp-play-text">Pause</span>
+          </button>
+          <label class="slider-ctrl-btn" style="cursor: pointer;" title="Upload any video from your device to test">
+            <span>📁 Upload Any Video to Compare</span>
+            <input type="file" id="comp-file-upload" accept="video/*" style="display: none;" onchange="handleUserCustomVideoUpload(event)">
+          </label>
         </div>
       </div>
     </section>
 
-    <!-- Case Studies & Work Showcase -->
-    <div class="section-title-wrap">
-      <span class="section-tag">Featured Client Work</span>
-      <h2 class="section-title">Selected Case Studies</h2>
-    </div>
+    <section class="ecosystem-section" id="ecosystem">
+      <div class="sec-header-warm">
+        <span class="sec-tag-warm">
+          <svg class="svg-icon" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <span>Why We Are Different</span>
+        </span>
+        <h2 class="sec-title-warm">Engineered to Win Attention & <span class="gradient-text-warm">Scale Cash Flow</span></h2>
+      </div>
 
-    <div class="showcase-grid">
-
-      <!-- Case 1: Cafe & Bakery Ad Scaling -->
-      <a href="https://wa.me/918005554768?text=Hi%20Grove%20Hub!%20I%20am%20interested%20in%20scaling%20my%20food/cafe%20business%20like%20the%20Aura%20Bistro%20case%20study." target="_blank" class="showcase-card">
-        <div class="card-img-wrap">
-          <span class="card-badge">Local Business Growth</span>
-          <img src="/static/images/portfolio/case_ads.jpg" alt="Aura Bistro Case Study" />
-          <div class="wa-tap-hint">💬 Tap to WhatsApp</div>
+      <div class="bento-warm-grid">
+        
+        <!-- Card 1: Escrow Vault -->
+        <div class="bento-box-warm">
+          <div>
+            <div class="icon-badge-box icon-emerald-box">
+              <svg class="svg-icon" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </div>
+            <h3>100% Escrow Milestone Vault</h3>
+            <p>Never risk your capital with unreliable freelancers. Funds stay safely locked in escrow until you 100% approve the final watermark-free export.</p>
+          </div>
+          <div style="font-size: 0.82rem; font-weight: 800; color: #059669; display: flex; align-items: center; gap: 6px; margin-top: 20px;">
+            <svg class="svg-icon" viewBox="0 0 24 24" style="width:16px; height:16px;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            <span>100% Escrow Milestone Protection</span>
+          </div>
         </div>
-        <div class="card-content">
-          <h3>Aura Bistro & Bakery: 5.4X ROAS Food Launch</h3>
-          <p>Produced viral crave-worthy dessert reels paired with geo-targeted Meta ads, generating 45,000+ new diners and scaling monthly revenue from $8.4k to $45.3k.</p>
-          <div class="card-stats-mini">
-            <div class="mini-stat">
-              <h4>5.4x</h4>
-              <span>Ad ROAS</span>
+
+        <!-- Card 2: 24h Turnaround -->
+        <div class="bento-box-warm">
+          <div>
+            <div class="icon-badge-box icon-gold-box">
+              <svg class="svg-icon" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
             </div>
-            <div class="mini-stat">
-              <h4>$45.3K</h4>
-              <span>Monthly Sales</span>
+            <h3>24-Hour Lightning Delivery</h3>
+            <p>Keep your publishing calendar full and capitalize on trending sounds while they are hot. Our dedicated editor pods deliver daily.</p>
+          </div>
+          <div style="font-size: 0.82rem; font-weight: 800; color: #D97706; display: flex; align-items: center; gap: 6px; margin-top: 20px;">
+            <svg class="svg-icon" viewBox="0 0 24 24" style="width:16px; height:16px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <span>Under 24H Average Turnaround</span>
+          </div>
+        </div>
+
+        <!-- Card 3: Multi-Platform Scale (Span 2) -->
+        <div class="bento-box-warm span-2">
+          <div>
+            <div class="icon-badge-box icon-sapphire-box">
+              <svg class="svg-icon" viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
             </div>
-            <div class="mini-stat">
-              <h4>+45,000</h4>
-              <span>Local Diners</span>
+            <h3>Full-Funnel Omnichannel Repurposing</h3>
+            <p>One core video shoot repurposed into 10+ high-impact assets: 9:16 Instagram Reels, TikToks, YouTube Shorts, Long-Form YouTube, Meta Ad Creatives, and Google Display Banners.</p>
+          </div>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 20px;">
+            <span style="background: var(--bg-cream); border: 1px solid var(--border-warm); padding: 6px 14px; border-radius: 999px; font-size: 0.78rem; font-weight: 700; color: var(--text-main); display: inline-flex; align-items: center; gap: 6px;">
+              <svg class="svg-icon" viewBox="0 0 24 24" style="color: #D97706; width:14px; height:14px;"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/></svg>
+              9:16 Reels
+            </span>
+            <span style="background: var(--bg-cream); border: 1px solid var(--border-warm); padding: 6px 14px; border-radius: 999px; font-size: 0.78rem; font-weight: 700; color: var(--text-main); display: inline-flex; align-items: center; gap: 6px;">
+              <svg class="svg-icon" viewBox="0 0 24 24" style="color: #EA580C; width:14px; height:14px;"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+              TikTok Ads
+            </span>
+            <span style="background: var(--bg-cream); border: 1px solid var(--border-warm); padding: 6px 14px; border-radius: 999px; font-size: 0.78rem; font-weight: 700; color: var(--text-main); display: inline-flex; align-items: center; gap: 6px;">
+              <svg class="svg-icon" viewBox="0 0 24 24" style="color: #EF4444; width:14px; height:14px;"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"/><polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"/></svg>
+              16:9 YouTube 4K
+            </span>
+            <span style="background: var(--bg-cream); border: 1px solid var(--border-warm); padding: 6px 14px; border-radius: 999px; font-size: 0.78rem; font-weight: 700; color: var(--text-main); display: inline-flex; align-items: center; gap: 6px;">
+              <svg class="svg-icon" viewBox="0 0 24 24" style="color: #25D366; width:14px; height:14px;"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+              WhatsApp Funnels
+            </span>
+          </div>
+        </div>
+
+        <!-- Card 4: Dedicated Growth Director -->
+        <div class="bento-box-warm">
+          <div>
+            <div class="icon-badge-box icon-terracotta-box">
+              <svg class="svg-icon" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            </div>
+            <h3>Dedicated Creative Director</h3>
+            <p>Direct communication via dedicated WhatsApp & Slack channel. No robotic ticketing systems or missed deadlines.</p>
+          </div>
+          <div style="font-size: 0.82rem; font-weight: 800; color: #EA580C; display: flex; align-items: center; gap: 6px; margin-top: 20px;">
+            <svg class="svg-icon" viewBox="0 0 24 24" style="width:16px; height:16px;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            <span>Direct Founder & Editor Access</span>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Selected Case Studies & Video Portfolio -->
+    <section class="case-section-warm" id="showcase">
+      <div class="sec-header-warm">
+        <span class="sec-tag-warm">
+          <svg class="svg-icon" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <span>Proof of Performance</span>
+        </span>
+        <h2 class="sec-title-warm">Selected Case Studies & <span class="gradient-text-warm">Client Proof</span></h2>
+      </div>
+
+      <!-- Filter Buttons -->
+      <div class="filter-tabs-warm">
+        <button class="btn-tab-warm active" onclick="filterCases('all', this)">All Projects</button>
+        <button class="btn-tab-warm" onclick="filterCases('food', this)">Food & Hospitality</button>
+        <button class="btn-tab-warm" onclick="filterCases('viral', this)">Viral Creator Edits</button>
+        <button class="btn-tab-warm" onclick="filterCases('ads', this)">Performance Meta Ads</button>
+        <button class="btn-tab-warm" onclick="filterCases('ecommerce', this)">E-Commerce & Retail</button>
+      </div>
+
+      <div class="case-grid-warm">
+        
+        <!-- Case 1: Aura Bistro -->
+        <div class="case-card-warm" data-cat="food">
+          <div class="case-media-box">
+            <span class="case-tag-top">Food & Hospitality Growth</span>
+            <img src="/static/images/portfolio/case_ads.jpg" alt="Aura Bistro Case Study" />
+            <div class="case-play-ring">
+              <div class="play-circle-warm">
+                <svg class="svg-icon" viewBox="0 0 24 24" style="fill:currentColor; width:22px; height:22px;"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              </div>
+            </div>
+          </div>
+          <div class="case-info-box">
+            <h3>Aura Bistro: 5.4X ROAS Food Launch Campaign</h3>
+            <p>Viral dessert reels paired with geo-targeted Instagram ads, generating 45,000+ new diners and scaling monthly revenue from $8.4k to $45.3k.</p>
+            <div class="case-stats-strip">
+              <div class="stat-mini-item">
+                <h4>5.4x</h4>
+                <span>Ad ROAS</span>
+              </div>
+              <div class="stat-mini-item">
+                <h4>$45.3K</h4>
+                <span>Monthly Sales</span>
+              </div>
+              <div class="stat-mini-item">
+                <h4>+45,000</h4>
+                <span>Local Diners</span>
+              </div>
             </div>
           </div>
         </div>
-      </a>
 
-      <!-- Case 2: Viral Video Editing -->
-      <a href="https://wa.me/918005554768?text=Hi%20Grove%20Hub!%20I%20need%20top-tier%20viral%20video%20editors%20for%20Reels%20and%20YouTube." target="_blank" class="showcase-card">
-        <div class="card-img-wrap">
-          <span class="card-badge">Viral Content Scaling</span>
-          <img src="/static/images/portfolio/poster_video.jpg" alt="Video Editors Showcase" />
-          <div class="wa-tap-hint">💬 Tap to WhatsApp</div>
-        </div>
-        <div class="card-content">
-          <h3>Creator Studio: 10M+ Views with Punchy Short Edits</h3>
-          <p>Alex Hormozi style animated typography, sound design, and retention hacks delivered in 24 hours. Boosted subscriber growth by 140,000 in 60 days.</p>
-          <div class="card-stats-mini">
-            <div class="mini-stat">
-              <h4>10.2M</h4>
-              <span>Total Views</span>
+        <!-- Case 2: Creator Studio -->
+        <div class="case-card-warm" data-cat="viral">
+          <div class="case-media-box">
+            <span class="case-tag-top">Viral Creator Growth</span>
+            <img src="/static/images/portfolio/poster_video.jpg" alt="Creator Studio Case Study" />
+            <div class="case-play-ring">
+              <div class="play-circle-warm">
+                <svg class="svg-icon" viewBox="0 0 24 24" style="fill:currentColor; width:22px; height:22px;"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              </div>
             </div>
-            <div class="mini-stat">
-              <h4>+140K</h4>
-              <span>Followers Gained</span>
-            </div>
-            <div class="mini-stat">
-              <h4>24h</h4>
-              <span>Turnaround</span>
+          </div>
+          <div class="case-info-box">
+            <h3>Creator Studio: 10M+ Views with Punchy Short Edits</h3>
+            <p>Alex Hormozi style animated typography, sound design, and retention hacks delivered in 24 hours. Boosted subscribers by 140,000 in 60 days.</p>
+            <div class="case-stats-strip">
+              <div class="stat-mini-item">
+                <h4>10.2M</h4>
+                <span>Total Views</span>
+              </div>
+              <div class="stat-mini-item">
+                <h4>+140K</h4>
+                <span>Subscribers</span>
+              </div>
+              <div class="stat-mini-item">
+                <h4>24h</h4>
+                <span>Turnaround</span>
+              </div>
             </div>
           </div>
         </div>
-      </a>
 
-      <!-- Case 3: Performance Ads & Growth -->
-      <a href="https://wa.me/918005554768?text=Hi%20Grove%20Hub!%20I%20want%20to%20run%20high-converting%20Google/Meta%20ads%20and%20funnels." target="_blank" class="showcase-card">
-        <div class="card-img-wrap">
-          <span class="card-badge">Performance Agency</span>
-          <img src="/static/images/portfolio/poster_growth.jpg" alt="Digital Marketing Case Study" />
-          <div class="wa-tap-hint">💬 Tap to WhatsApp</div>
-        </div>
-        <div class="card-content">
-          <h3>Apex B2B Solutions: 1,400+ Inbound Leads</h3>
-          <p>Full-funnel Google Search campaigns coupled with automated 60-second WhatsApp lead follow-ups, reducing cost per acquisition by 42%.</p>
-          <div class="card-stats-mini">
-            <div class="mini-stat">
-              <h4>1,420</h4>
-              <span>Leads Generated</span>
+        <!-- Case 3: Apex B2B Leads -->
+        <div class="case-card-warm" data-cat="ads">
+          <div class="case-media-box">
+            <span class="case-tag-top">Performance Ads & Funnels</span>
+            <img src="/static/images/portfolio/poster_growth.jpg" alt="Apex B2B Case Study" />
+            <div class="case-play-ring">
+              <div class="play-circle-warm">
+                <svg class="svg-icon" viewBox="0 0 24 24" style="fill:currentColor; width:22px; height:22px;"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              </div>
             </div>
-            <div class="mini-stat">
-              <h4>-42%</h4>
-              <span>Cost Per Lead</span>
-            </div>
-            <div class="mini-stat">
-              <h4>$320K</h4>
-              <span>Deal Pipeline</span>
+          </div>
+          <div class="case-info-box">
+            <h3>Apex B2B Solutions: 1,420 High-Intent Inbound Leads</h3>
+            <p>Full-funnel Google Search campaigns coupled with automated 60-second WhatsApp lead follow-ups, reducing cost per acquisition by 42%.</p>
+            <div class="case-stats-strip">
+              <div class="stat-mini-item">
+                <h4>1,420</h4>
+                <span>Leads Captured</span>
+              </div>
+              <div class="stat-mini-item">
+                <h4>-42%</h4>
+                <span>Cost Per Lead</span>
+              </div>
+              <div class="stat-mini-item">
+                <h4>$320K</h4>
+                <span>Deal Pipeline</span>
+              </div>
             </div>
           </div>
         </div>
-      </a>
 
-      <!-- Case 4: E-Commerce & Retail -->
-      <a href="https://wa.me/918005554768?text=Hi%20Grove%20Hub!%20I%20want%20to%20scale%20my%20e-commerce/retail%20store." target="_blank" class="showcase-card">
-        <div class="card-img-wrap">
-          <span class="card-badge">E-Commerce & Retail</span>
-          <img src="/static/images/portfolio/hero_showcase.jpg" alt="Luxe Brand Growth" />
-          <div class="wa-tap-hint">💬 Tap to WhatsApp</div>
-        </div>
-        <div class="card-content">
-          <h3>Luxe Fashion & Retail: 4.6X Festive ROAS</h3>
-          <p>High-definition product detail reels connected directly to instant DM-to-WhatsApp checkout paths, eliminating cart abandonment.</p>
-          <div class="card-stats-mini">
-            <div class="mini-stat">
-              <h4>4.6x</h4>
-              <span>Blended ROAS</span>
+        <!-- Case 4: Luxe Fashion -->
+        <div class="case-card-warm" data-cat="ecommerce">
+          <div class="case-media-box">
+            <span class="case-tag-top">E-Commerce & Retail</span>
+            <img src="/static/images/portfolio/poster_fashion.jpg" alt="Luxe Fashion Case Study" />
+            <div class="case-play-ring">
+              <div class="play-circle-warm">
+                <svg class="svg-icon" viewBox="0 0 24 24" style="fill:currentColor; width:22px; height:22px;"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              </div>
             </div>
-            <div class="mini-stat">
-              <h4>890+</h4>
-              <span>Direct Orders</span>
-            </div>
-            <div class="mini-stat">
-              <h4>$62K</h4>
-              <span>Campaign Sales</span>
+          </div>
+          <div class="case-info-box">
+            <h3>Luxe Fashion: 4.6X Festive ROAS via Instant Checkout</h3>
+            <p>High-definition product detail reels connected directly to instant DM-to-WhatsApp checkout paths, eliminating cart abandonment.</p>
+            <div class="case-stats-strip">
+              <div class="stat-mini-item">
+                <h4>4.6x</h4>
+                <span>Blended ROAS</span>
+              </div>
+              <div class="stat-mini-item">
+                <h4>890+</h4>
+                <span>Direct Orders</span>
+              </div>
+              <div class="stat-mini-item">
+                <h4>$62K</h4>
+                <span>Campaign Sales</span>
+              </div>
             </div>
           </div>
         </div>
-      </a>
 
-    </div>
+      </div>
+    </section>
 
-    <!-- Services Section (Click to WhatsApp) -->
-    <div class="section-title-wrap">
-      <span class="section-tag">Capabilities</span>
-      <h2 class="section-title">What We Can Do For You</h2>
-    </div>
+    <!-- Knowledge Hub & Editorial Strategy Insights -->
+    <section class="blog-section-warm" id="blog">
+      <div class="sec-header-warm">
+        <span class="sec-tag-warm">
+          <svg class="svg-icon" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          <span>Knowledge Hub & Insights</span>
+        </span>
+        <h2 class="sec-title-warm">Growth Blueprints & <span class="gradient-text-warm">Algorithm Playbooks</span></h2>
+      </div>
 
-    <div class="services-grid">
-
-      <a href="https://wa.me/918005554768?text=Hi%20Grove%20Hub!%20I%20need%20Viral%20Video%20Editing." target="_blank" class="service-card">
-        <div>
-          <div class="service-icon">🎬</div>
-          <h4>Viral Video Editing</h4>
-          <p>Subtitles, punchy zooms, sound effects, B-roll selection, and color grading delivered within 24 hours.</p>
+      <div class="blog-grid-warm">
+        
+        <!-- Post 1 -->
+        <div class="blog-card-warm" onclick="openWarmModal('hook')">
+          <div>
+            <span class="blog-tag-warm">Viral Video Strategy</span>
+            <h3>The 3-Second Hook Formula That Generated 10M+ Organic Views in 2026</h3>
+            <p>Why first-frame visual pattern interrupts and auditory dopamine cues dictate 90% of your video's virality on Instagram and TikTok.</p>
+          </div>
+          <div class="blog-foot-warm">
+            <span>5 min read</span>
+            <span class="blog-link-warm">
+              <span>Read Blueprint</span>
+              <svg class="svg-icon" viewBox="0 0 24 24" style="width:14px; height:14px;"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </span>
+          </div>
         </div>
-        <div class="service-wa-link">💬 Inquire on WhatsApp →</div>
-      </a>
 
-      <a href="https://wa.me/918005554768?text=Hi%20Grove%20Hub!%20I%20need%20Meta%20and%20Google%20Ads." target="_blank" class="service-card">
-        <div>
-          <div class="service-icon">🎯</div>
-          <h4>Meta & Google Ads</h4>
-          <p>Laser-targeted customer acquisition campaigns engineered to maximize your return on ad spend.</p>
+        <!-- Post 2 -->
+        <div class="blog-card-warm" onclick="openWarmModal('escrow')">
+          <div>
+            <span class="blog-tag-warm">Security & Escrow</span>
+            <h3>How Institutional Escrow Protects Brands Hiring Creative Editors</h3>
+            <p>How milestone-based escrow contracts eliminate missed deadlines, sub-par exports, and ghosting while elevating editor accountability.</p>
+          </div>
+          <div class="blog-foot-warm">
+            <span>4 min read</span>
+            <span class="blog-link-warm">
+              <span>Read Blueprint</span>
+              <svg class="svg-icon" viewBox="0 0 24 24" style="width:14px; height:14px;"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </span>
+          </div>
         </div>
-        <div class="service-wa-link">💬 Inquire on WhatsApp →</div>
-      </a>
 
-      <a href="https://wa.me/918005554768?text=Hi%20Grove%20Hub!%20I%20need%20High-Converting%20Copywriting." target="_blank" class="service-card">
-        <div>
-          <div class="service-icon">✍️</div>
-          <h4>High-Converting Copy</h4>
-          <p>Persuasive direct-response ad copy, automated email nurture sequences, and sales landing page copy.</p>
+        <!-- Post 3 -->
+        <div class="blog-card-warm" onclick="openWarmModal('roas')">
+          <div>
+            <span class="blog-tag-warm">Performance Ads</span>
+            <h3>How to Scale Local Hospitality Ads from $0 to $45k/mo on Meta</h3>
+            <p>The exact geo-radius ad targeting, crave-inducing macro cinematography, and instant WhatsApp booking flow we used for Aura Bistro.</p>
+          </div>
+          <div class="blog-foot-warm">
+            <span>6 min read</span>
+            <span class="blog-link-warm">
+              <span>Read Blueprint</span>
+              <svg class="svg-icon" viewBox="0 0 24 24" style="width:14px; height:14px;"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </span>
+          </div>
         </div>
-        <div class="service-wa-link">💬 Inquire on WhatsApp →</div>
-      </a>
 
-      <a href="https://wa.me/918005554768?text=Hi%20Grove%20Hub!%20I%20need%20AI%20Lead%20Automation." target="_blank" class="service-card">
-        <div>
-          <div class="service-icon">🤖</div>
-          <h4>24/7 AI Lead Automation</h4>
-          <p>Instant WhatsApp & SMS follow-ups within 60 seconds of inquiry so no lead is ever lost.</p>
-        </div>
-        <div class="service-wa-link">💬 Inquire on WhatsApp →</div>
-      </a>
+      </div>
+    </section>
 
-      <a href="https://wa.me/918005554768?text=Hi%20Grove%20Hub!%20I%20need%20Local%20SEO%20and%20Google%20Maps%20Ranking." target="_blank" class="service-card">
-        <div>
-          <div class="service-icon">📈</div>
-          <h4>Local SEO & Google Maps</h4>
-          <p>Rank #1 on Google maps and local searches to dominate local competitors in your city.</p>
-        </div>
-        <div class="service-wa-link">💬 Inquire on WhatsApp →</div>
-      </a>
-
-      <a href="https://wa.me/918005554768?text=Hi%20Grove%20Hub!%20I%20need%20Executive%20English%20Coaching." target="_blank" class="service-card">
-        <div>
-          <div class="service-icon">🗣️</div>
-          <h4>Executive English Coaching</h4>
-          <p>1-on-1 personalized fluency, accent refinement, and boardroom English communication.</p>
-        </div>
-        <div class="service-wa-link">💬 Inquire on WhatsApp →</div>
-      </a>
-
-    </div>
-
-    <!-- Big WhatsApp Action Banner -->
-    <div class="cta-banner">
-      <h2>READY TO SCALE YOUR BUSINESS?</h2>
-      <p>Message us directly on WhatsApp to get a <strong>Free 30-Minute Growth Audit & Roadmap</strong> for your brand ($500 Value - Free).</p>
+    <!-- Big Action WhatsApp CTA Banner -->
+    <div class="big-cta-warm">
+      <h2>READY TO SCALE YOUR AUDIENCE & CASH FLOW?</h2>
+      <p>
+        Message us directly on WhatsApp to claim a <strong>Free 30-Minute Growth Audit & Creative Strategy Map</strong> for your brand ($500 Value - Completely Free).
+      </p>
       
-      <a href="https://wa.me/918005554768?text=Hello%20Grove%20Hub!%20I%20want%20to%20claim%20my%20Free%2030-Minute%20Growth%20Audit." target="_blank" class="wa-big-btn">
-        <svg viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
-        Chat on WhatsApp (+91 800 555 4768)
+      <a href="https://wa.me/918005554768?text=Hello%20Grove%20Hub!%20I%20want%20to%20claim%20my%20Free%2030-Minute%20Growth%20Audit." target="_blank" class="wa-button-huge-warm">
+        <svg class="svg-icon" viewBox="0 0 24 24" style="width: 24px; height: 24px; fill: currentColor; stroke: none;"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
+        <span>Chat on WhatsApp (+91 800 555 4768)</span>
       </a>
     </div>
 
   </div>
 
-  <!-- Persistent Floating WhatsApp Quick-Chat Action -->
-  <a href="https://wa.me/918005554768?text=Hi%20Grove%20Hub!%20I%20am%20interested%20in%20your%20services." class="floating-wa" target="_blank">
-    <svg viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
-    <span>Chat with us on WhatsApp</span>
-  </a>
+  <!-- Interactive Blog Reader Modal -->
+  <div class="modal-backdrop" id="blog-modal" onclick="closeWarmModal(event)">
+    <div class="modal-box-warm" onclick="event.stopPropagation()">
+      <button class="modal-close-btn" onclick="closeWarmModal()">
+        <svg class="svg-icon" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+      <div id="modal-body">
+        <!-- Injected via JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Floating Quick-Action Dock -->
+  <div class="floating-dock-warm">
+    <button class="dock-btn-warm" id="sound-btn" onclick="toggleAudio()">
+      <svg id="sound-icon-svg" class="svg-icon" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+      <span id="sound-label">Sound FX: ON</span>
+    </button>
+    <a href="#studio" class="dock-btn-warm">
+      <svg class="svg-icon" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+      <span>Studio</span>
+    </a>
+
+    <a href="https://wa.me/918005554768?text=Hi%20Grove%20Hub!%20I%20am%20ready%20to%20discuss%20my%20project." target="_blank" class="dock-btn-warm highlight">
+      <svg class="svg-icon" viewBox="0 0 24 24" style="fill: currentColor; stroke: none; width:16px; height:16px;"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
+      <span>Book Founder Call</span>
+    </a>
+  </div>
 
   <!-- Footer -->
   <footer>
     <div class="container">
-      <img src="/static/icons/grove_hub_logo.png" alt="Grove Hub" class="footer-logo" onerror="this.onerror=null; this.src='/static/icons/grove_hub_emblem.png';" />
-      <p>© 2026 Grove Hub Agency & Marketplace. 100% Escrow Protected.</p>
+      <img src="/static/icons/grove_hub_logo_light.png" alt="Grove Hub Logo" style="height: 38px; margin-bottom: 14px; opacity: 0.9;" onerror="this.onerror=null; this.src='/static/icons/grove_hub_logo.png';" />
+      <p>© 2026 Grove Hub Agency & Creative Marketplace. All rights reserved. 100% Escrow Protected.</p>
     </div>
   </footer>
 
+  <!-- Advanced GPU-Accelerated 3D WebGL Caustics & Particle Constellation Engines -->
+  <script>
+    /* ==========================================================
+       1. GPU WebGL Shader - 3D Raymarched Liquid Silk & Caustics
+       ========================================================== */
+    const canvas = document.getElementById('webgl-canvas');
+    const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+
+    let mouseX = 0.5, mouseY = 0.5;
+    let targetMouseX = 0.5, targetMouseY = 0.5;
+    let prevMouseX = 0.5, prevMouseY = 0.5;
+    let mouseVelX = 0.0, mouseVelY = 0.0;
+    let scrollVal = 0.0;
+    let targetScrollVal = 0.0;
+    let lastClickTime = 0.0;
+    let clickPos = [0.5, 0.5];
+
+    const vsSource = `
+      attribute vec2 a_position;
+      varying vec2 v_uv;
+      void main() {
+        v_uv = (a_position + 1.0) * 0.5;
+        gl_Position = vec4(a_position, 0.0, 1.0);
+      }
+    `;
+
+    const fsSource = `
+      precision highp float;
+      uniform vec2 u_resolution;
+      uniform float u_time;
+      uniform vec2 u_mouse;
+      uniform vec2 u_mouse_vel;
+      uniform float u_scroll;
+      uniform vec3 u_click; // x, y, timeSinceClick
+      varying vec2 v_uv;
+
+      // Multi-harmonic 3D Liquid Surface Elevation
+      float waveHeight(vec2 p, float t, vec2 m) {
+        float dMouse = length(p - m);
+        float mouseWave = sin(dMouse * 18.0 - t * 4.5) * exp(-dMouse * 3.8) * 0.32;
+        
+        // Dynamic click ripple shockwave
+        float clickDist = length(p - u_click.xy);
+        float clickAge = u_click.z;
+        float clickWave = sin(clickDist * 22.0 - clickAge * 8.0) * exp(-abs(clickDist - clickAge * 0.8) * 4.0) * exp(-clickAge * 1.5) * 0.45;
+
+        float w1 = sin(p.x * 2.4 + p.y * 1.9 + t * 0.9) * 0.38;
+        float w2 = cos(p.x * 3.6 - p.y * 2.8 + t * 0.7 + w1) * 0.26;
+        float w3 = sin(length(p * 1.8 + vec2(sin(t * 0.45), cos(t * 0.35))) * 4.2 - t * 1.2) * 0.18;
+        float w4 = cos(p.x * 6.5 + p.y * 5.2 + t * 1.5) * 0.09;
+        
+        return w1 + w2 + w3 + w4 + mouseWave + clickWave;
+      }
+
+      vec3 getNormal(vec2 p, float t, vec2 m) {
+        float eps = 0.006;
+        float h = waveHeight(p, t, m);
+        float hx = waveHeight(p + vec2(eps, 0.0), t, m);
+        float hy = waveHeight(p + vec2(0.0, eps), t, m);
+        return normalize(vec3((h - hx) / eps, (h - hy) / eps, 1.0));
+      }
+
+      void main() {
+        vec2 uv = gl_FragCoord.xy / u_resolution.xy;
+        float aspect = u_resolution.x / u_resolution.y;
+        vec2 p = (uv - 0.5) * vec2(aspect, 1.0) * 2.5;
+        vec2 m = (u_mouse - 0.5) * vec2(aspect, 1.0) * 2.5;
+        
+        float t = u_time * 0.38 + (u_scroll * 0.001);
+        
+        float h = waveHeight(p, t, m);
+        vec3 n = getNormal(p, t, m);
+        
+        // 3D Lighting with Dual Specular Light Sources
+        vec3 lightPos1 = vec3(m.x + sin(t * 0.6) * 0.6, m.y + cos(t * 0.6) * 0.6, 1.8);
+        vec3 lightDir1 = normalize(lightPos1 - vec3(p, h));
+        
+        vec3 lightPos2 = vec3(-1.4, 1.6, 2.2);
+        vec3 lightDir2 = normalize(lightPos2 - vec3(p, h));
+        
+        vec3 viewDir = vec3(0.0, 0.0, 1.0);
+        
+        float diff1 = max(dot(n, lightDir1), 0.0);
+        float diff2 = max(dot(n, lightDir2), 0.0);
+        
+        // High-end Blinn-Phong Specular Reflections
+        vec3 half1 = normalize(lightDir1 + viewDir);
+        float spec1 = pow(max(dot(n, half1), 0.0), 32.0);
+        
+        vec3 half2 = normalize(lightDir2 + viewDir);
+        float spec2 = pow(max(dot(n, half2), 0.0), 48.0);
+        
+        float fresnel = pow(1.0 - max(dot(n, viewDir), 0.0), 3.2);
+        
+        // Luxury Editorial Beige, Champagne, Amber Gold, Terracotta Palette
+        vec3 colBase = vec3(0.984, 0.972, 0.952);      // #FAF7F2
+        vec3 colCream = vec3(0.960, 0.938, 0.902);     // #F4EFE6
+        vec3 colChampagne = vec3(0.996, 0.956, 0.890); // #FEF3C7
+        vec3 colGold = vec3(0.851, 0.467, 0.024);      // #D97706
+        vec3 colTerracotta = vec3(0.917, 0.345, 0.047);// #EA580C
+        
+        vec3 col = mix(colBase, colCream, clamp(h * 0.75 + 0.5, 0.0, 1.0));
+        col = mix(col, colChampagne, diff2 * 0.55);
+        col = mix(col, colGold, fresnel * 0.42);
+        col = mix(col, colTerracotta, clamp(-h * 0.65, 0.0, 1.0) * 0.16);
+        
+        // Golden Caustic Specular Glints
+        col += vec3(0.95, 0.82, 0.45) * spec1 * 0.75;
+        col += vec3(1.0, 0.95, 0.80) * spec2 * 0.95;
+        
+        // Dynamic Chromatic Dispersion Ripple near cursor
+        float dM = length(p - m);
+        float mouseWarp = exp(-dM * 3.2);
+        col.r += sin(dM * 24.0 - t * 6.0) * 0.035 * mouseWarp;
+        col.b += cos(dM * 24.0 - t * 6.0) * 0.035 * mouseWarp;
+        
+        gl_FragColor = vec4(col, 1.0);
+      }
+    `;
+
+    function createShader(gl, type, source) {
+      const shader = gl.createShader(type);
+      gl.shaderSource(shader, source);
+      gl.compileShader(shader);
+      if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+        console.error(gl.getShaderInfoLog(shader));
+        gl.deleteShader(shader);
+        return null;
+      }
+      return shader;
+    }
+
+    let program = null;
+    let positionBuffer = null;
+    let uResolution, uTime, uMouse, uMouseVel, uScroll, uClick;
+
+    if (gl) {
+      const vs = createShader(gl, gl.VERTEX_SHADER, vsSource);
+      const fs = createShader(gl, gl.FRAGMENT_SHADER, fsSource);
+      program = gl.createProgram();
+      gl.attachShader(program, vs);
+      gl.attachShader(program, fs);
+      gl.linkProgram(program);
+
+      positionBuffer = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+        -1, -1,
+         1, -1,
+        -1,  1,
+        -1,  1,
+         1, -1,
+         1,  1
+      ]), gl.STATIC_DRAW);
+
+      uResolution = gl.getUniformLocation(program, "u_resolution");
+      uTime = gl.getUniformLocation(program, "u_time");
+      uMouse = gl.getUniformLocation(program, "u_mouse");
+      uMouseVel = gl.getUniformLocation(program, "u_mouse_vel");
+      uScroll = gl.getUniformLocation(program, "u_scroll");
+      uClick = gl.getUniformLocation(program, "u_click");
+    }
+
+    function resizeCanvas() {
+      if (!gl) return;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2.0);
+      canvas.width = window.innerWidth * dpr;
+      canvas.height = window.innerHeight * dpr;
+      gl.viewport(0, 0, canvas.width, canvas.height);
+      
+      const pCanvas = document.getElementById('particle-canvas');
+      if (pCanvas) {
+        pCanvas.width = window.innerWidth;
+        pCanvas.height = window.innerHeight;
+      }
+    }
+    window.addEventListener('resize', resizeCanvas);
+
+    window.addEventListener('mousemove', (e) => {
+      targetMouseX = e.clientX / window.innerWidth;
+      targetMouseY = 1.0 - (e.clientY / window.innerHeight);
+
+      mouseVelX = (targetMouseX - prevMouseX) * 15.0;
+      mouseVelY = (targetMouseY - prevMouseY) * 15.0;
+      prevMouseX = targetMouseX;
+      prevMouseY = targetMouseY;
+
+      const cards = document.querySelectorAll('.bento-box-warm, .mockup-window, .case-card-warm');
+      cards.forEach(card => {
+        const rect = card.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        card.style.setProperty('--mouse-x', `${x}px`);
+        card.style.setProperty('--mouse-y', `${y}px`);
+      });
+    });
+
+    window.addEventListener('click', (e) => {
+      clickPos = [e.clientX / window.innerWidth, 1.0 - (e.clientY / window.innerHeight)];
+      lastClickTime = performance.now();
+      triggerParticleShockwave(e.clientX, e.clientY);
+    });
+
+    window.addEventListener('scroll', () => {
+      targetScrollVal = window.scrollY;
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const progress = (window.scrollY / Math.max(docHeight, 1)) * 100;
+      document.getElementById('scroll-progress').style.width = `${progress}%`;
+    });
+
+    let startTime = performance.now();
+    function renderWebGL() {
+      if (gl && program) {
+        mouseX += (targetMouseX - mouseX) * 0.08;
+        mouseY += (targetMouseY - mouseY) * 0.08;
+        scrollVal += (targetScrollVal - scrollVal) * 0.08;
+
+        const now = performance.now();
+        const timeSinceClick = (now - lastClickTime) * 0.001;
+
+        gl.useProgram(program);
+
+        const posAttr = gl.getAttribLocation(program, "a_position");
+        gl.enableVertexAttribArray(posAttr);
+        gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+        gl.vertexAttribPointer(posAttr, 2, gl.FLOAT, false, 0, 0);
+
+        gl.uniform2f(uResolution, canvas.width, canvas.height);
+        gl.uniform1f(uTime, (now - startTime) * 0.001);
+        gl.uniform2f(uMouse, mouseX, mouseY);
+        gl.uniform2f(uMouseVel, mouseVelX, mouseVelY);
+        gl.uniform1f(uScroll, scrollVal);
+        gl.uniform3f(uClick, clickPos[0], clickPos[1], timeSinceClick);
+
+        gl.drawArrays(gl.TRIANGLES, 0, 6);
+      }
+      requestAnimationFrame(renderWebGL);
+    }
+
+    /* ==========================================================
+       2. Synaptic Particle Constellation & Magnetic Energy Mesh
+       ========================================================== */
+    const pCanvas = document.getElementById('particle-canvas');
+    const pCtx = pCanvas ? pCanvas.getContext('2d') : null;
+    let particles = [];
+    let shockwaves = [];
+    const PARTICLE_COUNT = 75;
+
+    class ConstellationParticle {
+      constructor() {
+        this.reset();
+      }
+
+      reset() {
+        this.x = Math.random() * window.innerWidth;
+        this.y = Math.random() * window.innerHeight;
+        this.vx = (Math.random() - 0.5) * 0.8;
+        this.vy = (Math.random() - 0.5) * 0.8;
+        this.radius = Math.random() * 2.2 + 1.2;
+        this.baseRadius = this.radius;
+        this.alpha = Math.random() * 0.6 + 0.25;
+        this.color = Math.random() > 0.4 ? '#D97706' : (Math.random() > 0.5 ? '#EA580C' : '#059669');
+      }
+
+      update(mx, my) {
+        this.x += this.vx;
+        this.y += this.vy;
+
+        // Wrap edges
+        if (this.x < 0) this.x = window.innerWidth;
+        if (this.x > window.innerWidth) this.x = 0;
+        if (this.y < 0) this.y = window.innerHeight;
+        if (this.y > window.innerHeight) this.y = 0;
+
+        // Magnetic cursor interaction
+        const dx = mx - this.x;
+        const dy = my - this.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 140) {
+          const force = (140 - dist) / 140;
+          this.x -= (dx / dist) * force * 3.5;
+          this.y -= (dy / dist) * force * 3.5;
+          this.radius = this.baseRadius * (1.0 + force * 1.5);
+        } else {
+          this.radius += (this.baseRadius - this.radius) * 0.05;
+        }
+      }
+
+      draw(ctx) {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fillStyle = this.color;
+        ctx.globalAlpha = this.alpha;
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = this.color;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      }
+    }
+
+    function initParticles() {
+      particles = [];
+      for (let i = 0; i < PARTICLE_COUNT; i++) {
+        particles.push(new ConstellationParticle());
+      }
+    }
+
+    function triggerParticleShockwave(x, y) {
+      shockwaves.push({
+        x: x,
+        y: y,
+        radius: 5,
+        maxRadius: 220,
+        alpha: 0.8,
+        color: '#D97706'
+      });
+    }
+
+    function renderParticles() {
+      if (!pCtx) return;
+      pCtx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+
+      const realMx = mouseX * window.innerWidth;
+      const realMy = (1.0 - mouseY) * window.innerHeight;
+
+      // Update and draw connection lines
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+          const dx = particles[i].x - particles[j].x;
+          const dy = particles[i].y - particles[j].y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 110) {
+            const alpha = (1.0 - dist / 110) * 0.25;
+            pCtx.beginPath();
+            pCtx.moveTo(particles[i].x, particles[i].y);
+            pCtx.lineTo(particles[j].x, particles[j].y);
+            pCtx.strokeStyle = 'rgba(217, 119, 6, ' + alpha + ')';
+            pCtx.lineWidth = 1;
+            pCtx.stroke();
+          }
+        }
+      }
+
+      // Draw and update particles
+      particles.forEach(p => {
+        p.update(realMx, realMy);
+        p.draw(pCtx);
+      });
+
+      // Render expanding shockwaves
+      for (let i = shockwaves.length - 1; i >= 0; i--) {
+        const sw = shockwaves[i];
+        sw.radius += 5.5;
+        sw.alpha *= 0.95;
+
+        pCtx.beginPath();
+        pCtx.arc(sw.x, sw.y, sw.radius, 0, Math.PI * 2);
+        pCtx.strokeStyle = 'rgba(217, 119, 6, ' + sw.alpha + ')';
+        pCtx.lineWidth = 2.5;
+        pCtx.shadowBlur = 15;
+        pCtx.shadowColor = sw.color;
+        pCtx.stroke();
+        pCtx.shadowBlur = 0;
+
+        // Push nearby particles
+        particles.forEach(p => {
+          const dx = p.x - sw.x;
+          const dy = p.y - sw.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (Math.abs(dist - sw.radius) < 25) {
+            p.x += (dx / Math.max(dist, 1)) * 6.0;
+            p.y += (dy / Math.max(dist, 1)) * 6.0;
+          }
+        });
+
+        if (sw.alpha < 0.02 || sw.radius > sw.maxRadius) {
+          shockwaves.splice(i, 1);
+        }
+      }
+
+      requestAnimationFrame(renderParticles);
+    }
+
+    resizeCanvas();
+    initParticles();
+    renderWebGL();
+    renderParticles();
+
+    /* ==========================================================
+       2. Synchronized Dual-Video Split Comparison Engine
+       ========================================================== */
+    const compBox = document.getElementById('dual-slider');
+    const compAfter = document.getElementById('slide-after-view');
+    const compHandle = document.getElementById('slider-grabber');
+    const vidBefore = document.getElementById('vid-comp-before');
+    const vidAfter = document.getElementById('vid-comp-after');
+    let isCompDragging = false;
+    let isCompPlaying = true;
+
+    function resizeCompVideos() {
+      if (!compBox || !vidAfter) return;
+      vidAfter.style.width = compBox.offsetWidth + 'px';
+    }
+    window.addEventListener('resize', resizeCompVideos);
+    setTimeout(resizeCompVideos, 200);
+
+    function updateCompSlider(xPos) {
+      if (!compBox || !compAfter || !compHandle) return;
+      const rect = compBox.getBoundingClientRect();
+      let offsetX = xPos - rect.left;
+      if (offsetX < 0) offsetX = 0;
+      if (offsetX > rect.width) offsetX = rect.width;
+      const percentage = (offsetX / rect.width) * 100;
+      compAfter.style.width = `${percentage}%`;
+      compHandle.style.left = `${percentage}%`;
+    }
+
+    if (compBox) {
+      compBox.addEventListener('pointerdown', (e) => {
+        isCompDragging = true;
+        updateCompSlider(e.clientX);
+        try { compBox.setPointerCapture(e.pointerId); } catch(err) {}
+      });
+      compBox.addEventListener('pointermove', (e) => {
+        if (!isCompDragging) return;
+        updateCompSlider(e.clientX);
+      });
+      compBox.addEventListener('pointerup', (e) => {
+        isCompDragging = false;
+        try { compBox.releasePointerCapture(e.pointerId); } catch(err) {}
+      });
+      compBox.addEventListener('pointercancel', () => {
+        isCompDragging = false;
+      });
+    }
+
+    // Keep dual videos continuously synchronized
+    function syncCompVideos() {
+      if (vidBefore && vidAfter) {
+        if (Math.abs(vidBefore.currentTime - vidAfter.currentTime) > 0.08) {
+          vidAfter.currentTime = vidBefore.currentTime;
+        }
+      }
+      requestAnimationFrame(syncCompVideos);
+    }
+    syncCompVideos();
+
+    window.toggleCompPlay = function() {
+      if (!vidBefore || !vidAfter) return;
+      isCompPlaying = !isCompPlaying;
+      const icon = document.getElementById('comp-play-icon');
+      const text = document.getElementById('comp-play-text');
+      if (isCompPlaying) {
+        vidBefore.play();
+        vidAfter.play();
+        if (icon) icon.innerText = '⏸';
+        if (text) text.innerText = 'Pause';
+      } else {
+        vidBefore.pause();
+        vidAfter.pause();
+        if (icon) icon.innerText = '▶';
+        if (text) text.innerText = 'Play';
+      }
+    };
+
+    // Allow user to upload any video to compare in real-time
+    window.handleUserCustomVideoUpload = function(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const url = URL.createObjectURL(file);
+      if (vidBefore) {
+        vidBefore.src = url;
+        vidBefore.style.filter = 'grayscale(80%) contrast(75%) brightness(85%)';
+        vidBefore.play();
+      }
+      if (vidAfter) {
+        vidAfter.src = url;
+        vidAfter.style.filter = 'contrast(1.3) saturate(1.4) brightness(1.05)';
+        vidAfter.play();
+      }
+      resizeCompVideos();
+      playTone(750);
+    };
+
+    /* ==========================================================
+       3. Interactive Video Simulator Switcher
+       ========================================================== */
+    let isPlaying = true;
+    function switchClip(type, ev) {
+      playTone(600);
+      const items = document.querySelectorAll('.work-clip-item');
+      items.forEach(item => item.classList.remove('active'));
+      if (ev && ev.currentTarget) {
+        ev.currentTarget.classList.add('active');
+      }
+
+      const vid = document.getElementById('main-sim-video');
+      const caption = document.getElementById('main-sim-caption');
+
+      if (type === 'viral') {
+        if (vid) { vid.src = '/static/groove_viral_cut.mp4'; vid.play(); }
+        if (caption) caption.innerText = '"THE SECRET TO 10M+ VIEWS!"';
+      } else if (type === 'broll') {
+        if (vid) { vid.src = '/static/raw_creator_footage.mp4'; vid.play(); }
+        if (caption) caption.innerText = '"4K CINEMATIC MACRO GRADE"';
+      } else if (type === 'sound') {
+        if (vid) { vid.src = '/static/groove_viral_cut.mp4'; vid.play(); }
+        if (caption) caption.innerText = '⚡ [WHOOSH + BASS IMPACT]';
+      } else if (type === 'captions') {
+        if (vid) { vid.src = '/static/groove_viral_cut.mp4'; vid.play(); }
+        if (caption) caption.innerText = '"GROW YOUR REVENUE 5.4X!"';
+      }
+    }
+
+    function togglePlayback() {
+      isPlaying = !isPlaying;
+      const vid = document.getElementById('main-sim-video');
+      const icon = document.getElementById('play-pause-icon');
+      const needle = document.querySelector('.playhead-needle');
+      playTone(520);
+      if (vid) {
+        if (vid.paused) {
+          vid.play();
+          if (icon) icon.innerHTML = '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>';
+          if (needle) needle.style.animationPlayState = 'running';
+        } else {
+          vid.pause();
+          if (icon) icon.innerHTML = '<polygon points="5 3 19 12 5 21 5 3"/>';
+          if (needle) needle.style.animationPlayState = 'paused';
+        }
+      }
+    }
+
+    /* ==========================================================
+       4. Interactive ROI Calculator
+       ========================================================== */
+    /* ==========================================================
+       5. Portfolio Category Filtering
+       ========================================================== */
+    function filterCases(cat, btn) {
+      playTone(700);
+      document.querySelectorAll('.btn-tab-warm').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      const cards = document.querySelectorAll('.case-card-warm');
+      cards.forEach(card => {
+        if (cat === 'all' || card.getAttribute('data-cat') === cat) {
+          card.style.display = 'block';
+          card.style.animation = 'modalSlideUp 0.4s ease';
+        } else {
+          card.style.display = 'none';
+        }
+      });
+    }
+
+    /* ==========================================================
+       6. Knowledge Hub Modal Reader
+       ========================================================== */
+    const warmBlogData = {
+      hook: {
+        title: "The 3-Second Hook Formula That Generated 10M+ Organic Views in 2026",
+        tag: "Viral Video Strategy",
+        readTime: "5 min read",
+        content: `
+          <p style="font-size: 1.1rem; color: var(--text-body); margin-bottom: 20px;">
+            In modern short-form feeds, viewer retention drops by <strong>65% within the first 1.8 seconds</strong> if the sensory hook fails. Here is our exact 3-step retention architecture:
+          </p>
+          <div style="background: var(--amber-light); border-left: 4px solid #D97706; padding: 18px; border-radius: 10px; margin-bottom: 20px;">
+            <h4 style="color: #92400E; margin-bottom: 6px;">1. Visual Pattern Interrupt</h4>
+            <p style="color: var(--text-body); font-size: 0.92rem;">Never start with a stationary talking head. Begin with a fast match-cut zoom, inverted motion blur, or dynamic onscreen prop movement.</p>
+          </div>
+          <div style="background: var(--emerald-light); border-left: 4px solid #059669; padding: 18px; border-radius: 10px; margin-bottom: 20px;">
+            <h4 style="color: #065F46; margin-bottom: 6px;">2. Auditory Dopamine Cue</h4>
+            <p style="color: var(--text-body); font-size: 0.92rem;">Layer a deep cinematic bass drop or crisp whoosh hit within the first 0.3 seconds to trigger immediate subconscious focus.</p>
+          </div>
+          <div style="background: var(--sapphire-light); border-left: 4px solid #2563EB; padding: 18px; border-radius: 10px; margin-bottom: 24px;">
+            <h4 style="color: #1E40AF; margin-bottom: 6px;">3. Kinetic Word-by-Word Caption Pacing</h4>
+            <p style="color: var(--text-body); font-size: 0.92rem;">Highlight key trigger words in warm gold & emerald with smooth bounce transitions, keeping eyes locked to the center third.</p>
+          </div>
+          <a href="https://wa.me/918005554768?text=Hi%20Grove%20Hub!%20I%20read%20your%203-Second%20Hook%20article%20and%20want%20to%20apply%20it." target="_blank" class="btn-primary-warm" style="margin-top: 10px; display: inline-flex;">
+            <span>Apply This To Your Videos on WhatsApp</span>
+            <svg class="svg-icon" viewBox="0 0 24 24" style="stroke:none; fill:currentColor; width:18px; height:18px;"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
+          </a>
+        `
+      },
+      escrow: {
+        title: "How Institutional Escrow Protects Brands Hiring Creative Editors",
+        tag: "Security & Financial Escrow",
+        readTime: "4 min read",
+        content: `
+          <p style="font-size: 1.1rem; color: var(--text-body); margin-bottom: 20px;">
+            Traditional freelance platforms force clients into blind upfront milestones or painful disputes. Here's why <strong>Grove Hub's 100% Escrow Vault</strong> is transforming the industry:
+          </p>
+          <ul style="color: var(--text-body); line-height: 1.8; margin-left: 20px; margin-bottom: 24px;">
+            <li><strong>Automated Watermark Review:</strong> Inspect full 4K draft renders with zero risk of theft or incomplete delivery.</li>
+            <li><strong>Instant Milestone Release:</strong> When you're thrilled with the final cut, funds release in 1-click.</li>
+            <li><strong>Vetted Elite Creators:</strong> Only the top 3% of editors pass our speed and pacing vetting test.</li>
+          </ul>
+          <a href="https://wa.me/918005554768?text=Hi%20Grove%20Hub!%20I%20want%20to%20learn%20about%20your%20escrow-protected%20packages." target="_blank" class="btn-primary-warm" style="margin-top: 10px; display: inline-flex;">
+            <span>Book Escrow Protected Package</span>
+            <svg class="svg-icon" viewBox="0 0 24 24" style="stroke:none; fill:currentColor; width:18px; height:18px;"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
+          </a>
+        `
+      },
+      roas: {
+        title: "How to Scale Local Hospitality Ads from $0 to $45k/mo on Meta",
+        tag: "Performance Ads Playbook",
+        readTime: "6 min read",
+        content: `
+          <p style="font-size: 1.1rem; color: var(--text-body); margin-bottom: 20px;">
+            A step-by-step audit of how we scaled Aura Bistro & Bakery to a 5.4X verified ROAS in under 90 days:
+          </p>
+          <div style="background: var(--terracotta-light); border-left: 4px solid #EA580C; padding: 18px; border-radius: 10px; margin-bottom: 24px;">
+            <h4 style="color: #9A3412; margin-bottom: 6px;">The 5km Geo-Radius Creative Magnet</h4>
+            <p style="color: var(--text-body); font-size: 0.92rem;">We shot ultra-high-definition slow motion dessert pulls and ran localized reels targeting coffee lovers and foodies within 5 miles, driving immediate weekend table reservations.</p>
+          </div>
+          <a href="https://wa.me/918005554768?text=Hi%20Grove%20Hub!%20I%20want%20a%20food/hospitality%20growth%20audit." target="_blank" class="btn-primary-warm" style="margin-top: 10px; display: inline-flex;">
+            <span>Get Your Free 30-Min Ad Audit</span>
+            <svg class="svg-icon" viewBox="0 0 24 24" style="stroke:none; fill:currentColor; width:18px; height:18px;"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
+          </a>
+        `
+      }
+    };
+
+    function openWarmModal(id) {
+      playTone(800);
+      const post = warmBlogData[id];
+      if (!post) return;
+      const modal = document.getElementById('blog-modal');
+      const body = document.getElementById('modal-body');
+
+      body.innerHTML = `
+        <div style="font-size: 0.8rem; font-weight: 800; color: #D97706; text-transform: uppercase; margin-bottom: 8px;">
+          ${post.tag} • ${post.readTime}
+        </div>
+        <h2 style="font-family: var(--font-display); font-size: 1.85rem; font-weight: 900; color: var(--text-main); margin-bottom: 20px; line-height: 1.25;">
+          ${post.title}
+        </h2>
+        <div>${post.content}</div>
+      `;
+
+      modal.style.display = 'flex';
+    }
+
+    function closeWarmModal(e) {
+      document.getElementById('blog-modal').style.display = 'none';
+    }
+
+    /* ==========================================================
+       7. Web Audio Synthesizer Feedback
+       ========================================================== */
+    let audioOn = true;
+    let aCtx = null;
+
+    function playTone(freq = 500) {
+      if (!audioOn) return;
+      try {
+        if (!aCtx) {
+          aCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (aCtx.state === 'suspended') {
+          aCtx.resume();
+        }
+        const osc = aCtx.createOscillator();
+        const gain = aCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, aCtx.currentTime);
+        gain.gain.setValueAtTime(0.04, aCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, aCtx.currentTime + 0.12);
+        osc.connect(gain);
+        gain.connect(aCtx.destination);
+        osc.start();
+        osc.stop(aCtx.currentTime + 0.12);
+      } catch (err) {}
+    }
+
+    function toggleAudio() {
+      audioOn = !audioOn;
+      const label = document.getElementById('sound-label');
+      const icon = document.getElementById('sound-icon-svg');
+      if (audioOn) {
+        label.innerText = 'Sound FX: ON';
+        icon.innerHTML = '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>';
+        playTone(650);
+      } else {
+        label.innerText = 'Sound FX: OFF';
+        icon.innerHTML = '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/>';
+      }
+    }
+
+    window.addEventListener('click', () => {
+      if (!aCtx) {
+        try { aCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
+      }
+    }, { once: true });
+  
+
+    /* ==========================================================
+       GROVE HUB 360° ULTRA-SMOOTH MULTI-PERSPECTIVE STUDIO ENGINE
+       ========================================================== */
+    (function initCarraraExperience() {
+      const canvas = document.getElementById('carrara-canvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const stage = document.getElementById('carrara-stage');
+
+      // Milestone UI Elements
+      const ticker = document.getElementById('carrara-ticker');
+      const cardOrigin = document.getElementById('card-origin');
+      const cardPremise = document.getElementById('card-premise');
+      const cardProcess = document.getElementById('card-process');
+      const cardFinale = document.getElementById('card-finale');
+      const giantTitle = document.getElementById('carrara-giant-text');
+      const hint = document.getElementById('carrara-hint');
+      const scrubFill = document.getElementById('carrara-scrub-fill');
+      const angleText = document.getElementById('carrara-angle-text');
+      const playIcon = document.getElementById('carrara-play-icon');
+      const playText = document.getElementById('carrara-play-text');
+
+      // High-End Creative Studio Imagery
+      const visualWorkstation = new Image();
+      visualWorkstation.src = '/static/images/hero_engine/hero_studio_workstation.jpg';
+
+      const visualLens = new Image();
+      visualLens.src = '/static/images/hero_engine/hero_cinema_lens.jpg';
+
+      const visualTimeline = new Image();
+      visualTimeline.src = '/static/images/hero_engine/hero_color_timeline.jpg';
+
+      // State
+      let targetProgress = 0.0;
+      let currentProgress = 0.0;
+      let isAutoplaying = false;
+      let isDragging = false;
+      let dragStartX = 0;
+      let dragStartProgress = 0;
+      let mouseX = 0.5;
+      let mouseY = 0.5;
+      let targetMouseX = 0.5;
+      let targetMouseY = 0.5;
+      let dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+      // Track cursor for 3D depth parallax
+      window.addEventListener('mousemove', (e) => {
+        targetMouseX = e.clientX / window.innerWidth;
+        targetMouseY = e.clientY / window.innerHeight;
+      });
+
+      function resizeCanvas() {
+        if (!canvas) return;
+        dpr = Math.min(window.devicePixelRatio || 1, 2);
+        canvas.width = window.innerWidth * dpr;
+        canvas.height = window.innerHeight * dpr;
+      }
+      window.addEventListener('resize', resizeCanvas);
+      resizeCanvas();
+
+      [visualWorkstation, visualLens, visualTimeline].forEach(img => {
+        img.onload = () => { renderFrame(); };
+      });
+
+      // Smooth Cross-Fade Image Drawer with 3D Depth Pan & Zoom
+      function drawStudioScene(imgA, imgB, blendRatio, scaleOffset = 1.0, panX = 0, panY = 0) {
+        const cw = canvas.width;
+        const ch = canvas.height;
+
+        // Subtle 3D mouse parallax offset
+        const parallaxX = (mouseX - 0.5) * 35 * dpr + panX;
+        const parallaxY = (mouseY - 0.5) * 25 * dpr + panY;
+
+        function drawSingle(img, alpha, scaleMultiplier = 1.0) {
+          if (!img || !img.complete || img.naturalWidth === 0) return;
+          ctx.save();
+          ctx.globalAlpha = alpha;
+
+          const iw = img.naturalWidth;
+          const ih = img.naturalHeight;
+          const baseScale = Math.max(cw / iw, ch / ih);
+          const finalScale = baseScale * scaleOffset * scaleMultiplier;
+
+          const nw = iw * finalScale;
+          const nh = ih * finalScale;
+          const nx = (cw - nw) / 2 + parallaxX;
+          const ny = (ch - nh) / 2 + parallaxY;
+
+          ctx.drawImage(img, nx, ny, nw, nh);
+          ctx.restore();
+        }
+
+        if (blendRatio <= 0.02) {
+          drawSingle(imgA, 1.0);
+        } else if (blendRatio >= 0.98) {
+          drawSingle(imgB, 1.0);
+        } else {
+          drawSingle(imgA, 1.0 - blendRatio, 1.0 + (1.0 - blendRatio) * 0.04);
+          drawSingle(imgB, blendRatio, 1.0 + blendRatio * 0.04);
+        }
+      }
+
+      // Main Render Function
+      function renderFrame() {
+        if (!ctx || !canvas) return;
+
+        // Interpolate mouse
+        mouseX += (targetMouseX - mouseX) * 0.06;
+        mouseY += (targetMouseY - mouseY) * 0.06;
+
+        const p = Math.max(0, Math.min(1, currentProgress));
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        let scale = 1.0 + Math.sin(p * Math.PI) * 0.06;
+
+        if (p < 0.35) {
+          const localRatio = p / 0.35;
+          drawStudioScene(visualWorkstation, visualLens, Math.max(0, (localRatio - 0.6) / 0.4), scale, -localRatio * 20 * dpr, 0);
+        } else if (p < 0.70) {
+          const localRatio = (p - 0.35) / 0.35;
+          drawStudioScene(visualLens, visualTimeline, Math.max(0, (localRatio - 0.6) / 0.4), scale, 0, -localRatio * 15 * dpr);
+        } else {
+          const localRatio = (p - 0.70) / 0.30;
+          drawStudioScene(visualTimeline, visualWorkstation, Math.max(0, (localRatio - 0.7) / 0.3), scale, localRatio * 20 * dpr, 0);
+        }
+
+        // Update HUD
+        const deg = Math.round(p * 360);
+        if (angleText) angleText.innerText = `${deg}°`;
+        if (scrubFill) scrubFill.style.width = `${p * 100}%`;
+
+        updateMilestones(p);
+      }
+
+      function updateMilestones(p) {
+        // Milestone 1 (0% - 18%): Intro Escrow
+        if (p < 0.18) {
+          if (ticker) ticker.style.opacity = '1';
+          if (giantTitle) {
+            giantTitle.innerText = 'ESCROW';
+            giantTitle.style.opacity = '0.88';
+          }
+        } else {
+          if (ticker) ticker.style.opacity = '0';
+        }
+
+        // Milestone 2 (20% - 44%): 01. Formats
+        if (p >= 0.20 && p <= 0.44) {
+          cardOrigin?.classList.add('active');
+          if (giantTitle) giantTitle.innerText = 'FORMATS';
+        } else {
+          cardOrigin?.classList.remove('active');
+        }
+
+        // Milestone 3 (46% - 68%): 02. Speed & 24h
+        if (p >= 0.46 && p <= 0.68) {
+          cardPremise?.classList.add('active');
+          if (giantTitle) giantTitle.innerText = 'SPEED';
+        } else {
+          cardPremise?.classList.remove('active');
+        }
+
+        // Milestone 4 (70% - 86%): 03. Protection
+        if (p >= 0.70 && p <= 0.86) {
+          cardProcess?.classList.add('active');
+          if (giantTitle) giantTitle.innerText = 'SECURITY';
+        } else {
+          cardProcess?.classList.remove('active');
+        }
+
+        // Milestone 5 (88% - 1.0): Finale Scale
+        if (p >= 0.88) {
+          cardFinale?.classList.add('active');
+          if (giantTitle) {
+            giantTitle.innerText = 'GROOVE';
+            giantTitle.style.opacity = '0.22';
+          }
+        } else {
+          cardFinale?.classList.remove('active');
+          if (p < 0.88 && giantTitle) giantTitle.style.opacity = '0.88';
+        }
+      }
+
+      // Scroll Handling
+      function onScroll() {
+        if (isAutoplaying) return;
+        const rect = stage.getBoundingClientRect();
+        const totalScrollable = stage.offsetHeight - window.innerHeight;
+        if (totalScrollable <= 0) return;
+
+        const currentScrolled = -rect.top;
+        if (currentScrolled >= 0 && currentScrolled <= totalScrollable) {
+          targetProgress = Math.max(0, Math.min(1, currentScrolled / totalScrollable));
+          if (hint && currentScrolled > 40) hint.style.opacity = '0';
+        }
+      }
+      window.addEventListener('scroll', onScroll, { passive: true });
+
+      // Interactive Pointer / Touch Drag
+      canvas.addEventListener('pointerdown', (e) => {
+        isDragging = true;
+        dragStartX = e.clientX;
+        dragStartProgress = targetProgress;
+        if (isAutoplaying) toggleCarraraAutoplay();
+        if (hint) hint.style.opacity = '0';
+        canvas.setPointerCapture(e.pointerId);
+      });
+
+      canvas.addEventListener('pointermove', (e) => {
+        if (!isDragging) return;
+        const deltaX = e.clientX - dragStartX;
+        const sensitivity = 0.0018;
+        targetProgress = Math.max(0, Math.min(1, dragStartProgress - deltaX * sensitivity));
+      });
+
+      canvas.addEventListener('pointerup', (e) => {
+        isDragging = false;
+        try { canvas.releasePointerCapture(e.pointerId); } catch(err) {}
+      });
+
+      canvas.addEventListener('pointercancel', () => {
+        isDragging = false;
+      });
+
+      // Scrub Bar Seek
+      window.seekCarraraFromTrack = function(e) {
+        const bar = document.getElementById('carrara-scrub-bar');
+        if (!bar) return;
+        const rect = bar.getBoundingClientRect();
+        const clickX = e.clientX - rect.left;
+        const pct = Math.max(0, Math.min(1, clickX / rect.width));
+        targetProgress = pct;
+        if (isAutoplaying) toggleCarraraAutoplay();
+      };
+
+      // Autoplay Toggle
+      window.toggleCarraraAutoplay = function() {
+        isAutoplaying = !isAutoplaying;
+        if (isAutoplaying) {
+          playIcon.innerText = '⏸';
+          playText.innerText = 'Pause Orbit';
+        } else {
+          playIcon.innerText = '▶';
+          playText.innerText = 'Auto Orbit';
+        }
+      };
+
+      // Buttery Smooth 60fps / 120fps Sub-pixel Lerp Loop
+      function animLoop() {
+        if (isAutoplaying) {
+          targetProgress = (targetProgress + 0.0012) % 1.0;
+        }
+
+        const diff = targetProgress - currentProgress;
+        currentProgress += diff * 0.085;
+
+        renderFrame();
+        requestAnimationFrame(animLoop);
+      }
+      requestAnimationFrame(animLoop);
+
+    })();
+  </script>
 </body>
 </html>

@@ -831,3 +831,49 @@ class SearchAnalyticsResponse(BaseModel):
     recent_searches: List[SearchLogItem]
     zero_results_demands: List[SearchTrendItem]
 
+# 5-Person Agency Growth Team Schemas
+class AgencyTeamSubscriptionCreate(BaseModel):
+    store_name: str = Field(min_length=2, max_length=150)
+    store_location: Optional[str] = None
+    niche_category: Optional[str] = "Retail & Local Store"
+    plan_type: str = Field(default="MONTHLY") # MONTHLY or HALF_YEARLY
+    whatsapp_number: Optional[str] = None
+
+class AgencyTeamSubscriptionResponse(BaseModel):
+    id: int
+    user_id: int
+    store_name: str
+    store_location: Optional[str]
+    niche_category: str
+    plan_type: str
+    status: str
+    price_paid: float
+    whatsapp_number: str
+    vip_link_token: str
+    strategic_thinker_name: str
+    script_writer_name: str
+    videographer_editor_name: str
+    account_handler_name: str
+    app_management_team: str
+    start_date: datetime
+    end_date: Optional[datetime]
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class StoreAuditReportResponse(BaseModel):
+    id: int
+    subscription_id: int
+    store_flaws: List[Any]
+    competitor_comparison: List[Any]
+    strategic_roadmap: Optional[str]
+    script_vault: List[Any]
+    video_deliverables: List[Any]
+    account_stats: dict
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+

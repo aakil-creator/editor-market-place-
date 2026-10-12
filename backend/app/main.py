@@ -32,12 +32,14 @@ from .models import (
     User, Profile, Package, Booking, Payment, Release, Review, Dispute, Niche,
     UserType, BookingStatus, PaymentStatus, PackageType, Message, PortfolioItem, PlatformSettings,
     PasswordResetToken, EmailVerificationToken, OtpVerification, Notification,
-    ProviderSchedule, AvailabilityRequest, SearchLog
+    ProviderSchedule, AvailabilityRequest, SearchLog, AgencyTeamSubscription, StoreAuditReport
 )
 from .schemas import (
     UserCreate, UserUpdate, UserLogin, Token, UserResponse, ProfileCreate, ProfileUpdate,
     ProfileResponse, PackageCreate, PackageUpdate, PackageResponse,
     BookingCreate, BookingStatusUpdate, BookingDeliveryUpdate, BookingResponse,
+    AgencyTeamSubscriptionCreate, AgencyTeamSubscriptionResponse, StoreAuditReportResponse,
+
     PaymentCreate, PaymentResponse, PaymentRelease,
     CreatePaymentOrderRequest, PaymentOrderResponse, VerifyPaymentRequest, NotificationResponse,
     ReviewCreate, ReviewResponse,
@@ -150,7 +152,7 @@ def ensure_schema():
                 WHERE free_sample_limit IS NULL OR free_sample_limit < 0 OR free_sample_limit > 3
             """))
             
-            # --- Booking client handoff / free-sample workflow columns ---
+            # --- Booking client handoff / free-sample workflow & shoot verification columns ---
             cursor_bookings = conn.execute(text("PRAGMA table_info(bookings)"))
             cols_bookings = [row[1] for row in cursor_bookings.fetchall()]
             if "client_notes" not in cols_bookings:
@@ -161,6 +163,25 @@ def ensure_schema():
                 conn.execute(text("ALTER TABLE bookings ADD COLUMN is_free_sample BOOLEAN DEFAULT 0"))
             if "sample_number" not in cols_bookings:
                 conn.execute(text("ALTER TABLE bookings ADD COLUMN sample_number INTEGER"))
+            if "shoot_pin" not in cols_bookings:
+                conn.execute(text("ALTER TABLE bookings ADD COLUMN shoot_pin VARCHAR(6)"))
+            if "shoot_status" not in cols_bookings:
+                conn.execute(text("ALTER TABLE bookings ADD COLUMN shoot_status VARCHAR DEFAULT 'SCHEDULED'"))
+            if "shoot_verified_at" not in cols_bookings:
+                conn.execute(text("ALTER TABLE bookings ADD COLUMN shoot_verified_at DATETIME"))
+            if "event_count" not in cols_bookings:
+                conn.execute(text("ALTER TABLE bookings ADD COLUMN event_count INTEGER DEFAULT 1"))
+            if "event_details" not in cols_bookings:
+                conn.execute(text("ALTER TABLE bookings ADD COLUMN event_details JSON DEFAULT '[]'"))
+            if "watermarked_draft_url" not in cols_bookings:
+                conn.execute(text("ALTER TABLE bookings ADD COLUMN watermarked_draft_url VARCHAR"))
+            if "clean_final_url" not in cols_bookings:
+                conn.execute(text("ALTER TABLE bookings ADD COLUMN clean_final_url VARCHAR"))
+            if "is_watermark_removed" not in cols_bookings:
+                conn.execute(text("ALTER TABLE bookings ADD COLUMN is_watermark_removed BOOLEAN DEFAULT 0"))
+            if "per_reel_payout_rate" not in cols_bookings:
+                conn.execute(text("ALTER TABLE bookings ADD COLUMN per_reel_payout_rate FLOAT DEFAULT 0.0"))
+
 
             # --- Message model columns (for admin delete/mask) ---
             cursor_msg = conn.execute(text("PRAGMA table_info(messages)"))
@@ -402,11 +423,11 @@ async def add_security_headers(request: Request, call_next):
     response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
     response.headers["Content-Security-Policy"] = (
         "default-src 'self'; "
-        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com https://checkout.razorpay.com https://www.gstatic.com; "
-        "style-src 'self' 'unsafe-inline' https://accounts.google.com https://fonts.googleapis.com https://www.gstatic.com; "
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com https://checkout.razorpay.com https://www.gstatic.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; "
+        "style-src 'self' 'unsafe-inline' https://accounts.google.com https://fonts.googleapis.com https://www.gstatic.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; "
         "img-src 'self' data: blob: https:; "
         "media-src 'self' data: blob: https:; "
-        "font-src 'self' data: https://fonts.gstatic.com; "
+        "font-src 'self' data: https://fonts.gstatic.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; "
         "connect-src 'self' https: wss:; "
         "frame-src 'self' https://accounts.google.com https://api.razorpay.com https://checkout.razorpay.com https://www.youtube.com https://www.youtube-nocookie.com; "
         "object-src 'none';"
@@ -496,6 +517,7 @@ async def logout_page():
     return FileResponse(STATIC_DIR / "index.html", headers=NO_CACHE_HEADERS)
 
 @app.get("/portfolio")
+@app.get("/showcase")
 async def portfolio_page():
     return FileResponse(STATIC_DIR / "portfolio.html", headers=NO_CACHE_HEADERS)
 
@@ -506,6 +528,12 @@ async def outreach_page():
 @app.get("/posters")
 async def posters_page():
     return FileResponse(STATIC_DIR / "grove_posters_suite.html", headers=NO_CACHE_HEADERS)
+
+@app.get("/agency-team/portal")
+@app.get("/team-portal")
+async def agency_team_portal_page():
+    return FileResponse(STATIC_DIR / "agency_team_portal.html", headers=NO_CACHE_HEADERS)
+
 
 @app.get("/health")
 def root_health_check(db = Depends(get_db)):
@@ -1619,80 +1647,87 @@ def get_booking(booking_id: int, current_user = Depends(get_current_user), db = 
 
 @api_app.post("/bookings", response_model=BookingResponse)
 def create_booking(booking_data: BookingCreate, current_user = Depends(get_current_user), db = Depends(get_db)):
-    package = db.query(Package).filter(
-        Package.id == booking_data.package_id
-    ).first()
-    if not package:
-        raise HTTPException(status_code=400, detail="Package not found")
+    try:
+        package = db.query(Package).filter(
+            Package.id == booking_data.package_id
+        ).first()
+        if not package:
+            raise HTTPException(status_code=400, detail="Package not found")
 
-    provider_id = package.provider_id
-    if provider_id == current_user.id:
-        raise HTTPException(status_code=400, detail="You cannot hire yourself or purchase your own package.")
+        provider_id = package.provider_id
+        if provider_id == current_user.id:
+            raise HTTPException(status_code=400, detail="You cannot hire yourself or purchase your own package.")
 
-    provider = db.query(User).filter(
-        User.id == provider_id,
-        User.is_active == True
-    ).first()
-    if not provider:
-        raise HTTPException(status_code=400, detail="Provider not found")
+        provider = db.query(User).filter(
+            User.id == provider_id,
+            User.is_active == True
+        ).first()
+        if not provider:
+            raise HTTPException(status_code=400, detail="Provider not found")
 
-    import random
-    shoot_pin = f"{random.randint(100000, 999999)}"
+        import random
+        shoot_pin = f"{random.randint(100000, 999999)}"
 
-    booking = Booking(
-        buyer_id=current_user.id,
-        provider_id=provider_id,
-        package_id=booking_data.package_id,
-        niche=booking_data.niche,
-        total_amount=booking_data.total_amount,
-        status="confirmed",
-        client_notes=booking_data.client_notes,
-        source_file_url=booking_data.source_file_url,
-        is_free_sample=False,
-        shoot_pin=shoot_pin,
-        shoot_status="SCHEDULED",
-        event_count=booking_data.event_count or 1,
-        event_details=booking_data.event_details or [],
-        per_reel_payout_rate=round(booking_data.total_amount / max(1, booking_data.event_count or 1), 2)
-    )
-    db.add(booking)
-    db.commit()
-    db.refresh(booking)
-
-    # Use platform commission rate (0% during 1-Month Play Store Launch Promo)
-    settings = db.query(PlatformSettings).first()
-    is_promo = getattr(settings, 'launch_promo_active', True) if settings else True
-    comm_rate = 0.0 if is_promo else (settings.commission_rate if (settings and settings.commission_rate is not None) else 0.20)
-    platform_comm = round(booking_data.total_amount * comm_rate, 2)
-    prov_payout = round(booking_data.total_amount * (1.0 - comm_rate), 2)
-
-    existing_pay = db.query(Payment).filter(Payment.booking_id == booking.id).first()
-    if existing_pay:
-        existing_pay.amount = booking_data.total_amount
-        existing_pay.status = "held"
-        existing_pay.platform_commission = platform_comm
-        existing_pay.provider_payout = prov_payout
-        existing_pay.held_at = datetime.utcnow()
-    else:
-        payment = Payment(
-            booking_id=booking.id,
-            amount=booking_data.total_amount,
-            status="held",
-            platform_commission=platform_comm,
-            provider_payout=prov_payout,
-            held_at=datetime.utcnow()
+        booking = Booking(
+            buyer_id=current_user.id,
+            provider_id=provider_id,
+            package_id=booking_data.package_id,
+            niche=booking_data.niche,
+            total_amount=booking_data.total_amount,
+            status="confirmed",
+            client_notes=booking_data.client_notes,
+            source_file_url=booking_data.source_file_url,
+            is_free_sample=False,
+            shoot_pin=shoot_pin,
+            shoot_status="SCHEDULED",
+            event_count=booking_data.event_count or 1,
+            event_details=booking_data.event_details or [],
+            per_reel_payout_rate=round(booking_data.total_amount / max(1, booking_data.event_count or 1), 2)
         )
-        db.add(payment)
-    db.commit()
+        db.add(booking)
+        db.commit()
+        db.refresh(booking)
 
-    # Increment total_bookings only once (use confirmed provider_id from package)
-    provider_profile = db.query(Profile).filter(Profile.user_id == provider_id).first()
-    if provider_profile:
-        provider_profile.total_bookings = (provider_profile.total_bookings or 0) + 1
+        # Use platform commission rate (0% during 1-Month Play Store Launch Promo)
+        settings = db.query(PlatformSettings).first()
+        is_promo = getattr(settings, 'launch_promo_active', True) if settings else True
+        comm_rate = 0.0 if is_promo else (settings.commission_rate if (settings and settings.commission_rate is not None) else 0.20)
+        platform_comm = round(booking_data.total_amount * comm_rate, 2)
+        prov_payout = round(booking_data.total_amount * (1.0 - comm_rate), 2)
 
-    db.commit()
-    db.refresh(booking)
-    return booking
+        existing_pay = db.query(Payment).filter(Payment.booking_id == booking.id).first()
+        if existing_pay:
+            existing_pay.amount = booking_data.total_amount
+            existing_pay.status = "held"
+            existing_pay.platform_commission = platform_comm
+            existing_pay.provider_payout = prov_payout
+            existing_pay.held_at = datetime.utcnow()
+        else:
+            payment = Payment(
+                booking_id=booking.id,
+                amount=booking_data.total_amount,
+                status="held",
+                platform_commission=platform_comm,
+                provider_payout=prov_payout,
+                held_at=datetime.utcnow()
+            )
+            db.add(payment)
+        db.commit()
+
+        # Increment total_bookings only once (use confirmed provider_id from package)
+        provider_profile = db.query(Profile).filter(Profile.user_id == provider_id).first()
+        if provider_profile:
+            provider_profile.total_bookings = (provider_profile.total_bookings or 0) + 1
+
+        db.commit()
+        db.refresh(booking)
+        return booking
+    except Exception as err:
+        import traceback
+        print("CREATE BOOKING EXCEPTION TRACEBACK:\n", traceback.format_exc(), flush=True)
+        raise err
+
+
 
 class FreeSampleCreate(BaseModel):
     package_id: int
@@ -4848,6 +4883,265 @@ def update_bank_details(
     db.commit()
     db.refresh(profile)
     return {"message": "Bank details updated successfully"}
+
+# -----------------------------------------------------------------------------
+# 5-PERSON DEDICATED GROWTH TEAM & AGENCY SUBMISSIONS API
+# Roles: 1. Strategic Thinker, 2. Script Writer, 3. Videographer & Editor, 
+#        4. Account Handler, 5. App Management (User & Sashi)
+# -----------------------------------------------------------------------------
+
+@api_app.get("/agency-team/plans")
+def get_agency_growth_team_plans():
+    return {
+        "agency_name": "Groove Hub 5-Person Dedicated Growth Team",
+        "tagline": "Your Complete Store Growth Engine: Strategy, Scripting, Shoots, Edits & Account Lead Management",
+        "app_management": "Managed & Overseen directly by User & Sashi via Groove Hub App",
+        "team_roster": [
+            {
+                "role_id": 1,
+                "role_name": "Strategic Thinker",
+                "focus": "Store Audit, Flaw Identification & Local Competitor Comparison",
+                "deliverables": "Deep store flaw analysis, local competitor positioning, monthly growth strategy roadmap"
+            },
+            {
+                "role_id": 2,
+                "role_name": "Script Writer",
+                "focus": "High-Converting Scriptwriting & Storyboards",
+                "deliverables": "Viral reel scripts, ad copy, offer angles, high-retention hooks"
+            },
+            {
+                "role_id": 3,
+                "role_name": "Videographer & Video Editor (Dual Role)",
+                "focus": "On-Site Shoot Production & High-Retention 4K Editing",
+                "deliverables": "Raw footage shoot, 4K reel editing, color grading, sound design & motion graphics"
+            },
+            {
+                "role_id": 4,
+                "role_name": "Account Handler",
+                "focus": "Social Media Account Management, Views & Lead Optimization",
+                "deliverables": "Daily post scheduling, engagement management, views growth & lead acquisition tracking"
+            },
+            {
+                "role_id": 5,
+                "role_name": "App Operations & Management",
+                "focus": "User & Sashi Direct Oversight via Groove Hub App",
+                "deliverables": "SLA guarantee, direct quality control, escalation support & team coordination"
+            }
+        ],
+        "plans": [
+            {
+                "id": "monthly",
+                "name": "Monthly Dedicated Team Plan",
+                "billing": "Monthly",
+                "price": 24999.0,
+                "currency": "INR",
+                "usd_price": 299.0,
+                "features": [
+                    "Full 5-Person Dedicated Growth Team",
+                    "Complete Store & Competitor Flaw Analysis Report",
+                    "8-12 High-Retention Reels & Ad Videos per month",
+                    "Full Account Management (Views & Leads tracking)",
+                    "Exclusive VIP Web Portal Access Link",
+                    "Direct WhatsApp Team Contact Hotline (+919876543210)"
+                ]
+            },
+            {
+                "id": "half_yearly",
+                "name": "Half-Yearly Growth Accelerator Plan",
+                "billing": "6 Months (Save 15%)",
+                "price": 129999.0,
+                "currency": "INR",
+                "usd_price": 1499.0,
+                "features": [
+                    "Full 5-Person Dedicated Growth Team for 6 Months",
+                    "Bi-Weekly Competitor & Store Strategy Audits",
+                    "60+ High-Retention Reels & Performance Ads",
+                    "Dedicated Account Handler (Guaranteed Lead Targets)",
+                    "Exclusive VIP Web Portal Link for entire team tracking",
+                    "Priority Direct WhatsApp Hotline with User & Sashi"
+                ]
+            }
+        ],
+        "whatsapp_hotline": "+919876543210"
+    }
+
+@api_app.post("/agency-team/subscribe")
+def subscribe_agency_team(
+    subscription_data: AgencyTeamSubscriptionCreate,
+    current_user: Optional[User] = Depends(get_current_user_optional),
+    db = Depends(get_db)
+):
+    import uuid
+    token = f"VIP-{uuid.uuid4().hex[:8].upper()}"
+    
+    # If user is logged in, attach user_id. Otherwise attach first user or admin
+    user_id = current_user.id if current_user else 1
+    
+    is_half_yearly = subscription_data.plan_type.upper() in ["HALF_YEARLY", "HALF-YEARLY", "HALF YEARLY", "6_MONTHS"]
+    plan_type_clean = "HALF_YEARLY" if is_half_yearly else "MONTHLY"
+    price = 129999.0 if is_half_yearly else 24999.0
+    end_days = 180 if is_half_yearly else 30
+    
+    sub = AgencyTeamSubscription(
+        user_id=user_id,
+        store_name=subscription_data.store_name,
+        store_location=subscription_data.store_location or "Main Commercial Market",
+        niche_category=subscription_data.niche_category or "Retail & Local Store",
+        plan_type=plan_type_clean,
+        status="ACTIVE",
+        price_paid=price,
+        whatsapp_number=subscription_data.whatsapp_number or "+919876543210",
+        vip_link_token=token,
+        start_date=datetime.utcnow(),
+        end_date=datetime.utcnow() + timedelta(days=end_days)
+    )
+    db.add(sub)
+    db.commit()
+    db.refresh(sub)
+    
+    # Create initial Store Audit Report with sample strategic insights
+    audit = StoreAuditReport(
+        subscription_id=sub.id,
+        store_flaws=[
+            {"id": 1, "flaw": "Missing dynamic motion display on storefront to attract foot traffic", "severity": "HIGH"},
+            {"id": 2, "flaw": "Social handle lacks daily reel storyboards and customer testimonials", "severity": "HIGH"},
+            {"id": 3, "flaw": "Competitor price transparency mismatch in local area", "severity": "MEDIUM"}
+        ],
+        competitor_comparison=[
+            {"competitor": "Competitor Store Alpha", "their_strength": "Heavy local Instagram ad budget", "our_counter_strategy": "Launch 4K high-retention store walkthrough reels"},
+            {"competitor": "Nearby Store Beta", "their_strength": "WhatsApp direct customer support", "our_counter_strategy": "VIP WhatsApp Hotline integration with lead capture"}
+        ],
+        strategic_roadmap="1. Strategic Thinker store flaw audit completed\n2. Script Writer developing 8 viral reel storyboards\n3. Videographer/Editor shoot scheduled\n4. Account Handler optimizing daily posting & lead tracking",
+        script_vault=[
+            {"title": "Hook Script: 3 Secrets Nearby Competitors Hide", "file_name": "Hook_Script_A1.txt", "status": "APPROVED_FOR_SHOOT", "script_type": "Viral Reel Hook"},
+            {"title": "Behind the Scenes: Store Quality & Craftsmanship", "file_name": "BTS_StoryBoard_B2.txt", "status": "IN_PRODUCTION", "script_type": "Store Storyboard"},
+            {"title": "Local Shopper Offer & VIP Discount Call", "file_name": "Offer_Ad_Copy_C1.txt", "status": "SCRIPTING_COMPLETE", "script_type": "High-Converting Ad"}
+        ],
+        video_deliverables=[
+            {"title": "Hook_Retention_A1.mp4", "specs": "1080×1920 • 94% Retention", "status": "APPROVED_DELIVERED", "deliverable_url": "/static/images/portfolio/sample_reel.mp4"},
+            {"title": "4K_Storefront_Macro_Broll.mov", "specs": "3840×2160 • 60 FPS HDR", "status": "RAW_FOOTAGE_SYNCED", "deliverable_url": "/static/images/portfolio/sample_broll.mp4"},
+            {"title": "Competitor_Comparison_Ad_v2.mp4", "specs": "1080×1920 • High Conversion Ad", "status": "READY_FOR_PUBLISHING", "deliverable_url": "/static/images/portfolio/sample_ad.mp4"},
+            {"title": "Store_Walkthrough_Master_4K.mp4", "specs": "3840×2160 • 60 FPS Master", "status": "COMPLETED", "deliverable_url": "/static/images/portfolio/sample_walkthrough.mp4"}
+        ],
+        account_stats={
+            "total_views": 52400,
+            "leads_generated": 168,
+            "engagement_rate": "8.8%",
+            "active_plan": sub.plan_type
+        }
+    )
+    db.add(audit)
+    db.commit()
+    
+    import urllib.parse
+    whatsapp_msg = f"Hi Groove Team! I just subscribed to the {sub.plan_type} 5-Person Growth Team plan for '{sub.store_name}' (VIP Token: {sub.vip_link_token}). Let's start!"
+    wa_url = f"https://wa.me/919876543210?text={urllib.parse.quote(whatsapp_msg)}"
+    
+    return {
+        "message": f"Successfully subscribed to 5-Person Dedicated Growth Team ({sub.plan_type} Plan)!",
+        "subscription_id": sub.id,
+        "vip_link_token": sub.vip_link_token,
+        "web_portal_url": f"/team-portal?token={sub.vip_link_token}",
+        "whatsapp_url": wa_url,
+        "whatsapp_number": sub.whatsapp_number,
+        "store_name": sub.store_name,
+        "plan_type": sub.plan_type
+    }
+
+@api_app.get("/agency-team/dashboard/{token}")
+def get_agency_team_dashboard(token: str, db = Depends(get_db)):
+    sub = db.query(AgencyTeamSubscription).filter(AgencyTeamSubscription.vip_link_token == token).first()
+    if not sub:
+        import urllib.parse
+        wa_text = urllib.parse.quote("Hi Groove Team! I want to inquire about the 5-Person Dedicated Growth Team plan for my store.")
+        return {
+            "is_preview": True,
+            "store_name": "Sample Retail Store (VIP Preview)",
+            "store_location": "Central Shopping Hub",
+            "niche_category": "Retail & Digital Marketing",
+            "plan_type": "MONTHLY",
+            "status": "ACTIVE",
+            "price_paid": 24999.0,
+            "whatsapp_number": "+919876543210",
+            "whatsapp_url": f"https://wa.me/919876543210?text={wa_text}",
+            "vip_link_token": token,
+            "team_roster": {
+                "strategic_thinker": "Strategic Lead - Alex (Store & Competitor Analyst)",
+                "script_writer": "Script Master - Sarah (Ad & Reel Scripts)",
+                "videographer_editor": "Creative Producer - Marcus (Shoot & High-Retention Edit)",
+                "account_handler": "Growth Specialist - David (Views & Leads Handler)",
+                "app_management": "Managed by User & Sashi via Groove Hub App"
+            },
+            "active_footage_bins": [
+                {"name": "Hook_Retention_A1.mp4", "specs": "1080×1920 • 94% Retention", "icon_type": "yellow", "icon_fa": "fa-bolt"},
+                {"name": "4K_Food_Macro_Broll.mov", "specs": "3840×2160 • 60 FPS HDR", "icon_type": "green", "icon_fa": "fa-camera"},
+                {"name": "Whoosh_Bass_Impact.wav", "specs": "Stereo • Subconscious Hit", "icon_type": "blue", "icon_fa": "fa-wave-square"},
+                {"name": "Hormozi_Word_Pop.json", "specs": "Auto-Synced • Gold Pop", "icon_type": "orange", "icon_fa": "fa-flag"}
+            ],
+            "store_flaws": [
+                {"id": 1, "flaw": "Storefront lack of motion video screen & high-converting banners", "severity": "HIGH"},
+                {"id": 2, "flaw": "Local shoppers unaware of weekly exclusive discounts", "severity": "HIGH"},
+                {"id": 3, "flaw": "Weak social media conversion funnel vs nearby stores", "severity": "MEDIUM"}
+            ],
+            "competitor_comparison": [
+                {"competitor": "Nearby Store Alpha", "their_strength": "Heavy local Instagram ad presence", "our_counter_strategy": "High-retention 4K reels targeting 5km radius"},
+                {"competitor": "Competitor Beta", "their_strength": "Direct WhatsApp promotion blast", "our_counter_strategy": "VIP WhatsApp Hotline with instant lead capture"}
+            ],
+            "strategic_roadmap": "Store audit completed. 8 Reel scripts drafted by Script Writer. Shoots scheduled.",
+            "script_vault": [
+                {"title": "Hook Script: 3 Secrets Nearby Competitors Hide", "file_name": "Hook_Script_A1.txt", "status": "APPROVED_FOR_SHOOT"},
+                {"title": "Behind the Scenes: Product Quality Reel", "file_name": "BTS_StoryBoard_B2.txt", "status": "APPROVED"}
+            ],
+            "video_deliverables": [
+                {"title": "Hook_Retention_A1.mp4", "specs": "1080×1920 • 94% Retention", "status": "APPROVED_DELIVERED"},
+                {"title": "4K_Food_Macro_Broll.mov", "specs": "3840×2160 • 60 FPS HDR", "status": "RAW_FOOTAGE_SYNCED"},
+                {"title": "Competitor_Comparison_Ad_v2.mp4", "specs": "1080×1920 • High Conversion Ad", "status": "READY_FOR_PUBLISHING"},
+                {"title": "Store_Walkthrough_Master_4K.mp4", "specs": "3840×2160 • 60 FPS Master", "status": "DELIVERED"}
+            ],
+            "account_stats": {
+                "total_views": 128400,
+                "leads_generated": 312,
+                "engagement_rate": "9.2%",
+                "growth_multiplier": "3.4x"
+            }
+        }
+
+    
+    audit = db.query(StoreAuditReport).filter(StoreAuditReport.subscription_id == sub.id).first()
+    
+    import urllib.parse
+    wa_msg = f"Hi Groove Team! I'm checking my dedicated web dashboard for {sub.store_name} (VIP: {sub.vip_link_token})."
+    wa_url = f"https://wa.me/919876543210?text={urllib.parse.quote(wa_msg)}"
+    
+    return {
+        "is_preview": False,
+        "subscription_id": sub.id,
+        "store_name": sub.store_name,
+        "store_location": sub.store_location,
+        "niche_category": sub.niche_category,
+        "plan_type": sub.plan_type,
+        "status": sub.status,
+        "price_paid": sub.price_paid,
+        "whatsapp_number": sub.whatsapp_number,
+        "whatsapp_url": wa_url,
+        "vip_link_token": sub.vip_link_token,
+        "start_date": sub.start_date.isoformat() if sub.start_date else None,
+        "end_date": sub.end_date.isoformat() if sub.end_date else None,
+        "team_roster": {
+            "strategic_thinker": sub.strategic_thinker_name,
+            "script_writer": sub.script_writer_name,
+            "videographer_editor": sub.videographer_editor_name,
+            "account_handler": sub.account_handler_name,
+            "app_management": sub.app_management_team
+        },
+        "store_flaws": audit.store_flaws if audit and audit.store_flaws else [],
+        "competitor_comparison": audit.competitor_comparison if audit and audit.competitor_comparison else [],
+        "strategic_roadmap": audit.strategic_roadmap if audit and audit.strategic_roadmap else "Strategy session in progress.",
+        "script_vault": audit.script_vault if audit and audit.script_vault else [],
+        "video_deliverables": audit.video_deliverables if audit and audit.video_deliverables else [],
+        "account_stats": audit.account_stats if audit and audit.account_stats else {"total_views": 0, "leads_generated": 0}
+    }
+
 
 
 

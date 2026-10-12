@@ -62,11 +62,14 @@ def test_badge_level_calculation():
 
 def test_best_editors_endpoint():
     db = SessionLocal()
+    import uuid
+    uid = uuid.uuid4().hex[:6]
+    test_uname = f"top_diamond_{uid}"
     u_top = User(
         name="Top Diamond Editor",
-        email="top_editor_badge_test@example.com",
-        phone="9988776655",
-        username="top_diamond_editor_test",
+        email=f"top_editor_{uid}@example.com",
+        phone=f"998{uid[:7]}",
+        username=test_uname,
         password_hash=hash_password("Pass123!"),
         user_type=UserType.PROVIDER,
         is_active=True,
@@ -94,10 +97,11 @@ def test_best_editors_endpoint():
 
     found = False
     for ed in data:
-        if ed["username"] == "top_diamond_editor_test":
+        if ed["username"] == test_uname:
             found = True
             assert ed["creator_level"]["level"] == 4
             assert ed["creator_level"]["key"] == "diamond_elite"
+
     assert found
 
 def test_provider_profile_returns_creator_level():

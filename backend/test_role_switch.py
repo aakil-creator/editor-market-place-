@@ -35,14 +35,16 @@ httpx.Client.__init__ = _patched_httpx_init
 def test_role_switch_flow():
     client = TestClient(app)
     db = SessionLocal()
+    import uuid
+    uid = uuid.uuid4().hex[:6]
     try:
         # Create test buyer user
         user = User(
             user_type=UserType.BUYER,
             name="Test Mode Switcher",
-            username="modeswitcher",
-            email="modeswitcher@example.com",
-            phone="9876543210",
+            username=f"modeswitcher_{uid}",
+            email=f"modeswitcher_{uid}@example.com",
+            phone=f"987{uid[:7]}",
             password_hash=hash_password("Pass1234!"),
             is_verified=True,
             is_active=True
@@ -50,6 +52,7 @@ def test_role_switch_flow():
         db.add(user)
         db.commit()
         db.refresh(user)
+
 
         token = create_access_token({"sub": str(user.id), "type": "BUYER"})
         headers = {"Authorization": f"Bearer {token}"}

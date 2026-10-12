@@ -30,14 +30,17 @@ def test_package_tier_rules_and_profession_gate():
     client = TestClient(app)
 
 
-def _make_user(db, username):
+def _make_user(db, base_username):
     from app.security import hash_password
+    import uuid, random
+    uid = uuid.uuid4().hex[:6]
+    username = f"{base_username}_{uid}"
     user = User(
         user_type=UserType.PROVIDER,
         name=username.title(),
         username=username,
         email=f"{username}@example.test",
-        phone=f"90{abs(hash(username)) % 100000000:08d}",
+        phone=f"90{random.randint(10000000, 99999999)}",
         password_hash=hash_password("Test1234!"),
         is_verified=True,
         is_active=True,
@@ -46,6 +49,7 @@ def _make_user(db, username):
     db.add(user)
     db.commit()
     db.refresh(user)
+
     profile = Profile(
         user_id=user.id,
         niche="business_ads",

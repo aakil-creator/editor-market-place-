@@ -438,5 +438,51 @@ class SearchLog(Base):
     ip_address = Column(String(50), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, index=True)
 
+# 5-Person Dedicated Growth Team Agency Subscription & Store Audit Models
+class AgencyTeamSubscription(Base):
+    __tablename__ = "agency_team_subscriptions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    user = relationship("User", foreign_keys=[user_id])
+
+    store_name = Column(String, nullable=False)
+    store_location = Column(String, nullable=True)
+    niche_category = Column(String, default="Retail & Local Store")
+    plan_type = Column(String, default="MONTHLY") # MONTHLY or HALF_YEARLY
+    status = Column(String, default="ACTIVE") # ACTIVE, EXPIRED, CANCELLED
+    price_paid = Column(Float, default=24999.0)
+    whatsapp_number = Column(String, default="+919876543210") # Team WhatsApp hotline
+    vip_link_token = Column(String, unique=True, index=True, nullable=False)
+
+    # 5-Person Team Roster
+    strategic_thinker_name = Column(String, default="Strategic Lead - Alex (Store & Competitor Analyst)")
+    script_writer_name = Column(String, default="Script Master - Sarah (Ad & Reel Scripts)")
+    videographer_editor_name = Column(String, default="Creative Producer - Marcus (Shoot & High-Retention Edit)")
+    account_handler_name = Column(String, default="Growth Specialist - David (Views & Leads Handler)")
+    app_management_team = Column(String, default="Managed by User & Sashi via Groove Hub App")
+
+    start_date = Column(DateTime, default=datetime.utcnow)
+    end_date = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    audits = relationship("StoreAuditReport", back_populates="subscription", cascade="all, delete-orphan")
+
+class StoreAuditReport(Base):
+    __tablename__ = "store_audit_reports"
+
+    id = Column(Integer, primary_key=True, index=True)
+    subscription_id = Column(Integer, ForeignKey("agency_team_subscriptions.id"), nullable=False, index=True)
+    subscription = relationship("AgencyTeamSubscription", back_populates="audits")
+
+    store_flaws = Column(JSON, default=list) # List of identified store flaws
+    competitor_comparison = Column(JSON, default=list) # Comparison with nearby competitor stores
+    strategic_roadmap = Column(Text, nullable=True) # Strategic Thinker's plan
+    script_vault = Column(JSON, default=list) # List of scripts written
+    video_deliverables = Column(JSON, default=list) # List of video reels produced & edited
+    account_stats = Column(JSON, default=dict) # { "total_views": 150000, "leads_generated": 240, ... }
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
 
 

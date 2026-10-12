@@ -30,39 +30,43 @@ from app.models import Base, User, Profile, Package, Booking, Payment, UserType,
 from app.security import create_access_token, hash_password
 
 def test_shoot_pin_and_live_workflow():
-    client = TestClient(app)
+    client = TestClient(app, raise_server_exceptions=True)
     test_db = SessionLocal()
+
+    import uuid
+    uid = uuid.uuid4().hex[:6]
 
     # Setup test Buyer, Provider and Admin with unique phone numbers & usernames
     buyer = User(
         name="Test Shop Owner",
-        username="shopowner_feat1",
-        phone="9111111110",
-        email="shopowner_feat1@test.com",
+        username=f"shopowner_{uid}",
+        phone=f"911{uid[:7]}",
+        email=f"shopowner_{uid}@test.com",
         password_hash=hash_password("Password123"),
         user_type=UserType.BUYER,
         is_verified=True
     )
     provider = User(
         name="Ace Videographer",
-        username="acevideo_feat1",
-        phone="9111111111",
-        email="acevideo_feat1@test.com",
+        username=f"acevideo_{uid}",
+        phone=f"912{uid[:7]}",
+        email=f"acevideo_{uid}@test.com",
         password_hash=hash_password("Password123"),
         user_type=UserType.PROVIDER,
         is_verified=True
     )
     admin = User(
         name="Platform Admin",
-        username="admin_feat1",
-        phone="9111111112",
-        email="admin_feat1@test.com",
+        username=f"admin_{uid}",
+        phone=f"913{uid[:7]}",
+        email=f"admin_{uid}@test.com",
         password_hash=hash_password("Password123"),
         user_type=UserType.ADMIN,
         is_verified=True
     )
     test_db.add_all([buyer, provider, admin])
     test_db.commit()
+
 
     pkg = Package(
         provider_id=provider.id,
@@ -73,15 +77,21 @@ def test_shoot_pin_and_live_workflow():
     test_db.add(pkg)
     test_db.commit()
 
-    buyer_token = create_access_token(data={"sub": str(buyer.id), "type": "BUYER"})
-    provider_token = create_access_token(data={"sub": str(provider.id), "type": "PROVIDER"})
-    admin_token = create_access_token(data={"sub": str(admin.id), "type": "ADMIN"})
+    buyer_id_val = buyer.id
+    provider_id_val = provider.id
+    admin_id_val = admin.id
+    pkg_id_val = pkg.id
+    test_db.close()
+
+    buyer_token = create_access_token(data={"sub": str(buyer_id_val), "type": "BUYER"})
+    provider_token = create_access_token(data={"sub": str(provider_id_val), "type": "PROVIDER"})
+    admin_token = create_access_token(data={"sub": str(admin_id_val), "type": "ADMIN"})
 
     # 1. Buyer creates booking with 2 events in a day
     res = client.post(
         "/api/bookings",
         json={
-            "package_id": pkg.id,
+            "package_id": pkg_id_val,
             "total_amount": 1500.0,
             "niche": "videography",
             "event_count": 2,
@@ -89,7 +99,8 @@ def test_shoot_pin_and_live_workflow():
         },
         headers={"Authorization": f"Bearer {buyer_token}"}
     )
-    assert res.status_code == 200, res.text
+
+    assert res.status_code == 200, f"Error: {res.status_code} -> {res.text}"
     booking_data = res.json()
     booking_id = booking_data["id"]
     shoot_pin = booking_data["shoot_pin"]
@@ -143,7 +154,35 @@ def test_provider_schedule_and_availability():
     client = TestClient(app)
     test_db = SessionLocal()
     buyer = test_db.query(User).filter(User.username == "shopowner_feat1").first()
+    if not buyer:
+        buyer = User(
+            name="Shopowner Feat",
+            username="shopowner_feat1",
+            phone="9119998877",
+            email="shopowner_feat1@test.com",
+            password_hash=hash_password("Password123"),
+            user_type=UserType.BUYER,
+            is_verified=True
+        )
+        test_db.add(buyer)
+        test_db.commit()
+        test_db.refresh(buyer)
+
     provider = test_db.query(User).filter(User.username == "acevideo_feat1").first()
+    if not provider:
+        provider = User(
+            name="Acevideo Feat",
+            username="acevideo_feat1",
+            phone="9129998877",
+            email="acevideo_feat1@test.com",
+            password_hash=hash_password("Password123"),
+            user_type=UserType.PROVIDER,
+            is_verified=True
+        )
+        test_db.add(provider)
+        test_db.commit()
+        test_db.refresh(provider)
+
     buyer_token = create_access_token(data={"sub": str(buyer.id), "type": "BUYER"})
     provider_token = create_access_token(data={"sub": str(provider.id), "type": "PROVIDER"})
 
