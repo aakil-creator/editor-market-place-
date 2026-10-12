@@ -8,13 +8,13 @@
   
   <!-- Open Graph / Meta -->
   <meta property="og:title" content="Groove Hub — Elite Video Editing & Viral Content Studio" />
-  <meta property="og:description" content="Watch our client video reel, interactive raw vs master cut comparison, and sample packages. 24-48h turnaround with 100% escrow protection." />
-  <meta property="og:image" content="/static/images/portfolio/hero_showcase.jpg" />
+  <meta property="og:description" content="Watch our featured video work, interactive raw vs master cut comparison, and sample packages. 24-48h turnaround with 100% escrow protection." />
+  <meta property="og:image" content="/static/images/portfolio/client_work_poster.jpg" />
   <meta property="og:type" content="website" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="Groove Hub — Video Editing & Viral Content Studio" />
   <meta name="twitter:description" content="High-retention Reels, TikToks, and YouTube Shorts editing with cinema sound design & kinetic captions." />
-  <meta name="twitter:image" content="/static/images/portfolio/hero_showcase.jpg" />
+  <meta name="twitter:image" content="/static/images/portfolio/client_work_poster.jpg" />
 
   <link rel="icon" type="image/png" href="/static/icons/favicon.png">
 
@@ -520,174 +520,165 @@
       background: rgba(255, 255, 255, 0.22);
     }
 
-    /* Video Portfolio & Case Studies Grid */
-    .filter-tabs {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      flex-wrap: wrap;
-      margin-bottom: 36px;
-    }
-
-    .btn-tab {
-      padding: 10px 20px;
-      border-radius: 9999px;
-      border: 1px solid var(--border-warm);
+    /* Featured Client Video Showcase (User Work) */
+    .featured-video-container {
+      max-width: 960px;
+      margin: 0 auto;
       background: var(--bg-card);
-      color: var(--text-body);
-      font-size: 0.88rem;
-      font-weight: 700;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-
-    .btn-tab:hover {
-      border-color: var(--amber-gold);
-      color: var(--text-main);
-    }
-
-    .btn-tab.active {
-      background: var(--text-main);
-      color: #FAF7F2;
-      border-color: var(--text-main);
-      box-shadow: 0 4px 14px rgba(0,0,0,0.15);
-    }
-
-    .portfolio-grid {
+      border: 1px solid var(--border-warm);
+      border-radius: 28px;
+      padding: 36px;
+      box-shadow: 0 20px 50px rgba(68, 64, 60, 0.08);
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
-      gap: 28px;
-      margin-bottom: 48px;
+      grid-template-columns: 370px 1fr;
+      gap: 36px;
+      align-items: center;
     }
 
-    .portfolio-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border-warm);
-      border-radius: 22px;
-      overflow: hidden;
-      box-shadow: 0 10px 30px rgba(68, 64, 60, 0.06);
-      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-      display: flex;
-      flex-direction: column;
-    }
-
-    .portfolio-card:hover {
-      transform: translateY(-6px);
-      box-shadow: 0 20px 45px rgba(68, 64, 60, 0.12);
-      border-color: var(--amber-gold);
-    }
-
-    .card-thumbnail-wrap {
+    .featured-video-frame {
       position: relative;
       width: 100%;
-      height: 250px;
+      height: 580px;
+      border-radius: 22px;
       overflow: hidden;
-      background: #111;
-      cursor: pointer;
+      background: #000000;
+      box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+      border: 2px solid rgba(217, 119, 6, 0.4);
     }
 
-    .card-thumbnail-img {
+    .featured-video-element {
       width: 100%;
       height: 100%;
       object-fit: cover;
-      transition: transform 0.5s ease;
+      display: block;
     }
 
-    .portfolio-card:hover .card-thumbnail-img {
-      transform: scale(1.05);
-    }
-
-    .card-pill-tag {
+    .featured-video-badge {
       position: absolute;
       top: 16px;
       left: 16px;
-      padding: 5px 12px;
+      padding: 6px 14px;
       border-radius: 9999px;
-      background: rgba(0, 0, 0, 0.7);
+      background: rgba(0, 0, 0, 0.75);
       backdrop-filter: blur(8px);
       color: #FFFFFF;
       font-size: 0.72rem;
-      font-weight: 700;
-      text-transform: uppercase;
+      font-weight: 800;
       letter-spacing: 0.05em;
-    }
-
-    .card-play-overlay {
-      position: absolute;
-      inset: 0;
       display: flex;
       align-items: center;
-      justify-content: center;
-      background: rgba(0, 0, 0, 0.35);
-      transition: background 0.2s;
+      gap: 8px;
+      z-index: 5;
     }
 
-    .play-circle-btn {
-      width: 60px;
-      height: 60px;
+    .live-dot {
+      width: 8px;
+      height: 8px;
       border-radius: 50%;
-      background: rgba(255, 255, 255, 0.95);
-      color: var(--text-main);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 8px 25px rgba(0,0,0,0.3);
-      transition: all 0.25s ease;
+      background: #10B981;
+      box-shadow: 0 0 8px #10B981;
+      display: inline-block;
     }
 
-    .portfolio-card:hover .play-circle-btn {
-      transform: scale(1.12);
-      background: var(--amber-gold);
-      color: #FFFFFF;
-    }
-
-    .card-content {
-      padding: 24px;
-      flex: 1;
+    .featured-video-details {
       display: flex;
       flex-direction: column;
+      gap: 16px;
     }
 
-    .card-title {
-      font-family: var(--font-display);
-      font-size: 1.25rem;
+    .featured-video-tag {
+      font-size: 0.8rem;
       font-weight: 800;
+      color: var(--amber-gold);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .featured-video-title {
+      font-family: var(--font-display);
+      font-size: clamp(1.6rem, 2.5vw, 2.2rem);
+      font-weight: 900;
       color: var(--text-main);
-      line-height: 1.25;
-      margin-bottom: 8px;
+      line-height: 1.2;
     }
 
-    .card-desc {
-      font-size: 0.88rem;
+    .featured-video-desc {
+      font-size: 0.95rem;
       color: var(--text-body);
-      line-height: 1.55;
-      margin-bottom: 20px;
-      flex: 1;
+      line-height: 1.6;
     }
 
-    .card-metrics-strip {
+    .featured-stats-strip {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
-      padding-top: 16px;
-      border-top: 1px solid rgba(180, 160, 140, 0.25);
-      text-align: center;
+      gap: 12px;
+      padding: 16px 0;
+      border-top: 1px solid rgba(180, 160, 140, 0.3);
+      border-bottom: 1px solid rgba(180, 160, 140, 0.3);
     }
 
-    .metric-item strong {
+    .f-stat-item strong {
       display: block;
       font-family: var(--font-display);
-      font-size: 1.15rem;
+      font-size: 1.2rem;
       font-weight: 900;
       color: var(--amber-gold);
     }
 
-    .metric-item span {
-      font-size: 0.7rem;
+    .f-stat-item span {
+      font-size: 0.72rem;
       text-transform: uppercase;
       font-weight: 700;
       color: var(--text-muted);
+    }
+
+    .featured-video-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 8px;
+    }
+
+    .btn-featured-whatsapp {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 16px 24px;
+      border-radius: 14px;
+      background: var(--whatsapp-green);
+      color: #FFFFFF;
+      font-size: 0.95rem;
+      font-weight: 800;
+      text-decoration: none;
+      box-shadow: 0 8px 25px rgba(37, 211, 102, 0.4);
+      transition: all 0.2s;
+    }
+
+    .btn-featured-whatsapp:hover {
+      background: var(--whatsapp-dark);
+      transform: translateY(-2px);
+      box-shadow: 0 12px 30px rgba(37, 211, 102, 0.5);
+    }
+
+    .btn-featured-packages {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 14px 20px;
+      border-radius: 14px;
+      background: var(--bg-cream);
+      border: 1px solid var(--border-warm);
+      color: var(--text-main);
+      font-size: 0.9rem;
+      font-weight: 700;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+
+    .btn-featured-packages:hover {
+      background: #FFFFFF;
+      border-color: var(--text-main);
     }
 
     /* 6 Pillars Video Editing Toolkit */
@@ -920,58 +911,6 @@
       transform: translateY(-2px);
     }
 
-    /* Video Player Modal */
-    .video-modal {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.88);
-      backdrop-filter: blur(12px);
-      z-index: 9999;
-      align-items: center;
-      justify-content: center;
-      padding: 24px;
-    }
-
-    .video-modal.active {
-      display: flex;
-    }
-
-    .modal-content-box {
-      position: relative;
-      width: 100%;
-      max-width: 820px;
-      background: #000000;
-      border-radius: 20px;
-      overflow: hidden;
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      box-shadow: 0 30px 80px rgba(0,0,0,0.9);
-    }
-
-    .modal-close-btn {
-      position: absolute;
-      top: 16px;
-      right: 16px;
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      background: rgba(0, 0, 0, 0.6);
-      border: 1px solid rgba(255, 255, 255, 0.3);
-      color: #FFFFFF;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.2rem;
-      cursor: pointer;
-      z-index: 10;
-      transition: all 0.2s;
-    }
-
-    .modal-close-btn:hover {
-      background: #EF4444;
-      border-color: #EF4444;
-    }
-
     /* Floating WhatsApp Button */
     .whatsapp-float {
       position: fixed;
@@ -1018,7 +957,13 @@
       .nav-links { display: none; }
       .comp-stage { height: 380px; }
       .sample-banner { text-align: center; justify-content: center; }
-      .portfolio-grid { grid-template-columns: 1fr; }
+      .featured-video-container {
+        grid-template-columns: 1fr;
+        padding: 24px;
+      }
+      .featured-video-frame {
+        height: 480px;
+      }
     }
   </style>
 </head>
@@ -1041,7 +986,7 @@
       </a>
 
       <ul class="nav-links">
-        <li><a href="#showcase">Our Work</a></li>
+        <li><a href="#showcase">Featured Edit</a></li>
         <li><a href="#comparison">Raw vs Master Cut</a></li>
         <li><a href="#toolkit">Viral Architecture</a></li>
         <li><a href="#packages">Editing Packages</a></li>
@@ -1070,8 +1015,8 @@
       </p>
 
       <div class="hero-cta-group">
-        <a href="#comparison" class="btn-hero-primary">
-          <span>See Raw vs Master Cut</span>
+        <a href="#showcase" class="btn-hero-primary">
+          <span>Watch Our Featured Edit</span>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
         </a>
         <a href="https://wa.me/918005554768?text=Hi%20Groove%20Hub!%20I%20want%20to%20send%20my%20raw%20video%20for%20a%20test%20edit." target="_blank" class="btn-hero-secondary">
@@ -1097,6 +1042,67 @@
         <div class="trust-item">
           <div class="trust-number">100%</div>
           <div class="trust-label">Escrow Protected</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Featured Video Work Section (User Work: IMG_2389.MOV) -->
+    <section class="section-wrap" id="showcase">
+      <div class="section-header">
+        <div class="section-tag">Featured Client Work</div>
+        <h2 class="section-title">Our Featured Edit: <span class="gradient-text-warm">Master Reel Cut</span></h2>
+        <p class="section-desc">Real work produced by Groove Hub — engineered in full 9:16 vertical format with kinetic typography, custom sound design, and retention-focused pacing.</p>
+      </div>
+
+      <!-- Centered Premium Vertical Video Showcase Player -->
+      <div class="featured-video-container">
+        <div class="featured-video-frame">
+          <video 
+            id="featured-work-video" 
+            src="/static/client_showcase_work.mp4" 
+            poster="/static/images/portfolio/client_work_poster.jpg"
+            playsinline 
+            controls 
+            preload="metadata"
+            class="featured-video-element">
+          </video>
+          <div class="featured-video-badge">
+            <span class="live-dot"></span>
+            <span>1080x1920 • 9:16 VERTICAL MASTER</span>
+          </div>
+        </div>
+
+        <div class="featured-video-details">
+          <div class="featured-video-tag">VIRAL REEL & SHORT-FORM EDIT</div>
+          <h3 class="featured-video-title">Retention-Engineered Creator Reel Cut</h3>
+          <p class="featured-video-desc">
+            Paced for peak audience retention on Instagram Reels, YouTube Shorts, and TikTok. Featuring synchronized sound effects, punch-in framing, color grading, and zero dead air.
+          </p>
+          
+          <div class="featured-stats-strip">
+            <div class="f-stat-item">
+              <strong>1080x1920</strong>
+              <span>Vertical 9:16</span>
+            </div>
+            <div class="f-stat-item">
+              <strong>60 FPS</strong>
+              <span>Smooth Pacing</span>
+            </div>
+            <div class="f-stat-item">
+              <strong>Stereo EQ</strong>
+              <span>Master Audio</span>
+            </div>
+          </div>
+
+          <div class="featured-video-actions">
+            <a href="https://wa.me/918005554768?text=Hi%20Groove%20Hub!%20I%20saw%20your%20featured%20video%20on%20the%20showcase%20and%20want%20a%20similar%20edit." target="_blank" class="btn-featured-whatsapp">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.664-.699c.971.53 2.052.812 3.195.812 3.181 0 5.767-2.586 5.768-5.766 0-3.18-2.586-5.768-5.767-5.768zm7.399 5.766c-.002 4.079-3.32 7.397-7.399 7.397-1.327 0-2.583-.356-3.676-.975l-4.086 1.072 1.091-3.987c-.687-1.134-1.051-2.451-1.05-3.807.002-4.079 3.32-7.397 7.4-7.397 4.079 0 7.398 3.319 7.4 7.397z"/></svg>
+              <span>Get An Edit Like This On WhatsApp</span>
+            </a>
+            <a href="#packages" class="btn-featured-packages">
+              <span>View Packages & Pricing ↓</span>
+            </a>
+          </div>
         </div>
       </div>
     </section>
@@ -1142,201 +1148,6 @@
             </button>
           </div>
         </div>
-      </div>
-    </section>
-
-    <!-- Video Work & Case Studies Grid -->
-    <section class="section-wrap" id="showcase">
-      <div class="section-header">
-        <div class="section-tag">Curated Portfolio</div>
-        <h2 class="section-title">Selected Video Cuts & <span class="gradient-text-warm">Client Case Studies</span></h2>
-        <p class="section-desc">Explore our top-performing video editing formats across creator reels, high-converting product ads, podcast highlights, and YouTube pacing.</p>
-      </div>
-
-      <div class="filter-tabs">
-        <button class="btn-tab active" onclick="filterPortfolio('all', this)">All Video Cuts</button>
-        <button class="btn-tab" onclick="filterPortfolio('reels', this)">Viral Reels & Shorts</button>
-        <button class="btn-tab" onclick="filterPortfolio('ads', this)">Direct-Response Ad Creatives</button>
-        <button class="btn-tab" onclick="filterPortfolio('podcast', this)">Podcast & Interview Cuts</button>
-        <button class="btn-tab" onclick="filterPortfolio('youtube', this)">YouTube Long-Form Pacing</button>
-      </div>
-
-      <div class="portfolio-grid">
-        
-        <!-- Project 1: Alex Hormozi Style Creator Cut -->
-        <div class="portfolio-card" data-category="reels">
-          <div class="card-thumbnail-wrap" onclick="openVideoModal('/static/groove_viral_cut.mp4', 'Hormozi-Style Kinetic Reel — 10.2M Views')">
-            <img src="/static/images/portfolio/poster_video.jpg" alt="Viral Creator Edit" class="card-thumbnail-img" />
-            <div class="card-pill-tag">Viral Talking Head</div>
-            <div class="card-play-overlay">
-              <div class="play-circle-btn">▶</div>
-            </div>
-          </div>
-          <div class="card-content">
-            <h3 class="card-title">Creator Studio: 10M+ Views Hormozi-Style Master Cut</h3>
-            <p class="card-desc">Punchy kinetic captions, custom emoji animations, sound FX pops, and zero awkward pauses. Boosted client channel by 140,000 subscribers in 60 days.</p>
-            <div class="card-metrics-strip">
-              <div class="metric-item">
-                <strong>10.2M</strong>
-                <span>Total Views</span>
-              </div>
-              <div class="metric-item">
-                <strong>96.4%</strong>
-                <span>Retention Rate</span>
-              </div>
-              <div class="metric-item">
-                <strong>24h</strong>
-                <span>Turnaround</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Project 2: High ROAS E-Commerce Ad Cut -->
-        <div class="portfolio-card" data-category="ads">
-          <div class="card-thumbnail-wrap" onclick="openVideoModal('/static/groove_viral_cut.mp4', 'Performance Meta Ad — 5.4X ROAS')">
-            <img src="/static/images/portfolio/case_ads.jpg" alt="E-Commerce Video Ad" class="card-thumbnail-img" />
-            <div class="card-pill-tag">Direct-Response Ad</div>
-            <div class="card-play-overlay">
-              <div class="play-circle-btn">▶</div>
-            </div>
-          </div>
-          <div class="card-content">
-            <h3 class="card-title">E-Commerce Brand: 5.4X ROAS Performance Meta Ad</h3>
-            <p class="card-desc">3-second visual pattern interrupt hook, beat-synced macro product b-roll, customer proof overlays, and urgency CTA designed to eliminate cart abandonment.</p>
-            <div class="card-metrics-strip">
-              <div class="metric-item">
-                <strong>5.4X</strong>
-                <span>Ad ROAS</span>
-              </div>
-              <div class="metric-item">
-                <strong>$45.3K</strong>
-                <span>Campaign Sales</span>
-              </div>
-              <div class="metric-item">
-                <strong>-42%</strong>
-                <span>Cost Per Lead</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Project 3: Fashion & Lifestyle UGC Style Cut -->
-        <div class="portfolio-card" data-category="reels">
-          <div class="card-thumbnail-wrap" onclick="openVideoModal('/static/groove_viral_cut.mp4', 'Fashion & Lifestyle Cinematic Reel')">
-            <img src="/static/images/portfolio/poster_fashion.jpg" alt="Fashion Reel" class="card-thumbnail-img" />
-            <div class="card-pill-tag">Cinematic Aesthetics</div>
-            <div class="card-play-overlay">
-              <div class="play-circle-btn">▶</div>
-            </div>
-          </div>
-          <div class="card-content">
-            <h3 class="card-title">Luxe Retail: Viral Fashion Reel with Instant Checkout</h3>
-            <p class="card-desc">Lush color grading calibrated for OLED smartphone screens, elegant typography transitions, and audio-reactive pacing driving 890+ direct orders.</p>
-            <div class="card-metrics-strip">
-              <div class="metric-item">
-                <strong>4.6X</strong>
-                <span>Blended ROAS</span>
-              </div>
-              <div class="metric-item">
-                <strong>890+</strong>
-                <span>Orders</span>
-              </div>
-              <div class="metric-item">
-                <strong>4K 60FPS</strong>
-                <span>Master Export</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Project 4: Podcast & Multi-Cam Cutdown -->
-        <div class="portfolio-card" data-category="podcast">
-          <div class="card-thumbnail-wrap" onclick="openVideoModal('/static/groove_viral_cut.mp4', 'Podcast Highlights Cutdown')">
-            <img src="/static/images/portfolio/hero_showcase.jpg" alt="Podcast Highlights" class="card-thumbnail-img" />
-            <div class="card-pill-tag">Podcast Cutdowns</div>
-            <div class="card-play-overlay">
-              <div class="play-circle-btn">▶</div>
-            </div>
-          </div>
-          <div class="card-content">
-            <h3 class="card-title">Founder Podcast: Multi-Cam Dynamic Cutdowns</h3>
-            <p class="card-desc">Seamless active-speaker auto zoom, background room tone cleaning, waveform audiogram visuals, and gold keyword highlights that turn 1 hour chats into 10 viral shorts.</p>
-            <div class="card-metrics-strip">
-              <div class="metric-item">
-                <strong>2.8M</strong>
-                <span>Shorts Reach</span>
-              </div>
-              <div class="metric-item">
-                <strong>10 Clips</strong>
-                <span>Per Episode</span>
-              </div>
-              <div class="metric-item">
-                <strong>Stereo</strong>
-                <span>Bass EQ Mix</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Project 5: High-Retention YouTube Long Form -->
-        <div class="portfolio-card" data-category="youtube">
-          <div class="card-thumbnail-wrap" onclick="openVideoModal('/static/groove_viral_cut.mp4', 'YouTube Long-Form Retention Edit')">
-            <img src="/static/images/portfolio/poster_growth.jpg" alt="YouTube Pacing" class="card-thumbnail-img" />
-            <div class="card-pill-tag">YouTube Long-Form</div>
-            <div class="card-play-overlay">
-              <div class="play-circle-btn">▶</div>
-            </div>
-          </div>
-          <div class="card-content">
-            <h3 class="card-title">Tech Channel: 18-Min YouTube Retention Master Edit</h3>
-            <p class="card-desc">Custom After Effects motion graphics, screen recordings with 3D device mockups, music mood shifts, and chapter title cards maintaining 62% watch time.</p>
-            <div class="card-metrics-strip">
-              <div class="metric-item">
-                <strong>62%</strong>
-                <span>Avg Watch Time</span>
-              </div>
-              <div class="metric-item">
-                <strong>450K+</strong>
-                <span>Full Views</span>
-              </div>
-              <div class="metric-item">
-                <strong>48h</strong>
-                <span>Delivery</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Project 6: Viral Hook Teaser -->
-        <div class="portfolio-card" data-category="reels">
-          <div class="card-thumbnail-wrap" onclick="openVideoModal('/static/groove_viral_cut.mp4', 'Viral Hook Teaser')">
-            <img src="/static/images/portfolio/case_viral_creator.jpg" alt="Viral Hook Teaser" class="card-thumbnail-img" />
-            <div class="card-pill-tag">Trend Sound Design</div>
-            <div class="card-play-overlay">
-              <div class="play-circle-btn">▶</div>
-            </div>
-          </div>
-          <div class="card-content">
-            <h3 class="card-title">Fitness Creator: High-Energy Sound-Reactive Reel</h3>
-            <p class="card-desc">Speed ramping, whip pans, bass drop hit markers, and dynamic text tracking that earned 1.4M views in the first 48 hours of posting.</p>
-            <div class="card-metrics-strip">
-              <div class="metric-item">
-                <strong>1.4M</strong>
-                <span>Views in 48h</span>
-              </div>
-              <div class="metric-item">
-                <strong>+28K</strong>
-                <span>Followers</span>
-              </div>
-              <div class="metric-item">
-                <strong>24h</strong>
-                <span>Turnaround</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
       </div>
     </section>
 
@@ -1477,20 +1288,6 @@
 
   </div>
 
-  <!-- Video Playback Modal -->
-  <div class="video-modal" id="video-modal" onclick="closeVideoModal(event)">
-    <div class="modal-content-box" onclick="event.stopPropagation()">
-      <button class="modal-close-btn" onclick="closeVideoModal()">✕</button>
-      <video id="modal-video-player" controls playsinline style="width: 100%; height: auto; max-height: 80vh; display: block;"></video>
-      <div style="padding: 16px 20px; background: #1C1917; color: #FAF7F2; display: flex; justify-content: space-between; align-items: center;">
-        <span id="modal-video-title" style="font-weight: 700; font-family: var(--font-display);">Video Preview</span>
-        <a id="modal-whatsapp-btn" href="https://wa.me/918005554768?text=Hi%20Groove%20Hub!%20I%20saw%20this%20video%20on%20your%20showcase%20and%20want%20a%20similar%20edit." target="_blank" style="color: #25D366; text-decoration: none; font-weight: 700; font-size: 0.85rem;">
-          Inquire About This Style ↗
-        </a>
-      </div>
-    </div>
-  </div>
-
   <!-- Floating Sticky WhatsApp CTA -->
   <a href="https://wa.me/918005554768?text=Hi%20Groove%20Hub!%20I%20have%20raw%20footage%20and%20want%20to%20get%20sample%20video%20edits." target="_blank" class="whatsapp-float">
     <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.664-.699c.971.53 2.052.812 3.195.812 3.181 0 5.767-2.586 5.768-5.766 0-3.18-2.586-5.768-5.767-5.768zm7.399 5.766c-.002 4.079-3.32 7.397-7.399 7.397-1.327 0-2.583-.356-3.676-.975l-4.086 1.072 1.091-3.987c-.687-1.134-1.051-2.451-1.05-3.807.002-4.079 3.32-7.397 7.4-7.397 4.079 0 7.398 3.319 7.4 7.397z"/></svg>
@@ -1575,44 +1372,6 @@
         vidBefore.pause();
         icon.textContent = '▶';
       }
-    }
-
-    // 2. Portfolio Filter Tabs
-    function filterPortfolio(cat, btn) {
-      const tabs = document.querySelectorAll('.filter-tabs .btn-tab');
-      tabs.forEach(t => t.classList.remove('active'));
-      btn.classList.add('active');
-
-      const cards = document.querySelectorAll('.portfolio-grid .portfolio-card');
-      cards.forEach(c => {
-        if (cat === 'all' || c.getAttribute('data-category') === cat) {
-          c.style.display = 'flex';
-        } else {
-          c.style.display = 'none';
-        }
-      });
-    }
-
-    // 3. Video Modal Preview
-    function openVideoModal(videoSrc, title) {
-      const modal = document.getElementById('video-modal');
-      const player = document.getElementById('modal-video-player');
-      const titleEl = document.getElementById('modal-video-title');
-      const waBtn = document.getElementById('modal-whatsapp-btn');
-
-      titleEl.textContent = title || 'Groove Hub Video Showcase';
-      waBtn.href = `https://wa.me/918005554768?text=${encodeURIComponent('Hi Groove Hub! I am interested in this video style: ' + title)}`;
-      player.src = videoSrc;
-      modal.classList.add('active');
-      player.play().catch(() => {});
-    }
-
-    function closeVideoModal(e) {
-      const modal = document.getElementById('video-modal');
-      const player = document.getElementById('modal-video-player');
-      player.pause();
-      player.currentTime = 0;
-      modal.classList.remove('active');
     }
   </script>
 
