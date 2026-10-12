@@ -8,7 +8,7 @@
   
   <!-- Open Graph / Meta -->
   <meta property="og:title" content="Groove Hub — Elite Video Editing & Viral Content Studio" />
-  <meta property="og:description" content="Watch our featured video work, interactive raw vs master cut comparison, and sample packages. 24-48h turnaround with 100% escrow protection." />
+  <meta property="og:description" content="Watch our featured video work, retention-tested editing architecture, and transparent packages. 24-48h turnaround with 100% escrow protection." />
   <meta property="og:image" content="/static/images/portfolio/client_work_poster.jpg" />
   <meta property="og:type" content="website" />
   <meta name="twitter:card" content="summary_large_image" />
@@ -181,7 +181,7 @@
     .nav-links {
       display: flex;
       align-items: center;
-      gap: 24px;
+      gap: 28px;
       list-style: none;
     }
 
@@ -220,7 +220,7 @@
 
     /* Hero Section */
     .hero-section {
-      padding: 64px 0 48px;
+      padding: 64px 0 40px;
       text-align: center;
     }
 
@@ -317,7 +317,7 @@
       grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
       gap: 16px;
       max-width: 980px;
-      margin: 0 auto 56px;
+      margin: 0 auto 48px;
       padding: 20px 24px;
       background: var(--bg-card);
       border: 1px solid var(--border-warm);
@@ -349,13 +349,13 @@
 
     /* Section Headers */
     .section-wrap {
-      padding: 56px 0;
+      padding: 48px 0;
     }
 
     .section-header {
       text-align: center;
       max-width: 760px;
-      margin: 0 auto 44px;
+      margin: 0 auto 36px;
     }
 
     .section-tag {
@@ -387,137 +387,6 @@
       font-size: 1.05rem;
       color: var(--text-body);
       line-height: 1.6;
-    }
-
-    /* Comparison Section: Raw vs Master Cut */
-    .comparison-box {
-      position: relative;
-      max-width: 1040px;
-      margin: 0 auto;
-      border-radius: 24px;
-      overflow: hidden;
-      border: 1px solid var(--border-warm);
-      box-shadow: 0 25px 60px rgba(44, 38, 30, 0.15);
-      background: #000;
-    }
-
-    .comp-stage {
-      position: relative;
-      width: 100%;
-      height: 580px;
-      user-select: none;
-      overflow: hidden;
-    }
-
-    .comp-video-after, .comp-video-before {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    .comp-before-layer {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 50%;
-      height: 100%;
-      overflow: hidden;
-      z-index: 2;
-    }
-
-    .comp-before-layer .comp-video-before {
-      width: 1040px;
-      max-width: none;
-    }
-
-    .comp-slider-divider {
-      position: absolute;
-      top: 0;
-      left: 50%;
-      width: 4px;
-      height: 100%;
-      background: #FFFFFF;
-      box-shadow: 0 0 15px rgba(0,0,0,0.5);
-      cursor: ew-resize;
-      z-index: 10;
-      transform: translateX(-50%);
-    }
-
-    .comp-slider-handle {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 48px;
-      height: 48px;
-      border-radius: 50%;
-      background: #FFFFFF;
-      box-shadow: 0 4px 18px rgba(0,0,0,0.4);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--text-main);
-      font-size: 1.1rem;
-      font-weight: 900;
-    }
-
-    .comp-label-badge {
-      position: absolute;
-      top: 24px;
-      padding: 8px 16px;
-      border-radius: 9999px;
-      font-size: 0.8rem;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      z-index: 5;
-      backdrop-filter: blur(8px);
-    }
-
-    .comp-label-left {
-      left: 24px;
-      background: rgba(0, 0, 0, 0.65);
-      color: #FFFFFF;
-      border: 1px solid rgba(255, 255, 255, 0.2);
-    }
-
-    .comp-label-right {
-      right: 24px;
-      background: rgba(217, 119, 6, 0.85);
-      color: #FFFFFF;
-      border: 1px solid rgba(255, 255, 255, 0.3);
-    }
-
-    .comp-bottom-controls {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 16px 24px;
-      background: #181513;
-      color: #FAF7F2;
-      font-size: 0.85rem;
-    }
-
-    .comp-ctrl-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 16px;
-      border-radius: 8px;
-      background: rgba(255, 255, 255, 0.12);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      color: #FFFFFF;
-      font-size: 0.82rem;
-      font-weight: 700;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .comp-ctrl-btn:hover {
-      background: rgba(255, 255, 255, 0.22);
     }
 
     /* Featured Client Video Showcase (User Work) */
@@ -955,7 +824,6 @@
 
     @media (max-width: 768px) {
       .nav-links { display: none; }
-      .comp-stage { height: 380px; }
       .sample-banner { text-align: center; justify-content: center; }
       .featured-video-container {
         grid-template-columns: 1fr;
@@ -987,7 +855,6 @@
 
       <ul class="nav-links">
         <li><a href="#showcase">Featured Edit</a></li>
-        <li><a href="#comparison">Raw vs Master Cut</a></li>
         <li><a href="#toolkit">Viral Architecture</a></li>
         <li><a href="#packages">Editing Packages</a></li>
       </ul>
@@ -1102,50 +969,6 @@
             <a href="#packages" class="btn-featured-packages">
               <span>View Packages & Pricing ↓</span>
             </a>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Interactive Comparison Section: Raw vs Master Cut -->
-    <section class="section-wrap" id="comparison">
-      <div class="section-header">
-        <div class="section-tag">Interactive Split-Screen Proof</div>
-        <h2 class="section-title">Raw Creator Footage vs. <span class="gradient-text-warm">Groove Hub Master Cut</span></h2>
-        <p class="section-desc">Drag the interactive slider left & right to see how our retention formulas, dynamic kinetic subtitles, and sound effects transform dull raw video into viral content.</p>
-      </div>
-
-      <div class="comparison-box">
-        <div class="comp-stage" id="comp-stage">
-          <!-- Background: Master Cut (After) -->
-          <video id="comp-vid-after" class="comp-video-after" src="/static/groove_viral_cut.mp4" playsinline autoplay muted loop></video>
-          <div class="comp-label-badge comp-label-right">✨ GROOVE HUB MASTER CUT (COLOR GRADE + SFX + SUBTITLES)</div>
-
-          <!-- Foreground: Raw Footage (Before) -->
-          <div class="comp-before-layer" id="comp-before-layer">
-            <video id="comp-vid-before" class="comp-video-before" src="/static/raw_creator_footage.mp4" playsinline autoplay muted loop></video>
-            <div class="comp-label-badge comp-label-left">📹 RAW UNEDITED FOOTAGE</div>
-          </div>
-
-          <!-- Draggable Slider Handle -->
-          <div class="comp-slider-divider" id="comp-divider">
-            <div class="comp-slider-handle">⇄</div>
-          </div>
-        </div>
-
-        <div class="comp-bottom-controls">
-          <div>
-            <strong>Interactive Mode:</strong> Drag slider to inspect pacing, typography & sound design.
-          </div>
-          <div style="display: flex; gap: 12px;">
-            <button class="comp-ctrl-btn" onclick="toggleCompAudio()">
-              <span id="audio-icon">🔇</span>
-              <span id="audio-text">Unmute Sound</span>
-            </button>
-            <button class="comp-ctrl-btn" onclick="toggleCompPlay()">
-              <span id="play-icon">⏸</span>
-              <span>Pause / Play</span>
-            </button>
           </div>
         </div>
       </div>
@@ -1293,87 +1116,6 @@
     <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.664-.699c.971.53 2.052.812 3.195.812 3.181 0 5.767-2.586 5.768-5.766 0-3.18-2.586-5.768-5.767-5.768zm7.399 5.766c-.002 4.079-3.32 7.397-7.399 7.397-1.327 0-2.583-.356-3.676-.975l-4.086 1.072 1.091-3.987c-.687-1.134-1.051-2.451-1.05-3.807.002-4.079 3.32-7.397 7.4-7.397 4.079 0 7.398 3.319 7.4 7.397z"/></svg>
     <span>Chat on WhatsApp</span>
   </a>
-
-  <!-- Interactive JavaScript Logic -->
-  <script>
-    // 1. Comparison Slider Drag & Sync Logic
-    const compStage = document.getElementById('comp-stage');
-    const compBeforeLayer = document.getElementById('comp-before-layer');
-    const compDivider = document.getElementById('comp-divider');
-    const vidBefore = document.getElementById('comp-vid-before');
-    const vidAfter = document.getElementById('comp-vid-after');
-    let isDragging = false;
-
-    function updateSlider(xPos) {
-      const rect = compStage.getBoundingClientRect();
-      let pos = (xPos - rect.left) / rect.width;
-      if (pos < 0) pos = 0;
-      if (pos > 1) pos = 1;
-      const pct = pos * 100;
-      compBeforeLayer.style.width = pct + '%';
-      compDivider.style.left = pct + '%';
-    }
-
-    if (compStage) {
-      compStage.addEventListener('mousedown', (e) => {
-        isDragging = true;
-        updateSlider(e.clientX);
-      });
-      window.addEventListener('mousemove', (e) => {
-        if (!isDragging) return;
-        updateSlider(e.clientX);
-      });
-      window.addEventListener('mouseup', () => { isDragging = false; });
-
-      // Touch events for mobile phones
-      compStage.addEventListener('touchstart', (e) => {
-        isDragging = true;
-        updateSlider(e.touches[0].clientX);
-      }, { passive: true });
-      window.addEventListener('touchmove', (e) => {
-        if (!isDragging) return;
-        updateSlider(e.touches[0].clientX);
-      }, { passive: true });
-      window.addEventListener('touchend', () => { isDragging = false; });
-    }
-
-    // Sync dual videos
-    if (vidBefore && vidAfter) {
-      vidAfter.addEventListener('timeupdate', () => {
-        if (Math.abs(vidBefore.currentTime - vidAfter.currentTime) > 0.25) {
-          vidBefore.currentTime = vidAfter.currentTime;
-        }
-      });
-    }
-
-    function toggleCompAudio() {
-      if (!vidAfter) return;
-      vidAfter.muted = !vidAfter.muted;
-      const icon = document.getElementById('audio-icon');
-      const text = document.getElementById('audio-text');
-      if (vidAfter.muted) {
-        icon.textContent = '🔇';
-        text.textContent = 'Unmute Sound';
-      } else {
-        icon.textContent = '🔊';
-        text.textContent = 'Mute Sound';
-      }
-    }
-
-    function toggleCompPlay() {
-      if (!vidAfter || !vidBefore) return;
-      const icon = document.getElementById('play-icon');
-      if (vidAfter.paused) {
-        vidAfter.play();
-        vidBefore.play();
-        icon.textContent = '⏸';
-      } else {
-        vidAfter.pause();
-        vidBefore.pause();
-        icon.textContent = '▶';
-      }
-    }
-  </script>
 
 </body>
 </html>
