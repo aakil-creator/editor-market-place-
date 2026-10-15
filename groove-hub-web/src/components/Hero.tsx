@@ -94,7 +94,7 @@ export function Hero() {
       ref={containerRef}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
-      className="relative min-h-[96vh] flex flex-col justify-center items-center pt-32 pb-20 px-4 sm:px-6 overflow-hidden bg-[#2A0A0E]"
+      className="relative min-h-[96vh] flex flex-col justify-center items-center pt-32 pb-20 px-4 sm:px-6 overflow-hidden bg-transparent"
     >
       {/* Drifting Clouds & Soft Ambient Radial Light */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">

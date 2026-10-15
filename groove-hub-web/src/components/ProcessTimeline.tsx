@@ -24,7 +24,7 @@ export function ProcessTimeline() {
     <section
       id="process"
       ref={containerRef}
-      className="py-28 px-4 sm:px-6 relative bg-[#2A0A0E] border-t border-[#F4B183]/15"
+      className="py-28 px-4 sm:px-6 relative bg-[#2A0A0E]/75 backdrop-blur-sm border-t border-[#F4B183]/15"
     >
       <div className="max-w-6xl mx-auto">
         

@@ -98,7 +98,7 @@ export function WorkShowcase() {
   };
 
   return (
-    <section id="our-work" className="py-28 px-4 sm:px-6 relative bg-[#2A0A0E] border-t border-[#F4B183]/15">
+    <section id="our-work" className="py-28 px-4 sm:px-6 relative bg-[#2A0A0E]/75 backdrop-blur-sm border-t border-[#F4B183]/15">
       <div className="max-w-6xl mx-auto">
         
         {/* Section Heading */}

@@ -54,7 +54,7 @@ Please review our profile and local competitors nearby.`;
   };
 
   return (
-    <section id="free-check" className="py-28 px-4 sm:px-6 relative bg-[#2A0A0E] border-t border-[#F4B183]/15">
+    <section id="free-check" className="py-28 px-4 sm:px-6 relative bg-[#2A0A0E]/75 backdrop-blur-sm border-t border-[#F4B183]/15">
       <div className="max-w-4xl mx-auto">
         
         <div className="rounded-3xl border border-[#F4B183]/25 bg-[#3B0D12]/90 p-6 sm:p-10 lg:p-12 shadow-2xl relative backdrop-blur-xl">

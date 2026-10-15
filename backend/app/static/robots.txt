@@ -1,7 +1,5 @@
-User-agent: *
+User-Agent: *
 Allow: /
-Allow: /work
-Allow: /static/
 Disallow: /team-portal
 Disallow: /api/
 

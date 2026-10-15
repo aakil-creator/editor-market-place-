@@ -32,3 +32,6 @@ backend/nul
 Thumbs.db
 backend/app/static/frames_carrara/
 backend/app/static/carrara.mp4
+*bg-scroll-original.mp4
+groove-hub-web/.next/
+groove-hub-web/out/

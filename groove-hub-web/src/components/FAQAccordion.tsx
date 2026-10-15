@@ -13,7 +13,7 @@ export function FAQAccordion() {
   };
 
   return (
-    <section id="faq" className="py-28 px-4 sm:px-6 relative bg-[#2A0A0E] border-t border-[#F4B183]/15">
+    <section id="faq" className="py-28 px-4 sm:px-6 relative bg-[#2A0A0E]/75 backdrop-blur-sm border-t border-[#F4B183]/15">
       <div className="max-w-4xl mx-auto">
         
         {/* Section Header */}

@@ -1,3 +1,4 @@
+import { BackgroundScrollVideo } from "@/components/BackgroundScrollVideo";
 import { Header } from "@/components/Header";
 import { Hero } from "@/components/Hero";
 import { TrustStrip } from "@/components/TrustStrip";
@@ -14,6 +15,9 @@ import { Footer } from "@/components/Footer";
 export default function Home() {
   return (
     <main className="relative bg-[#2A0A0E] min-h-screen text-[#FFF4E8] overflow-hidden">
+      {/* Dynamic Background Scroll Video (Synced 60fps Scrub) */}
+      <BackgroundScrollVideo />
+
       {/* 1. Sticky Blur Header */}
       <Header />
 

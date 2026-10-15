@@ -13,7 +13,7 @@ export function WhyDifferent() {
   };
 
   return (
-    <section id="why-us" className="py-28 px-4 sm:px-6 relative overflow-hidden bg-[#2A0A0E]">
+    <section id="why-us" className="py-28 px-4 sm:px-6 relative overflow-hidden bg-[#2A0A0E]/75 backdrop-blur-sm">
       <div className="max-w-6xl mx-auto">
         
         {/* Section Heading with Mask Reveal */}
