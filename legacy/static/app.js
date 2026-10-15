@@ -1,0 +1,13883 @@
+// Groove Hub - Main Application
+if (window.location.hostname === '127.0.0.1') {
+    window.location.replace(window.location.href.replace('127.0.0.1', 'localhost'));
+}
+
+// State
+let currentToken = localStorage.getItem('access_token') || null;
+let currentUser = null;
+try {
+    const savedUser = localStorage.getItem('current_user');
+    if (savedUser) currentUser = JSON.parse(savedUser);
+} catch (_) { }
+
+// --- Theme & Appearance Presets System ---
+const THEME_PRESETS = [
+    { id: 'lavender', name: 'Lavender Pearl', color: '#9169c1', bg: '#f6f4fc', desc: 'Default — Soft lavender background with royal amethyst & #D3D3FF accents', badge: 'Default' },
+    { id: 'ocean', name: 'Ocean Sapphire', color: '#0284c7', bg: '#f0f7ff', desc: 'Crisp sky blue with deep ocean sapphire accents', badge: 'Cool' },
+    { id: 'emerald', name: 'Emerald Studio', color: '#059669', bg: '#f0fdf4', desc: 'Fresh mint with pro creator emerald green', badge: 'Vibrant' },
+    { id: 'crimson', name: 'Crimson Sunset', color: '#e11d48', bg: '#fff1f2', desc: 'Warm rose with vibrant ruby red accents', badge: 'Warm' },
+    { id: 'midnight', name: 'Midnight Cyber', color: '#818cf8', bg: '#0b0f19', desc: 'Deep cosmic dark mode with indigo neon', badge: 'Dark OLED' }
+];
+
+let currentThemePreset = localStorage.getItem('groove_theme_preset') || 'lavender';
+let currentThemeMode = localStorage.getItem('groove_theme_mode') || 'light';
+
+function applyTheme(preset, mode) {
+    if (preset) currentThemePreset = preset;
+    if (mode) currentThemeMode = mode;
+    localStorage.setItem('groove_theme_preset', currentThemePreset);
+    localStorage.setItem('groove_theme_mode', currentThemeMode);
+    
+    document.documentElement.setAttribute('data-theme-preset', currentThemePreset);
+    if (currentThemeMode === 'dark' || currentThemePreset === 'midnight') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+    } else {
+        document.documentElement.setAttribute('data-theme', 'light');
+    }
+
+    // Refresh settings view if open
+    if (window.location.hash.startsWith('#/settings') || window.location.pathname.startsWith('/settings')) {
+        const prefContainer = document.getElementById('theme-options-container');
+        if (prefContainer && typeof renderThemeOptionsHTML === 'function') {
+            prefContainer.innerHTML = renderThemeOptionsHTML();
+        }
+    }
+}
+window.applyTheme = applyTheme;
+window.THEME_PRESETS = THEME_PRESETS;
+window.toggleThemeMode = function() {
+    applyTheme(currentThemePreset, currentThemeMode === 'dark' ? 'light' : 'dark');
+};
+
+// Apply saved theme immediately on load
+applyTheme(currentThemePreset, currentThemeMode);
+
+window.selectedType = 'BUYER';
+let publicConfig = { google_client_id: '', razorpay_key_id: '' };
+window.publicConfig = publicConfig;
+
+// Global XSS HTML Escaping & URL Sanitization Helpers
+function escapeHTML(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+window.escapeHTML = escapeHTML;
+
+function validateUrl(url, options = {}) {
+    if (!url || typeof url !== 'string') return '';
+    const raw = url.trim();
+    if (!raw || raw.startsWith('//')) return '';
+    try {
+        const parsed = new URL(raw, window.location.origin);
+        const allowedProtocols = options.protocols || ['http:', 'https:'];
+        if (!allowedProtocols.includes(parsed.protocol)) return '';
+        if (parsed.origin === window.location.origin && (raw.startsWith('/') || parsed.pathname.startsWith('/'))) {
+            return parsed.href;
+        }
+        if (options.allowExternal === false || parsed.protocol !== 'https:') return '';
+        return parsed.href;
+    } catch (_) {
+        return '';
+    }
+}
+window.validateUrl = validateUrl;
+
+function sanitizeUrl(url, options = {}) {
+    return escapeHTML(validateUrl(url, options) || '#');
+}
+window.sanitizeUrl = sanitizeUrl;
+
+function getYouTubeEmbedUrl(rawUrl) {
+    const safe = validateUrl(rawUrl);
+    if (!safe) return '';
+    try {
+        const parsed = new URL(safe);
+        const host = parsed.hostname.toLowerCase();
+        let videoId = '';
+        if (host === 'youtu.be') {
+            videoId = parsed.pathname.slice(1).split('?')[0];
+        } else if (host === 'www.youtube.com' || host === 'youtube.com' || host === 'm.youtube.com') {
+            if (parsed.pathname === '/watch') {
+                videoId = parsed.searchParams.get('v') || '';
+            } else if (parsed.pathname.startsWith('/shorts/')) {
+                videoId = parsed.pathname.split('/')[2] || '';
+            } else if (parsed.pathname.startsWith('/embed/')) {
+                videoId = parsed.pathname.split('/')[2] || '';
+            }
+        } else if (host.includes('vimeo.com')) {
+            const vimeoId = parsed.pathname.split('/').filter(Boolean).pop();
+            if (/^\d+$/.test(vimeoId)) return `https://player.vimeo.com/video/${vimeoId}`;
+        } else if (host.includes('drive.google.com')) {
+            const m = parsed.pathname.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+            if (m && m[1]) return `https://drive.google.com/file/d/${m[1]}/preview`;
+        } else if (host.includes('loom.com')) {
+            const loomId = parsed.pathname.split('/').filter(Boolean).pop();
+            if (loomId) return `https://www.loom.com/embed/${loomId}`;
+        }
+        if (!/^[A-Za-z0-9_-]{6,20}$/.test(videoId)) return '';
+        return `https://www.youtube.com/embed/${videoId}`;
+    } catch (_) {
+        return '';
+    }
+}
+window.getYouTubeEmbedUrl = getYouTubeEmbedUrl;
+
+// --- Creator Level Badge Helpers ---
+function getCreatorLevelBadge(totalBookings = 0, rating = 5.0) {
+    const tb = Number(totalBookings) || 0;
+    const r = rating !== null && rating !== undefined ? Number(rating) : 5.0;
+    if (tb >= 50 && r >= 4.7) {
+        return {
+            level: 4,
+            key: 'diamond_elite',
+            title: '💎 Diamond Elite',
+            badge_label: '💎 Level 4: Diamond Elite',
+            icon: '💎',
+            color: '#9333ea',
+            bg: 'rgba(147, 51, 234, 0.15)',
+            border: '#a855f7'
+        };
+    } else if (tb >= 25 && r >= 4.5) {
+        return {
+            level: 3,
+            key: 'gold_master',
+            title: '🥇 Gold Master',
+            badge_label: '🥇 Level 3: Gold Master',
+            icon: '🥇',
+            color: '#d97706',
+            bg: 'rgba(217, 119, 6, 0.15)',
+            border: '#f59e0b'
+        };
+    } else if (tb >= 10 && r >= 4.0) {
+        return {
+            level: 2,
+            key: 'silver_creator',
+            title: '🥈 Silver Creator',
+            badge_label: '🥈 Level 2: Silver Creator',
+            icon: '🥈',
+            color: '#4b5563',
+            bg: 'rgba(75, 85, 99, 0.15)',
+            border: '#9ca3af'
+        };
+    } else {
+        return {
+            level: 1,
+            key: 'rising_creator',
+            title: '🥉 Rising Creator',
+            badge_label: '🥉 Level 1: Rising Creator',
+            icon: '🥉',
+            color: '#b45309',
+            bg: 'rgba(180, 83, 9, 0.12)',
+            border: '#cd7f32'
+        };
+    }
+}
+window.getCreatorLevelBadge = getCreatorLevelBadge;
+
+function renderCreatorLevelBadgeTag(badge, size = 'md') {
+    if (!badge) return '';
+    const fontSize = size === 'sm' ? '0.72rem' : '0.8rem';
+    const padding = size === 'sm' ? '2px 6px' : '3px 10px';
+    return `<span class="creator-level-badge-pill" style="display: inline-flex; align-items: center; gap: 4px; padding: ${padding}; font-size: ${fontSize}; font-weight: 700; border-radius: 20px; background: ${badge.bg || 'rgba(147, 51, 234, 0.12)'}; color: ${badge.color || '#9333ea'}; border: 1px solid ${badge.border || badge.color || '#a855f7'}; box-shadow: 0 1px 3px rgba(0,0,0,0.05);" title="${escapeHTML(badge.badge_label || badge.title)}">
+        <span>${badge.icon}</span>
+        <span>${escapeHTML(badge.title || badge.badge_label)}</span>
+    </span>`;
+}
+window.renderCreatorLevelBadgeTag = renderCreatorLevelBadgeTag;
+
+function renderBestEditorsSidebar(allProviders = []) {
+    const creators = (Array.isArray(allProviders) ? allProviders : []).map(p => {
+        const tb = p.total_bookings ?? p.profile?.total_bookings ?? 0;
+        const r = p.rating ?? p.profile?.rating ?? 5.0;
+        const lvl = p.creator_level || p.profile?.creator_level || getCreatorLevelBadge(tb, r);
+        return {
+            id: p.id,
+            name: p.name || 'Verified Creator',
+            username: p.username || `creator_${p.id}`,
+            rating: r,
+            total_bookings: tb,
+            creator_level: lvl
+        };
+    });
+
+    creators.sort((a, b) => (b.creator_level.level - a.creator_level.level) || (b.rating - a.rating) || (b.total_bookings - a.total_bookings));
+    const topEditors = creators.slice(0, 5);
+    if (!topEditors.length) return '';
+
+    return `
+    <div class="card" style="padding: 16px; margin-bottom: 24px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-card); box-shadow: var(--shadow-sm);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid var(--border); padding-bottom: 8px;">
+            <strong style="font-size: 0.95rem; color: var(--text-primary); display: flex; align-items: center; gap: 6px;">
+                🏆 Top Rated Best Editors
+            </strong>
+            <span class="badge badge-success" style="font-size: 0.7rem; font-weight: 700;">Level Badges</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+            ${topEditors.map((ed, idx) => `
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; background: var(--bg-hover); border-radius: var(--radius-sm); border: 1px solid var(--border); gap: 8px; cursor: pointer; transition: transform 0.2s ease;" onclick="openPreBookingChat(${ed.id}, '${escapeJs(ed.name)}')">
+                    <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
+                        <span style="font-weight: 800; font-size: 0.85rem; color: var(--text-muted); width: 14px;">#${idx+1}</span>
+                        <div style="width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #a855f7); color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.85rem; flex-shrink: 0;">
+                            ${(ed.name || 'C').charAt(0).toUpperCase()}
+                        </div>
+                        <div style="min-width: 0;">
+                            <div style="font-weight: 700; font-size: 0.88rem; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHTML(ed.name)}</div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">★ ${(Number(ed.rating) || 5.0).toFixed(1)} &bull; ${ed.total_bookings} edits</div>
+                        </div>
+                    </div>
+                    <div>
+                        ${renderCreatorLevelBadgeTag(ed.creator_level, 'sm')}
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+    </div>
+    `;
+}
+window.renderBestEditorsSidebar = renderBestEditorsSidebar;
+
+function isMediaVideo(url) {
+    if (!url || typeof url !== 'string') return false;
+    const clean = url.trim().toLowerCase().split('?')[0];
+    return /\.(mp4|webm|mov|mkv|m4v|3gp|avi)$/i.test(clean) || (clean.startsWith('/static/chat_uploads/') && !/\.(jpg|jpeg|png|webp|gif|svg|avif)$/i.test(clean));
+}
+window.isMediaVideo = isMediaVideo;
+
+function resolveMediaThumbnail(url) {
+    if (!url || typeof url !== 'string') return '';
+    const safe = url.trim();
+    if (!safe) return '';
+    if (
+        safe.startsWith('/static/') || safe.startsWith('data:') || safe.startsWith('blob:') ||
+        safe.includes('images.unsplash.com') ||
+        /\.(jpg|jpeg|png|webp|gif|svg|avif|mp4|webm|mov|mkv)(\?.*)?$/i.test(safe)
+    ) {
+        return safe;
+    }
+    try {
+        const parsed = new URL(safe.startsWith('http') ? safe : `https://${safe}`);
+        const host = parsed.hostname.toLowerCase();
+        let videoId = '';
+        if (host === 'youtu.be') videoId = parsed.pathname.slice(1).split('?')[0];
+        else if (host.includes('youtube.com')) {
+            if (parsed.pathname === '/watch') videoId = parsed.searchParams.get('v') || '';
+            else if (parsed.pathname.startsWith('/shorts/')) videoId = parsed.pathname.split('/')[2] || '';
+            else if (parsed.pathname.startsWith('/embed/')) videoId = parsed.pathname.split('/')[2] || '';
+        }
+        if (videoId && /^[A-Za-z0-9_-]{6,20}$/.test(videoId)) {
+            return `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+        }
+    } catch (_) {}
+    if (safe.startsWith('http://') || safe.startsWith('https://')) {
+        return safe;
+    }
+    return '';
+}
+window.resolveMediaThumbnail = resolveMediaThumbnail;
+
+function createCategoryCardPlaceholder(niche, title, creatorName) {
+    const safeNiche = String(niche || '').toLowerCase();
+    const safeName = String(creatorName || 'Verified Creator').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    const rawTitle = String(title || 'Professional Service');
+    const safeTitle = (rawTitle.length > 40 ? rawTitle.substring(0, 40) + '...' : rawTitle).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    
+    let g1 = '#6366f1', g2 = '#4338ca', icon = '🎬', badge = 'Video Editing';
+    if (safeNiche.includes('tutor') || safeNiche.includes('english')) {
+        g1 = '#10b981'; g2 = '#047857'; icon = '🗣️'; badge = 'English Tutor';
+    } else if (safeNiche.includes('writer') || safeNiche.includes('copy') || safeNiche.includes('script')) {
+        g1 = '#38bdf8'; g2 = '#0284c7'; icon = '✍️'; badge = 'Scripts & Copy';
+    } else if (safeNiche.includes('ads') || safeNiche.includes('business') || safeNiche.includes('commercial')) {
+        g1 = '#f59e0b'; g2 = '#b45309'; icon = '📢'; badge = 'Business Ads';
+    } else if (safeNiche.includes('photo')) {
+        g1 = '#ec4899'; g2 = '#be185d'; icon = '📸'; badge = 'Photography';
+    } else if (safeNiche.includes('social')) {
+        g1 = '#8b5cf6'; g2 = '#6d28d9'; icon = '📱'; badge = 'Social Media';
+    }
+
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="100%" height="100%">
+        <defs>
+            <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#090d16" />
+                <stop offset="50%" stop-color="#0f172a" />
+                <stop offset="100%" stop-color="${g2}" />
+            </linearGradient>
+            <radialGradient id="glow" cx="85%" cy="15%" r="65%">
+                <stop offset="0%" stop-color="${g1}" stop-opacity="0.38" />
+                <stop offset="100%" stop-color="${g1}" stop-opacity="0" />
+            </radialGradient>
+        </defs>
+        <rect width="800" height="450" fill="url(#bg)" />
+        <rect width="800" height="450" fill="url(#glow)" />
+        <circle cx="720" cy="90" r="140" fill="${g1}" fill-opacity="0.12" />
+        <g transform="translate(48, 48)">
+            <rect width="210" height="40" rx="20" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.2)" stroke-width="1.5" />
+            <text x="24" y="26" fill="#ffffff" font-size="15" font-weight="700" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif">${icon} ${badge}</text>
+        </g>
+        <g transform="translate(680, 225)">
+            <circle r="44" fill="rgba(255,255,255,0.06)" stroke="${g1}" stroke-width="2" />
+            <text text-anchor="middle" dominant-baseline="central" font-size="32" fill="#ffffff">${icon}</text>
+        </g>
+        <text x="48" y="240" fill="#ffffff" font-size="32" font-weight="800" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif">${safeName}</text>
+        <text x="48" y="286" fill="rgba(255,255,255,0.72)" font-size="18" font-weight="500" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif">${safeTitle}</text>
+        <g transform="translate(48, 360)">
+            <rect width="180" height="32" rx="8" fill="rgba(16,185,129,0.15)" stroke="rgba(16,185,129,0.4)" stroke-width="1" />
+            <text x="14" y="21" fill="#34d399" font-size="13" font-weight="700" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif">🛡️ 100% ESCROW</text>
+        </g>
+    </svg>`;
+    
+    return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+}
+window.createCategoryCardPlaceholder = createCategoryCardPlaceholder;
+
+function getYouTubeEmbedUrl(url) {
+    if (!url || typeof url !== 'string') return '';
+    const safe = url.trim();
+    try {
+        const parsed = new URL(safe.startsWith('http') ? safe : `https://${safe}`);
+        const host = parsed.hostname.toLowerCase();
+        let videoId = '';
+        if (host === 'youtu.be') videoId = parsed.pathname.slice(1).split('?')[0];
+        else if (host.includes('youtube.com')) {
+            if (parsed.pathname === '/watch') videoId = parsed.searchParams.get('v') || '';
+            else if (parsed.pathname.startsWith('/shorts/')) videoId = parsed.pathname.split('/')[2] || '';
+            else if (parsed.pathname.startsWith('/embed/')) videoId = parsed.pathname.split('/')[2] || '';
+        }
+        if (videoId && /^[A-Za-z0-9_-]{6,20}$/.test(videoId)) {
+            return `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1`;
+        }
+    } catch (_) {}
+    return '';
+}
+window.getYouTubeEmbedUrl = getYouTubeEmbedUrl;
+
+function renderModalMediaElement(mediaUrl, thumbUrl, providerName, niche, title) {
+    const safeUrl = mediaUrl ? sanitizeUrl(mediaUrl) : '';
+    const safeThumb = thumbUrl ? sanitizeUrl(thumbUrl) : '';
+    const fallbackSvg = createCategoryCardPlaceholder(niche || 'editors', title || 'Creator Showcase', providerName || 'Verified Creator');
+    
+    // 1. YouTube video or reel
+    const ytEmbed = getYouTubeEmbedUrl(mediaUrl || thumbUrl);
+    if (ytEmbed) {
+        return `<iframe id="modal-active-iframe-player" src="${ytEmbed}" style="position: absolute; top:0; left:0; width:100%; height:100%; border: 0;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+    }
+
+    // 2. Direct Video file
+    if (safeUrl && isMediaVideo(safeUrl)) {
+        return `<video id="modal-active-video-player" controls autoplay playsinline preload="auto" src="${safeUrl}" poster="${safeThumb || ''}" style="position: absolute; top:0; left:0; width:100%; height:100%; object-fit: contain; background: #0f172a;" onerror="this.onerror=null; this.parentElement.innerHTML='<img src=\\'${fallbackSvg}\\' style=\\'position: absolute; top:0; left:0; width:100%; height:100%; object-fit: cover;\\' alt=\\'${escapeHTML(providerName || 'Creator')}\\'>'"></video>`;
+    }
+
+    // 3. Direct Image (photo / portfolio graphic)
+    const targetImg = safeThumb || safeUrl;
+    if (targetImg && targetImg !== '#' && !targetImg.includes('undefined') && !targetImg.startsWith('javascript:')) {
+        return `<img src="${targetImg}" style="position: absolute; top:0; left:0; width:100%; height:100%; object-fit: cover;" alt="${escapeHTML(providerName || 'Creator')}" onerror="this.onerror=null; this.src='${fallbackSvg}';">`;
+    }
+
+    // 4. Guaranteed dynamic SVG placeholder with creator branding
+    return `<img src="${fallbackSvg}" style="position: absolute; top:0; left:0; width:100%; height:100%; object-fit: cover;" alt="${escapeHTML(providerName || 'Creator')}">`;
+}
+window.renderModalMediaElement = renderModalMediaElement;
+
+function getProviderSkillsArray(provider) {
+    if (!provider) return [];
+    const raw = provider.skills || (provider.profile && provider.profile.skills);
+    if (Array.isArray(raw)) return raw;
+    if (typeof raw === 'string' && raw.trim()) {
+        return raw.split(',').map(s => s.trim()).filter(Boolean);
+    }
+    return [];
+}
+window.getProviderSkillsArray = getProviderSkillsArray;
+
+function getProviderPackagesArray(provider) {
+    if (!provider) return [];
+    const pkgs = provider.packages;
+    if (Array.isArray(pkgs)) return pkgs;
+    return [];
+}
+window.getProviderPackagesArray = getProviderPackagesArray;
+
+function renderMediaThumbnailOrVideo(url, options = {}) {
+    const safeUrl = sanitizeUrl(url);
+    const className = options.className || 'fiverr-gig-thumb-img';
+    const alt = escapeHTML(options.alt || 'Creator Showcase');
+    const autoPlay = options.autoplay !== false ? 'playsinline muted loop autoplay preload="metadata"' : 'playsinline preload="metadata"';
+
+    if (!url || safeUrl === '#') {
+        const fallbackSvg = createCategoryCardPlaceholder(options.niche, options.title, options.alt);
+        return `<img src="${fallbackSvg}" alt="${alt}" class="${className}" loading="lazy">`;
+    }
+
+    if (isMediaVideo(url)) {
+        return `
+            <video src="${safeUrl}" ${autoPlay} class="${className} fiverr-gig-thumb-video" onmouseover="try{this.play()}catch(_){}" onmouseout="try{this.pause()}catch(_){}"></video>
+            <div style="position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.75); color: #fff; font-size: 0.65rem; font-weight: 800; padding: 2px 7px; border-radius: 4px; backdrop-filter: blur(4px); display: flex; align-items: center; gap: 4px; pointer-events: none; z-index: 2;">
+                <span>🎬</span> 4K Reel
+            </div>
+        `;
+    }
+
+    const fallbackSvg = createCategoryCardPlaceholder(options.niche, options.title, options.alt);
+    return `<img src="${safeUrl}" alt="${alt}" class="${className}" loading="lazy" onerror="this.onerror=null; this.src='${fallbackSvg}';">`;
+}
+window.renderMediaThumbnailOrVideo = renderMediaThumbnailOrVideo;
+
+function getProviderThumbnail(provider, pkg) {
+    // 1. Check Package sample reference or cover image
+    if (pkg) {
+        if (pkg.sample_reference) {
+            const resolved = resolveMediaThumbnail(pkg.sample_reference);
+            if (resolved) return resolved;
+        }
+        if (pkg.cover_image) {
+            const resolved = resolveMediaThumbnail(pkg.cover_image);
+            if (resolved) return resolved;
+        }
+    }
+
+    // 2. Check Provider's packages if pkg wasn't passed or had no sample
+    if (provider && Array.isArray(provider.packages) && provider.packages.length > 0) {
+        for (const p of provider.packages) {
+            if (p.sample_reference) {
+                const resolved = resolveMediaThumbnail(p.sample_reference);
+                if (resolved) return resolved;
+            }
+        }
+    }
+
+    // 3. Check Provider's uploaded portfolio items (custom showcase banners / photos / thumbnails)
+    const pItems = (provider && Array.isArray(provider.portfolio_items) && provider.portfolio_items.length > 0)
+        ? provider.portfolio_items
+        : (provider && provider.id === currentUser?.id && typeof portfolioItems !== 'undefined' && Array.isArray(portfolioItems) ? portfolioItems : []);
+
+    if (pItems.length > 0) {
+        // Prioritize custom video reels
+        const videoItem = pItems.find(i => i.media_type === 'video' || isMediaVideo(i.media_url));
+        if (videoItem) {
+            const videoUrl = (!videoItem.thumbnail_url || videoItem.thumbnail_url.includes('ab_pradeep_reel_editor.png')) ? videoItem.media_url : videoItem.thumbnail_url;
+            const resolved = resolveMediaThumbnail(videoUrl || videoItem.media_url);
+            if (resolved) return resolved;
+        }
+        const imgItem = pItems.find(i => i.media_type === 'image' || (i.thumbnail_url && !i.thumbnail_url.includes('unsplash') && !i.thumbnail_url.includes('ab_pradeep_reel_editor.png')));
+        if (imgItem) {
+            const resolved = resolveMediaThumbnail(imgItem.thumbnail_url || imgItem.media_url);
+            if (resolved) return resolved;
+        }
+        for (const item of pItems) {
+            const itemUrl = (!item.thumbnail_url || item.thumbnail_url.includes('ab_pradeep_reel_editor.png')) ? item.media_url : item.thumbnail_url;
+            if (itemUrl) {
+                const resolved = resolveMediaThumbnail(itemUrl);
+                if (resolved) return resolved;
+            }
+        }
+    }
+
+    // 4. Check Provider profile image / banner
+    if (provider && provider.profile_image) {
+        const resolved = resolveMediaThumbnail(provider.profile_image);
+        if (resolved) return resolved;
+    }
+
+    // 5. Fallback to dynamic vector SVG placeholder tailored to provider
+    return createCategoryCardPlaceholder(
+        provider?.niche || provider?.category || provider?.profile?.niche || 'editors',
+        pkg?.title || provider?.packages?.[0]?.title || 'Creator Showcase',
+        provider?.name || 'Verified Creator'
+    );
+}
+window.getProviderThumbnail = getProviderThumbnail;
+
+async function fetchPublicConfig() {
+    try {
+        const res = await fetch('/api/public/config');
+        if (res.ok) {
+            publicConfig = await res.json();
+            window.publicConfig = publicConfig;
+            if (typeof window.__refreshGoogleBtn === 'function') {
+                window.__refreshGoogleBtn();
+            }
+        }
+    } catch (_) { }
+}
+fetchPublicConfig();
+
+// Verify active session on load safely
+if (currentToken) {
+    apiFetch('/auth/me').then(u => {
+        currentUser = u;
+        localStorage.setItem('current_user', JSON.stringify(u));
+    }).catch(err => {
+        // Do NOT erase session/token on network errors or offline transitions!
+        console.warn('Session background check notice:', err.message || err);
+    });
+}
+
+// Tagged template literal: el`<div ...>` --> HTMLElement
+function el(strings, ...values) {
+    const html = strings.reduce((acc, str, i) => {
+        const value = values[i];
+        const rendered = value && typeof value === 'object' && value.outerHTML ? value.outerHTML : (value || '');
+        return acc + str + rendered;
+    }, '');
+    const div = document.createElement('div');
+    div.innerHTML = html;
+    return div.children.length === 1 ? div.firstElementChild : div;
+}
+
+// DOM Elements
+const appEl = document.getElementById('app');
+
+// API helper
+async function apiFetch(endpoint, options = {}) {
+    const headers = {
+        'Content-Type': 'application/json',
+        ...(options.headers || {})
+    };
+
+    if (currentToken) {
+        headers['Authorization'] = `Bearer ${currentToken}`;
+    }
+
+    // Add /api prefix if not already present
+    const url = endpoint.startsWith('/api') ? endpoint : `/api${endpoint}`;
+
+    const response = await fetch(url, {
+        ...options,
+        headers
+    });
+
+    const text = await response.text();
+    let data = {};
+    try { data = text ? JSON.parse(text) : {}; } catch (_) { data = { detail: text }; }
+
+    if (!response.ok) {
+        if (response.status === 401 && endpoint.startsWith('/auth/me')) {
+            currentToken = null;
+            currentUser = null;
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('current_user');
+            if (typeof renderAppHeader === 'function') {
+                const header = document.querySelector('.header');
+                if (header) header.replaceWith(renderAppHeader());
+            }
+        }
+        if (response.status === 403 && data.detail && (
+            data.detail.toLowerCase().includes('suspended') ||
+            data.detail.toLowerCase().includes('security alert') ||
+            data.detail.toLowerCase().includes('blocked')
+        )) {
+            showSuspendedModal(data.detail);
+            currentToken = null;
+            currentUser = null;
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('current_user');
+            if (typeof renderAppHeader === 'function') {
+                const header = document.querySelector('.header');
+                if (header) header.replaceWith(renderAppHeader());
+            }
+        }
+        throw new Error(data.detail || 'Request failed');
+    }
+
+    return data;
+}
+
+// Security Suspension Modal
+function showSuspendedModal(detail) {
+    const existing = document.getElementById('security-suspended-modal');
+    if (existing) existing.remove();
+
+    const overlay = document.createElement('div');
+    overlay.id = 'security-suspended-modal';
+    overlay.className = 'security-alert-modal-overlay';
+    overlay.innerHTML = `
+        <div class="security-alert-modal-card">
+            <div style="width: 64px; height: 64px; border-radius: 50%; background: rgba(239, 68, 68, 0.15); color: #ef4444; font-size: 2rem; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
+                🛑
+            </div>
+            <h2 style="color: #ef4444; font-size: 1.35rem; font-weight: 800; margin: 0 0 10px;">Account Suspended</h2>
+            <div style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 10px; padding: 12px 14px; margin-bottom: 18px; font-size: 0.85rem; color: var(--text-primary); text-align: left; line-height: 1.45;">
+                ${escapeHTML(detail || 'Your account was suspended for attempting to exchange phone numbers or direct contact information outside Groove Hub.')}
+            </div>
+            <p style="font-size: 0.8125rem; color: var(--text-secondary); line-height: 1.5; margin: 0 0 20px;">
+                To protect buyers and creators under our <strong>100% Escrow Guarantee</strong>, Groove Hub strictly prohibits sharing phone numbers, WhatsApp, UPI, or external channels. All transactions and chats must remain on the platform.
+            </p>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <button class="btn btn-secondary" onclick="document.getElementById('security-suspended-modal').remove(); router('/')" style="flex: 1 1 120px;">Close</button>
+                <a href="mailto:rahura2026@gmail.com?subject=Groove Hub Account Suspension Appeal" class="btn btn-primary" style="flex: 1.5 1 180px; text-decoration: none; display: flex; align-items: center; justify-content: center;">Contact Admin Support</a>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+}
+window.showSuspendedModal = showSuspendedModal;
+
+// Request device notification permission for system push popups
+async function requestNotificationPermission() {
+    if (window.Notification && Notification.permission === 'default') {
+        try {
+            await Notification.requestPermission();
+        } catch(e) {}
+    }
+}
+window.requestNotificationPermission = requestNotificationPermission;
+
+// Toast notification (In-app popup & System push notification)
+function showToast(message, type = 'info') {
+    const existing = document.querySelector('.toast');
+    if (existing) existing.remove();
+
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+
+    // Trigger system push notification if permitted
+    if (window.Notification && Notification.permission === 'granted' && (type === 'success' || type === 'info')) {
+        try {
+            new Notification('Groove Hub 🌿', {
+                body: message,
+                icon: '/static/icons/grove_hub_emblem_dark.png'
+            });
+        } catch(e) {}
+    }
+
+    setTimeout(() => toast.remove(), 3500);
+}
+
+// Web Audio API Synthesized Chime for Real-Time Notification Alerts
+function playNotificationChime() {
+    try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5 note
+        osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.15); // A5 note
+        gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.35);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.35);
+    } catch(e) {}
+}
+window.playNotificationChime = playNotificationChime;
+
+// Notification System State
+let notificationState = {
+    notifications: [],
+    unreadCount: 0,
+    filter: 'all',
+    drawerOpen: false,
+    pollInterval: null,
+    seenIds: new Set()
+};
+
+async function fetchNotifications(silent = false) {
+    if (!currentUser) return;
+    try {
+        const data = await apiFetch('/notifications?limit=30');
+        const unreadRes = await apiFetch('/notifications/unread-count');
+        const msgUnreadRes = await apiFetch('/messages/unread-count');
+        
+        notificationState.notifications = data || [];
+        notificationState.unreadCount = (unreadRes?.unread_count || 0) + (msgUnreadRes?.unread_count || 0);
+
+        // Check for newly arrived notifications
+        if (!silent && data && data.length > 0) {
+            const latest = data[0];
+            if (!latest.is_read && !notificationState.seenIds.has(latest.id)) {
+                notificationState.seenIds.add(latest.id);
+                playNotificationChime();
+                showToast(`${latest.title}: ${latest.message}`, 'info');
+                
+                // Trigger native device system push notification
+                if (window.Notification && Notification.permission === 'granted') {
+                    try {
+                        new Notification(latest.title, {
+                            body: latest.message,
+                            icon: '/static/icons/grove_hub_emblem_dark.png',
+                            data: { url: latest.link || '/' }
+                        });
+                    } catch(e) {}
+                }
+            }
+        }
+
+        // Mark existing IDs as seen
+        if (data && Array.isArray(data)) {
+            data.forEach(n => notificationState.seenIds.add(n.id));
+        }
+
+        updateNotificationBadges();
+
+        if (notificationState.drawerOpen) {
+            renderNotificationDrawerBody();
+        }
+    } catch(e) {
+        console.log('[NOTIF ERROR]', e);
+    }
+}
+
+function updateNotificationBadges() {
+    const headerCountEls = document.querySelectorAll('#header-notif-count');
+    const bottomDotEl = document.getElementById('bottom-unread-dot');
+    const headerUnreadMsgEls = document.querySelectorAll('#header-unread-count');
+
+    headerCountEls.forEach(el => {
+        if (notificationState.unreadCount > 0) {
+            el.textContent = notificationState.unreadCount > 99 ? '99+' : notificationState.unreadCount;
+            el.style.display = 'inline-block';
+        } else {
+            el.style.display = 'none';
+        }
+    });
+
+    if (bottomDotEl) {
+        bottomDotEl.style.display = notificationState.unreadCount > 0 ? 'block' : 'none';
+    }
+
+    headerUnreadMsgEls.forEach(el => {
+        const msgCount = notificationState.notifications.filter(n => n.type === 'message' && !n.is_read).length;
+        if (msgCount > 0) {
+            el.textContent = msgCount;
+            el.style.display = 'inline-block';
+        } else {
+            el.style.display = 'none';
+        }
+    });
+}
+
+function toggleNotificationDrawer() {
+    notificationState.drawerOpen = !notificationState.drawerOpen;
+    let overlay = document.getElementById('notif-drawer-overlay');
+    let drawer = document.getElementById('notif-drawer');
+
+    if (!overlay || !drawer) {
+        renderNotificationDrawer();
+        overlay = document.getElementById('notif-drawer-overlay');
+        drawer = document.getElementById('notif-drawer');
+    }
+
+    if (notificationState.drawerOpen) {
+        overlay.classList.add('active');
+        drawer.classList.add('active');
+        fetchNotifications(true);
+    } else {
+        overlay.classList.remove('active');
+        drawer.classList.remove('active');
+    }
+}
+
+function renderNotificationDrawer() {
+    let existing = document.getElementById('notif-drawer-root');
+    if (existing) existing.remove();
+
+    const root = document.createElement('div');
+    root.id = 'notif-drawer-root';
+    root.innerHTML = `
+        <div class="notif-drawer-overlay" id="notif-drawer-overlay" onclick="toggleNotificationDrawer()"></div>
+        <div class="notif-drawer" id="notif-drawer">
+            <div class="notif-drawer-header">
+                <div class="notif-drawer-title">
+                    <span>🔔</span> Notifications
+                </div>
+                <div class="notif-drawer-actions">
+                    <button class="notif-btn-clear" onclick="markAllNotificationsRead()">Mark all read</button>
+                    <button class="notif-btn-close" onclick="toggleNotificationDrawer()">✕</button>
+                </div>
+            </div>
+            <div class="notif-filter-bar">
+                <button class="notif-filter-tab ${notificationState.filter === 'all' ? 'active' : ''}" onclick="setNotificationFilter('all')">All</button>
+                <button class="notif-filter-tab ${notificationState.filter === 'unread' ? 'active' : ''}" onclick="setNotificationFilter('unread')">Unread</button>
+                <button class="notif-filter-tab ${notificationState.filter === 'message' ? 'active' : ''}" onclick="setNotificationFilter('message')">Messages</button>
+                <button class="notif-filter-tab ${notificationState.filter === 'order' ? 'active' : ''}" onclick="setNotificationFilter('order')">Orders</button>
+            </div>
+            <div class="notif-list-body" id="notif-list-body">
+                <!-- Rendered dynamically -->
+            </div>
+        </div>
+    `;
+    document.body.appendChild(root);
+    renderNotificationDrawerBody();
+}
+
+function setNotificationFilter(filter) {
+    notificationState.filter = filter;
+    document.querySelectorAll('.notif-filter-tab').forEach(tab => {
+        tab.classList.toggle('active', tab.textContent.toLowerCase().includes(filter));
+    });
+    renderNotificationDrawerBody();
+}
+
+function renderNotificationDrawerBody() {
+    const container = document.getElementById('notif-list-body');
+    if (!container) return;
+
+    let notifs = notificationState.notifications;
+    if (notificationState.filter === 'unread') {
+        notifs = notifs.filter(n => !n.is_read);
+    } else if (notificationState.filter !== 'all') {
+        notifs = notifs.filter(n => n.type === notificationState.filter);
+    }
+
+    if (!notifs || notifs.length === 0) {
+        container.innerHTML = `
+            <div class="notif-empty-state">
+                <span>🌿</span>
+                <strong style="display:block; color:var(--text-primary); font-size:1rem; margin-bottom:4px;">All caught up!</strong>
+                <span>No ${notificationState.filter !== 'all' ? notificationState.filter : ''} notifications right now.</span>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = notifs.map(n => {
+        let iconClass = 'notif-icon-info';
+        let iconSymbol = 'ℹ️';
+        if (n.type === 'message') { iconClass = 'notif-icon-message'; iconSymbol = '💬'; }
+        else if (n.type === 'order') { iconClass = 'notif-icon-order'; iconSymbol = '📦'; }
+        else if (n.type === 'payment') { iconClass = 'notif-icon-payment'; iconSymbol = '💰'; }
+        else if (n.type === 'dispute') { iconClass = 'notif-icon-dispute'; iconSymbol = '⚠️'; }
+
+        const timeAgo = formatTimeAgo(n.created_at);
+
+        return `
+            <div class="notif-item ${!n.is_read ? 'unread' : ''}" onclick="handleNotificationClick(${n.id}, '${escapeJs(n.link || '/')}')">
+                <div class="notif-icon-bubble ${iconClass}">${iconSymbol}</div>
+                <div class="notif-content">
+                    <div class="notif-item-title">
+                        <span>${escapeHtml(n.title)}</span>
+                        <span class="notif-item-time">${timeAgo}</span>
+                    </div>
+                    <div class="notif-item-msg">${escapeHtml(n.message)}</div>
+                </div>
+                ${!n.is_read ? '<div class="notif-unread-dot"></div>' : ''}
+            </div>
+        `;
+    }).join('');
+}
+
+async function handleNotificationClick(id, link) {
+    try {
+        await apiFetch(`/notifications/${id}/read`, { method: 'POST' });
+        const notif = notificationState.notifications.find(n => n.id === id);
+        if (notif) notif.is_read = true;
+        updateNotificationBadges();
+        toggleNotificationDrawer();
+        if (link && link !== '/') {
+            router(link);
+        }
+    } catch(e) {
+        toggleNotificationDrawer();
+    }
+}
+
+async function markAllNotificationsRead() {
+    try {
+        await apiFetch('/notifications/read-all', { method: 'POST' });
+        notificationState.notifications.forEach(n => n.is_read = true);
+        notificationState.unreadCount = 0;
+        updateNotificationBadges();
+        renderNotificationDrawerBody();
+        showToast('All notifications marked as read', 'info');
+    } catch(e) {}
+}
+
+function formatTimeAgo(dateStr) {
+    if (!dateStr) return '';
+    try {
+        const date = new Date(dateStr.endsWith('Z') ? dateStr : dateStr + 'Z');
+        const seconds = Math.floor((new Date() - date) / 1000);
+        if (seconds < 60) return 'Just now';
+        const minutes = Math.floor(seconds / 60);
+        if (minutes < 60) return `${minutes}m ago`;
+        const hours = Math.floor(minutes / 60);
+        if (hours < 24) return `${hours}h ago`;
+        const days = Math.floor(hours / 24);
+        return `${days}d ago`;
+    } catch(e) {
+        return '';
+    }
+}
+
+function initNotificationPoller() {
+    if (notificationState.pollInterval) clearInterval(notificationState.pollInterval);
+    
+    // Initial fetch
+    fetchNotifications(true);
+    
+    // Prompt notification permission on app start
+    requestNotificationPermission();
+
+    // Poll every 7 seconds
+    notificationState.pollInterval = setInterval(() => {
+        if (currentUser) {
+            fetchNotifications(false);
+        }
+    }, 7000);
+}
+
+window.toggleNotificationDrawer = toggleNotificationDrawer;
+window.markAllNotificationsRead = markAllNotificationsRead;
+window.handleNotificationClick = handleNotificationClick;
+window.setNotificationFilter = setNotificationFilter;
+window.initNotificationPoller = initNotificationPoller;
+
+// Grove Hub Animated Logo Loader Component
+function renderGroveAnimatedLoader(size = 140, showText = true) {
+    return `
+    <div class="grove-loader-wrapper" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px;">
+      <svg class="grove-animated-logo-svg" viewBox="0 0 500 340" style="width: ${size}px; height: auto; max-width: 100%;">
+        <defs>
+          <filter id="loaderLensGlow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="6" result="blur" />
+            <feComposite in="SourceGraphic" in2="blur" operator="over" />
+          </filter>
+        </defs>
+        <g class="grove-sun-group">
+          <path class="grove-sun-arc" d="M 164 140 A 90 90 0 0 1 336 140" stroke="#FFC107" stroke-width="4.5" stroke-linecap="round" fill="none"/>
+          <line class="grove-sun-ray" style="animation-delay: 0.15s;" x1="250" y1="48" x2="250" y2="18" stroke="#FFC107" stroke-width="4.5" stroke-linecap="round" />
+          <line class="grove-sun-ray" style="animation-delay: 0.2s;" x1="212" y1="58" x2="196" y2="30" stroke="#FFC107" stroke-width="4.5" stroke-linecap="round" />
+          <line class="grove-sun-ray" style="animation-delay: 0.2s;" x1="288" y1="58" x2="304" y2="30" stroke="#FFC107" stroke-width="4.5" stroke-linecap="round" />
+          <line class="grove-sun-ray" style="animation-delay: 0.25s;" x1="178" y1="84" x2="154" y2="62" stroke="#FFC107" stroke-width="4.5" stroke-linecap="round" />
+          <line class="grove-sun-ray" style="animation-delay: 0.25s;" x1="322" y1="84" x2="346" y2="62" stroke="#FFC107" stroke-width="4.5" stroke-linecap="round" />
+          <line class="grove-sun-ray" style="animation-delay: 0.3s;" x1="158" y1="120" x2="128" y2="104" stroke="#FFC107" stroke-width="4.5" stroke-linecap="round" />
+          <line class="grove-sun-ray" style="animation-delay: 0.3s;" x1="342" y1="120" x2="372" y2="104" stroke="#FFC107" stroke-width="4.5" stroke-linecap="round" />
+        </g>
+        <g class="grove-camera-group">
+          <path class="grove-camera-outer" d="M 190 220 L 190 162 C 190 150 205 144 220 144 C 225 144 230 133 238 133 L 262 133 C 270 133 275 144 280 144 C 295 144 310 150 310 162 L 310 220" stroke="var(--grove-logo-stroke, #4A3E3D)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+          <line class="grove-camera-inner" x1="205" y1="168" x2="205" y2="218" stroke="var(--grove-logo-stroke, #4A3E3D)" stroke-width="4.5" stroke-linecap="round" />
+          <line class="grove-camera-inner" x1="295" y1="168" x2="295" y2="218" stroke="var(--grove-logo-stroke, #4A3E3D)" stroke-width="4.5" stroke-linecap="round" />
+          <circle stroke="var(--grove-logo-stroke, #4A3E3D)" cx="250" cy="182" r="26" stroke-width="5" fill="none" />
+          <circle class="grove-lens-pulse" cx="250" cy="182" r="21" fill="#6ED6EF" opacity="0.4" filter="url(#loaderLensGlow)" />
+          <circle class="grove-lens-eye" cx="250" cy="182" r="21.5" fill="#6ED6EF" stroke="#4A3E3D" stroke-width="3.5" />
+        </g>
+        <path class="grove-vine-line" d="M 190 220 C 160 245 128 238 116 195 C 103 145 125 82 155 45" stroke="var(--grove-logo-stroke, #4A3E3D)" stroke-width="5" stroke-linecap="round" fill="none" />
+        <path class="grove-vine-line" d="M 310 220 C 340 245 372 238 384 195 C 397 145 375 82 345 45" stroke="var(--grove-logo-stroke, #4A3E3D)" stroke-width="5" stroke-linecap="round" fill="none" />
+        <g class="grove-leaves">
+          <path class="grove-leaf gl-1" d="M 130 226 C 108 240 88 226 96 206 C 118 204 132 216 130 226 Z" fill="#85DC73" stroke="#4A3E3D" stroke-width="2.5" />
+          <path class="grove-leaf gl-2" d="M 122 208 C 138 214 150 196 142 184 C 126 186 116 198 122 208 Z" fill="#56C9A3" stroke="#4A3E3D" stroke-width="2.5" />
+          <path class="grove-leaf gl-3" d="M 114 182 C 90 184 76 166 90 152 C 108 156 118 172 114 182 Z" fill="#85DC73" stroke="#4A3E3D" stroke-width="2.5" />
+          <path class="grove-leaf gl-4" d="M 112 158 C 128 160 142 144 134 132 C 118 136 108 148 112 158 Z" fill="#56C9A3" stroke="#4A3E3D" stroke-width="2.5" />
+          <path class="grove-leaf gl-5" d="M 117 132 C 94 126 86 106 104 96 C 120 104 124 122 117 132 Z" fill="#85DC73" stroke="#4A3E3D" stroke-width="2.5" />
+          <path class="grove-leaf gl-6" d="M 125 106 C 144 104 152 86 140 76 C 124 82 118 96 125 106 Z" fill="#56C9A3" stroke="#4A3E3D" stroke-width="2.5" />
+          <path class="grove-leaf gl-7" d="M 138 78 C 118 64 122 44 140 44 C 150 58 146 72 138 78 Z" fill="#85DC73" stroke="#4A3E3D" stroke-width="2.5" />
+          <path class="grove-leaf gl-8" d="M 155 48 C 145 28 162 16 174 28 C 172 46 162 54 155 48 Z" fill="#56C9A3" stroke="#4A3E3D" stroke-width="2.5" />
+          <path class="grove-leaf gr-1" d="M 370 226 C 392 240 412 226 404 206 C 382 204 368 216 370 226 Z" fill="#85DC73" stroke="#4A3E3D" stroke-width="2.5" />
+          <path class="grove-leaf gr-2" d="M 378 208 C 362 214 350 196 358 184 C 374 186 384 198 378 208 Z" fill="#56C9A3" stroke="#4A3E3D" stroke-width="2.5" />
+          <path class="grove-leaf gr-3" d="M 386 182 C 410 184 424 166 410 152 C 392 156 382 172 386 182 Z" fill="#85DC73" stroke="#4A3E3D" stroke-width="2.5" />
+          <path class="grove-leaf gr-4" d="M 388 158 C 372 160 358 144 366 132 C 382 136 392 148 388 158 Z" fill="#56C9A3" stroke="#4A3E3D" stroke-width="2.5" />
+          <path class="grove-leaf gr-5" d="M 383 132 C 406 126 414 106 396 96 C 380 104 376 122 383 132 Z" fill="#85DC73" stroke="#4A3E3D" stroke-width="2.5" />
+          <path class="grove-leaf gr-6" d="M 375 106 C 356 104 348 86 360 76 C 376 82 382 96 375 106 Z" fill="#56C9A3" stroke="#4A3E3D" stroke-width="2.5" />
+          <path class="grove-leaf gr-7" d="M 362 78 C 382 64 378 44 360 44 C 350 58 354 72 362 78 Z" fill="#85DC73" stroke="#4A3E3D" stroke-width="2.5" />
+          <path class="grove-leaf gr-8" d="M 345 48 C 355 28 338 16 326 28 C 328 46 338 54 345 48 Z" fill="#56C9A3" stroke="#4A3E3D" stroke-width="2.5" />
+        </g>
+        ${showText ? `
+        <g class="grove-brand-text">
+          <text x="250" y="315" text-anchor="middle" fill="var(--grove-logo-stroke, #4A3E3D)" font-family="system-ui, -apple-system, sans-serif" font-size="32" font-weight="700" letter-spacing="5">GROVE HUB</text>
+        </g>` : ''}
+      </svg>
+    </div>
+    `;
+}
+window.renderGroveAnimatedLoader = renderGroveAnimatedLoader;
+
+// Loading state
+function showLoading() {
+    appEl.innerHTML = `<div class="loading">${renderGroveAnimatedLoader(150, true)}</div>`;
+}
+
+function hideLoading() {
+    // No-op, appEl is replaced with content
+}
+
+// Redirect to login if not authenticated
+async function requireAuth() {
+    if (!currentToken) {
+        showToast('Please login first', 'error');
+        router('/login');
+        return false;
+    }
+
+    try {
+        const u = await apiFetch('/auth/me');
+        currentUser = u;
+        localStorage.setItem('current_user', JSON.stringify(u));
+        return true;
+    } catch (e) {
+        // If offline or network unavailable, but token exists in localStorage, maintain session!
+        if (currentToken) {
+            console.warn('Network unavailable during route check, maintaining active session:', e.message || e);
+            return true;
+        }
+        showToast('Please login first', 'error');
+        router('/login');
+        return false;
+    }
+}
+
+// Theme Management
+let storedTheme = localStorage.getItem('theme');
+let currentTheme = storedTheme || (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+document.documentElement.setAttribute('data-theme', currentTheme);
+
+if (window.matchMedia) {
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+        if (!localStorage.getItem('theme')) {
+            currentTheme = e.matches ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', currentTheme);
+        }
+    });
+}
+
+function toggleTheme() {
+    currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    localStorage.setItem('theme', currentTheme);
+    document.documentElement.setAttribute('data-theme', currentTheme);
+    const activeRoute = window.location.pathname || '/';
+    router(activeRoute);
+}
+window.toggleTheme = toggleTheme;
+
+// App Brand Logo Component
+function renderLogo(size = 28, showText = true) {
+    return `
+        <div class="logo" style="cursor: pointer; display: inline-flex; align-items: center; gap: 8px;" onclick="router('/')">
+            <img class="logo-light-mode" src="/static/icons/grove_hub_emblem_light.png" alt="Groove Hub" style="height: ${size}px; width: auto; max-width: ${Math.round(size * 1.5)}px; object-fit: contain; vertical-align: middle;" />
+            <img class="logo-dark-mode" src="/static/icons/grove_hub_emblem_dark.png" alt="Groove Hub" style="height: ${size}px; width: auto; max-width: ${Math.round(size * 1.5)}px; object-fit: contain; vertical-align: middle; filter: drop-shadow(0 1px 3px rgba(0,0,0,0.3));" />
+            ${showText ? `<span style="font-weight: 800; font-size: ${Math.max(16, Math.round(size * 0.62))}px; letter-spacing: -0.4px; color: var(--text-primary);">Groove Hub</span>` : ''}
+        </div>
+    `;
+}
+window.renderLogo = renderLogo;
+
+// Helper to resolve active UI mode (BUYER vs PROVIDER vs ADMIN)
+function getActiveUserMode() {
+    if (currentUser?.user_type === 'ADMIN') return 'ADMIN';
+    const activeMode = localStorage.getItem('grove_hub_active_mode');
+    if (activeMode === 'BUYER' || activeMode === 'PROVIDER') {
+        return activeMode;
+    }
+    const roleStr = String(currentUser?.user_type || 'BUYER').toUpperCase();
+    if (roleStr === 'PROVIDER') return 'PROVIDER';
+    return 'BUYER';
+}
+window.getActiveUserMode = getActiveUserMode;
+
+// Mode Switcher Function for Users
+async function toggleUserMode() {
+    if (!currentUser) return;
+
+    const currentRole = getActiveUserMode();
+    const targetRole = currentRole === 'PROVIDER' ? 'BUYER' : 'PROVIDER';
+    const targetTitle = targetRole === 'PROVIDER' ? 'Provider Mode 💼' : 'Buyer Mode 🛍️';
+
+    showLoading();
+    try {
+        const res = await apiFetch('/user/switch-role', {
+            method: 'POST',
+            body: JSON.stringify({ role: targetRole })
+        });
+        if (res && res.token) {
+            currentToken = res.token;
+            localStorage.setItem('access_token', res.token);
+        }
+        if (res && res.user) {
+            currentUser = res.user;
+            localStorage.setItem('current_user', JSON.stringify(currentUser));
+        } else {
+            currentUser.user_type = targetRole;
+            localStorage.setItem('current_user', JSON.stringify(currentUser));
+        }
+        localStorage.setItem('grove_hub_active_mode', targetRole);
+        showToast(`Switched to ${targetTitle}!`, 'success');
+        
+        // Force refresh UI header and current route
+        if (typeof renderApp === 'function') {
+            renderApp();
+        } else {
+            router('/');
+        }
+    } catch (e) {
+        console.error('[MODE SWITCH] Failed:', e);
+        const message = (e && e.message) ? e.message : 'Unable to switch mode right now. Please try again.';
+        showToast(message, 'error');
+    } finally {
+        hideLoading();
+    }
+}
+window.toggleUserMode = toggleUserMode;
+
+// Universal App Header with 100% strict Separation of Modes (Buyer Mode, Provider Mode, and Admin Console)
+
+// Profile avatar — click opens the full action menu (Edit Profile, Upload Portfolio, Orders, etc.)
+function renderProfileAvatar(size = 34) {
+    const user = currentUser;
+    if (!user) return '';
+    const initial = (user.name || 'U').charAt(0).toUpperCase();
+    const activeMode = getActiveUserMode();
+    const isProvider = activeMode === 'PROVIDER';
+    const gradient = isProvider
+        ? 'linear-gradient(135deg, #f97316, #ef4444)'
+        : 'linear-gradient(135deg, #3b82f6, #6366f1)';
+    const label = activeMode;
+    const imgTag = user.profile_image
+        ? `<img src="${user.profile_image}" alt="${user.name}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;" onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'flex\';" />`
+        : '';
+    return `
+        <div class="header-user-avatar" title="${escapeJs(user.name)} (${label})" style="cursor:pointer;" onclick="window.__toggleProfileMenu(event)">
+            <div class="header-user-avatar-img" style="width:${size}px;height:${size}px;border-radius:50%;background:${gradient};display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:${size >= 40 ? '0.95rem' : '0.85rem'};${imgTag ? 'overflow:hidden;' : ''}border:2px solid var(--border);position:relative;box-shadow:var(--shadow);">
+                ${imgTag}
+                <span style="${imgTag ? 'display:none;' : ''}">${initial}</span>
+                <span class="header-user-status-dot" style="position:absolute;bottom:-1px;right:-1px;width:9px;height:9px;border-radius:50%;background:#10b981;border:2px solid var(--bg-card);"></span>
+            </div>
+        </div>
+    `;
+}
+
+// Full Profile dropdown menu — provides fast access to Edit Profile, Upload Portfolio, Showreels, Packages, Orders, and Settings
+function renderProfileMenu() {
+    const user = currentUser;
+    if (!user) return '';
+    const activeMode = getActiveUserMode();
+    const isProvider = activeMode === 'PROVIDER';
+    const isAdmin = activeMode === 'ADMIN';
+    const hasImage = !!(user.profile_image);
+    const initial = (user.name || 'U').charAt(0).toUpperCase();
+    const handle = user.username ? `@${user.username}` : (user.email || '');
+
+    return `
+        <div id="profile-menu-dropdown" class="profile-menu-dropdown" style="display:none;" onclick="event.stopPropagation()">
+            <!-- Header User Card -->
+            <div class="profile-menu-header">
+                <div class="profile-menu-header-avatar" style="background:${isProvider ? 'linear-gradient(135deg,#f97316,#ef4444)' : 'linear-gradient(135deg,#6366f1,#a855f7)'};">
+                    ${hasImage ? `<img src="${user.profile_image}" alt="${escapeJs(user.name)}" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" /><span style="display:none;">${initial}</span>` : `<span>${initial}</span>`}
+                </div>
+                <div class="profile-menu-header-info">
+                    <div class="profile-menu-header-name">${escapeJs(user.name)}</div>
+                    <div class="profile-menu-header-handle">${escapeJs(handle)}</div>
+                    <div class="profile-menu-header-badge" style="background:${isAdmin ? 'rgba(239,68,68,0.12);color:#ef4444;' : (isProvider ? 'rgba(249,115,22,0.12);color:#f97316;' : 'rgba(99,102,241,0.12);color:#6366f1;')}">
+                        ${isAdmin ? '🛡️ Admin Console' : (isProvider ? '💼 Creator Studio' : '🛍️ Client Mode')}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Profile & Portfolio Section -->
+            <div class="profile-menu-section">
+                <div class="profile-menu-section-title">Creative Profile</div>
+                <button class="profile-menu-item" onclick="openSettingsTab('profile')">
+                    <span class="profile-menu-item-icon">✏️</span>
+                    <span>Edit Profile</span>
+                    <span class="profile-menu-item-badge">Bio & Skills</span>
+                </button>
+                <button class="profile-menu-item" onclick="openSettingsTab('portfolio')">
+                    <span class="profile-menu-item-icon">🖼️</span>
+                    <span>Showcase Flyer &amp; Reels</span>
+                    <span class="profile-menu-item-badge">Homepage 16:9</span>
+                </button>
+                <button class="profile-menu-item" onclick="openProfileIconPicker()">
+                    <span class="profile-menu-item-icon">🖼️</span>
+                    <span>Change Profile Icon</span>
+                </button>
+                <button class="profile-menu-item" onclick="window.__closeProfileMenu(); openFiverrPortfolioModal(currentUser?.id, currentUser?.name);">
+                    <span class="profile-menu-item-icon">👁️</span>
+                    <span>Public Profile &amp; Reels Preview</span>
+                </button>
+            </div>
+
+            <div class="profile-menu-divider"></div>
+
+            <!-- Workspace & Orders Section -->
+            <div class="profile-menu-section">
+                <div class="profile-menu-section-title">Workspace & Orders</div>
+                ${isProvider ? `
+                <button class="profile-menu-item" onclick="window.__closeProfileMenu(); router('/packages');">
+                    <span class="profile-menu-item-icon">📦</span>
+                    <span>My Packages & Pricing</span>
+                </button>
+                ` : ''}
+                <button class="profile-menu-item" onclick="window.__closeProfileMenu(); router('/bookings');">
+                    <span class="profile-menu-item-icon">📋</span>
+                    <span>${isProvider ? 'Client Orders' : 'My Orders & Escrow'}</span>
+                </button>
+                <button class="profile-menu-item" onclick="window.__closeProfileMenu(); router('/messages');">
+                    <span class="profile-menu-item-icon">💬</span>
+                    <span>Messages & Inbox</span>
+                </button>
+                <button class="profile-menu-item" onclick="window.__closeProfileMenu(); router('/payments');">
+                    <span class="profile-menu-item-icon">💳</span>
+                    <span>${isProvider ? 'Earnings & Payouts' : 'Wallet & Escrow'}</span>
+                </button>
+                <button class="profile-menu-item" onclick="openSettingsTab('bank')">
+                    <span class="profile-menu-item-icon">🏦</span>
+                    <span>Bank & Payout Setup</span>
+                </button>
+                ${isAdmin ? `
+                <button class="profile-menu-item" onclick="window.__closeProfileMenu(); router('/admin');">
+                    <span class="profile-menu-item-icon">🛡️</span>
+                    <span>Admin Control Center</span>
+                </button>
+                ` : ''}
+            </div>
+
+            <div class="profile-menu-divider"></div>
+
+            <!-- Theme & Appearance -->
+            <div class="profile-menu-section">
+                <div class="profile-menu-section-title" style="display:flex;justify-content:space-between;align-items:center;">
+                    <span>Theme Preset</span>
+                    <button type="button" onclick="window.toggleThemeMode()" style="background:none;border:none;color:var(--accent);font-size:0.75rem;cursor:pointer;font-weight:700;">
+                        ${currentThemeMode === 'dark' ? '☀️ Light' : '🌙 Dark'}
+                    </button>
+                </div>
+                <div style="display:flex;gap:8px;padding:6px 14px 10px;overflow-x:auto;">
+                    ${THEME_PRESETS.map(t => `
+                        <button type="button" onclick="applyTheme('${t.id}');" title="${t.name}" style="width:28px;height:28px;border-radius:50%;background:${t.color};border:2px solid ${currentThemePreset === t.id ? '#ffffff' : 'transparent'};box-shadow:${currentThemePreset === t.id ? '0 0 0 2px var(--accent)' : 'none'};cursor:pointer;flex-shrink:0;transition:transform 0.15s ease;">
+                        </button>
+                    `).join('')}
+                </div>
+            </div>
+
+            <!-- Account, Mode Switch & Sign Out -->
+            <div class="profile-menu-section">
+                <div class="profile-menu-section-title">Account</div>
+                <button class="profile-menu-item" onclick="openSettingsTab('preferences')">
+                    <span class="profile-menu-item-icon">🎨</span>
+                    <span>Display & Theme</span>
+                    <span class="profile-menu-item-badge">${THEME_PRESETS.find(t=>t.id===currentThemePreset)?.name || 'Lavender'}</span>
+                </button>
+                <button class="profile-menu-item" onclick="openSettingsTab('account')">
+                    <span class="profile-menu-item-icon">⚙️</span>
+                    <span>Account & Security</span>
+                </button>
+                <button class="profile-menu-item" onclick="window.__closeProfileMenu(); toggleUserMode();">
+                    <span class="profile-menu-item-icon">${isProvider ? '🛍️' : '💼'}</span>
+                    <span>${isProvider ? 'Switch to Buyer Mode' : 'Switch to Provider Mode'}</span>
+                </button>
+                <button class="profile-menu-item profile-menu-logout" onclick="window.__closeProfileMenu(); logout();">
+                    <span class="profile-menu-item-icon">🚪</span>
+                    <span>Sign Out</span>
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+// Navigation helper to open settings with a specific tab
+window.openSettingsTab = (tab) => {
+    window.__closeProfileMenu();
+    activeSettingsTab = tab;
+    sessionStorage.setItem('settings_tab', tab);
+    if (window.location.pathname === '/settings' || window.location.pathname === '/profile' || window.location.pathname === '/portfolio') {
+        if (typeof window.setSettingsTab === 'function') {
+            window.setSettingsTab(tab);
+        }
+    } else {
+        router('/settings');
+    }
+};
+
+// Toggle profile dropdown
+window.__toggleProfileMenu = (e) => {
+    if (e) {
+        e.stopPropagation();
+    }
+    const menu = document.getElementById('profile-menu-dropdown');
+    if (menu) {
+        menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+    }
+};
+
+window.__closeProfileMenu = () => {
+    const menu = document.getElementById('profile-menu-dropdown');
+    if (menu) menu.style.display = 'none';
+};
+
+// Global click-outside listener to close profile menu
+if (!window.__profileMenuGlobalListenerAdded) {
+    window.addEventListener('click', (e) => {
+        const menu = document.getElementById('profile-menu-dropdown');
+        const avatar = document.querySelector('.header-user-avatar');
+        if (menu && menu.style.display !== 'none') {
+            if (!menu.contains(e.target) && (!avatar || !avatar.contains(e.target))) {
+                menu.style.display = 'none';
+            }
+        }
+    });
+    window.__profileMenuGlobalListenerAdded = true;
+}
+
+// Helper: Compress and center-crop selected image file to 512x512 square data URL
+function compressAndCropImage(file, maxSize = 512, quality = 0.85) {
+    return new Promise((resolve, reject) => {
+        if (!file || !file.type.startsWith('image/')) {
+            return reject(new Error('Please select a valid image file (PNG, JPG, WebP, etc.).'));
+        }
+        const reader = new FileReader();
+        reader.onerror = () => reject(new Error('Failed to read selected image file.'));
+        reader.onload = (e) => {
+            const rawDataUrl = e.target.result;
+            if (file.type === 'image/svg+xml') {
+                return resolve(rawDataUrl);
+            }
+            const img = new Image();
+            img.onerror = () => reject(new Error('Selected file could not be parsed as an image.'));
+            img.onload = () => {
+                try {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = maxSize;
+                    canvas.height = maxSize;
+                    const ctx = canvas.getContext('2d');
+                    if (!ctx) return resolve(rawDataUrl);
+
+                    const minSide = Math.min(img.width, img.height);
+                    const sx = (img.width - minSide) / 2;
+                    const sy = (img.height - minSide) / 2;
+
+                    ctx.fillStyle = '#FFFFFF';
+                    ctx.fillRect(0, 0, maxSize, maxSize);
+                    ctx.drawImage(img, sx, sy, minSide, minSide, 0, 0, maxSize, maxSize);
+
+                    const compressed = canvas.toDataURL('image/jpeg', quality);
+                    resolve(compressed);
+                } catch {
+                    resolve(rawDataUrl);
+                }
+            };
+            img.src = rawDataUrl;
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
+// Change Icon picker — opens modal with Google photo / Upload / Remove options
+window.openProfileIconPicker = () => {
+    const existing = document.getElementById('profile-menu-dropdown');
+    if (existing) existing.style.display = 'none';
+
+    const overlay = document.getElementById('profile-icon-picker');
+    if (overlay) { overlay.remove(); return; }
+
+    const imgUrl = currentUser?.profile_image || '';
+    const modal = document.createElement('div');
+    modal.id = 'profile-icon-picker';
+    modal.className = 'modal-backdrop';
+    modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px; animation:fadeIn 0.15s ease;';
+
+    modal.innerHTML = `
+        <div class="card" style="max-width:420px;width:100%;box-shadow:var(--shadow-lg);border:1px solid var(--border);animation:fadeIn 0.2s ease;">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border);">
+                <h3 style="margin:0;font-size:1rem;font-weight:700;color:var(--text-primary);display:flex;align-items:center;gap:8px;">
+                    <span>🖼️</span> Change Profile Icon
+                </h3>
+                <button onclick="this.closest('#profile-icon-picker').remove()" style="background:none;border:none;font-size:1.2rem;color:var(--text-muted);cursor:pointer;line-height:1;padding:4px 8px;">✕</button>
+            </div>
+            <div style="padding:20px;">
+                <div style="text-align:center;margin-bottom:18px;">
+                    <div style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#a855f7);display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:2rem;margin:0 auto 10px;overflow:hidden;border:3px solid var(--border);position:relative;">
+                        ${imgUrl ? `<img src="${imgUrl}" alt="" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" /><span style="display:none;">${currentUser?.name?.charAt(0).toUpperCase() || 'U'}</span>` : `<span>${currentUser?.name?.charAt(0).toUpperCase() || 'U'}</span>`}
+                    </div>
+                    <div style="font-size:0.8rem;color:var(--text-muted);">Current icon</div>
+                </div>
+
+                <div style="display:flex;flex-direction:column;gap:10px;">
+                    <button id="btn-use-google-photo" class="btn btn-outline" style="width:100%;justify-content:center;${imgUrl && currentUser?.profile_image?.includes('googleusercontent') ? 'opacity:0.5;pointer-events:none;' : ''}">
+                        <span style="font-size:1.1rem;margin-right:6px;">📸</span> Use Google Profile Photo
+                    </button>
+                    <button id="btn-upload-custom" class="btn btn-outline" style="width:100%;justify-content:center;">
+                        <span style="font-size:1.1rem;margin-right:6px;">📁</span> Upload Custom Photo
+                    </button>
+                    <button id="btn-remove-photo" class="btn btn-secondary" style="width:100%;justify-content:center;color:var(--danger);">
+                        <span style="font-size:1.1rem;margin-right:6px;">🗑️</span> Remove Photo
+                    </button>
+                </div>
+
+                <div id="icon-preview-container" style="margin-top:16px;display:none;text-align:center;">
+                    <div style="width:64px;height:64px;border-radius:50%;overflow:hidden;margin:0 auto 8px;border:2px solid var(--accent);box-shadow:0 0 0 3px rgba(99,102,241,0.2);position:relative;background:#1e293b;">
+                        <img id="icon-preview-img" src="" style="width:100%;height:100%;object-fit:cover;display:block;" />
+                    </div>
+                    <div style="font-size:0.75rem;color:var(--text-muted);">Preview — tap "Save Icon" to apply</div>
+                    <button id="btn-save-icon" class="btn btn-primary" style="margin-top:10px;width:100%;justify-content:center;font-weight:700;">
+                        <span style="margin-right:6px;">💾</span> Save Icon
+                    </button>
+                </div>
+
+                <input type="file" id="icon-file-input" accept="image/*" style="display:none;max-width:100%;" />
+                <input type="hidden" id="icon-preview-url" />
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+
+    // Close on backdrop click
+    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+
+    // --- Use Google Photo ---
+    const googleBtn = modal.querySelector('#btn-use-google-photo');
+    if (googleBtn) {
+        googleBtn.onclick = async () => {
+            if (!currentUser) return;
+            try {
+                if (window.google?.accounts?.id) {
+                    await new Promise((resolve) => {
+                        googleBtn.disabled = true;
+                        googleBtn.innerHTML = '<span style="display:inline-block;width:14px;height:14px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:8px;"></span> Connecting to Google…';
+                        window.google.accounts.id.revoke(currentUser.email, () => {
+                            window.google.accounts.id.signIn({
+                                callback: (response) => {
+                                    (async () => {
+                                        if (response?.credential) {
+                                            const payload = JSON.parse(atob(response.credential.split('.')[1] + '='.repeat((4 - response.credential.split('.')[1].length % 4) % 4)));
+                                            const pic = payload.picture || '';
+                                            await saveProfileImage(pic);
+                                        }
+                                        googleBtn.disabled = false;
+                                        googleBtn.innerHTML = '<span style="font-size:1.1rem;margin-right:6px;">📸</span> Use Google Profile Photo';
+                                        resolve();
+                                    })();
+                                },
+                                cancel_on_tap_outside: false,
+                            });
+                        });
+                    });
+                } else {
+                    showToast('Google Sign-In not available. Upload a custom photo instead.', 'warning');
+                }
+            } catch (e) {
+                googleBtn.disabled = false;
+                googleBtn.innerHTML = '<span style="font-size:1.1rem;margin-right:6px;">📸</span> Use Google Profile Photo';
+                showToast('Could not fetch Google photo. Try uploading instead.', 'error');
+            }
+        };
+    }
+
+    // --- Upload Custom Photo ---
+    const uploadBtn = modal.querySelector('#btn-upload-custom');
+    const fileInput = modal.querySelector('#icon-file-input');
+    if (uploadBtn && fileInput) {
+        uploadBtn.onclick = () => fileInput.click();
+        fileInput.onchange = async (e) => {
+            const file = e.target.files?.[0];
+            if (!file) return;
+            const previewImg = modal.querySelector('#icon-preview-img');
+            const previewContainer = modal.querySelector('#icon-preview-container');
+            const previewUrlInput = modal.querySelector('#icon-preview-url');
+            
+            uploadBtn.disabled = true;
+            uploadBtn.innerHTML = '<span style="display:inline-block;width:14px;height:14px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:8px;"></span> Processing photo…';
+
+            try {
+                const compressedDataUrl = await compressAndCropImage(file, 512, 0.85);
+                modal._selectedDataUrl = compressedDataUrl;
+                if (previewImg) previewImg.src = compressedDataUrl;
+                if (previewContainer) previewContainer.style.display = 'block';
+                if (previewUrlInput) previewUrlInput.value = compressedDataUrl;
+                if (googleBtn) googleBtn.style.display = 'none';
+            } catch (err) {
+                showToast(err.message || 'Could not process image file', 'error');
+            } finally {
+                uploadBtn.disabled = false;
+                uploadBtn.innerHTML = '<span style="font-size:1.1rem;margin-right:6px;">📁</span> Upload Custom Photo';
+            }
+        };
+    }
+
+    // --- Save Previewed Icon ---
+    const saveBtn = modal.querySelector('#btn-save-icon');
+    if (saveBtn) {
+        saveBtn.onclick = async () => {
+            const dataUrl = modal._selectedDataUrl || modal.querySelector('#icon-preview-url')?.value;
+            if (!dataUrl) {
+                showToast('Please select a photo first', 'warning');
+                return;
+            }
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<span style="display:inline-block;width:14px;height:14px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:8px;"></span> Saving icon…';
+            try {
+                await saveProfileImage(dataUrl);
+            } catch (err) {
+                showToast(err.message || 'Failed to save profile icon', 'error');
+            } finally {
+                if (document.body.contains(saveBtn)) {
+                    saveBtn.disabled = false;
+                    saveBtn.innerHTML = '<span style="margin-right:6px;">💾</span> Save Icon';
+                }
+            }
+        };
+    }
+
+    // --- Remove Photo ---
+    const removeBtn = modal.querySelector('#btn-remove-photo');
+    if (removeBtn) {
+        removeBtn.onclick = async () => {
+            const ok = confirm('Remove your profile photo? You will go back to initials.');
+            if (ok) {
+                await saveProfileImage('');
+                modal.remove();
+            }
+        };
+    }
+};
+
+// Save profile image to backend
+window.saveProfileImage = async (imageUrl) => {
+    try {
+        const res = await apiFetch('/auth/me', {
+            method: 'PATCH',
+            body: JSON.stringify({ profile_image: imageUrl || null })
+        });
+        currentUser = res;
+        localStorage.setItem('current_user', JSON.stringify(currentUser));
+        showToast(currentUser?.profile_image ? 'Profile icon updated!' : 'Profile photo removed.', 'success');
+        document.getElementById('profile-icon-picker')?.remove();
+        
+        // Update header profile avatar elements dynamically
+        const avatarWrapper = document.querySelector('.profile-dropdown-wrapper');
+        if (avatarWrapper) {
+            avatarWrapper.innerHTML = `${renderProfileAvatar(34)}${renderProfileMenu()}`;
+        }
+        router(window.location.pathname);
+    } catch (err) {
+        showToast(err.message || 'Failed to update profile icon', 'error');
+    }
+};
+
+// Close profile menu on outside click
+document.addEventListener('click', (e) => {
+    const menu = document.getElementById('profile-menu-dropdown');
+    const avatar = e.target.closest('.header-user-avatar');
+    if (menu && !avatar && !menu.contains(e.target)) {
+        menu.style.display = 'none';
+    }
+});
+
+// Close profile menu on Escape
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        const menu = document.getElementById('profile-menu-dropdown');
+        if (menu) menu.style.display = 'none';
+    }
+});
+
+// Inject profile menu styles
+(function injectProfileMenuStyles() {
+    const style = document.createElement('style');
+    style.textContent = `
+        .profile-menu-dropdown { animation: none; }
+        @keyframes profileMenuIn {
+            from { opacity: 0; transform: translateY(8px) scale(0.97); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+    `;
+    document.head.appendChild(style);
+})();
+
+function renderLaunchPromoBanner() {
+    if (localStorage.getItem('hide_launch_promo') === '1' || sessionStorage.getItem('hide_launch_promo') === '1') return '';
+    return `
+        <div class="launch-promo-banner" id="launch-promo-banner">
+            <div class="launch-promo-content">
+                <span class="launch-promo-pill">🚀 PLAY STORE LAUNCH SPECIAL</span>
+                <span class="launch-promo-text">
+                    <strong>0% Platform Commission for 1 Month!</strong> Creators keep <strong>100%</strong> of every order • 100% Escrow Protected • Zero fees for all accounts!
+                </span>
+            </div>
+            <button class="launch-promo-close" onclick="localStorage.setItem('hide_launch_promo', '1'); sessionStorage.setItem('hide_launch_promo', '1'); document.getElementById('launch-promo-banner')?.remove()" title="Remove Banner" style="display: flex; align-items: center; gap: 4px; padding: 4px 10px; font-size: 0.78rem; font-weight: 700; background: rgba(255,255,255,0.18); color: #fff; border: 1px solid rgba(255,255,255,0.35); border-radius: 6px; cursor: pointer; white-space: nowrap;">✕ Remove</button>
+        </div>
+    `;
+}
+window.renderLaunchPromoBanner = renderLaunchPromoBanner;
+
+function renderAppHeader(activeRoute = '') {
+    const activeMode = getActiveUserMode();
+    const isAdmin = activeMode === 'ADMIN';
+    const isProvider = activeMode === 'PROVIDER';
+
+    // 1. ADMIN EXCLUSIVE HEADER (No buyer or provider interference)
+    if (isAdmin) {
+        return el`<div>
+            ${renderLaunchPromoBanner()}
+            <div class="header" style="border-bottom: 2px solid rgba(239, 68, 68, 0.35);">
+                <div class="header-logo-group">
+                    ${renderLogo(32, true)}
+                    <span class="mode-badge-pill mode-badge-admin">🛡️ Admin</span>
+                </div>
+                <div class="header-nav" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                    <button class="nav-btn ${activeRoute === '/admin' || activeRoute === '/' ? 'active' : ''}" onclick="router('/admin')">📊 Dashboard</button>
+                    <button class="nav-btn ${activeRoute === '/admin/chats' ? 'active' : ''}" onclick="router('/admin/chats')">💬 Chats Guard</button>
+                    <button class="nav-btn ${activeRoute === '/admin/providers' ? 'active' : ''}" onclick="router('/admin/providers')">👥 Providers</button>
+                    <button class="nav-btn ${activeRoute === '/admin/bookings' ? 'active' : ''}" onclick="router('/admin/bookings')">📋 Bookings & Escrow</button>
+                    <button class="nav-btn ${activeRoute === '/admin/disputes' ? 'active' : ''}" onclick="router('/admin/disputes')">⚖️ Disputes</button>
+                    <button class="nav-btn ${activeRoute === '/payments' ? 'active' : ''}" onclick="router('/payments')">💳 Financials</button>
+                    <button class="nav-btn ${activeRoute === '/admin/niches' ? 'active' : ''}" onclick="router('/admin/niches')">🗂️ Niches</button>
+                    <button class="nav-btn ${activeRoute === '/settings' ? 'active' : ''}" onclick="router('/settings')">⚙️ Settings</button>
+                    <button class="nav-btn notif-bell-btn" onclick="toggleNotificationDrawer()" title="Notifications" style="position: relative; padding: 8px 12px;">
+                        🔔 <span class="nav-notif-badge" id="header-notif-count" style="display:none; position:absolute; top:2px; right:4px; background:#ff4757; color:#fff; font-size:0.65rem; font-weight:800; padding:1px 5px; border-radius:10px; border:2px solid var(--bg-surface, #1e2230);"></span>
+                    </button>
+                    <button class="nav-btn" onclick="toggleTheme()" title="Toggle Theme" style="padding: 8px 12px;">
+                        ${currentTheme === 'dark' ? '☀️' : '🌙'}
+                    </button>
+                    <div class="profile-dropdown-wrapper">${renderProfileAvatar(34)}${renderProfileMenu()}</div>
+                </div>
+            </div>
+            <!-- Admin Mobile Bottom Nav -->
+            <div class="mobile-bottom-nav">
+                <button class="bottom-nav-item ${activeRoute === '/admin' || activeRoute === '/' ? 'active' : ''}" onclick="router('/admin')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                    <span>Overview</span>
+                </button>
+                <button class="bottom-nav-item ${activeRoute === '/admin/chats' ? 'active' : ''}" onclick="router('/admin/chats')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                    <span>Chats</span>
+                </button>
+                <button class="bottom-nav-item ${activeRoute === '/admin/bookings' ? 'active' : ''}" onclick="router('/admin/bookings')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+                    <span>Orders</span>
+                </button>
+                <button class="bottom-nav-item ${activeRoute === '/payments' ? 'active' : ''}" onclick="router('/payments')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                    <span>Financials</span>
+                </button>
+                <button class="bottom-nav-item ${activeRoute === '/settings' ? 'active' : ''}" onclick="router('/settings')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                    <span>Settings</span>
+                </button>
+            </div>
+        </div>`;
+    }
+
+    // 2. PROVIDER EXCLUSIVE HEADER (Creator Studio)
+    if (isProvider) {
+        return el`<div>
+            ${renderLaunchPromoBanner()}
+            <div class="header">
+                <div class="header-logo-group">
+                    ${renderLogo(32, true)}
+                    <span class="mode-badge-pill mode-badge-provider">💼 Provider</span>
+                    <button type="button" class="btn-switch-mode" onclick="toggleUserMode()" title="Switch to Buyer Mode to hire talent">
+                        🛍️ Switch to Buyer Mode
+                    </button>
+                </div>
+                <div class="header-nav" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                    <button class="nav-btn ${activeRoute === '/' ? 'active' : ''}" onclick="router('/')">📊 Studio</button>
+                    <button class="nav-btn ${activeRoute === '/packages' || activeRoute === '/create-package' ? 'active' : ''}" onclick="router('/packages')">📦 My Packages</button>
+                    <button class="nav-btn ${activeRoute === '/bookings' ? 'active' : ''}" onclick="router('/bookings')">📋 Client Orders</button>
+                    <button class="nav-btn ${activeRoute === '/messages' ? 'active' : ''}" onclick="router('/messages')" id="nav-btn-messages">
+                        💬 Messages <span class="nav-unread-badge" id="header-unread-count" style="display:none; background:#ff4757; color:#fff; font-size:0.7rem; font-weight:700; padding:1px 6px; border-radius:10px; margin-left:4px;"></span>
+                    </button>
+                    <button class="nav-btn ${activeRoute === '/payments' ? 'active' : ''}" onclick="router('/payments')">💳 Earnings & Payouts</button>
+                    <button class="nav-btn ${activeRoute === '/profile' || activeRoute === '/settings' ? 'active' : ''}" onclick="router('/profile')">🎨 My Profile</button>
+                    <button class="nav-btn notif-bell-btn" onclick="toggleNotificationDrawer()" title="Notifications" style="position: relative; padding: 8px 12px;">
+                        🔔 <span class="nav-notif-badge" id="header-notif-count" style="display:none; position:absolute; top:2px; right:4px; background:#ff4757; color:#fff; font-size:0.65rem; font-weight:800; padding:1px 5px; border-radius:10px; border:2px solid var(--bg-surface, #1e2230);"></span>
+                    </button>
+                    <button class="nav-btn" onclick="toggleTheme()" title="Toggle Theme" style="padding: 8px 12px;">
+                        ${currentTheme === 'dark' ? '☀️' : '🌙'}
+                    </button>
+                    <div class="profile-dropdown-wrapper">${renderProfileAvatar(34)}${renderProfileMenu()}</div>
+                </div>
+            </div>
+            <!-- Provider Mobile Bottom Nav -->
+            <div class="mobile-bottom-nav">
+                <button class="bottom-nav-item ${activeRoute === '/' ? 'active' : ''}" onclick="router('/')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                    <span>Studio</span>
+                </button>
+                <button class="bottom-nav-item ${activeRoute === '/packages' ? 'active' : ''}" onclick="router('/packages')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    <span>Packages</span>
+                </button>
+                <button class="bottom-nav-item ${activeRoute === '/bookings' ? 'active' : ''}" onclick="router('/bookings')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+                    <span>Orders</span>
+                </button>
+                <button class="bottom-nav-item ${activeRoute === '/messages' ? 'active' : ''}" onclick="router('/messages')" style="position: relative;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                    <span class="nav-unread-dot" id="bottom-unread-dot" style="display:none; position:absolute; top:4px; right:18px; width:8px; height:8px; border-radius:50%; background:#ff4757;"></span>
+                    <span>Messages</span>
+                </button>
+                <button class="bottom-nav-item ${activeRoute === '/payments' ? 'active' : ''}" onclick="router('/payments')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                    <span>Earnings</span>
+                </button>
+            </div>
+        </div>`;
+    }
+
+    // 3. BUYER EXCLUSIVE HEADER (Client / Marketplace)
+    return el`<div>
+        ${renderLaunchPromoBanner()}
+        <div class="header">
+            <div class="header-logo-group">
+                ${renderLogo(32, true)}
+                <span class="mode-badge-pill mode-badge-buyer">🛍️ Buyer</span>
+                <button type="button" class="btn-switch-mode" onclick="toggleUserMode()" title="Switch to Provider Mode to offer your services">
+                    💼 Switch to Provider Mode
+                </button>
+            </div>
+            <div class="header-nav" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                <button class="nav-btn ${activeRoute === '/' ? 'active' : ''}" onclick="router('/')">🏠 Home</button>
+                <button class="nav-btn ${activeRoute === '/messages' ? 'active' : ''}" onclick="router('/messages')" id="nav-btn-messages">
+                    💬 Messages <span class="nav-unread-badge" id="header-unread-count" style="display:none; background:#ff4757; color:#fff; font-size:0.7rem; font-weight:700; padding:1px 6px; border-radius:10px; margin-left:4px;"></span>
+                </button>
+                <button class="nav-btn ${activeRoute === '/bookings' ? 'active' : ''}" onclick="router('/bookings')">📦 My Orders</button>
+                <button class="nav-btn ${activeRoute === '/payments' ? 'active' : ''}" onclick="router('/payments')">💳 Wallet / Escrow</button>
+                <button class="nav-btn ${activeRoute === '/settings' ? 'active' : ''}" onclick="router('/settings')">⚙️ Settings</button>
+                <button class="nav-btn notif-bell-btn" onclick="toggleNotificationDrawer()" title="Notifications" style="position: relative; padding: 8px 12px;">
+                    🔔 <span class="nav-notif-badge" id="header-notif-count" style="display:none; position:absolute; top:2px; right:4px; background:#ff4757; color:#fff; font-size:0.65rem; font-weight:800; padding:1px 5px; border-radius:10px; border:2px solid var(--bg-surface, #1e2230);"></span>
+                </button>
+                <button class="nav-btn" onclick="toggleTheme()" title="Toggle Theme" style="padding: 8px 12px;">
+                    ${currentTheme === 'dark' ? '☀️' : '🌙'}
+                </button>
+                <div class="profile-dropdown-wrapper">${renderProfileAvatar(34)}${renderProfileMenu()}</div>
+            </div>
+        </div>
+        <!-- Buyer Mobile Bottom Nav -->
+        <div class="mobile-bottom-nav">
+            <button class="bottom-nav-item ${activeRoute === '/' ? 'active' : ''}" onclick="router('/')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <span>Home</span>
+            </button>
+            <button class="bottom-nav-item ${activeRoute === '/messages' ? 'active' : ''}" onclick="router('/messages')" style="position: relative;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                <span class="nav-unread-dot" id="bottom-unread-dot" style="display:none; position:absolute; top:4px; right:18px; width:8px; height:8px; border-radius:50%; background:#ff4757;"></span>
+                <span>Messages</span>
+            </button>
+            <button class="bottom-nav-item ${activeRoute === '/bookings' ? 'active' : ''}" onclick="router('/bookings')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+                <span>Orders</span>
+            </button>
+            <button class="bottom-nav-item ${activeRoute === '/payments' ? 'active' : ''}" onclick="router('/payments')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                <span>Wallet</span>
+            </button>
+            <button class="bottom-nav-item ${activeRoute === '/settings' ? 'active' : ''}" onclick="router('/settings')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                <span>Account</span>
+            </button>
+        </div>
+    </div>`;
+}
+window.renderAppHeader = renderAppHeader;
+
+function escapeJs(str) {
+    if (!str) return '';
+    return String(str).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"');
+}
+window.escapeJs = escapeJs;
+
+function openPreBookingChat(providerId, providerName) {
+    if (!providerName && Array.isArray(window.__cachedProviders)) {
+        const cached = window.__cachedProviders.find(p => Number(p.id) === Number(providerId));
+        providerName = cached?.name || '';
+    }
+    if (!currentToken) {
+        showToast('Please log in to chat with creators', 'info');
+        sessionStorage.setItem('redirect_after_login', `/messages?user_id=${providerId}`);
+        router('/login');
+        return;
+    }
+    window.__selectedChatUserId = providerId;
+    window.__selectedChatUserName = providerName || 'Creator';
+    router('/messages');
+}
+
+async function openFiverrPortfolioModal(providerId, providerName) {
+    if (!providerId) return;
+
+    // Remove any existing modals
+    document.querySelectorAll('.fiverr-escrow-modal').forEach(m => m.remove());
+
+    const modal = document.createElement('div');
+    modal.className = 'fiverr-escrow-modal';
+    modal.innerHTML = `
+        <div class="fiverr-escrow-card" style="max-width: 680px; position: relative;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <button class="modal-back-btn" onclick="this.closest('.fiverr-escrow-modal').remove()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14">
+                            <line x1="19" y1="12" x2="5" y2="12"></line>
+                            <polyline points="12 19 5 12 12 5"></polyline>
+                        </svg>
+                        <span>Back</span>
+                    </button>
+                    <div>
+                        <h3 style="margin: 0; font-size: 1.15rem; font-weight: 800; color: var(--text-primary);">${escapeHTML(providerName || 'Creator Showcase')}</h3>
+                        <div class="provider-modal-subtitle" style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 2px;">
+                            Loading verified showcase details...
+                        </div>
+                    </div>
+                </div>
+                <button class="modal-close" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--text-muted);">&times;</button>
+            </div>
+            <div class="provider-modal-body" style="min-height: 200px; display: flex; align-items: center; justify-content: center;">
+                <div class="spinner"></div>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    modal.querySelector('.modal-close').onclick = () => modal.remove();
+    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+
+    try {
+        let provider = null;
+        try {
+            provider = await apiFetch(`/educators/${providerId}/profile-detail`);
+        } catch (_) {
+            try {
+                provider = await apiFetch(`/educators/${providerId}`);
+            } catch (_) {}
+        }
+
+        if (!provider) {
+            provider = {
+                id: providerId,
+                name: providerName || 'Verified Creator',
+                rating: 5.0,
+                total_bookings: 24,
+                skills: ['4K Video Editing', 'Shorts & Reels', 'Color Grading', 'Sound Design'],
+                starting_price: 999,
+                response_time: '1 hour',
+                packages: [{ title: 'Full 4K Video Edit & Audio Mix', price: 999, turnaround: '24 hours' }],
+                portfolio_items: []
+            };
+        }
+
+        const name = provider.name || providerName || 'Creator';
+        const rating = Number(provider.rating || provider.profile?.rating || 5.0).toFixed(1);
+        const totalOrders = provider.review_count || provider.profile?.review_count || 20;
+        const skills = (provider.skills && provider.skills.length > 0) ? provider.skills : (provider.profile?.skills || ['Video Editing', 'Color Grading', 'Sound Design']);
+        let items = Array.isArray(provider.portfolio_items) ? [...provider.portfolio_items] : [];
+        const packages = provider.packages || [];
+
+        // Also gather sample references from provider packages so package videos appear in the modal
+        if (packages && Array.isArray(packages)) {
+            packages.forEach(pkg => {
+                if (pkg.sample_reference && !items.some(i => i.media_url === pkg.sample_reference)) {
+                    items.push({
+                        id: `pkg_${pkg.id}`,
+                        title: pkg.title || '4K Sample Reel',
+                        media_url: pkg.sample_reference,
+                        thumbnail_url: pkg.sample_reference,
+                        media_type: isMediaVideo(pkg.sample_reference) ? 'video' : 'image',
+                        description: `${pkg.title} — ₹${(pkg.price || 0).toLocaleString()} (${pkg.turnaround || '24h'})`
+                    });
+                }
+            });
+        }
+
+        const thumb = getProviderThumbnail(provider);
+        const startingPrice = provider.starting_price || (packages[0]?.price) || 999;
+        const turnaround = packages[0]?.turnaround || '24 hours';
+        const responseTime = provider.response_time || provider.profile?.response_time || '1 hour';
+
+        const cardEl = modal.querySelector('.fiverr-escrow-card');
+        if (!cardEl) return;
+
+        const niche = provider.niche || provider.category || provider.profile?.niche || 'editors';
+        const videoItems = items.filter(i => i.media_type === 'video' || (i.media_url && isMediaVideo(i.media_url)) || (i.media_url && (i.media_url.includes('youtube') || i.media_url.includes('youtu.be'))));
+        const activeMedia = videoItems[0] || items[0];
+        const activeMediaUrl = activeMedia?.media_url || (thumb && isMediaVideo(thumb) ? thumb : '');
+        const activeThumbUrl = activeMedia?.thumbnail_url || (!isMediaVideo(thumb) ? thumb : '');
+        const activeTitle = activeMedia?.title || 'Creator Portfolio Showcase';
+        const activeDesc = activeMedia?.description || 'High-retention editing, sound design, and color grading deliverables with 100% Escrow Protection.';
+
+        const initialMediaHtml = renderModalMediaElement(activeMediaUrl, activeThumbUrl, name, niche, activeTitle);
+
+        cardEl.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <button class="modal-back-btn" onclick="this.closest('.fiverr-escrow-modal').remove()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14">
+                            <line x1="19" y1="12" x2="5" y2="12"></line>
+                            <polyline points="12 19 5 12 12 5"></polyline>
+                        </svg>
+                        <span>Back</span>
+                    </button>
+                    <div>
+                        <h3 style="margin: 0; font-size: 1.2rem; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 6px;">
+                            ${escapeHTML(name)}
+                            <span style="font-size: 0.65rem; background: rgba(16, 185, 129, 0.12); color: var(--success); padding: 2px 6px; border-radius: 4px; font-weight: 700;">★ PRO VERIFIED</span>
+                        </h3>
+                        <div style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 2px;">
+                            ★ ${rating} (${totalOrders} orders) • ⚡ Response: ${escapeHTML(responseTime)} • 100% Escrow Protected
+                        </div>
+                    </div>
+                </div>
+                <button class="modal-close" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--text-muted);">&times;</button>
+            </div>
+
+            <!-- Active Video Sample Reel Player -->
+            <div style="margin-bottom: 14px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <span style="font-size: 0.8125rem; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 6px;">
+                        <span>🎬</span> Verified 4K Video Reel
+                    </span>
+                    <span style="font-size: 0.72rem; color: var(--success); font-weight: 700;">✓ In-App Native Playback</span>
+                </div>
+                <div id="provider-modal-media-wrap" style="position: relative; width: 100%; padding-top: 56.25%; border-radius: 12px; overflow: hidden; background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%); box-shadow: 0 6px 24px rgba(0,0,0,0.5); border: 1px solid var(--border);">
+                    ${initialMediaHtml}
+                </div>
+                <div id="modal-active-reel-title" style="font-size: 0.85rem; font-weight: 700; color: var(--text-primary); margin-top: 8px;">
+                    ${escapeHTML(activeTitle)}
+                </div>
+                <div id="modal-active-reel-desc" style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px;">
+                    ${escapeHTML(activeDesc)}
+                </div>
+            </div>
+
+            <!-- Multiple Sample Reels Switcher (If multiple exist) -->
+            ${items.length > 1 ? `
+                <div style="margin-bottom: 16px;">
+                    <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">
+                        All Sample Reels &amp; Deliverables (${items.length}):
+                    </div>
+                    <div style="display: flex; gap: 8px; overflow-x: auto; padding-bottom: 6px; scrollbar-width: thin;">
+                        ${items.map((item, idx) => `
+                            <div class="sample-reel-tab" onclick="window.__switchModalShowcaseItem(${JSON.stringify(escapeHTML(item.media_url || '')).replace(/"/g, '&quot;')}, ${JSON.stringify(escapeHTML(item.title || '')).replace(/"/g, '&quot;')}, ${JSON.stringify(escapeHTML(item.description || '')).replace(/"/g, '&quot;')}, ${JSON.stringify(escapeHTML(item.thumbnail_url || '')).replace(/"/g, '&quot;')})" style="flex-shrink: 0; width: 120px; cursor: pointer; background: var(--bg-hover); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; transition: transform 0.15s ease;">
+                                <div style="width: 100%; height: 65px; background: #0f172a; position: relative;">
+                                    ${item.thumbnail_url && !isMediaVideo(item.thumbnail_url) ? `
+                                        <img src="${sanitizeUrl(item.thumbnail_url)}" style="width: 100%; height: 100%; object-fit: cover;" alt="${escapeHTML(item.title)}" onerror="this.onerror=null; this.src='${createCategoryCardPlaceholder(niche, item.title, name)}';">
+                                    ` : isMediaVideo(item.media_url) ? `
+                                        <video src="${sanitizeUrl(item.media_url)}" preload="metadata" muted playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>
+                                        <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.3); color: #fff; font-size: 1rem;">▶</div>
+                                    ` : `
+                                        <img src="${createCategoryCardPlaceholder(niche, item.title, name)}" style="width: 100%; height: 100%; object-fit: cover;" alt="${escapeHTML(item.title)}">
+                                    `}
+                                    <span style="position: absolute; bottom: 3px; right: 3px; background: rgba(0,0,0,0.7); font-size: 0.6rem; color: #fff; padding: 1px 4px; border-radius: 3px;">▶ #${idx + 1}</span>
+                                </div>
+                                <div style="padding: 4px 6px; font-size: 0.7rem; font-weight: 700; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                    ${escapeHTML(item.title)}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            ` : ''}
+
+            <!-- Skills & Specializations -->
+            ${skills && skills.length > 0 ? `
+                <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px;">
+                    ${skills.map(s => `<span style="font-size: 0.75rem; background: var(--bg-hover); color: var(--text-secondary); border: 1px solid var(--border); padding: 3px 8px; border-radius: 6px; font-weight: 600;">✨ ${escapeHTML(s)}</span>`).join('')}
+                </div>
+            ` : ''}
+
+            <!-- Packages / Starting Price Bar -->
+            <div style="background: var(--bg-hover); padding: 12px 16px; border-radius: 10px; margin-bottom: 18px; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border);">
+                <div>
+                    <div style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Starting Package</div>
+                    <div style="font-weight: 800; color: var(--accent); font-size: 1.25rem;">₹${Number(startingPrice).toLocaleString()}</div>
+                </div>
+                <div style="text-align: right;">
+                    <div style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Standard Delivery</div>
+                    <div style="font-weight: 700; color: var(--text-primary); font-size: 0.9rem;">⚡ ${escapeHTML(turnaround)}</div>
+                </div>
+            </div>
+
+            <!-- Call to Actions -->
+            <div style="display: flex; gap: 10px; flex-wrap: wrap; width: 100%; box-sizing: border-box;">
+                <button class="btn btn-outline" onclick="this.closest('.fiverr-escrow-modal').remove(); openPreBookingChat(${providerId})" style="flex: 1 1 140px; min-height: 46px; font-weight: 700; border-color: var(--accent); color: var(--accent); display: flex; align-items: center; justify-content: center; gap: 6px;">
+                    💬 Chat with ${escapeHTML(name)}
+                </button>
+                <button class="btn btn-primary" onclick="this.closest('.fiverr-escrow-modal').remove(); selectProvider(${providerId})" style="flex: 1.4 1 160px; font-weight: 700; min-height: 46px; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                    📦 View Packages / Hire
+                </button>
+            </div>
+        `;
+
+        window.__switchModalShowcaseItem = (url, title, desc, itemThumb) => {
+            const wrap = document.getElementById('provider-modal-media-wrap');
+            const titleEl = document.getElementById('modal-active-reel-title');
+            const descEl = document.getElementById('modal-active-reel-desc');
+            if (titleEl) titleEl.textContent = title || 'Creator Portfolio Showcase';
+            if (descEl) descEl.textContent = desc || 'High-retention deliverables with 100% Escrow Protection.';
+            if (!wrap) return;
+
+            wrap.innerHTML = renderModalMediaElement(url, itemThumb, name, niche, title);
+        };
+
+        cardEl.querySelector('.modal-close').onclick = () => modal.remove();
+    } catch (err) {
+        const bodyEl = modal.querySelector('.provider-modal-body');
+        if (bodyEl) {
+            bodyEl.innerHTML = `
+                <div style="text-align: center; padding: 24px; color: var(--text-muted);">
+                    <div style="font-size: 2rem; margin-bottom: 8px;">⚠️</div>
+                    <div style="font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">Unable to load profile details</div>
+                    <p style="font-size: 0.8rem; margin-bottom: 12px;">${escapeHTML(err.message || 'Please try again')}</p>
+                    <button class="btn btn-secondary btn-sm" onclick="this.closest('.fiverr-escrow-modal').remove()">Close</button>
+                </div>
+            `;
+        }
+    }
+}
+window.openFiverrPortfolioModal = openFiverrPortfolioModal;
+window.viewProviderPortfolio = openFiverrPortfolioModal;
+window.openEducatorModal = openFiverrPortfolioModal;
+
+function getCategoryPeekIconSvg(niche, size = 38) {
+    if (niche === 'editors_animators' || niche === 'editors') {
+        return `<svg class="peek-svg peek-svg-clapper" style="width: ${size}px; height: ${size}px;" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="8" y="20" width="32" height="21" rx="4" fill="#6c5ce7" stroke="#4c3fb5" stroke-width="1.5"/>
+            <rect x="8" y="20" width="32" height="7" fill="#221d3b"/>
+            <path d="M14 20 L18 27 M22 20 L26 27 M30 20 L34 27 M38 20 L40 23.5" stroke="#e0e7ff" stroke-width="2.2" stroke-linecap="round"/>
+            <line x1="13" y1="32" x2="23" y2="32" stroke="#ffffff" stroke-opacity="0.5" stroke-width="2" stroke-linecap="round"/>
+            <line x1="13" y1="36" x2="35" y2="36" stroke="#ffffff" stroke-opacity="0.35" stroke-width="1.5" stroke-linecap="round"/>
+            <g class="clapper-stick-group">
+                <rect x="6" y="11" width="34" height="7.5" rx="2.5" fill="#221d3b" stroke="#4c3fb5" stroke-width="1.5"/>
+                <path d="M11 11.5 L15 18 M19 11.5 L23 18 M27 11.5 L31 18 M35 11.5 L39 18" stroke="#e0e7ff" stroke-width="2.2" stroke-linecap="round"/>
+                <circle cx="9" cy="14.5" r="2.2" fill="#c7d2fe" stroke="#4c3fb5" stroke-width="1"/>
+            </g>
+        </svg>`;
+    } else if (niche === 'tutors') {
+        return `<svg class="peek-svg peek-svg-tutor" style="width: ${size}px; height: ${size}px;" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M8 22C8 14.268 15.163 8 24 8C32.837 8 40 14.268 40 22C40 29.732 32.837 36 24 36C21.6 36 19.33 35.53 17.3 34.7L10 38L11.8 32.1C9.46 29.35 8 25.86 8 22Z" fill="#059669" stroke="#065f46" stroke-width="1.5"/>
+            <g class="tutor-wave-group">
+                <path class="wave-1" d="M16 22C16 18.5 19 16 24 16" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
+                <path class="wave-2" d="M19 22C19 19.8 21 18.2 24 18.2" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
+                <path class="wave-3" d="M18 25C18 27.5 20.5 29.5 24 29.5C26.5 29.5 28.5 28.3 29.3 26.5" stroke="#a7f3d0" stroke-width="2" stroke-linecap="round"/>
+                <circle cx="30" cy="26.5" r="2" fill="#ecfdf5"/>
+            </g>
+        </svg>`;
+    } else if (niche === 'writers') {
+        return `<svg class="peek-svg peek-svg-writer" style="width: ${size}px; height: ${size}px;" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="8" y="10" width="22" height="30" rx="3" fill="#1e293b" stroke="#334155" stroke-width="1.5"/>
+            <line x1="13" y1="17" x2="22" y2="17" stroke="#38bdf8" stroke-width="2" stroke-linecap="round"/>
+            <line x1="13" y1="23" x2="25" y2="23" stroke="#64748b" stroke-width="1.8" stroke-linecap="round"/>
+            <line x1="13" y1="29" x2="20" y2="29" stroke="#64748b" stroke-width="1.8" stroke-linecap="round"/>
+            <path class="writer-ink-trail" d="M13 34 C16 32, 19 36, 23 34" stroke="#38bdf8" stroke-width="1.8" stroke-linecap="round"/>
+            <g class="writer-pen-group">
+                <path d="M38 8L41 11L28 27L23 28L24 23L38 8Z" fill="#0284c7" stroke="#0369a1" stroke-width="1.2"/>
+                <path d="M23 28L26 25L24 23L23 28Z" fill="#f8fafc"/>
+                <circle cx="34" cy="14" r="1" fill="#ffffff"/>
+            </g>
+        </svg>`;
+    } else if (niche === 'express') {
+        return `<svg class="peek-svg peek-svg-express" style="width: ${size}px; height: ${size}px;" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="24" cy="24" r="18" fill="rgba(245, 158, 11, 0.15)" stroke="rgba(245, 158, 11, 0.35)" stroke-width="1.2"/>
+            <g class="express-pulse-group">
+                <path d="M26 8L15 24H25L22 40L33 24H23L26 8Z" fill="#f59e0b" stroke="#b45309" stroke-width="1.5" stroke-linejoin="round"/>
+                <circle cx="24" cy="24" r="2.5" fill="#ffffff"/>
+            </g>
+        </svg>`;
+    } else {
+        return `<svg class="peek-svg peek-svg-all" style="width: ${size}px; height: ${size}px;" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="24" cy="24" r="18" fill="rgba(245, 158, 11, 0.12)" stroke="rgba(245, 158, 11, 0.3)" stroke-width="1"/>
+            <g class="star-sparkle-group">
+                <path d="M24 6 C24 16, 24 16, 34 24 C24 24, 24 24, 24 34 C24 24, 24 24, 14 24 C24 16, 24 16, 24 6 Z" fill="#f59e0b" stroke="#b45309" stroke-width="1"/>
+                <circle cx="24" cy="24" r="3" fill="#ffffff"/>
+                <circle cx="13" cy="13" r="1.5" fill="#fde68a"/>
+                <circle cx="35" cy="14" r="1.8" fill="#fde68a"/>
+            <circle cx="33" cy="33" r="1.2" fill="#fde68a"/>
+        </g>
+    </svg>`;
+    }
+}
+function getTypeIconSvg(typeId, fallbackIcon = '✨', size = 32) {
+    if (!typeId) {
+        return `<svg class="type-svg type-svg-all" style="width: ${size}px; height: ${size}px;" viewBox="0 0 36 36" fill="none">
+            <circle cx="18" cy="18" r="15" fill="rgba(245, 158, 11, 0.15)"/>
+            <path class="anim-sparkle" d="M18 4L21 14L31 17L21 20L18 30L15 20L5 17L15 14Z" fill="#f59e0b"/>
+            <circle cx="18" cy="17" r="2.5" fill="#fff"/>
+        </svg>`;
+    }
+    if (typeId === 'youtube') {
+        return `<svg class="type-svg type-svg-youtube" style="width: ${size}px; height: ${size}px;" viewBox="0 0 36 36" fill="none">
+            <rect x="3" y="6" width="30" height="24" rx="7" fill="#ef4444"/>
+            <path class="anim-yt-play" d="M14 12L24 18L14 24Z" fill="#ffffff"/>
+            <circle class="anim-pulse-dot" cx="28" cy="10" r="2" fill="#fecaca"/>
+        </svg>`;
+    }
+    if (typeId === 'ads_social') {
+        return `<svg class="type-svg type-svg-social" style="width: ${size}px; height: ${size}px;" viewBox="0 0 36 36" fill="none">
+            <defs>
+                <linearGradient id="gradSocial" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#ec4899"/>
+                    <stop offset="100%" stop-color="#8b5cf6"/>
+                </linearGradient>
+            </defs>
+            <rect x="8" y="4" width="20" height="28" rx="5" fill="url(#gradSocial)"/>
+            <rect x="10" y="7" width="16" height="20" rx="3" fill="#0f172a"/>
+            <path class="anim-heart" d="M18 13C16.5 11 13 12.5 13 15C13 18 18 21 18 21C18 21 23 18 23 15C23 12.5 19.5 11 18 13Z" fill="#ec4899"/>
+            <circle cx="18" cy="29" r="1.5" fill="#e2e8f0"/>
+        </svg>`;
+    }
+    if (typeId === 'gaming') {
+        return `<svg class="type-svg type-svg-gaming" style="width: ${size}px; height: ${size}px;" viewBox="0 0 36 36" fill="none">
+            <path d="M7 13C7 10 10 9 18 9C26 9 29 10 29 13L31 23C31.5 25.5 29 27.5 27 26L23 23H13L9 26C7 27.5 4.5 25.5 5 23L7 13Z" fill="#6366f1" stroke="#4338ca" stroke-width="1.5"/>
+            <path class="anim-dpad" d="M10 16H14M12 14V18" stroke="#a5b4fc" stroke-width="2" stroke-linecap="round"/>
+            <circle class="anim-btn-1" cx="22" cy="15" r="1.5" fill="#f43f5e"/>
+            <circle class="anim-btn-2" cx="25" cy="17" r="1.5" fill="#10b981"/>
+        </svg>`;
+    }
+    if (typeId === 'animations') {
+        return `<svg class="type-svg type-svg-anim" style="width: ${size}px; height: ${size}px;" viewBox="0 0 36 36" fill="none">
+            <path d="M18 4L30 11V25L18 32L6 25V11L18 4Z" fill="#8b5cf6" stroke="#6d28d9" stroke-width="1.2"/>
+            <path d="M18 4L18 18L30 11" stroke="#c4b5fd" stroke-width="1.2"/>
+            <path d="M18 18L6 11" stroke="#c4b5fd" stroke-width="1.2"/>
+            <path d="M18 18L18 32" stroke="#4c1d95" stroke-width="1.2"/>
+            <circle class="anim-orbit" cx="24" cy="8" r="2.5" fill="#fbbf24"/>
+        </svg>`;
+    }
+    if (typeId === 'motion_graphics') {
+        return `<svg class="type-svg type-svg-motion" style="width: ${size}px; height: ${size}px;" viewBox="0 0 36 36" fill="none">
+            <ellipse cx="18" cy="18" rx="14" ry="6" stroke="#38bdf8" stroke-width="1.5" transform="rotate(-25 18 18)" class="anim-ring-1"/>
+            <ellipse cx="18" cy="18" rx="14" ry="6" stroke="#f43f5e" stroke-width="1.5" transform="rotate(35 18 18)" class="anim-ring-2"/>
+            <circle cx="18" cy="18" r="4.5" fill="#38bdf8"/>
+            <circle cx="18" cy="18" r="2" fill="#fff"/>
+        </svg>`;
+    }
+    if (typeId === 'music') {
+        return `<svg class="type-svg type-svg-music" style="width: ${size}px; height: ${size}px;" viewBox="0 0 36 36" fill="none">
+            <rect class="eq-bar-1" x="7" y="16" width="3.5" height="12" rx="1.75" fill="#a855f7"/>
+            <rect class="eq-bar-2" x="13" y="10" width="3.5" height="18" rx="1.75" fill="#ec4899"/>
+            <rect class="eq-bar-3" x="19" y="6" width="3.5" height="22" rx="1.75" fill="#3b82f6"/>
+            <rect class="eq-bar-4" x="25" y="13" width="3.5" height="15" rx="1.75" fill="#10b981"/>
+        </svg>`;
+    }
+    if (typeId === 'corporate') {
+        return `<svg class="type-svg type-svg-corp" style="width: ${size}px; height: ${size}px;" viewBox="0 0 36 36" fill="none">
+            <rect x="6" y="12" width="11" height="18" rx="2" fill="#334155" stroke="#475569" stroke-width="1"/>
+            <rect x="19" y="6" width="11" height="24" rx="2" fill="#1e293b" stroke="#0ea5e9" stroke-width="1.2"/>
+            <line x1="10" y1="16" x2="13" y2="16" stroke="#94a3b8" stroke-width="1.5"/>
+            <line x1="10" y1="20" x2="13" y2="20" stroke="#94a3b8" stroke-width="1.5"/>
+            <line x1="23" y1="10" x2="26" y2="10" stroke="#38bdf8" stroke-width="1.5"/>
+            <line x1="23" y1="14" x2="26" y2="14" stroke="#38bdf8" stroke-width="1.5"/>
+            <line x1="23" y1="18" x2="26" y2="18" stroke="#38bdf8" stroke-width="1.5"/>
+            <path class="anim-arrow" d="M12 28L20 18L26 22L32 14" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>`;
+    }
+    if (typeId === 'ielts') {
+        return `<svg class="type-svg type-svg-ielts" style="width: ${size}px; height: ${size}px;" viewBox="0 0 36 36" fill="none">
+            <circle cx="18" cy="18" r="14" fill="#059669" stroke="#047857" stroke-width="1.2"/>
+            <circle cx="18" cy="18" r="9" fill="#10b981"/>
+            <circle cx="18" cy="18" r="4.5" fill="#ffffff"/>
+            <path d="M18 6V11M18 25V30M6 18H11M25 18H30" stroke="#a7f3d0" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>`;
+    }
+    if (typeId === 'accent') {
+        return `<svg class="type-svg type-svg-accent" style="width: ${size}px; height: ${size}px;" viewBox="0 0 36 36" fill="none">
+            <rect x="13" y="6" width="10" height="16" rx="5" fill="#3b82f6" stroke="#1d4ed8" stroke-width="1.2"/>
+            <path d="M9 16C9 21 13 25 18 25C23 25 27 21 27 16" stroke="#93c5fd" stroke-width="2" stroke-linecap="round"/>
+            <line x1="18" y1="25" x2="18" y2="30" stroke="#93c5fd" stroke-width="2" stroke-linecap="round"/>
+            <line x1="13" y1="30" x2="23" y2="30" stroke="#93c5fd" stroke-width="2" stroke-linecap="round"/>
+        </svg>`;
+    }
+    if (typeId === 'business') {
+        return `<svg class="type-svg type-svg-business" style="width: ${size}px; height: ${size}px;" viewBox="0 0 36 36" fill="none">
+            <rect x="6" y="12" width="24" height="18" rx="4" fill="#f59e0b" stroke="#b45309" stroke-width="1.2"/>
+            <path d="M13 12V9C13 7.5 14.5 6 16 6H20C21.5 6 23 7.5 23 9V12" stroke="#fef3c7" stroke-width="1.8" stroke-linecap="round"/>
+            <line x1="6" y1="18" x2="30" y2="18" stroke="#78350f" stroke-width="1.5"/>
+            <circle cx="18" cy="18" r="2.5" fill="#ffffff" stroke="#78350f" stroke-width="1"/>
+        </svg>`;
+    }
+    if (typeId === 'speaking') {
+        return `<svg class="type-svg type-svg-speaking" style="width: ${size}px; height: ${size}px;" viewBox="0 0 36 36" fill="none">
+            <path d="M7 16C7 10 11 7 18 7C25 7 29 10 29 16C29 21 25 24 19 24L12 28L13 23.5C9 22 7 19.5 7 16Z" fill="#10b981" stroke="#047857" stroke-width="1.2"/>
+            <circle cx="13" cy="15.5" r="1.5" fill="#ffffff"/>
+            <circle cx="18" cy="15.5" r="1.5" fill="#ffffff"/>
+            <circle cx="23" cy="15.5" r="1.5" fill="#ffffff"/>
+        </svg>`;
+    }
+    if (typeId === 'script') {
+        return `<svg class="type-svg type-svg-script" style="width: ${size}px; height: ${size}px;" viewBox="0 0 36 36" fill="none">
+            <rect x="7" y="6" width="22" height="24" rx="3" fill="#6366f1" stroke="#4338ca" stroke-width="1.2"/>
+            <line x1="12" y1="12" x2="24" y2="12" stroke="#e0e7ff" stroke-width="2" stroke-linecap="round"/>
+            <line x1="12" y1="17" x2="24" y2="17" stroke="#c7d2fe" stroke-width="1.5" stroke-linecap="round"/>
+            <line x1="12" y1="22" x2="19" y2="22" stroke="#c7d2fe" stroke-width="1.5" stroke-linecap="round"/>
+            <circle cx="25" cy="24" r="3" fill="#fbbf24"/>
+        </svg>`;
+    }
+    if (typeId === 'copy') {
+        return `<svg class="type-svg type-svg-copy" style="width: ${size}px; height: ${size}px;" viewBox="0 0 36 36" fill="none">
+            <path d="M20 4L8 19H18L16 32L28 17H18L20 4Z" fill="#ec4899" stroke="#be185d" stroke-width="1.2" stroke-linejoin="round"/>
+            <circle cx="18" cy="18" r="2" fill="#ffffff"/>
+        </svg>`;
+    }
+    if (typeId === 'seo') {
+        return `<svg class="type-svg type-svg-seo" style="width: ${size}px; height: ${size}px;" viewBox="0 0 36 36" fill="none">
+            <circle cx="16" cy="16" r="9" stroke="#0ea5e9" stroke-width="2"/>
+            <line x1="23" y1="23" x2="30" y2="30" stroke="#0ea5e9" stroke-width="2.5" stroke-linecap="round"/>
+            <path d="M12 18L15 14L18 16L21 12" stroke="#38bdf8" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>`;
+    }
+    if (typeId === 'email') {
+        return `<svg class="type-svg type-svg-email" style="width: ${size}px; height: ${size}px;" viewBox="0 0 36 36" fill="none">
+            <rect x="5" y="8" width="26" height="20" rx="3" fill="#8b5cf6" stroke="#6d28d9" stroke-width="1.2"/>
+            <path d="M5 10L18 19L31 10" stroke="#f5f3ff" stroke-width="1.5" stroke-linejoin="round"/>
+            <circle cx="28" cy="12" r="2" fill="#34d399"/>
+        </svg>`;
+    }
+    return `<span style="font-size: ${Math.round(size * 0.7)}px; line-height: 1;">${fallbackIcon}</span>`;
+}
+window.getTypeIconSvg = getTypeIconSvg;
+window.getCategoryPeekIconSvg = getCategoryPeekIconSvg;
+
+window.__initSliderMouseDrag = (sliderEl) => {
+    if (!sliderEl || sliderEl.__mouseDragInit) return;
+    sliderEl.__mouseDragInit = true;
+    let isDown = false;
+    let startX = 0;
+    let scrollLeft = 0;
+    let hasMoved = false;
+
+    sliderEl.addEventListener('mousedown', (e) => {
+        isDown = true;
+        hasMoved = false;
+        sliderEl.classList.add('grabbing');
+        startX = e.pageX - sliderEl.offsetLeft;
+        scrollLeft = sliderEl.scrollLeft;
+    });
+
+    sliderEl.addEventListener('mouseleave', () => {
+        isDown = false;
+        sliderEl.classList.remove('grabbing');
+    });
+
+    sliderEl.addEventListener('mouseup', () => {
+        isDown = false;
+        sliderEl.classList.remove('grabbing');
+    });
+
+    sliderEl.addEventListener('mousemove', (e) => {
+        if (!isDown) return;
+        e.preventDefault();
+        const x = e.pageX - sliderEl.offsetLeft;
+        const walk = (x - startX) * 1.5;
+        if (Math.abs(walk) > 4) {
+            hasMoved = true;
+        }
+        sliderEl.scrollLeft = scrollLeft - walk;
+    });
+
+    sliderEl.addEventListener('click', (e) => {
+        if (hasMoved) {
+            e.preventDefault();
+            e.stopPropagation();
+            hasMoved = false;
+        }
+    }, true);
+};
+
+async function updateUnreadCountBadge() {
+    if (!currentToken) return;
+    try {
+        const res = await apiFetch('/messages/unread-count');
+        const count = res.unread_count || 0;
+        const topBadge = document.getElementById('header-unread-count');
+        if (topBadge) {
+            if (count > 0) {
+                topBadge.textContent = count > 99 ? '99+' : count;
+                topBadge.style.display = 'inline-block';
+            } else {
+                topBadge.style.display = 'none';
+            }
+        }
+        const bottomDot = document.getElementById('bottom-unread-dot');
+        if (bottomDot) {
+            bottomDot.style.display = count > 0 ? 'block' : 'none';
+        }
+    } catch (_) {}
+}
+window.updateUnreadCountBadge = updateUnreadCountBadge;
+setInterval(updateUnreadCountBadge, 12000);
+setTimeout(updateUnreadCountBadge, 2000);
+
+// Universal History & Mobile Back-Button Management
+if (!history.state) {
+    try {
+        history.replaceState({ path: window.location.pathname }, '', window.location.pathname);
+    } catch (_) {}
+}
+
+function getSafeNextUrl() {
+    try {
+        const nextParam = new URLSearchParams(window.location.search).get('next');
+        if (nextParam && nextParam.startsWith('/') && !nextParam.startsWith('//') && !nextParam.includes('\\')) {
+            return nextParam;
+        }
+    } catch (_) {}
+    return null;
+}
+window.getSafeNextUrl = getSafeNextUrl;
+
+// Router
+function router(path, pushState = true) {
+    if (!path) path = window.location.pathname + window.location.search + window.location.hash;
+    let rawPath = '/';
+    try {
+        const urlObj = new URL(path, window.location.origin);
+        rawPath = urlObj.pathname || '/';
+    } catch (_) {
+        rawPath = (path || '/').split('?')[0].split('#')[0] || '/';
+    }
+
+    const routes = {
+        '/': (currentToken ? Dashboard : Landing),
+        '/dashboard': (currentToken ? Dashboard : Login),
+        '/providers': ProvidersList,
+        '/explore': ProvidersList,
+        '/talent': ProvidersList,
+        '/welcome': (currentToken ? (currentUser?.user_type === 'ADMIN' ? AdminDashboard : WelcomePage) : Login),
+        '/login': Login,
+        '/register': Register,
+        '/profile': (currentToken ? Settings : Login),
+        '/portfolio': (currentToken ? Settings : Login),
+        '/settings': (currentToken ? Settings : Login),
+        '/payments': (currentToken ? PaymentsPortal : Login),
+        '/packages': (currentToken ? MyPackages : Landing),
+        '/create-package': (currentToken ? CreatePackage : Login),
+        '/bookings': (currentToken ? BookingsList : Login),
+        '/create-booking': (currentToken ? CreateBooking : Login),
+        '/messages': (currentToken ? MessagesInbox : Login),
+        '/admin': (currentToken ? AdminDashboard : Login),
+        '/admin/providers': (currentToken ? AdminProviders : Login),
+        '/admin/bookings': (currentToken ? AdminBookings : Login),
+        '/admin/disputes': (currentToken ? AdminDisputes : Login),
+        '/admin/chats': (currentToken ? AdminChatsView : Login),
+        '/admin/niches': (currentToken ? AdminNiches : Login),
+        '/groove-chat': (currentToken ? GrooveChat : Login),
+        '/privacy': PrivacyPolicy,
+        '/terms': TermsOfService,
+        '/forgot-password': ForgotPassword,
+        '/reset-password': ResetPasswordPage,
+        '/verify-email': VerifyEmailPage,
+        '/logout': LogoutPage,
+    };
+
+    const protectedPaths = ['/dashboard', '/messages', '/bookings', '/payments', '/create-booking', '/create-package', '/admin', '/admin/providers', '/admin/bookings', '/admin/disputes', '/admin/chats', '/admin/niches', '/groove-chat'];
+    let targetFullUrl = path;
+    if (!currentToken && protectedPaths.includes(rawPath)) {
+        const safeNext = encodeURIComponent(path);
+        targetFullUrl = `/login?next=${safeNext}`;
+        rawPath = '/login';
+    }
+
+    const component = routes[rawPath] || NotFound;
+    if (pushState) {
+        try {
+            if (window.location.pathname + window.location.search !== targetFullUrl || !history.state) {
+                history.pushState({ path: targetFullUrl }, '', targetFullUrl);
+            }
+        } catch (_) {}
+    }
+    render(component);
+    if (currentToken && currentUser && !notificationState.pollInterval) {
+        initNotificationPoller();
+    }
+    try { window.scrollTo({ top: 0, behavior: 'instant' }); } catch (_) { window.scrollTo(0, 0); }
+}
+window.router = router;
+
+// Universal Modal MutationObserver to seamlessly handle phone physical/swipe back buttons
+const modalSelector = '.fiverr-escrow-modal, #deliver-work-modal-root, #portfolio-modal-root, #security-suspended-modal, .modal-backdrop, .modal-overlay, #profile-icon-picker, #groove-chat-modal, #social-login-modal, #inbox-modal-root, #chat-modal-root, #review-modal-root';
+
+let isPoppingModalState = false;
+
+if (!window.__modalObserverInitialized) {
+    window.__modalObserverInitialized = true;
+    const modalObserver = new MutationObserver((mutations) => {
+        for (const mutation of mutations) {
+            for (const node of mutation.addedNodes) {
+                if (node.nodeType === 1) {
+                    const targetModal = (node.matches && node.matches(modalSelector)) ? node : (node.querySelector ? node.querySelector(modalSelector) : null);
+                    if (targetModal && !targetModal.dataset.historyAttached) {
+                        targetModal.dataset.historyAttached = 'true';
+                        try {
+                            history.pushState({ isModal: true, modalId: targetModal.id || 'modal', path: window.location.pathname }, '', window.location.href);
+                        } catch (_) {}
+                    }
+                }
+            }
+            for (const node of mutation.removedNodes) {
+                if (node.nodeType === 1) {
+                    const targetModal = (node.matches && node.matches(modalSelector)) ? node : (node.querySelector ? node.querySelector(modalSelector) : null);
+                    if (targetModal && targetModal.dataset.historyAttached === 'true' && !isPoppingModalState && !targetModal.dataset.closedByPopstate && !targetModal.dataset.skipHistoryBack) {
+                        try {
+                            history.back();
+                        } catch (_) {}
+                    }
+                }
+            }
+        }
+    });
+    modalObserver.observe(document.body, { childList: true, subtree: true });
+}
+
+// Handle phone physical/swipe back button & browser back/forward buttons
+window.addEventListener('popstate', (e) => {
+    isPoppingModalState = true;
+    try {
+        // 1. Close open profile menu if open
+        const profileDropdown = document.getElementById('profile-menu-dropdown');
+        if (profileDropdown && profileDropdown.style.display !== 'none') {
+            profileDropdown.style.display = 'none';
+            return;
+        }
+
+        // 2. Close open modals / overlays first
+        const openModals = document.querySelectorAll(modalSelector);
+        if (openModals && openModals.length > 0) {
+            const topModal = openModals[openModals.length - 1];
+            topModal.dataset.closedByPopstate = 'true';
+            topModal.remove();
+            return;
+        }
+
+        // 3. If in Messages on mobile and viewing active chat conversation, back returns to conversations list
+        const inboxContainer = document.querySelector('.inbox-container.show-chat');
+        if (inboxContainer) {
+            inboxContainer.classList.remove('show-chat');
+            window.__selectedChatUserId = null;
+            return;
+        }
+
+        // 4. If in ProvidersList and viewing a specific category or subType, back returns to all categories
+        if ((window.location.pathname === '/providers' || window.location.pathname === '/explore' || window.location.pathname === '/talent') && (providerSearchState?.niche || providerSearchState?.subType)) {
+            providerSearchState.niche = '';
+            providerSearchState.subType = '';
+            providerSearchState.serviceOption = '';
+            providerSearchState.sellerDetail = '';
+            providerSearchState.budget = '';
+            providerSearchState.deliveryTime = '';
+            if (typeof window.setProviderNiche === 'function') {
+                window.setProviderNiche('');
+            } else {
+                router('/providers', false);
+            }
+            return;
+        }
+
+        // 5. If on Dashboard and a category filter is active, back returns to 'all'
+        if (window.location.pathname === '/' && typeof window.__activeBuyerFilter !== 'undefined' && window.__activeBuyerFilter !== 'all') {
+            if (typeof window.__setBuyerFilter === 'function') {
+                window.__setBuyerFilter('all');
+                return;
+            }
+        }
+
+        // 6. Otherwise, render the current route for the new URL
+        const currentPath = (e.state && e.state.path) || window.location.pathname || '/';
+        router(currentPath, false);
+    } finally {
+        setTimeout(() => { isPoppingModalState = false; }, 60);
+    }
+});
+
+function wireForms(root) {
+    const form = root?.querySelector?.('form');
+    if (!form) return;
+    const handlers = {
+        'handleLogin(event)': window.handleLogin,
+        'handleRegister(event)': window.handleRegister,
+        'handleProfileSave(event)': window.handleProfileSave,
+        'handleSubmit(event)': window.handleSubmit
+    };
+    const inline = form.getAttribute('onsubmit');
+    const handler = handlers[inline];
+    if (handler) {
+        form.removeAttribute('onsubmit');
+        form.addEventListener('submit', handler);
+    }
+}
+
+function render(component) {
+    appEl.innerHTML = '';
+    const content = component();
+    if (content) { appEl.appendChild(content); wireForms(content); }
+    else appEl.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+}
+
+window.render = render;
+
+function mount(content) {
+    appEl.innerHTML = '';
+    if (content) { appEl.appendChild(content); wireForms(content); }
+}
+
+// =============== GLOBAL SOCIAL AUTH ===============
+
+// Google Sign-In using the real Google Identity Services (GIS) library.
+// The library (https://accounts.google.com/gsi/client) is loaded in index.html.
+// When the user clicks "Continue with Google", Google shows its own account
+// picker / login page. On success, Google returns a verified ID token that the
+// backend already verifies via oauth2.googleapis.com/tokeninfo.
+//
+// Apple Sign-In keeps its existing modal flow (Apple has no equivalent JS popup).
+// If no Google client ID is configured, falls back to the modal email flow.
+
+async function handleGoogleSignIn(initialRole = null, credential = null) {
+    const role = initialRole || window.selectedType || 'BUYER';
+    const existing = document.getElementById('social-login-modal');
+    if (existing) existing.remove();
+
+    // 1. If credential is provided (e.g. from Google GIS callback):
+    if (credential) {
+        const btn = document.querySelector('#btn-auth-google');
+        const origBtnHtml = btn ? btn.innerHTML : '';
+        if (btn && btn.tagName === 'BUTTON') {
+            btn.disabled = true;
+            btn.innerHTML = '<span style="display:inline-block;width:14px;height:14px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:8px;vertical-align:middle;"></span> Signing in with Google…';
+        }
+
+        try {
+            showToast('Verifying with Google...', 'info');
+            const res = await apiFetch('/auth/google', {
+                method: 'POST',
+                body: JSON.stringify({
+                    provider: 'google',
+                    token: credential,
+                    user_type: role,
+                }),
+            });
+            currentToken = res.access_token;
+            localStorage.setItem('access_token', currentToken);
+            currentUser = await apiFetch('/auth/me');
+            localStorage.setItem('current_user', JSON.stringify(currentUser));
+            showToast(`Signed in with Google as ${currentUser.name}!`, 'success');
+            const safeNext = getSafeNextUrl();
+            if (safeNext) {
+                router(safeNext);
+            } else if (currentUser?.user_type === 'ADMIN') {
+                router('/admin');
+            } else {
+                router('/');
+            }
+            return;
+        } catch (err) {
+            if (btn && btn.tagName === 'BUTTON') { btn.disabled = false; btn.innerHTML = origBtnHtml; }
+            console.error('Google token verification failed:', err);
+            showToast(err.message || 'Google Sign-In failed. Please try again.', 'error');
+            return;
+        }
+    }
+
+    // 2. If no credential yet and GIS is available with client_id:
+    const clientId = window.publicConfig?.google_client_id;
+    if (typeof window.google !== 'undefined' && window.google?.accounts?.id && clientId) {
+        try {
+            window.google.accounts.id.initialize({
+                client_id: clientId,
+                callback: (gisResponse) => {
+                    const cred = gisResponse?.credential || gisResponse;
+                    if (cred && typeof cred === 'string') {
+                        handleGoogleSignIn(role, cred);
+                    }
+                },
+                auto_select: false,
+                cancel_on_tap_outside: true,
+            });
+
+            window.google.accounts.id.prompt();
+            return;
+        } catch (e) {
+            console.warn('GIS One Tap prompt note:', e);
+        }
+    }
+
+    // 3. Fallback only if GIS is missing or unconfigured
+    if (!window.google?.accounts?.id || !clientId) {
+        handleSocialLoginFallback('google', role);
+    }
+}
+
+// Modal fallback for Google/Apple sign-in when GIS is unavailable or no client ID
+async function handleSocialLoginFallback(provider, initialRole = null) {
+    const providerName = provider === 'google' ? 'Google' : 'Apple';
+    const existing = document.getElementById('social-login-modal');
+    if (existing) existing.remove();
+
+    const overlay = document.createElement('div');
+    overlay.id = 'social-login-modal';
+    overlay.className = 'modal-backdrop';
+    overlay.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(8px); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 16px;';
+    overlay.innerHTML = `
+        <div class="card" style="max-width: 380px; width: 100%; box-shadow: var(--shadow-lg); border: 1px solid var(--border); border-radius: 16px; animation: fadeIn 0.2s ease;">
+            <div class="card-body" style="padding: 24px 20px; text-align: center;">
+                <div style="font-size: 2rem; margin-bottom: 10px;">🔐</div>
+                <h3 style="margin: 0 0 8px; font-size: 1.1rem; font-weight: 800; color: var(--text-primary);">${providerName} Sign-In</h3>
+                <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5; margin: 0 0 18px;">
+                    ${provider === 'apple'
+                        ? 'Apple sign-in is coming soon. Please sign in with your email/phone and password, or with a phone OTP.'
+                        : 'Please use email/phone and password, or log in with phone OTP.'}
+                </p>
+                <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 18px;">
+                    <button class="btn btn-primary" id="fallback-email-btn" style="width: 100%; justify-content: center; padding: 12px 18px; font-weight: 700; font-size: 0.95rem;">Sign In with Email / Phone</button>
+                    <button class="btn btn-secondary" id="fallback-cancel-btn" style="width: 100%; justify-content: center; padding: 10px 18px; font-size: 0.95rem;">Close</button>
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+    const close = () => overlay.remove();
+    overlay.querySelector('#fallback-cancel-btn').onclick = close;
+    overlay.onclick = (e) => { if (e.target === overlay) close(); };
+    overlay.querySelector('#fallback-email-btn').onclick = () => { close(); router('/login'); };
+}
+
+function handleSocialLogin(provider, initialRole = null) {
+    if (provider === 'google') {
+        return handleGoogleSignIn(initialRole);
+    }
+    return handleSocialLoginFallback(provider, initialRole);
+}
+window.handleSocialLogin = handleSocialLogin;
+
+// =============== AUTH PORTAL (SIGN IN & REGISTER) ===============
+
+let authPortalActiveTab = 'login'; // 'login' or 'register'
+
+function AuthPortal(initialTab = 'login') {
+    authPortalActiveTab = initialTab;
+
+    const view = el`<div class="main" style="padding: 24px 16px;">
+        <div class="card" style="max-width: 440px; margin: 20px auto 40px; box-shadow: var(--shadow-lg); border: 1px solid var(--border);">
+            <div class="card-header" style="display: flex; flex-direction: column; align-items: center; padding: 24px 20px 16px; border-bottom: 1px solid var(--border);">
+                <img class="logo-light-mode" src="/static/icons/grove_hub_logo_light.png" alt="Groove Hub" style="height: 68px; width: auto; max-width: 230px; object-fit: contain; margin-bottom: 6px; cursor: pointer;" onclick="router('/')" />
+                <img class="logo-dark-mode" src="/static/icons/grove_hub_logo_dark.png" alt="Groove Hub" style="height: 68px; width: auto; max-width: 230px; object-fit: contain; margin-bottom: 6px; cursor: pointer; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.3));" onclick="router('/')" />
+                <!-- Auth Tabs -->
+                <div class="tabs" style="width: 100%; margin-top: 18px; display: flex;">
+                    <button type="button" class="tab ${authPortalActiveTab === 'login' ? 'active' : ''}" id="auth-tab-login" style="flex: 1; text-align: center; font-weight: 700;">
+                        Sign In
+                    </button>
+                    <button type="button" class="tab ${authPortalActiveTab === 'register' ? 'active' : ''}" id="auth-tab-register" style="flex: 1; text-align: center; font-weight: 700;">
+                        Create Account
+                    </button>
+                </div>
+            </div>
+
+            <div class="card-body" style="padding: 24px 20px;">
+                <!-- Social Sign In Options -->
+                <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 18px;">
+                    <button type="button" class="btn-social btn-google" id="btn-auth-google" style="margin: 0;">
+
+                        <svg width="18" height="18" viewBox="0 0 18 18">
+                            <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.616z"/>
+                            <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"/>
+                            <path fill="#FBBC05" d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.961H.957C.347 6.173 0 7.548 0 9s.348 2.827.957 4.039l3.007-2.332z"/>
+                            <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.961L3.964 7.293C4.672 5.166 6.656 3.58 9 3.58z"/>
+                        </svg>
+                        <span id="label-google-btn">Continue with Google</span>
+                    </button>
+                    <button type="button" class="btn-social btn-apple" id="btn-auth-apple" style="margin: 0; opacity: 0.7;" title="Apple sign-in is coming soon" disabled aria-disabled="true">
+                        <svg width="18" height="18" viewBox="0 0 170 170" fill="currentColor">
+                            <path d="M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.19-2.12-9.97-3.17-14.34-3.17-4.58 0-9.49 1.05-14.74 3.17-5.26 2.13-9.5 3.24-12.74 3.35-4.35.13-9.16-1.9-14.42-6.08-3.7-3.05-7.6-7.79-11.7-14.24-6.3-9.91-11.25-20.98-14.85-33.2-3.6-12.22-5.4-23.77-5.4-34.65 0-14.73 3.65-26.96 10.96-36.68 7.3-9.73 16.48-14.71 27.53-14.96 4.9.12 10.37 1.33 16.4 3.63 6.03 2.3 9.94 3.52 11.73 3.66 2.01-.27 6.02-1.57 12.03-3.9 6.01-2.33 11.37-3.4 16.07-3.21 11.19.74 20.37 4.96 27.55 12.65-9.87 5.99-14.67 14.36-14.41 25.1.26 8.35 3.38 15.35 9.36 21 5.98 5.66 13.06 8.89 21.23 9.69-2.26 6.8-4.99 13.79-8.19 20.97zM119.22 31.84c0-7.23 2.61-13.9 7.82-20.02 5.22-6.12 11.59-9.86 19.11-11.22.13 1.06.2 2.06.2 3 0 7.34-2.73 14.19-8.18 20.55-5.46 6.36-11.96 10.09-19.51 11.19-.27-1.19-.44-2.36-.44-3.5z"/>
+                        </svg>
+                        <span id="label-apple-btn">Continue with Apple <small style="opacity: 0.75; font-size: 0.72rem;">(Coming Soon)</small></span>
+                    </button>
+                </div>
+
+                <div class="social-divider"><span>or with email & phone</span></div>
+
+                <!-- SIGN IN FORM -->
+                <div id="auth-panel-login" style="display: ${authPortalActiveTab === 'login' ? 'block' : 'none'};">
+                    <div id="login-error-container"></div>
+                    <form id="login-form" onsubmit="return false;">
+                        <div class="form-group">
+                            <label for="login-phone" class="form-label">Phone Number or Email</label>
+                            <input type="text" class="form-input" id="login-phone" placeholder="Phone number or email address" required autocomplete="username">
+                        </div>
+                        <div class="form-group">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <label for="login-password" class="form-label" style="margin: 0;">Password</label>
+                                <button type="button" id="toggle-login-password" style="background: none; border: none; font-size: 0.75rem; color: var(--accent); cursor: pointer; padding: 0;">Show</button>
+                            </div>
+                            <input type="password" class="form-input" id="login-password" placeholder="Enter password" required autocomplete="current-password" style="margin-top: 6px;">
+                        </div>
+                        <button type="submit" class="btn btn-primary" id="login-submit-btn" style="width: 100%; padding: 13px; font-weight: 700; font-size: 1rem; justify-content: center; margin-top: 8px;">
+                            Sign In
+                        </button>
+
+                        <!-- OTP Login Divider -->
+                        <div style="display: flex; align-items: center; gap: 10px; margin: 16px 0 10px;">
+                            <div style="flex: 1; height: 1px; background: var(--border);"></div>
+                            <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">or</span>
+                            <div style="flex: 1; height: 1px; background: var(--border);"></div>
+                        </div>
+
+                        <button type="button" id="otp-toggle-btn" class="btn btn-outline" style="width: 100%; padding: 12px; font-weight: 700;" onclick="window.__toggleOtp()">
+                            📱 Login with OTP instead
+                        </button>
+
+                        <!-- OTP Login Panel -->
+                        <div id="otp-login-section" style="display: none; margin-top: 10px;">
+                            <div class="form-group">
+                                <label for="otp-phone" class="form-label">Phone Number</label>
+                                <input type="tel" class="form-input" id="otp-phone" placeholder="+91 98765 43210" autocomplete="tel">
+                            </div>
+                            <button type="button" id="otp-send-btn" class="btn btn-outline" style="width: 100%; padding: 12px; font-weight: 700;" onclick="window.__sendOtp()">
+                                Send OTP Code
+                            </button>
+                            <div id="otp-status" style="font-size: 0.8rem; margin-top: 8px; min-height: 20px;"></div>
+
+                            <!-- OTP Verification (shown after sending) -->
+                            <div id="otp-verify-section" style="display: none; margin-top: 12px;">
+                                <div class="form-group">
+                                    <label for="otp-code" class="form-label">Enter OTP Code</label>
+                                    <input type="text" class="form-input" id="otp-code" placeholder="6 digits" maxlength="6" inputmode="numeric" style="text-align: center; font-size: 1.2rem; letter-spacing: 8px;">
+                                </div>
+                                <button type="button" id="otp-verify-btn" class="btn btn-primary" style="width: 100%; padding: 13px; font-weight: 700; font-size: 1rem; justify-content: center;" onclick="window.__verifyOtp()">
+                                    Verify & Sign In
+                                </button>
+                                <button type="button" style="width: 100%; padding: 10px; margin-top: 8px; background: none; border: none; color: var(--accent); font-weight: 600; cursor: pointer;" onclick="window.__cancelOtp()">
+                                    ← Back to password login
+                                </button>
+                            </div>
+                        </div>
+
+                        <div style="text-align: center; margin-top: 14px;">
+                            <button type="button" onclick="router('/forgot-password')" style="background: none; border: none; padding: 0; font-size: 0.85rem; color: var(--accent); text-decoration: none; font-weight: 600; cursor: pointer;">Forgot Password?</button>
+                        </div>
+                    </form>
+
+
+                </div>
+
+                <!-- REGISTER FORM -->
+                <div id="auth-panel-register" style="display: ${authPortalActiveTab === 'register' ? 'block' : 'none'};">
+                    <div id="reg-error-container"></div>
+                    <form id="register-form" onsubmit="return false;">
+                        <div class="form-group">
+                            <label for="reg-name" class="form-label">Full Name</label>
+                            <input type="text" class="form-input" id="reg-name" placeholder="John Doe" required autocomplete="name">
+                        </div>
+                        <div class="form-group">
+                            <label for="reg-username" class="form-label" style="display:flex;align-items:center;gap:6px;">Username <span style="color:var(--danger);font-size:0.75rem;">*required</span></label>
+                            <div style="position:relative;">
+                                <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:0.9rem;pointer-events:none;">@</span>
+                                <input type="text" class="form-input" id="reg-username" placeholder="your_unique_username" required autocomplete="username" style="padding-left:26px;" maxlength="30">
+                            </div>
+                            <div id="reg-username-hint" style="font-size:0.75rem;margin-top:4px;color:var(--text-muted);">3–30 characters. Letters, numbers, underscores only. Must be unique and different from your name.</div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="reg-phone" class="form-label">Phone Number</label>
+                                <input type="tel" class="form-input" id="reg-phone" placeholder="Your phone number" required autocomplete="tel">
+                            </div>
+                            <div class="form-group">
+                                <label for="reg-email" class="form-label">Email Address</label>
+                                <input type="email" class="form-input" id="reg-email" placeholder="name@example.com" required autocomplete="email">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <label for="reg-password" class="form-label" style="margin: 0;">Password</label>
+                                <button type="button" id="toggle-reg-password" style="background: none; border: none; font-size: 0.75rem; color: var(--accent); cursor: pointer; padding: 0;">Show</button>
+                            </div>
+                            <input type="password" class="form-input" id="reg-password" placeholder="Create strong password" required autocomplete="new-password" style="margin-top: 6px;">
+                        </div>
+
+                        <div class="form-group" style="margin-top: 4px;">
+                            <label style="display: flex; align-items: flex-start; gap: 8px; font-size: 0.8rem; color: var(--text-secondary); line-height: 1.45; cursor: pointer;">
+                                <input type="checkbox" id="reg-tos" style="margin-top: 3px; width: 16px; height: 16px; accent-color: var(--accent); flex-shrink: 0;">
+                                <span>I agree to the <a href="/terms" onclick="event.preventDefault(); router('/terms')" style="color: var(--accent); font-weight: 600;">Terms of Service</a> and <a href="/privacy" onclick="event.preventDefault(); router('/privacy')" style="color: var(--accent); font-weight: 600;">Privacy Policy</a></span>
+                            </label>
+                        </div>
+                        <button type="submit" class="btn btn-primary" id="reg-submit-btn" style="width: 100%; padding: 13px; font-weight: 700; font-size: 1rem; justify-content: center; margin-top: 8px;">
+                            Create Account
+                        </button>
+                        <div style="text-align: center; margin-top: 14px;">
+                            <button type="button" onclick="router('/login')" style="background: none; border: none; padding: 0; font-size: 0.85rem; color: var(--accent); text-decoration: none; font-weight: 600; cursor: pointer;">Already have an account? Sign In</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>`;
+
+    // Elements
+    const tabLogin = view.querySelector('#auth-tab-login');
+    const tabRegister = view.querySelector('#auth-tab-register');
+    const panelLogin = view.querySelector('#auth-panel-login');
+    const panelRegister = view.querySelector('#auth-panel-register');
+    const labelGoogle = view.querySelector('#label-google-btn');
+    const labelApple = view.querySelector('#label-apple-btn');
+    const btnGoogle = view.querySelector('#btn-auth-google');
+    const btnApple = view.querySelector('#btn-auth-apple');
+
+    // Switch tab function
+    const switchTab = (tab) => {
+        authPortalActiveTab = tab;
+        if (tab === 'login') {
+            tabLogin.classList.add('active');
+            tabRegister.classList.remove('active');
+            panelLogin.style.display = 'block';
+            panelRegister.style.display = 'none';
+            if (labelGoogle) labelGoogle.textContent = 'Continue with Google';
+            if (labelApple) labelApple.textContent = 'Continue with Apple';
+            if (window.location.pathname !== '/login') history.pushState({}, '', '/login');
+        } else {
+            tabRegister.classList.add('active');
+            tabLogin.classList.remove('active');
+            panelRegister.style.display = 'block';
+            panelLogin.style.display = 'none';
+            if (labelGoogle) labelGoogle.textContent = 'Sign up with Google';
+            if (labelApple) labelApple.textContent = 'Sign up with Apple';
+            if (window.location.pathname !== '/register') history.pushState({}, '', '/register');
+        }
+        renderGoogleBtnIfReady();
+    };
+
+    tabLogin.onclick = () => switchTab('login');
+    tabRegister.onclick = () => switchTab('register');
+
+    // Social buttons — Google uses renderButton() when GIS is available and configured
+    const renderGoogleBtnIfReady = () => {
+        let googleBtn = view.querySelector('#btn-auth-google');
+        if (!googleBtn) return;
+        const clientId = window.publicConfig?.google_client_id;
+
+        if (window.google?.accounts?.id && clientId) {
+            const parent = googleBtn.parentNode;
+            const containerWidth = parent ? Math.max(220, Math.min(400, Math.floor(parent.clientWidth || parent.offsetWidth || 340))) : 340;
+
+            // renderButton works best on clean div containers without button styling
+            if (googleBtn.tagName === 'BUTTON') {
+                const div = document.createElement('div');
+                div.id = googleBtn.id;
+                div.className = 'gis-btn-container';
+                div.style.cssText = 'width: 100%; display: flex; justify-content: center; align-items: center; min-height: 44px; margin: 0; padding: 0; background: transparent; border: none; box-shadow: none;';
+                parent.replaceChild(div, googleBtn);
+                googleBtn = div;
+            } else {
+                googleBtn.className = 'gis-btn-container';
+                googleBtn.style.cssText = 'width: 100%; display: flex; justify-content: center; align-items: center; min-height: 44px; margin: 0; padding: 0; background: transparent; border: none; box-shadow: none;';
+            }
+
+            try {
+                window.google.accounts.id.initialize({
+                    client_id: clientId,
+                    callback: (response) => {
+                        if (response && response.credential) {
+                            handleGoogleSignIn(window.selectedType || 'BUYER', response.credential);
+                        } else {
+                            handleSocialLoginFallback('google', window.selectedType || 'BUYER');
+                        }
+                    },
+                    auto_select: false,
+                    cancel_on_tap_outside: true,
+                });
+
+                googleBtn.innerHTML = '';
+                window.google.accounts.id.renderButton(googleBtn, {
+                    type: 'standard',
+                    theme: 'outline',
+                    size: 'large',
+                    text: authPortalActiveTab === 'register' ? 'signup_with' : 'continue_with',
+                    shape: 'rectangular',
+                    logo_alignment: 'left',
+                    width: containerWidth,
+                });
+            } catch (e) {
+                console.warn('Google renderButton failed, falling back to manual sign-in:', e);
+                // Note: google.accounts.id.signIn 15_000 timeout safeguard
+                googleBtn.onclick = () => handleSocialLoginFallback('google', window.selectedType || 'BUYER');
+            }
+        } else {
+            // Wait for GIS to load on click, with a timeout fallback
+            googleBtn.onclick = () => {
+                if (!window.google?.accounts?.id || !window.publicConfig?.google_client_id) {
+                    googleBtn.disabled = true;
+                    googleBtn.innerHTML = '<span style="display:inline-block;width:14px;height:14px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:8px;vertical-align:middle;"></span> Loading Google...';
+                    let waited = 0;
+                    const waitForGis = setInterval(() => {
+                        waited += 100;
+                        if (window.google?.accounts?.id && window.publicConfig?.google_client_id) {
+                            clearInterval(waitForGis);
+                            renderGoogleBtnIfReady();
+                            // Sign in immediately after render — no second click needed
+                            try { window.google.accounts.id.signIn(); } catch(e) {}
+                        } else if (waited >= 8000) {
+                            clearInterval(waitForGis);
+                            googleBtn.disabled = false;
+                            googleBtn.innerHTML = 'Continue with Google';
+                            handleSocialLoginFallback('google', window.selectedType || 'BUYER');
+                        }
+                    }, 100);
+                } else {
+                    renderGoogleBtnIfReady();
+                    // Sign in immediately — no second click needed
+                    try { window.google.accounts.id.signIn(); } catch(e) {}
+                }
+            };
+        }
+    };
+
+    renderGoogleBtnIfReady();
+    window.__refreshGoogleBtn = renderGoogleBtnIfReady;
+
+    if (!window.__gisPollInterval) {
+        let attempts = 0;
+        window.__gisPollInterval = setInterval(() => {
+            attempts++;
+            if (window.google?.accounts?.id && window.publicConfig?.google_client_id) {
+                renderGoogleBtnIfReady();
+                clearInterval(window.__gisPollInterval);
+                window.__gisPollInterval = null;
+            } else if (attempts >= 20) {
+                clearInterval(window.__gisPollInterval);
+                window.__gisPollInterval = null;
+            }
+        }, 500);
+    }
+
+    if (!window.__gisResizeAttached) {
+        window.__gisResizeAttached = true;
+        window.addEventListener('resize', () => {
+            if (window.__gisResizeTimer) clearTimeout(window.__gisResizeTimer);
+            window.__gisResizeTimer = setTimeout(() => {
+                if (typeof window.__refreshGoogleBtn === 'function') {
+                    window.__refreshGoogleBtn();
+                }
+            }, 250);
+        }, { passive: true });
+    }
+
+
+    if (btnApple) {
+        btnApple.disabled = true;
+        btnApple.setAttribute('aria-disabled', 'true');
+        btnApple.onclick = null;
+    }
+
+    // Password toggles
+    const toggleLoginPw = view.querySelector('#toggle-login-password');
+    const loginPwInput = view.querySelector('#login-password');
+    if (toggleLoginPw && loginPwInput) {
+        toggleLoginPw.onclick = () => {
+            if (loginPwInput.type === 'password') {
+                loginPwInput.type = 'text';
+                toggleLoginPw.textContent = 'Hide';
+            } else {
+                loginPwInput.type = 'password';
+                toggleLoginPw.textContent = 'Show';
+            }
+        };
+    }
+
+    const toggleRegPw = view.querySelector('#toggle-reg-password');
+    const regPwInput = view.querySelector('#reg-password');
+    if (toggleRegPw && regPwInput) {
+        toggleRegPw.onclick = () => {
+            if (regPwInput.type === 'password') {
+                regPwInput.type = 'text';
+                toggleRegPw.textContent = 'Hide';
+            } else {
+                regPwInput.type = 'password';
+                toggleRegPw.textContent = 'Show';
+            }
+        };
+    }
+
+    // Auto-suggest username from name input
+    const regNameInput = view.querySelector('#reg-name');
+    const regUsernameInput = view.querySelector('#reg-username');
+    const regUsernameHint = view.querySelector('#reg-username-hint');
+
+    if (regNameInput && regUsernameInput) {
+        // Auto-fill username when user types their name (only if username is still empty/auto)
+        let usernameTouched = false;
+        regUsernameInput.addEventListener('input', () => { usernameTouched = true; });
+
+        regNameInput.addEventListener('input', () => {
+            // Re-check if username matches name (in case name was edited after username was set)
+            const currentUsername = (regUsernameInput.value || '').trim();
+            if (currentUsername) {
+                const nameNormalized = regNameInput.value.toLowerCase().replace(/\s+/g, '_');
+                if (currentUsername === nameNormalized) {
+                    if (regUsernameHint) regUsernameHint.innerHTML = '<span style="color:var(--danger);">❌ Username cannot match your name — choose something different</span>';
+                } else if (currentUsername.length >= 3) {
+                    clearTimeout(usernameCheckTimer);
+                    usernameCheckTimer = setTimeout(async () => {
+                        try {
+                            const res = await fetch(`/api/providers/by-username/${encodeURIComponent(currentUsername)}`, { method: 'GET' });
+                            const data = await res.json();
+                            if (data && data.provider) {
+                                if (regUsernameHint) regUsernameHint.innerHTML = '<span style="color:var(--danger);">❌ @' + currentUsername + ' is already taken</span>';
+                            } else {
+                                if (regUsernameHint) regUsernameHint.innerHTML = '<span style="color:#10b981;">✅ @' + currentUsername + ' is available!</span>';
+                            }
+                        } catch {
+                            if (regUsernameHint) regUsernameHint.innerHTML = '<span style="color:var(--text-muted);">3–30 characters. Letters, numbers, underscores only.</span>';
+                        }
+                    }, 400);
+                }
+            }
+        });
+
+        // Real-time username availability check + name-match check
+        let usernameCheckTimer = null;
+        regUsernameInput.addEventListener('input', () => {
+            clearTimeout(usernameCheckTimer);
+            const val = regUsernameInput.value.replace(/[^a-zA-Z0-9_]/g, '').toLowerCase();
+            regUsernameInput.value = val; // sanitize in-place
+
+            // --- Name-match check: username cannot be the same as the name ---
+            const nameField = document.getElementById('reg-name');
+            if (nameField && val) {
+                const nameNormalized = nameField.value.toLowerCase().replace(/\s+/g, '_');
+                if (val === nameNormalized) {
+                    if (regUsernameHint) regUsernameHint.innerHTML = '<span style="color:var(--danger);">❌ Username cannot match your name — choose something different</span>';
+                    return;
+                }
+            }
+
+            if (!val) {
+                if (regUsernameHint) regUsernameHint.innerHTML = '<span style="color:var(--text-muted);">3–30 characters. Letters, numbers, underscores only. Must be unique and different from your name.</span>';
+                return;
+            }
+            if (val.length < 3) {
+                if (regUsernameHint) regUsernameHint.innerHTML = '<span style="color:var(--danger);">⚠ Too short — at least 3 characters</span>';
+                return;
+            }
+            if (regUsernameHint) regUsernameHint.innerHTML = '<span style="color:var(--text-muted);">⏳ Checking availability...</span>';
+
+            usernameCheckTimer = setTimeout(async () => {
+                try {
+                    // Use the existing providers search — if a provider with this username exists, it's taken
+                    // We check by trying the public endpoint
+                    const res = await fetch(`/api/providers/by-username/${encodeURIComponent(val)}`);
+                    if (res.status === 200) {
+                        // Found — username taken
+                        if (regUsernameHint) regUsernameHint.innerHTML = '<span style="color:var(--danger);">❌ @' + val + ' is already taken</span>';
+                    } else if (res.status === 404) {
+                        if (regUsernameHint) regUsernameHint.innerHTML = '<span style="color:#10b981;">✅ @' + val + ' is available!</span>';
+                    } else {
+                        if (regUsernameHint) regUsernameHint.innerHTML = '<span style="color:var(--text-muted);">3–30 characters. Letters, numbers, underscores only. Must be unique and different from your name.</span>';
+                    }
+                } catch (_) {
+                    if (regUsernameHint) regUsernameHint.innerHTML = '<span style="color:var(--text-muted);">3–30 characters. Letters, numbers, underscores only.</span>';
+                }
+            }, 500);
+        });
+    }
+
+    // Role selection in Register
+    const regTabBuyer = view.querySelector('#reg-tab-buyer');
+    const regTabProv = view.querySelector('#reg-tab-prov');
+    if (regTabBuyer && regTabProv) {
+        regTabBuyer.onclick = () => {
+            window.selectedType = 'BUYER';
+            regTabBuyer.classList.add('active');
+            regTabProv.classList.remove('active');
+        };
+        regTabProv.onclick = () => {
+            window.selectedType = 'PROVIDER';
+            regTabProv.classList.add('active');
+            regTabBuyer.classList.remove('active');
+        };
+    }
+
+
+
+    // Login Form Submit Handler
+    const loginForm = view.querySelector('#login-form');
+    loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const errContainer = view.querySelector('#login-error-container');
+        if (errContainer) errContainer.innerHTML = '';
+
+        const phoneInput = (view.querySelector('#login-phone')?.value || '').trim();
+        const cleanPhone = phoneInput.replace(/^\+91[\s-]*/, '').replace(/[\s-]/g, '');
+        const password = view.querySelector('#login-password')?.value || '';
+        const btn = view.querySelector('#login-submit-btn');
+
+        if (!phoneInput || !password) {
+            if (errContainer) {
+                errContainer.innerHTML = `
+                    <div style="background: rgba(239, 68, 68, 0.12); border: 1px solid var(--danger, #ef4444); color: var(--danger, #ef4444); padding: 10px 14px; border-radius: 8px; margin-bottom: 16px; font-size: 0.85rem;">
+                        ⚠️ Please enter both phone/email and password.
+                    </div>
+                `;
+            }
+            return;
+        }
+
+        const origBtnHtml = btn ? btn.innerHTML : 'Sign In';
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = `<span style="display:inline-block;width:14px;height:14px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:8px;vertical-align:middle;"></span> Signing in...`;
+        }
+
+        try {
+            const data = {
+                phone: cleanPhone || phoneInput,
+                password: password
+            };
+            const result = await apiFetch('/auth/login', {
+                method: 'POST',
+                body: JSON.stringify(data)
+            });
+
+            currentToken = result.access_token;
+            localStorage.setItem('access_token', currentToken);
+
+            currentUser = await apiFetch('/auth/me');
+            localStorage.setItem('current_user', JSON.stringify(currentUser));
+
+            showToast(`Welcome back, ${currentUser.name || 'User'}!`, 'success');
+            const safeNext = getSafeNextUrl();
+            if (safeNext) {
+                router(safeNext);
+            } else if (currentUser?.user_type === 'ADMIN') {
+                router('/admin');
+            } else {
+                router('/');
+            }
+        } catch (err) {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = origBtnHtml;
+            }
+            const isCredErr = err.message && (err.message.toLowerCase().includes('credential') || err.message.toLowerCase().includes('401'));
+            const isUnverified = err.message && err.message.includes('EMAIL_NOT_VERIFIED');
+            if (errContainer) {
+                errContainer.innerHTML = `
+                    <div style="background: rgba(239, 68, 68, 0.12); border: 1px solid var(--danger, #ef4444); color: var(--danger, #ef4444); padding: 12px 14px; border-radius: 8px; margin-bottom: 16px; font-size: 0.85rem; line-height: 1.4;">
+                        <div style="font-weight: 700; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+                            <span>⚠️</span> ${isUnverified ? 'Email Not Verified' : (isCredErr ? 'Invalid Phone/Email or Password' : (err.message || 'Login failed'))}
+                        </div>
+                        <div style="font-size: 0.8rem; color: var(--text-secondary);">
+                            ${isUnverified ?
+                        `Please verify your email before signing in. <button type="button" id="btn-go-verify" style="background:none;border:none;color:var(--accent);font-weight:700;text-decoration:underline;cursor:pointer;padding:0;">Verify now</button>` :
+                        (isCredErr ?
+                        `No account found with these credentials. Don't have an account yet? <button type="button" id="btn-switch-to-reg" style="background:none;border:none;color:var(--accent);font-weight:700;text-decoration:underline;cursor:pointer;padding:0;">Create Account here</button> with these details, or use Google / Apple above.` :
+                        err.message)}
+                        </div>
+                    </div>
+                `;
+
+                const verifyBtn = errContainer.querySelector('#btn-go-verify');
+                if (verifyBtn) {
+                    verifyBtn.onclick = () => {
+                        try { sessionStorage.removeItem('pending_verification'); } catch (_) {}
+                        router('/verify-email' + (phoneInput ? `?email=${encodeURIComponent(phoneInput)}` : ''));
+                    };
+                }
+
+                const switchBtn = errContainer.querySelector('#btn-switch-to-reg');
+                if (switchBtn) {
+                    switchBtn.onclick = () => {
+                        switchTab('register');
+                        // Pre-fill email/phone and password into register inputs
+                        const regEmail = view.querySelector('#reg-email');
+                        const regPhone = view.querySelector('#reg-phone');
+                        const regPw = view.querySelector('#reg-password');
+                        if (phoneInput.includes('@')) {
+                            if (regEmail) regEmail.value = phoneInput;
+                        } else {
+                            if (regPhone) regPhone.value = cleanPhone || phoneInput;
+                        }
+                        if (regPw) regPw.value = password;
+                    };
+                }
+            }
+        }
+    });
+
+    // ---- OTP Phone Login ----
+    window.__otpPhone = '';
+    window.__otpPending = false;
+
+    window.__sendOtp = async () => {
+        const phoneInput = document.getElementById('otp-phone') || view.querySelector('#otp-phone');
+        const phone = (phoneInput?.value || '').trim();
+        const status = document.getElementById('otp-status') || view.querySelector('#otp-status');
+        const sendBtn = document.getElementById('otp-send-btn') || view.querySelector('#otp-send-btn');
+        const verifySection = document.getElementById('otp-verify-section') || view.querySelector('#otp-verify-section');
+        const codeInput = document.getElementById('otp-code') || view.querySelector('#otp-code');
+
+        if (!phone || phone.replace(/\D/g, '').length < 10) {
+            if (status) status.innerHTML = '<span style="color:var(--danger); font-weight: 600;">⚠️ Please enter a valid 10-digit phone number</span>';
+            return;
+        }
+
+        window.__otpPhone = phone;
+        if (status) status.innerHTML = '<span style="color:var(--accent); font-weight: 600;">📱 Requesting OTP code...</span>';
+        if (sendBtn) sendBtn.disabled = true;
+
+        try {
+            const result = await apiFetch('/auth/otp-request', {
+                method: 'POST',
+                body: JSON.stringify({ phone: phone })
+            });
+
+            const otp = result.otp || '';
+            if (codeInput) {
+                codeInput.value = otp;
+            }
+
+            if (status) {
+                status.innerHTML = `
+                    <div style="background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 12px; padding: 12px 14px; margin: 10px 0; text-align: center;">
+                        <div style="color: #10b981; font-weight: 800; font-size: 0.9rem;">✅ OTP Sent to ${escapeHTML(phone)}!</div>
+                        <div style="font-size: 1.4rem; font-weight: 900; letter-spacing: 4px; color: var(--text-primary); margin: 6px 0;">🔑 ${otp}</div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted);">Code auto-filled below! Click 'Verify & Sign In' to log in.</div>
+                    </div>
+                `;
+            }
+            if (verifySection) verifySection.style.display = 'block';
+            if (sendBtn) sendBtn.style.display = 'none';
+            if (codeInput) codeInput.focus();
+        } catch (err) {
+            if (status) status.innerHTML = `<span style="color:var(--danger); font-weight: 600;">❌ ${escapeHTML(err.message || 'Failed to send OTP. Please check your phone number.')}</span>`;
+            if (sendBtn) sendBtn.disabled = false;
+        }
+    };
+
+    window.__verifyOtp = async () => {
+        const phoneInput = document.getElementById('otp-phone') || view.querySelector('#otp-phone');
+        const phone = (phoneInput?.value || window.__otpPhone || '').trim();
+        const codeInput = document.getElementById('otp-code') || view.querySelector('#otp-code');
+        const otpCode = (codeInput?.value || '').trim();
+        const status = document.getElementById('otp-status') || view.querySelector('#otp-status');
+        const verifyBtn = document.getElementById('otp-verify-btn') || view.querySelector('#otp-verify-btn');
+
+        if (!phone || !otpCode) {
+            if (status) status.innerHTML = '<span style="color:var(--danger); font-weight: 600;">⚠️ Please enter both phone number and OTP code</span>';
+            return;
+        }
+        if (otpCode.length !== 6 || !/^\d{6}$/.test(otpCode)) {
+            if (status) status.innerHTML = '<span style="color:var(--danger); font-weight: 600;">⚠️ OTP code must be 6 digits</span>';
+            return;
+        }
+
+        if (status) status.innerHTML = '<span style="color:var(--accent); font-weight: 600;">🔐 Verifying OTP...</span>';
+        if (verifyBtn) verifyBtn.disabled = true;
+
+        try {
+            const result = await apiFetch('/auth/otp-verify', {
+                method: 'POST',
+                body: JSON.stringify({ phone: phone, otp: otpCode })
+            });
+
+            currentToken = result.access_token;
+            localStorage.setItem('access_token', currentToken);
+
+            currentUser = await apiFetch('/auth/me');
+            localStorage.setItem('current_user', JSON.stringify(currentUser));
+
+            showToast(`Welcome, ${currentUser.name || 'User'}!`, 'success');
+            window.__cancelOtp();
+            const safeNext = getSafeNextUrl();
+            if (safeNext) {
+                router(safeNext);
+            } else if (currentUser?.user_type === 'ADMIN') {
+                router('/admin');
+            } else {
+                router('/');
+            }
+        } catch (err) {
+            if (status) status.innerHTML = `<span style="color:var(--danger); font-weight: 600;">❌ ${escapeHTML(err.message || 'OTP verification failed. Please try requesting a new code.')}</span>`;
+            if (verifyBtn) verifyBtn.disabled = false;
+        }
+    };
+
+    window.__toggleOtp = () => {
+        const otpSection = view.querySelector('#otp-login-section');
+        const toggleBtn = view.querySelector('#otp-toggle-btn');
+        if (!otpSection) return;
+        const show = otpSection.style.display === 'none';
+        otpSection.style.display = show ? 'block' : 'none';
+        if (toggleBtn) toggleBtn.style.display = show ? 'none' : 'block';
+        if (show) view.querySelector('#otp-phone')?.focus();
+    };
+
+    window.__cancelOtp = () => {
+        window.__otpPhone = '';
+        window.__otpPending = false;
+        const phoneInput = view.querySelector('#otp-phone');
+        if (phoneInput) phoneInput.removeAttribute('disabled');
+        if (phoneInput) phoneInput.value = '';
+        if (view.querySelector('#otp-code')) view.querySelector('#otp-code').value = '';
+        const otpSection = view.querySelector('#otp-login-section');
+        const verifySection = view.querySelector('#otp-verify-section');
+        const status = view.querySelector('#otp-status');
+        const sendBtn = view.querySelector('#otp-send-btn');
+        const toggleBtn = view.querySelector('#otp-toggle-btn');
+        if (otpSection) otpSection.style.display = 'none';
+        if (verifySection) verifySection.style.display = 'none';
+        if (status) status.innerHTML = '';
+        if (sendBtn) sendBtn.style.display = 'block';
+        if (toggleBtn) toggleBtn.style.display = 'block';
+        view.querySelector('#login-phone')?.focus();
+    };
+
+    // ---- Register Form Submit Handler
+    const regForm = view.querySelector('#register-form');
+    regForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const errContainer = view.querySelector('#reg-error-container');
+        if (errContainer) errContainer.innerHTML = '';
+
+        const name = (view.querySelector('#reg-name')?.value || '').trim();
+        const rawUsername = (view.querySelector('#reg-username')?.value || '').trim();
+        const username = rawUsername.replace(/[^a-zA-Z0-9_]/g, '').toLowerCase();
+        const phone = (view.querySelector('#reg-phone')?.value || '').trim();
+        const email = (view.querySelector('#reg-email')?.value || '').trim();
+        const password = view.querySelector('#reg-password')?.value || '';
+        const role = window.selectedType || 'BUYER';
+        const btn = view.querySelector('#reg-submit-btn');
+        const regUsernameHint = view.querySelector('#reg-username-hint');
+
+        if (!name || !username || !phone || !email || !password) {
+            if (errContainer) {
+                errContainer.innerHTML = `
+                    <div style="background: rgba(239, 68, 68, 0.12); border: 1px solid var(--danger, #ef4444); color: var(--danger, #ef4444); padding: 10px 14px; border-radius: 8px; margin-bottom: 16px; font-size: 0.85rem;">
+                        ⚠️ ${!username ? 'Please choose a username — it must be unique.' : 'Please fill in all fields to create your account.'}
+                    </div>
+                `;
+            }
+            if (!username) view.querySelector('#reg-username')?.focus();
+            return;
+        }
+
+        if (username.length < 3) {
+            if (errContainer) {
+                errContainer.innerHTML = `<div style="background: rgba(239, 68, 68, 0.12); border: 1px solid var(--danger, #ef4444); color: var(--danger, #ef4444); padding: 10px 14px; border-radius: 8px; margin-bottom: 16px; font-size: 0.85rem;">⚠️ Username must be at least 3 characters.</div>`;
+            }
+            return;
+        }
+
+        if (!view.querySelector('#reg-tos')?.checked) {
+            if (errContainer) {
+                errContainer.innerHTML = `<div style="background: rgba(239, 68, 68, 0.12); border: 1px solid var(--danger, #ef4444); color: var(--danger, #ef4444); padding: 10px 14px; border-radius: 8px; margin-bottom: 16px; font-size: 0.85rem;">⚠️ Please accept the Terms of Service and Privacy Policy to create your account.</div>`;
+            }
+            view.querySelector('#reg-tos')?.focus();
+            return;
+        }
+
+        const origText = btn ? btn.innerHTML : 'Create Account';
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = `<span style="display:inline-block;width:14px;height:14px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin 0.6s linear infinite;margin-right:8px;vertical-align:middle;"></span> Creating Account...`;
+        }
+
+        try {
+            const data = {
+                name,
+                username,
+                phone,
+                email,
+                password,
+                user_type: role,
+                tos_accepted: true
+            };
+            const result = await apiFetch('/auth/register', {
+                method: 'POST',
+                body: JSON.stringify(data)
+            });
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = origText;
+            }
+            if (result && result.must_verify) {
+                // Email verification required before first sign-in (demo: code shown on verify page)
+                try { sessionStorage.setItem('pending_verification', JSON.stringify({ email: result.email || email, token: result.verification_token || '' })); } catch (_) {}
+                showToast('Account created! Please verify your email to sign in.', 'success');
+                router('/verify-email' + (result.email || email ? `?email=${encodeURIComponent(result.email || email)}` : ''));
+                return;
+            }
+            currentToken = result.access_token;
+            localStorage.setItem('access_token', currentToken);
+            currentUser = await apiFetch('/auth/me');
+            localStorage.setItem('current_user', JSON.stringify(currentUser));
+
+            showToast(`Account created successfully! Welcome, ${currentUser.name}!`, 'success');
+            const safeNext = getSafeNextUrl();
+            if (safeNext) {
+                router(safeNext);
+            } else if (currentUser?.user_type === 'ADMIN') {
+                router('/admin');
+            } else {
+                router('/');
+            }
+        } catch (err) {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = origText;
+            }
+            const isAlreadyErr = err.message && (err.message.toLowerCase().includes('already') || err.message.toLowerCase().includes('exists'));
+            if (errContainer) {
+                errContainer.innerHTML = `
+                    <div style="background: rgba(239, 68, 68, 0.12); border: 1px solid var(--danger, #ef4444); color: var(--danger, #ef4444); padding: 12px 14px; border-radius: 8px; margin-bottom: 16px; font-size: 0.85rem; line-height: 1.4;">
+                        <div style="font-weight: 700; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+                            <span>⚠️</span> Registration Failed
+                        </div>
+                        <div style="font-size: 0.8rem; color: var(--text-secondary);">
+                            ${escapeHTML(err.message || 'Could not create account')}.
+                            ${isAlreadyErr ?
+                        ` Already registered? <button type="button" id="btn-switch-to-login" style="background:none;border:none;color:var(--accent);font-weight:700;text-decoration:underline;cursor:pointer;padding:0;">Sign In here</button>` : ''}
+                        </div>
+                    </div>
+                `;
+
+                const switchLoginBtn = errContainer.querySelector('#btn-switch-to-login');
+                if (switchLoginBtn) {
+                    switchLoginBtn.onclick = () => {
+                        switchTab('login');
+                        const loginPhone = view.querySelector('#login-phone');
+                        const loginPw = view.querySelector('#login-password');
+                        if (loginPhone) loginPhone.value = email || phone;
+                        if (loginPw) loginPw.value = password;
+                    };
+                }
+            }
+        }
+    });
+
+    return view;
+}
+
+function Login() {
+    return AuthPortal('login');
+}
+
+function Register() {
+    return AuthPortal('register');
+}
+
+
+// =============== LANDING & START YOUR JOURNEY ===============
+
+function startJourney() {
+    router('/register');
+}
+window.startJourney = startJourney;
+
+// =============== QUICK NAV: VIDEO EDITORS & TUTORS ===============
+function navigateToProviderNiche(niche) {
+    if (typeof providerSearchState === 'object' && providerSearchState) {
+        providerSearchState.q = '';
+        providerSearchState.niche = niche;
+        providerSearchState.subType = '';
+        providerSearchState.serviceOption = '';
+        providerSearchState.sellerDetail = '';
+        providerSearchState.budget = '';
+        providerSearchState.deliveryTime = '';
+        providerSearchState.minRating = '';
+        providerSearchState.sortBy = 'rating';
+        providerSearchState.proOnly = false;
+        providerSearchState.onlineOnly = false;
+    }
+    window.__currentProviderNiche = niche;
+    router('/providers');
+}
+
+function goToBusinessAds() {
+    navigateToProviderNiche('business_ads');
+}
+window.goToBusinessAds = goToBusinessAds;
+
+function goToVideoEditors() {
+    navigateToProviderNiche('editors_animators');
+}
+window.goToVideoEditors = goToVideoEditors;
+
+function goToTutors() {
+    navigateToProviderNiche('tutors');
+}
+window.goToTutors = goToTutors;
+
+// =============== WELCOME / START YOUR JOURNEY PAGE (POST-LOGIN) ===============
+function WelcomePage() {
+    if (!currentUser && !currentToken) {
+        router('/login');
+        return el`<div></div>`;
+    }
+
+    const user = currentUser || {};
+    const isProvider = user.user_type === 'PROVIDER';
+    const isAdmin = user.user_type === 'ADMIN';
+
+    const roleLabel = isAdmin ? 'Admin' : isProvider ? 'Creator / Educator' : 'Client / Buyer';
+    const roleEmoji = isAdmin ? '⚡' : isProvider ? '🎨' : '🎯';
+
+    const getDestination = () => {
+        if (isAdmin) return '/admin';
+        if (isProvider) return '/packages';
+        return '/';
+    };
+
+    const view = el`<div>
+        <!-- Modern Welcome Header -->
+        <header class="header" style="border-bottom: 1px solid var(--border); padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; background: var(--bg-card);">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                ${renderLogo(30, true)}
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                <div style="display: flex; align-items: center; gap: 6px; font-size: 0.825rem; color: var(--text-secondary);">
+                    <span>Welcome back, <strong style="color: var(--text-primary);">${user.name || 'Friend'}</strong></span>
+                    <span style="background: rgba(91, 52, 234, 0.12); color: #5b34ea; padding: 2px 8px; border-radius: 6px; font-size: 0.72rem; font-weight: 700;">
+                        ${roleEmoji} ${roleLabel}
+                    </span>
+                </div>
+                <button class="btn btn-secondary btn-sm" id="welcome-skip-btn" style="padding: 6px 14px; font-size: 0.8125rem; font-weight: 600; cursor: pointer;"
+                        onclick="router('/'); setTimeout(function(){ window.setProviderNiche && window.setProviderNiche(''); }, 200);">
+                    Skip to App -->
+                </button>
+            </div>
+        </header>
+
+        <!-- Moxie-Style Hero Section -->
+        <div class="hero-wrapper" style="padding-top: 40px; padding-bottom: 40px;">
+            <div class="hero-grid">
+                <!-- Left Column -->
+                <div class="hero-left">
+                    <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(91, 52, 234, 0.08); border: 1px solid rgba(91, 52, 234, 0.2); padding: 6px 14px; border-radius: 999px; font-size: 0.8125rem; color: #5b34ea; font-weight: 700; margin-bottom: 18px; width: fit-content;">
+                        <span>🚀</span> Successfully Logged In
+                    </div>
+
+                    <h1 class="hero-title" style="margin-bottom: 16px; line-height: 1.15;">
+                        Stupid-good tools<br>
+                        <span class="hero-title-accent">for freelancers</span>
+                    </h1>
+
+                    <p class="hero-subtitle" style="margin-bottom: 28px;">
+                        We can't run your business for you, but we can make it easier.
+                    </p>
+
+                    <!-- CTAs -->
+                    <div class="hero-cta-group">
+                        <button class="btn-start-journey" id="btn-welcome-start" style="padding: 16px 38px; font-size: 1.1rem; cursor: pointer;">
+                            Start your journey -->
+                        </button>
+                        <div class="hero-cta-secondary">
+                            or <span class="hero-link-action" id="btn-welcome-explore">See marketplace in action</span>
+                        </div>
+                    </div>
+
+                    <div class="hero-microcopy" style="margin-top: 14px;">
+                        Enjoy 100% escrow protection & verified talent - <strong>no credit card required</strong>.
+                    </div>
+
+                    <!-- Role highlights mini cards -->
+                    <div style="margin-top: 28px; display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; max-width: 520px;">
+                        <div class="mini-card mini-video" onclick="goToVideoEditors()" style="background: var(--bg-hover); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; display: flex; align-items: center; gap: 10px; cursor: pointer; transition: transform 0.2s var(--ease-spring), box-shadow 0.2s ease, border-color 0.2s ease;"
+                           onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 20px -4px rgba(99,102,241,0.2)'; this.style.borderColor='var(--accent)';"
+                           onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'; this.style.borderColor='var(--border)';">
+                            <span style="font-size: 1.3rem;">🎬</span>
+                            <div style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.3;">
+                                <strong style="color: var(--text-primary); display: block;">Video Editors</strong>
+                                Reels, Shorts & Longform
+                            </div>
+                        </div>
+                        <div class="mini-card mini-tutor" onclick="goToTutors()" style="background: var(--bg-hover); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; display: flex; align-items: center; gap: 10px; cursor: pointer; transition: transform 0.2s var(--ease-spring), box-shadow 0.2s ease, border-color 0.2s ease;"
+                           onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 20px -4px rgba(99,102,241,0.2)'; this.style.borderColor='var(--accent)';"
+                           onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'; this.style.borderColor='var(--border)';">
+                            <span style="font-size: 1.3rem;">🗣️</span>
+                            <div style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.3;">
+                                <strong style="color: var(--text-primary); display: block;">English Coaches</strong>
+                                1-on-1 Fluency & Accent
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column: Illustration with Floating Badges -->
+                <div class="hero-right">
+                    <div class="hero-illustration-wrapper">
+                        <picture>
+                            <source srcset="/static/images/welcome_freelancer.webp" type="image/webp">
+                            <img src="/static/images/welcome_freelancer.png" alt="Freelancer working happily on laptop" class="hero-illustration-img">
+                        </picture>
+
+                        <!-- Dotted curved arc with floating badges matching Moxie screenshot -->
+                        <div class="welcome-floating-badge badge-top-left">
+                            <span class="badge-icon">📅</span>
+                            <span class="badge-text">Bookings</span>
+                        </div>
+                        <div class="welcome-floating-badge badge-top-right">
+                            <span class="badge-icon">🤝</span>
+                            <span class="badge-text">100% Escrow</span>
+                        </div>
+                        <div class="welcome-floating-badge badge-mid-left">
+                            <span class="badge-icon">💬</span>
+                            <span class="badge-text">Live Chat</span>
+                        </div>
+                        <div class="welcome-floating-badge badge-mid-right">
+                            <span class="badge-icon">⏱️</span>
+                            <span class="badge-text">24-48h Delivery</span>
+                        </div>
+                        <div class="welcome-floating-badge badge-bot-right">
+                            <span class="badge-icon">💰</span>
+                            <span class="badge-text">Direct Payouts</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Trust / Review Strip at Bottom (Matching Moxie reference) -->
+            <div class="welcome-trust-strip" style="margin-top: 52px; padding-top: 28px; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-around; flex-wrap: wrap; gap: 20px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div style="display: flex; gap: 2px;">
+                        <span style="background: #00b67a; color: #fff; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; border-radius: 3px; font-weight: bold;">★</span>
+                        <span style="background: #00b67a; color: #fff; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; border-radius: 3px; font-weight: bold;">★</span>
+                        <span style="background: #00b67a; color: #fff; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; border-radius: 3px; font-weight: bold;">★</span>
+                        <span style="background: #00b67a; color: #fff; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; border-radius: 3px; font-weight: bold;">★</span>
+                        <span style="background: #00b67a; color: #fff; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; border-radius: 3px; font-weight: bold;">★</span>
+                    </div>
+                    <div>
+                        <strong style="color: var(--text-primary); font-size: 0.875rem; display: block;">4.9 / 5 Rating</strong>
+                        <span style="font-size: 0.75rem; color: var(--text-muted);">from 2,400+ creators & clients</span>
+                    </div>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--text-secondary);">
+                    <span style="color: #10b981; font-size: 1.1rem; font-weight: bold;">✓</span>
+                    <span>100% Escrow Protection</span>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--text-secondary);">
+                    <span style="color: #6366f1; font-size: 1.1rem; font-weight: bold;">✓</span>
+                    <span>Verified Video Editors & Tutors</span>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--text-secondary);">
+                    <span style="color: #f59e0b; font-size: 1.1rem; font-weight: bold;">✓</span>
+                    <span>Zero Upfront Risk</span>
+                </div>
+            </div>
+        </div>
+    </div>`;
+
+    // Event handlers
+    const startBtn = view.querySelector('#btn-welcome-start');
+    const exploreBtn = view.querySelector('#btn-welcome-explore');
+    const skipBtn = view.querySelector('#welcome-skip-btn');
+
+    const proceed = () => {
+        view.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
+        view.style.opacity = '0';
+        view.style.transform = 'scale(0.98)';
+        setTimeout(() => {
+            router(getDestination());
+        }, 180);
+    };
+
+    if (startBtn) startBtn.onclick = proceed;
+    if (skipBtn) skipBtn.onclick = proceed;
+    if (exploreBtn) exploreBtn.onclick = () => {
+        view.style.transition = 'opacity 0.2s ease';
+        view.style.opacity = '0';
+        setTimeout(() => router('/'), 180);
+    };
+
+    return view;
+}
+window.WelcomePage = WelcomePage;
+
+function Landing() {
+    if (currentUser) {
+        return Dashboard();
+    }
+
+    return el`<div>
+        <!-- Modern SaaS Landing Navigation -->
+        <header class="header" style="border-bottom: 1px solid var(--border); padding: 16px 24px; display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                ${renderLogo(34, true)}
+            </div>
+            <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                <button class="nav-btn" onclick="router('/login')" style="border: none; font-weight: 600; cursor: pointer;">Sign In</button>
+                <button class="btn btn-primary" onclick="startJourney()" style="padding: 10px 22px; font-weight: 700; background: #5b34ea; border: none; cursor: pointer;">
+                    Start your journey
+                </button>
+            </div>
+        </header>
+
+        <!-- Moxie-Inspired Hero Section -->
+        <div class="hero-wrapper">
+            <div class="hero-grid">
+                <div class="hero-left">
+                    <h1 class="hero-title">
+                        Stupid-good tools<br>
+                        <span class="hero-title-accent">for freelancers</span>
+                    </h1>
+                    <p class="hero-subtitle">
+                        We can't run your business for you, but we can make it easier.
+                    </p>
+                    <div class="hero-cta-group">
+                        <button class="btn-start-journey" onclick="startJourney()">
+                            Start your journey
+                        </button>
+                        <div class="hero-cta-secondary">
+                            or <span class="hero-link-action" onclick="router('/providers');">Explore marketplace</span>
+                        </div>
+                    </div>
+                    <div class="hero-microcopy">
+                        Enjoy 100% escrow protection - <strong>no credit card required</strong> to explore.
+                    </div>
+                </div>
+                <div class="hero-right">
+                    <div class="hero-illustration-wrapper">
+                        <picture>
+                            <source srcset="/static/images/welcome_freelancer.webp" type="image/webp">
+                            <img src="/static/images/welcome_freelancer.png" alt="Freelancer working happily on laptop" class="hero-illustration-img">
+                        </picture>
+
+                        <!-- Dotted curved arc with floating badges -->
+                        <div class="welcome-floating-badge badge-top-left">
+                            <span class="badge-icon">📅</span>
+                            <span class="badge-text">Bookings</span>
+                        </div>
+                        <div class="welcome-floating-badge badge-top-right">
+                            <span class="badge-icon">🤝</span>
+                            <span class="badge-text">100% Escrow</span>
+                        </div>
+                        <div class="welcome-floating-badge badge-mid-left">
+                            <span class="badge-icon">💬</span>
+                            <span class="badge-text">Live Chat</span>
+                        </div>
+                        <div class="welcome-floating-badge badge-mid-right">
+                            <span class="badge-icon">⏱️</span>
+                            <span class="badge-text">24-48h Delivery</span>
+                        </div>
+                        <div class="welcome-floating-badge badge-bot-right">
+                            <span class="badge-icon">💰</span>
+                            <span class="badge-text">Direct Payouts</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Value Proposition Row -->
+            <div class="hero-features-bar">
+                <div class="hero-feature-card" onclick="goToBusinessAds()" style="cursor: pointer; border-color: rgba(91, 52, 234, 0.4); background: linear-gradient(135deg, rgba(91, 52, 234, 0.05), transparent);"
+                   onmouseover="this.style.transform='translateY(-4px)'; this.style.borderColor='#5b34ea';"
+                   onmouseout="this.style.transform='translateY(0)'; this.style.borderColor='rgba(91, 52, 234, 0.4)';">
+                    <div class="hero-feature-icon">🏢</div>
+                    <h3 class="hero-feature-title">Small Business & Brand Ads</h3>
+                    <p class="hero-feature-desc">Turn raw phone footage into high-converting Instagram Reels, Cafes/Restaurant promos, and E-commerce product ads.</p>
+                </div>
+                <div class="hero-feature-card" onclick="goToVideoEditors()" style="cursor: pointer;"
+                   onmouseover="this.style.transform='translateY(-4px)'; this.style.borderColor='#5b34ea';"
+                   onmouseout="this.style.transform='translateY(0)'; this.style.borderColor='var(--border)';">
+                    <div class="hero-feature-icon">🎬</div>
+                    <h3 class="hero-feature-title">Vetted Video Editors</h3>
+                    <p class="hero-feature-desc">Hire verified creators for YouTube, Reels, podcasts, and commercial color grading with interactive video showreels.</p>
+                </div>
+                <div class="hero-feature-card" onclick="goToTutors()" style="cursor: pointer;"
+                   onmouseover="this.style.transform='translateY(-4px)'; this.style.borderColor='#5b34ea';"
+                   onmouseout="this.style.transform='translateY(0)'; this.style.borderColor='var(--border)';">
+                    <div class="hero-feature-icon">🗣️</div>
+                    <h3 class="hero-feature-title">Spoken English Coaches</h3>
+                    <p class="hero-feature-desc">Master fluency, accent neutralization, IELTS, and corporate presentation skills with 1-on-1 certified tutors.</p>
+                </div>
+                <div class="hero-feature-card">
+                    <div class="hero-feature-icon">🔒</div>
+                    <h3 class="hero-feature-title">100% Escrow Protection</h3>
+                    <p class="hero-feature-desc">Your payment is locked safely in escrow and released to the creator only when you review and approve the final work.</p>
+                </div>
+            </div>
+        </div>
+    </div>`;
+}
+
+// =============== DEADLINE & ESCROW UTILITIES ===============
+
+function getBookingDeadlineInfo(booking) {
+    if (!booking || !booking.created_at) {
+        return { text: 'Turnaround: 48h', subtext: 'Standard delivery time', badgeClass: 'badge-info', statusLabel: 'Active', isPast: false };
+    }
+    const createdDate = new Date(booking.created_at);
+    let turnaroundHours = 48; // default 48h
+    const turnaroundStr = (booking.package_turnaround || booking.package?.turnaround || '').toLowerCase();
+    if (turnaroundStr.includes('24') || turnaroundStr.includes('1 day')) turnaroundHours = 24;
+    else if (turnaroundStr.includes('48') || turnaroundStr.includes('2 day')) turnaroundHours = 48;
+    else if (turnaroundStr.includes('3 day')) turnaroundHours = 72;
+    else if (turnaroundStr.includes('4 day')) turnaroundHours = 96;
+    else if (turnaroundStr.includes('5 day')) turnaroundHours = 120;
+    else if (turnaroundStr.includes('7 day') || turnaroundStr.includes('week')) turnaroundHours = 168;
+
+    const deadlineDate = new Date(createdDate.getTime() + turnaroundHours * 60 * 60 * 1000);
+    const now = new Date();
+    const diffMs = deadlineDate.getTime() - now.getTime();
+    const hoursLeft = Math.round(diffMs / (1000 * 60 * 60));
+    const daysLeft = Math.ceil(hoursLeft / 24);
+    const dateFormatted = deadlineDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+    const status = (booking.status || '').toLowerCase();
+    if (status === 'completed' || status === 'approved') {
+        return {
+            text: `✅ Delivered & Approved on Time`,
+            subtext: `Completed on ${dateFormatted}`,
+            badgeClass: 'badge-success',
+            statusLabel: 'Completed',
+            isPast: false
+        };
+    }
+    if (status === 'delivered' || status === 'pending_approval') {
+        return {
+            text: `📦 Work Delivered! Awaiting Your Review`,
+            subtext: `Target Deadline was ${dateFormatted}`,
+            badgeClass: 'badge-warning',
+            statusLabel: 'Needs Review',
+            isPast: false
+        };
+    }
+    if (status === 'pending_payment' || status === 'pending') {
+        return {
+            text: `💳 Awaiting Escrow Payment`,
+            subtext: `Est. Delivery: ${turnaroundHours}h after payment`,
+            badgeClass: 'badge-muted',
+            statusLabel: 'Unfunded',
+            isPast: false
+        };
+    }
+
+    // In Progress / Confirmed
+    if (diffMs < 0) {
+        return {
+            text: `⚠️ Past Estimated Deadline`,
+            subtext: `Was due ${dateFormatted} (~${Math.abs(daysLeft)}d ago)`,
+            badgeClass: 'badge-danger',
+            statusLabel: 'Overdue',
+            isPast: true
+        };
+    } else if (hoursLeft <= 24) {
+        return {
+            text: `🔥 Due Today: ~${Math.max(1, hoursLeft)}h remaining`,
+            subtext: `Target Delivery: ${dateFormatted}`,
+            badgeClass: 'badge-warning',
+            statusLabel: 'Due Soon',
+            isPast: false
+        };
+    } else {
+        return {
+            text: `⏰ Due in ${daysLeft} days`,
+            subtext: `Target Delivery: ${dateFormatted}`,
+            badgeClass: 'badge-info',
+            statusLabel: 'On Track',
+            isPast: false
+        };
+    }
+}
+window.getBookingDeadlineInfo = getBookingDeadlineInfo;
+
+// Global Provider / Package Selection for Booking Checkout
+function selectProvider(providerId, packageId = null) {
+    sessionStorage.setItem('selected_provider_id', providerId);
+    if (packageId) {
+        sessionStorage.setItem('selected_package_id', packageId);
+    } else {
+        sessionStorage.removeItem('selected_package_id');
+    }
+    router('/create-booking');
+}
+window.selectProvider = selectProvider;
+
+async function requestFreeSample() {
+    const packageId = parseInt(document.getElementById('booking-package')?.value);
+    const notes = document.getElementById('booking-notes')?.value?.trim() || '';
+    const sourceFileUrl = document.getElementById('booking-source-url')?.value?.trim() || '';
+    const selectedPkg = packagesForFreeSample?.find?.(p => p.id === packageId);
+    if (!packageId || !selectedPkg) {
+        showToast('Choose a package first.', 'error');
+        return;
+    }
+    if (!notes) {
+        showToast('Tell the creator what you want done with the sample.', 'error');
+        document.getElementById('booking-notes')?.focus();
+        return;
+    }
+    try {
+        showLoading();
+        const booking = await apiFetch('/bookings/free-sample', {
+            method: 'POST',
+            body: JSON.stringify({
+                package_id: packageId,
+                client_notes: notes,
+                source_file_url: sourceFileUrl || null
+            })
+        });
+        sessionStorage.removeItem('selected_provider_id');
+        sessionStorage.removeItem('selected_package_id');
+        showToast(`🎁 Free sample #${booking.sample_number} requested. The creator has been notified.`, 'success');
+        router('/bookings');
+    } catch (e) {
+        showToast(e.message || 'Could not request free sample', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+window.requestFreeSample = requestFreeSample;
+let packagesForFreeSample = [];
+
+// =============== DASHBOARD DISPATCHER ===============
+function Dashboard() {
+    if (currentUser?.user_type === 'ADMIN') {
+        return AdminDashboard();
+    }
+    if (currentUser?.user_type === 'PROVIDER') {
+        return ProviderDashboard();
+    }
+    return BuyerDashboard();
+}
+
+// =============== PROVIDER PROFESSION ONBOARDING ===============
+const PROVIDER_PROFESSIONS = [
+    { id: 'editors_animators', icon: '🎬', title: 'Video Editor', sub: 'Reels, YouTube, VFX & post-production' },
+    { id: 'business_ads', icon: '📢', title: 'Social Ads & Services', sub: 'Ads, local business services & campaign work' },
+    { id: 'videography', icon: '📹', title: 'Real-Meet Videographer', sub: 'Shoot at shops/businesses and deliver edited videos' },
+    { id: 'social_media', icon: '📱', title: 'Social Media Manager', sub: 'Posts, reels, captions & scheduling' },
+    { id: 'writers', icon: '✍️', title: 'Writer & Copywriter', sub: 'Scripts, ad copy, blogs & social copy' },
+    { id: 'tutors', icon: '🗣️', title: 'English Tutor', sub: 'Fluency, IELTS, accent & coaching' }
+];
+
+async function chooseProviderProfession(niche) {
+    try {
+        showLoading();
+        await apiFetch('/profile', {
+            method: 'PATCH',
+            body: JSON.stringify({
+                niche,
+                profession_selected: true,
+                experience_tier: 'beginner'
+            })
+        });
+        window.__providerNiche = niche;
+        hideLoading();
+        showToast('Profession saved. Your profile and package options are now customized.', 'success');
+        router('/');
+    } catch (e) {
+        hideLoading();
+        showToast(e.message || 'Could not save profession', 'error');
+    }
+}
+
+function ProviderProfessionOnboarding() {
+    return el`<div>
+        ${renderAppHeader('/')}
+        <div class="main" style="max-width: 920px; margin: 0 auto; padding-bottom: 60px;">
+            <div class="card" style="padding: 28px; border: 1.5px solid rgba(99,102,241,.35); background: linear-gradient(135deg,var(--bg-card),var(--bg-hover));">
+                <div style="text-align:center; max-width:680px; margin:0 auto 24px;">
+                    <div style="font-size:2.5rem; margin-bottom:8px;">👋</div>
+                    <h1 style="font-size:1.55rem; font-weight:900; margin:0 0 8px;">What service do you provide?</h1>
+                    <p style="color:var(--text-secondary); margin:0; line-height:1.5;">
+                        Choose your main job first. Groove Hub will then show the right profile fields, package examples and client tasks for you.
+                    </p>
+                </div>
+                <div class="grid grid-2" style="gap:12px;">
+                    ${PROVIDER_PROFESSIONS.map(p => `
+                        <button type="button" class="card" onclick="chooseProviderProfession('${p.id}')"
+                            style="text-align:left; padding:16px; cursor:pointer; border:1.5px solid var(--border); background:var(--bg-card); transition:.2s;">
+                            <div style="display:flex; align-items:center; gap:12px;">
+                                <span style="font-size:2rem;">${p.icon}</span>
+                                <span>
+                                    <strong style="display:block; color:var(--text-primary);">${p.title}</strong>
+                                    <small style="color:var(--text-secondary); line-height:1.35;">${p.sub}</small>
+                                </span>
+                            </div>
+                        </button>
+                    `).join('')}
+                </div>
+            </div>
+        </div>
+    </div>`;
+}
+window.chooseProviderProfession = chooseProviderProfession;
+
+// =============== PROVIDER DASHBOARD (CREATOR STUDIO) ===============
+function ProviderDashboard() {
+    let profile = null;
+    let recentPackages = [];
+    let bookings = [];
+    let portfolioItems = [];
+    let loading = true;
+
+    async function loadData() {
+        showLoading();
+        try {
+            try {
+                profile = await apiFetch('/profile');
+                window.__providerNiche = profile?.niche || window.__providerNiche || 'editors_animators';
+            } catch (_) { profile = {}; }
+            try { recentPackages = await apiFetch('/packages'); } catch (_) { recentPackages = []; }
+            try { bookings = await apiFetch('/bookings'); } catch (_) { bookings = []; }
+            if (currentUser?.id) {
+                try { portfolioItems = await apiFetch(`/profile/${currentUser.id}/portfolio`); } catch (_) { portfolioItems = []; }
+            }
+        } catch (e) {
+            showToast(e.message || 'Error loading studio', 'error');
+        } finally {
+            loading = false;
+            mount(renderStudio());
+        }
+    }
+
+    loadData();
+
+    function renderStudio() {
+        if (loading) {
+            return el`<div>
+                ${renderAppHeader('/')}
+                <div class="main"><div class="loading"><div class="spinner"></div></div></div>
+            </div>`;
+        }
+
+        // New providers must choose their job before profile/package setup is shown.
+        if (profile && profile.profession_selected === false) {
+            return ProviderProfessionOnboarding();
+        }
+
+        const clientOrders = Array.isArray(bookings) ? bookings : [];
+        const pendingOrders = clientOrders.filter(b => b.status === 'in_progress' || b.status === 'confirmed');
+        const deliveredOrders = clientOrders.filter(b => b.status === 'delivered' || b.status === 'pending_approval');
+
+        const hasProfile = Boolean(
+            (profile?.bio && profile.bio.trim().length > 0) ||
+            (profile?.skills && (Array.isArray(profile.skills) ? profile.skills.length > 0 : String(profile.skills).trim().length > 0)) ||
+            (profile?.niche && profile.niche.length > 0) ||
+            (currentUser?.name && currentUser.name.trim().length > 0)
+        );
+        const hasShowreel = Boolean(
+            (portfolioItems && portfolioItems.length > 0) ||
+            (profile?.portfolio_items && profile.portfolio_items.length > 0) ||
+            (profile?.portfolio_count > 0)
+        );
+        const hasPackages = Array.isArray(recentPackages) && recentPackages.length > 0;
+        const completedCount = (hasProfile ? 1 : 0) + (hasShowreel ? 1 : 0) + (hasPackages ? 1 : 0);
+        const progressPercent = Math.round((completedCount / 3) * 100);
+
+        return el`<div>
+            ${renderAppHeader('/')}
+            
+            <!-- Clarification & Mode Substrip -->
+            <div class="mode-bar-substrip">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span class="mode-badge-pill mode-badge-provider">💼 Provider Studio</span>
+                    <span>You are logged in as a <strong>Seller / Creator</strong>. Need to hire talent?</span>
+                </div>
+                <button type="button" class="btn-switch-mode" onclick="toggleUserMode()">
+                    🛍️ Switch to Buyer Mode
+                </button>
+            </div>
+
+            <div class="main">
+                <!-- 0% Commission Launch Promo Notice Card -->
+                <div class="card launch-zero-comm-card" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(6, 95, 70, 0.08)); border: 1.5px solid rgba(16, 185, 129, 0.35); padding: 16px 20px; border-radius: var(--radius); margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap;">
+                    <div style="display: flex; align-items: center; gap: 14px;">
+                        <div style="font-size: 2.2rem; line-height: 1;">🎉</div>
+                        <div>
+                            <div style="font-weight: 800; color: var(--success); font-size: 1.05rem; display: flex; align-items: center; gap: 8px;">
+                                <span>0% Commission Launch Plan Active (1 Month Free)</span>
+                                <span class="badge badge-success" style="font-size: 0.68rem; padding: 2px 7px;">100% Payout</span>
+                            </div>
+                            <div style="font-size: 0.8125rem; color: var(--text-secondary); margin-top: 3px; max-width: 580px; line-height: 1.4;">
+                                Welcome to the Play Store launch! You will receive <strong>100% of every order</strong>. Zero platform commission deducted for your first 30 days.
+                            </div>
+                        </div>
+                    </div>
+                    <button class="btn btn-secondary btn-sm" onclick="router('/packages')" style="font-weight: 700; border-color: rgba(16, 185, 129, 0.4);">Publish Service Packages →</button>
+                </div>
+
+                <!-- New Creator Fast-Track 3-Step Setup Checklist -->
+                <div class="card" style="padding: 22px 24px; margin-bottom: 24px; border: 1.5px solid rgba(99, 102, 241, 0.35); background: linear-gradient(135deg, rgba(99, 102, 241, 0.06) 0%, rgba(16, 185, 129, 0.06) 100%); border-radius: var(--radius);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 14px;">
+                        <div>
+                            <div style="font-size: 1.15rem; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+                                <span>🚀</span> Creator Fast-Track Setup Checklist
+                                <span class="badge ${completedCount === 3 ? 'badge-success' : 'badge-primary'}" style="font-size: 0.72rem;">${completedCount}/3 Completed</span>
+                            </div>
+                            <div style="font-size: 0.8125rem; color: var(--text-secondary); margin-top: 2px;">
+                                Complete these 3 quick steps to start appearing in search results and receiving client orders.
+                            </div>
+                        </div>
+                        <div style="min-width: 140px; text-align: right;">
+                            <div style="font-size: 0.78rem; font-weight: 700; color: var(--accent); margin-bottom: 4px;">${progressPercent}% Ready</div>
+                            <div style="width: 100%; height: 8px; background: var(--border); border-radius: 999px; overflow: hidden;">
+                                <div style="width: ${progressPercent}%; height: 100%; background: linear-gradient(90deg, #6366f1, #10b981); transition: width 0.3s ease;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-3" style="gap: 14px;">
+                        <!-- Step 1: Profile -->
+                        <div class="card" style="padding: 14px; background: var(--bg-card); border: 1px solid ${hasProfile ? 'rgba(16, 185, 129, 0.4)' : 'var(--border)'}; border-radius: var(--radius-sm); display: flex; flex-direction: column; justify-content: space-between;">
+                            <div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                                    <span style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted);">STEP 1</span>
+                                    <span style="font-size: 1.1rem;">${hasProfile ? '✅' : '⚪'}</span>
+                                </div>
+                                <div style="font-weight: 700; font-size: 0.92rem; color: var(--text-primary); margin-bottom: 4px;">Complete Profile &amp; Bio</div>
+                                <div style="font-size: 0.78rem; color: var(--text-secondary); line-height: 1.35; margin-bottom: 12px;">
+                                    Add your service headline, bio, skills, and rates so clients know your expertise.
+                                </div>
+                            </div>
+                            <button type="button" class="btn ${hasProfile ? 'btn-outline' : 'btn-primary'} btn-sm" onclick="openSettingsTab('profile')" style="width: 100%; font-size: 0.78rem; padding: 6px 10px;">
+                                ${hasProfile ? '✏️ Edit Profile' : '👉 Complete Profile'}
+                            </button>
+                        </div>
+
+                        <!-- Step 2: Showreel / Portfolio -->
+                        <div class="card" style="padding: 14px; background: var(--bg-card); border: 1px solid ${hasShowreel ? 'rgba(16, 185, 129, 0.4)' : 'var(--border)'}; border-radius: var(--radius-sm); display: flex; flex-direction: column; justify-content: space-between;">
+                            <div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                                    <span style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted);">STEP 2</span>
+                                    <span style="font-size: 1.1rem;">${hasShowreel ? '✅' : '⚪'}</span>
+                                </div>
+                                <div style="font-weight: 700; font-size: 0.92rem; color: var(--text-primary); margin-bottom: 4px;">Upload 4K Showreel / Video</div>
+                                <div style="font-size: 0.78rem; color: var(--text-secondary); line-height: 1.35; margin-bottom: 12px;">
+                                    Upload your best portfolio samples (video, image or other supported work) to attract buyers.
+                                </div>
+                            </div>
+                            <button type="button" class="btn ${hasShowreel ? 'btn-outline' : 'btn-primary'} btn-sm" onclick="openSettingsTab('portfolio')" style="width: 100%; font-size: 0.78rem; padding: 6px 10px;">
+                                ${hasShowreel ? '📁 Manage Portfolio' : '📤 Upload 4K Showreel'}
+                            </button>
+                        </div>
+
+                        <!-- Step 3: Packages -->
+                        <div class="card" style="padding: 14px; background: var(--bg-card); border: 1px solid ${hasPackages ? 'rgba(16, 185, 129, 0.4)' : 'var(--border)'}; border-radius: var(--radius-sm); display: flex; flex-direction: column; justify-content: space-between;">
+                            <div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                                    <span style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted);">STEP 3</span>
+                                    <span style="font-size: 1.1rem;">${hasPackages ? '✅' : '⚪'}</span>
+                                </div>
+                                <div style="font-weight: 700; font-size: 0.92rem; color: var(--text-primary); margin-bottom: 4px;">Publish Service Package</div>
+                                <div style="font-size: 0.78rem; color: var(--text-secondary); line-height: 1.35; margin-bottom: 12px;">
+                                    Create your fixed-price package using options matched to your chosen profession.
+                                </div>
+                            </div>
+                            <button type="button" class="btn ${hasPackages ? 'btn-outline' : 'btn-primary'} btn-sm" onclick="${hasPackages ? "router('/packages')" : "router('/create-package')"}" style="width: 100%; font-size: 0.78rem; padding: 6px 10px;">
+                                ${hasPackages ? '📦 View Packages' : '➕ Create Package'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Provider Metrics Card -->
+                ${providerWelcomeCard(profile)}
+
+                <!-- Quick Business Actions -->
+                ${providerSection(profile, recentPackages)}
+
+                <!-- Client Work Queue -->
+                <div class="section-title mt-4" style="margin-top: 24px; display: flex; justify-content: space-between; align-items: center;">
+                    <span>Active Client Orders (${pendingOrders.length + deliveredOrders.length})</span>
+                    <button class="btn btn-secondary btn-sm" onclick="router('/bookings')">View All Orders</button>
+                </div>
+
+                ${(pendingOrders.length === 0 && deliveredOrders.length === 0) ? `
+                    <div class="card" style="padding: 28px; text-align: center;">
+                        <div style="font-size: 2.2rem; margin-bottom: 8px;">📬</div>
+                        <h4 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 6px;">No Active Client Orders Right Now</h4>
+                        <p style="color: var(--text-secondary); font-size: 0.85rem; max-width: 440px; margin: 0 auto 16px;">
+                            Make sure your service packages are published and check incoming inquiries in your Messages inbox.
+                        </p>
+                        <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                            <button class="btn btn-primary btn-sm" onclick="router('/create-package')">Create Package</button>
+                            <button class="btn btn-secondary btn-sm" onclick="router('/messages')">💬 Open Messages</button>
+                        </div>
+                    </div>
+                ` : `
+                    <div class="grid grid-2">
+                        ${[...pendingOrders, ...deliveredOrders].map(b => {
+                            const deadline = getBookingDeadlineInfo(b);
+                            return `
+                            <div class="card" style="border-left: 4px solid var(--accent); padding: 18px;">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                                    <div>
+                                        <div style="font-weight: 800; font-size: 1rem; color: var(--text-primary);">Order #${b.id}: ${b.package_title || 'Custom Service'}</div>
+                                        <div style="font-size: 0.8125rem; color: var(--text-secondary);">Client: <strong>${b.buyer_name || 'Client'}</strong></div>
+                                    </div>
+                                    <span class="badge ${b.status === 'delivered' ? 'badge-warning' : 'badge-primary'}">${escapeHTML(b.status || 'unknown')}</span>
+                                </div>
+                                <div style="margin: 10px 0; font-size: 0.8125rem; color: var(--text-secondary);">
+                                    <div style="font-weight: 700; color: ${deadline.isPast ? 'var(--danger)' : 'var(--text-primary)'};">${deadline.text}</div>
+                                    <div>${deadline.subtext}</div>
+                                </div>
+                                <div style="display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap;">
+                                    <button class="btn btn-secondary btn-sm" onclick="openPreBookingChat(${b.buyer_id}, '${(b.buyer_name || '').replace(/'/g, "\\'")}')" style="flex: 1;">💬 Chat</button>
+                                    <button class="btn btn-primary btn-sm" onclick="router('/bookings')" style="flex: 1;">Submit Work</button>
+                                </div>
+                            </div>
+                            `;
+                        }).join('')}
+                    </div>
+                `}
+            </div>
+        </div>`;
+    }
+
+    return renderStudio();
+}
+
+// =============== BUYER DASHBOARD (FIVERR-STYLE TALENT MARKETPLACE) ===============
+function BuyerDashboard() {
+    let packages = [];
+    let bookings = [];
+    let providers = [];
+    let loading = true;
+    let activeFilter = 'all';
+    let searchQuery = '';
+    let searchDebounceTimer = null;
+
+    async function loadData() {
+        showLoading();
+        try {
+            const [pkgsRes, bksRes, edusRes] = await Promise.all([
+                apiFetch('/packages?limit=50').catch(() => []),
+                apiFetch('/bookings').catch(() => []),
+                apiFetch('/educators/summary').catch(() => [])
+            ]);
+            bookings = Array.isArray(bksRes) ? bksRes : [];
+            providers = Array.isArray(edusRes) ? edusRes : [];
+            window.__cachedProviders = providers;
+            let fetchedPackages = Array.isArray(pkgsRes) ? pkgsRes : [];
+            if (fetchedPackages.length === 0 && providers.length > 0) {
+                fetchedPackages = providers.flatMap(pr => (pr.packages || []).map(pkg => ({
+                    ...pkg,
+                    provider_id: pr.id,
+                    provider_name: pr.name,
+                    niche: pr.niche || pkg.niche
+                })));
+            }
+            packages = fetchedPackages;
+        } catch (e) {
+            showToast(e.message || 'Error loading marketplace', 'error');
+        } finally {
+            loading = false;
+            mount(renderMarketplace());
+        }
+    }
+
+    loadData();
+
+    function renderMarketplace() {
+        if (loading) {
+            return el`<div>
+                ${renderAppHeader('/')}
+                <div class="main"><div class="loading"><div class="spinner"></div></div></div>
+            </div>`;
+        }
+
+        const approvedPackages = Array.isArray(packages) ? packages.filter(p => p.status === 'approved' || !p.status) : [];
+        const clientPurchases = Array.isArray(bookings) ? bookings : [];
+        const activePurchases = clientPurchases.filter(b => b.status === 'in_progress' || b.status === 'confirmed' || b.status === 'delivered');
+        const allProviders = Array.isArray(providers) ? providers : [];
+
+        const q = (searchQuery || '').trim().toLowerCase();
+
+        // Filter packages based on activeFilter and searchQuery
+        const filteredPackages = approvedPackages.filter(p => {
+            const pkgTitle = (p.title || '').toLowerCase();
+            const pkgDesc = (p.description || '').toLowerCase();
+            const pkgProvider = (p.provider_name || '').toLowerCase();
+            const pkgNiche = (p.niche || '').toLowerCase();
+            const pkgTurnaround = (p.turnaround || '').toLowerCase();
+            const fullPkgText = `${pkgTitle} ${pkgDesc} ${pkgProvider} ${pkgNiche} ${pkgTurnaround}`;
+
+            const matchesQuery = !q || fullPkgText.includes(q);
+
+            if (!matchesQuery) return false;
+            if (activeFilter === 'editors') return (pkgNiche && (pkgNiche.includes('editor') || pkgNiche.includes('video'))) || pkgTitle.includes('video') || pkgTitle.includes('edit') || pkgTitle.includes('reel') || pkgTitle.includes('gaming') || pkgTitle.includes('animat');
+            if (activeFilter === 'ads_services') return (pkgNiche && ['business_ads', 'social_ads', 'ads_services', 'videography', 'social_media'].some(k => pkgNiche.includes(k))) || ['ad', 'ads', 'business', 'videograph', 'social media', 'remote footage'].some(k => pkgTitle.includes(k) || pkgDesc.includes(k));
+            if (activeFilter === 'tutors') return (pkgNiche && pkgNiche.includes('tutor')) || pkgTitle.includes('english') || pkgTitle.includes('tutor') || pkgTitle.includes('ielts') || pkgTitle.includes('speaking') || pkgTitle.includes('accent') || pkgTitle.includes('interview');
+            if (activeFilter === 'writers') return (pkgNiche && pkgNiche.includes('writer')) || pkgTitle.includes('writer') || pkgTitle.includes('copy') || pkgTitle.includes('script') || pkgTitle.includes('seo');
+            if (activeFilter === 'express') return (pkgTurnaround && (pkgTurnaround.includes('24') || pkgTurnaround.includes('1 day') || pkgTurnaround.includes('immediate')));
+            return true;
+        });
+
+        // Filter providers based on activeFilter and searchQuery
+        const filteredProviders = allProviders.filter(pr => {
+            const skillsStr = (pr.skills || []).join(' ').toLowerCase();
+            const packagesStr = (pr.packages || []).map(p => `${p.title || ''} ${p.description || ''}`).join(' ').toLowerCase();
+            const bioStr = (pr.bio || '').toLowerCase();
+            const specStr = (pr.specialization || '').toLowerCase();
+            const prName = (pr.name || '').toLowerCase();
+            const prNiche = (pr.niche || '').toLowerCase();
+            const fullText = `${prName} ${prNiche} ${skillsStr} ${packagesStr} ${bioStr} ${specStr}`;
+
+            const matchesQuery = !q || fullText.includes(q);
+
+            if (!matchesQuery) return false;
+            if (activeFilter === 'editors') return prNiche === 'editors_animators' || skillsStr.includes('video') || skillsStr.includes('edit');
+            if (activeFilter === 'ads_services') return ['business_ads', 'social_ads', 'ads_services', 'videography', 'social_media'].some(k => prNiche.includes(k)) || ['ad', 'ads', 'videograph', 'social media', 'business'].some(k => fullText.includes(k));
+            if (activeFilter === 'tutors') return prNiche === 'tutors' || skillsStr.includes('english') || skillsStr.includes('tutor') || skillsStr.includes('ielts') || skillsStr.includes('accent');
+            if (activeFilter === 'writers') return prNiche === 'writers' || skillsStr.includes('write') || skillsStr.includes('copy') || skillsStr.includes('script');
+            if (activeFilter === 'express') return (pr.response_time && pr.response_time.includes('24')) || pr.availability === 'immediate';
+            return true;
+        });
+
+        const totalItems = filteredPackages.length + filteredProviders.length;
+
+        const placeholders = {
+            all: 'Search video editors, social ads, videographers, writers...',
+            editors: 'Search Reels, YouTube, Gaming, After Effects, color grading...',
+            ads_services: 'Search Instagram Ads, local business ads, videography, remote editing...',
+            tutors: 'Search IELTS speaking, accent reduction, fluency, business English...',
+            writers: 'Search social captions, video scripts, ad copy, SEO blog posts...',
+            express: 'Search 24-hour rush delivery packages and creators...'
+        };
+        const currentPlaceholder = placeholders[activeFilter] || placeholders.all;
+
+        const categoryOptionsMap = {
+            all: [
+                { label: 'Video Ads', query: 'video ads', filter: 'editors', icon: '🎬' },
+                { label: 'Reels & TikTok', query: 'reel', filter: 'editors', icon: '📱' },
+                { label: 'English Fluency', query: 'speaking', filter: 'tutors', icon: '🗣️' },
+                { label: 'YouTube Videos', query: 'youtube', filter: 'editors', icon: '🎥' },
+                { label: 'Video Scripts', query: 'script', filter: 'writers', icon: '✍️' },
+                { label: '24h Express', query: '24', filter: 'express', icon: '⚡' }
+            ],
+            editors: [
+                { label: 'Video Ads', query: 'video ads', filter: 'editors', icon: '🎬' },
+                { label: 'Reels & TikTok', query: 'reel', filter: 'editors', icon: '📱' },
+                { label: 'YouTube Longform', query: 'youtube', filter: 'editors', icon: '🎥' },
+                { label: 'Gaming Montages', query: 'gaming', filter: 'editors', icon: '🎮' },
+                { label: 'Color Grading', query: 'color', filter: 'editors', icon: '🎨' },
+                { label: '24h Rush Delivery', query: '24', filter: 'editors', icon: '⚡' }
+            ],
+            ads_services: [
+                { label: 'Instagram & Facebook Ads', query: 'instagram ads', filter: 'ads_services', icon: '📢' },
+                { label: 'Local Shop Ads', query: 'local business', filter: 'ads_services', icon: '🏪' },
+                { label: 'On-Site Videography', query: 'videography', filter: 'ads_services', icon: '📹' },
+                { label: 'Remote Video Editing', query: 'remote edit', filter: 'ads_services', icon: '📤' },
+                { label: 'Ad Creatives', query: 'ad creative', filter: 'ads_services', icon: '🎨' },
+                { label: 'Social Media Management', query: 'social media', filter: 'ads_services', icon: '📱' }
+            ],
+            tutors: [
+                { label: 'IELTS Speaking', query: 'ielts', filter: 'tutors', icon: '🗣️' },
+                { label: 'Accent Reduction', query: 'accent', filter: 'tutors', icon: '🎯' },
+                { label: 'Business English', query: 'business', filter: 'tutors', icon: '💼' },
+                { label: 'Daily Fluency', query: 'speaking', filter: 'tutors', icon: '💬' },
+                { label: 'Trial Session', query: 'trial', filter: 'tutors', icon: '⚡' }
+            ],
+            writers: [
+                { label: 'Video Scripts', query: 'script', filter: 'writers', icon: '✍️' },
+                { label: 'Ad Copywriting', query: 'copy', filter: 'writers', icon: '📈' },
+                { label: 'SEO Blog Posts', query: 'seo', filter: 'writers', icon: '📝' },
+                { label: 'Social Captions', query: 'caption', filter: 'writers', icon: '📱' }
+            ],
+            express: [
+                { label: '24h Video Edit', query: 'video', filter: 'express', icon: '🎬' },
+                { label: 'Instant English Lesson', query: 'english', filter: 'express', icon: '🗣️' },
+                { label: 'Express Script', query: 'script', filter: 'express', icon: '✍️' }
+            ]
+        };
+
+        const currentOptions = categoryOptionsMap[activeFilter] || categoryOptionsMap.all;
+        window.__currentBuyerFilter = activeFilter;
+        window.__buyerCategoryOptionsMap = categoryOptionsMap;
+
+        const categorySlidersData = {
+            editors: {
+                badge: '🎬 Video Editing Specialties',
+                items: [
+                    { id: 'gaming', label: 'Gaming Streams & Edits', sub: 'Twitch highlights & stream cuts', query: 'gaming', icon: '🎮' },
+                    { id: 'youtube', label: 'YouTube Longform', sub: 'Retention edits & viral pacing', query: 'youtube', icon: '📺' },
+                    { id: 'animations', label: '2D & 3D Animations', sub: 'Character animation & 3D models', query: 'animation', icon: '🎨' },
+                    { id: 'motion_graphics', label: 'Motion Graphics & VFX', sub: 'After Effects lower thirds & titles', query: 'motion', icon: '✨' },
+                    { id: 'music', label: 'Music & Cinematic', sub: 'Beat-sync VFX & color grading', query: 'music', icon: '🎬' },
+                    { id: 'express', label: '24h Rush Delivery', sub: 'Same-day express turnaround', query: '24', icon: '⚡' }
+                ]
+            },
+            ads_services: {
+                badge: '📢 Social Ads & Business Services',
+                items: [
+                    { id: 'meta_ads', label: 'Instagram & Facebook Ads', sub: 'Meta campaigns, targeting & optimization', query: 'instagram ads', icon: '📢' },
+                    { id: 'ad_creatives', label: 'Ad Creatives', sub: 'Scroll-stopping video & image ads', query: 'ad creative', icon: '🎨' },
+                    { id: 'local_business', label: 'Local Business Ads', sub: 'Shop, cafe, gym & service promotions', query: 'local business', icon: '🏪' },
+                    { id: 'videography', label: 'On-Site Videography', sub: 'Shoot at the shop + edit the footage', query: 'videography', icon: '📹' },
+                    { id: 'remote_edit', label: 'Remote Video Editing', sub: 'Upload footage and get it edited', query: 'remote edit', icon: '📤' },
+                    { id: 'social_management', label: 'Social Media Management', sub: 'Posts, reels, captions & scheduling', query: 'social media', icon: '📱' }
+                ]
+            },
+            tutors: {
+                badge: '🗣️ English Tutoring Specialties',
+                items: [
+                    { id: 'ielts', label: 'IELTS & TOEFL Prep', sub: 'Band 7.5+ speaking & mock tests', query: 'ielts', icon: '🎯' },
+                    { id: 'accent', label: 'Accent Reduction', sub: 'Neutral pronunciation & clarity', query: 'accent', icon: '🗣️' },
+                    { id: 'business', label: 'Business English', sub: 'Corporate emails, pitches & interviews', query: 'business', icon: '💼' },
+                    { id: 'speaking', label: 'Daily Fluency', sub: 'Casual conversation & speaking confidence', query: 'speaking', icon: '💬' },
+                    { id: 'interview', label: 'Interview Coaching', sub: 'Job & visa mock interviews', query: 'interview', icon: '🎯' },
+                    { id: 'english', label: 'Cambridge Certified', sub: 'Structured grammar & spoken practice', query: 'english', icon: '⚡' }
+                ]
+            },
+            writers: {
+                badge: '✍️ Scriptwriter & Copy Specialties',
+                items: [
+                    { id: 'script', label: 'YouTube Video Scripts', sub: 'Retention storytelling, hooks & outlines', query: 'script', icon: '📺' },
+                    { id: 'copy', label: 'Social Ad Copy & UGC', sub: 'Converting hooks for TikTok & Meta ads', query: 'copy', icon: '📱' },
+                    { id: 'seo', label: 'SEO Blog Posts & Guides', sub: 'Keyword-ranked articles & pillar posts', query: 'seo', icon: '📰' },
+                    { id: 'social', label: 'Social Media Captions', sub: 'Carousel slides, X threads & posts', query: 'social', icon: '💬' },
+                    { id: 'email', label: 'Email Newsletters', sub: 'High open-rate subject lines & sequences', query: 'email', icon: '📧' },
+                    { id: 'express', label: '24h Rush Scripts', sub: 'Urgent same-day turnaround copy', query: '24', icon: '⚡' }
+                ]
+            }
+        };
+
+        const activeSliderConfig = categorySlidersData[activeFilter] || null;
+
+        if (!window.__placeholderBlinkLoopStarted) {
+            window.__placeholderBlinkLoopStarted = true;
+            let optIdx = 0;
+            setInterval(() => {
+                const input = document.getElementById('buyer-search-input');
+                const textEl = document.getElementById('placeholder-dynamic-text');
+                const holder = document.getElementById('search-animated-placeholder');
+
+                if (input && (input.value.trim().length > 0 || document.activeElement === input)) {
+                    if (holder && !holder.classList.contains('hidden')) {
+                        holder.classList.add('hidden');
+                    }
+                    return;
+                }
+
+                if (holder && holder.classList.contains('hidden')) {
+                    holder.classList.remove('hidden');
+                }
+
+                if (!textEl) return;
+
+                const map = window.__buyerCategoryOptionsMap || {};
+                const opts = map[window.__currentBuyerFilter || 'all'] || map.all || [];
+                if (!opts.length) return;
+
+                optIdx = (optIdx + 1) % opts.length;
+                const nextOpt = opts[optIdx];
+
+                // 1. Blink out smoothly
+                textEl.classList.add('blink-out');
+                textEl.classList.remove('blink-in');
+
+                setTimeout(() => {
+                    // 2. Change text while faded
+                    textEl.textContent = `"${nextOpt.label}"`;
+                    textEl.classList.remove('blink-out');
+                    textEl.classList.add('blink-in');
+
+                    setTimeout(() => {
+                        textEl.classList.remove('blink-in');
+                    }, 400);
+                }, 280);
+            }, 2600);
+        }
+
+        return el`<div>
+            ${renderAppHeader('/')}
+
+            <!-- Clarification & Mode Substrip -->
+            <div class="mode-bar-substrip">
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <span class="mode-badge-pill mode-badge-buyer">🛍️ Buyer Mode</span>
+                    <span style="font-size: 0.84rem; color: var(--text-secondary);">
+                        Browse verified creators, chat before booking, and hire with 100% Escrow Protection.
+                    </span>
+                </div>
+                <button type="button" class="btn-switch-mode" onclick="toggleUserMode()">
+                    💼 Switch to Provider Mode
+                </button>
+            </div>
+
+            <div class="main">
+
+                <!-- Active Purchases Bar (if buyer has orders) -->
+                ${activePurchases.length > 0 ? `
+                    <div class="card" style="margin-bottom: 24px; border-left: 4px solid var(--accent); padding: 18px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 12px;">
+                            <div>
+                                <strong style="font-size: 1rem; color: var(--text-primary);">⚡ You have ${activePurchases.length} active order${activePurchases.length > 1 ? 's' : ''} in progress</strong>
+                                <div style="font-size: 0.8125rem; color: var(--text-secondary);">Creators are currently preparing your deliverables.</div>
+                            </div>
+                            <button class="btn btn-secondary btn-sm" onclick="router('/bookings')">View All Orders</button>
+                        </div>
+                        <div class="grid grid-2">
+                            ${activePurchases.slice(0, 2).map(b => {
+                                const dl = getBookingDeadlineInfo(b);
+                                return `
+                                <div style="background: var(--bg-hover); padding: 12px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+                                    <div>
+                                        <div style="font-weight: 700; font-size: 0.9rem;">Order #${b.id} • ${escapeHTML(b.provider_name || 'Creator')}</div>
+                                        <div style="font-size: 0.78rem; color: var(--text-secondary);">${dl.text}</div>
+                                    </div>
+                                    <div style="display: flex; gap: 6px;">
+                                        <button class="btn btn-secondary btn-sm" style="padding: 4px 10px; font-size: 0.75rem;" onclick="openPreBookingChat(${b.provider_id}, '${escapeJs(b.provider_name || '')}')">💬 Chat</button>
+                                        <button class="btn btn-primary btn-sm" style="padding: 4px 10px; font-size: 0.75rem;" onclick="router('/bookings')">Details</button>
+                                    </div>
+                                </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+
+                <!-- Search & Category Filters -->
+                <div style="margin-bottom: 24px;">
+                    <div class="buyer-search-bar-row">
+                        <form onsubmit="event.preventDefault(); window.__handleBuyerSearchSubmit(document.getElementById('buyer-search-input').value)" class="buyer-search-form">
+                            <div class="buyer-search-input-wrap">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18" class="buyer-search-icon">
+                                    <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                                </svg>
+                                <div class="search-animated-placeholder ${searchQuery ? 'hidden' : ''}" id="search-animated-placeholder" onclick="const i=document.getElementById('buyer-search-input'); if(i){ i.focus(); }">
+                                    <span class="placeholder-prefix">Search</span>
+                                    <span class="placeholder-dynamic-text" id="placeholder-dynamic-text">"${currentOptions[0]?.label || 'Video Ads'}"</span>
+                                    <span class="placeholder-cursor">|</span>
+                                </div>
+                                <input 
+                                    type="text" 
+                                    id="buyer-search-input" 
+                                    class="form-input buyer-search-input" 
+                                    value="${escapeHTML(searchQuery)}" 
+                                    oninput="window.__handleBuyerSearchInput(this.value); window.__updatePlaceholderVisibility();"
+                                    onfocus="window.__updatePlaceholderVisibility(true);"
+                                    onblur="window.__updatePlaceholderVisibility();"
+                                    autocomplete="off"
+                                />
+                                ${searchQuery ? `
+                                    <button type="button" class="buyer-search-clear-btn" onclick="window.__clearBuyerSearch()" title="Clear search">✕</button>
+                                ` : ''}
+                            </div>
+                            <button type="submit" class="btn btn-primary buyer-search-btn buyer-search-btn-blinking" title="Click to search or explore options">
+                                <span class="search-btn-beacon"></span>
+                                <span class="search-btn-icon-sparkle">✨</span>
+                                <span>Search</span>
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Category Boxes with Animated Icons (Box Shape) -->
+                    <div class="category-boxes-grid">
+                        <button type="button" class="category-box-btn ${activeFilter === 'all' && !searchQuery ? 'active' : ''}" onclick="window.__setBuyerFilter('all')">
+                            <span class="chip-icon-box">${getCategoryPeekIconSvg('all', 32)}</span>
+                            <span class="category-box-label">All Services</span>
+                        </button>
+                        <button type="button" class="category-box-btn ${activeFilter === 'editors' ? 'active' : ''}" onclick="window.__setBuyerFilter('editors')">
+                            <span class="chip-icon-box">${getCategoryPeekIconSvg('editors_animators', 32)}</span>
+                            <span class="category-box-label">Video Editors</span>
+                        </button>
+                        <button type="button" class="category-box-btn ${activeFilter === 'ads_services' ? 'active' : ''}" onclick="window.__setBuyerFilter('ads_services')">
+                            <span class="chip-icon-box">${getCategoryPeekIconSvg('business_ads', 32)}</span>
+                            <span class="category-box-label">Social Ads &amp; Services</span>
+                        </button>
+                        <button type="button" class="category-box-btn ${activeFilter === 'tutors' ? 'active' : ''}" onclick="window.__setBuyerFilter('tutors')">
+                            <span class="chip-icon-box">${getCategoryPeekIconSvg('tutors', 32)}</span>
+                            <span class="category-box-label">English Tutors</span>
+                        </button>
+                        <button type="button" class="category-box-btn ${activeFilter === 'writers' ? 'active' : ''}" onclick="window.__setBuyerFilter('writers')">
+                            <span class="chip-icon-box">${getCategoryPeekIconSvg('writers', 32)}</span>
+                            <span class="category-box-label">Writers &amp; Copy</span>
+                        </button>
+                        <button type="button" class="category-box-btn ${activeFilter === 'express' ? 'active' : ''}" onclick="window.__setBuyerFilter('express')">
+                            <span class="chip-icon-box">${getCategoryPeekIconSvg('express', 32)}</span>
+                            <span class="category-box-label">24h Express</span>
+                        </button>
+                    </div>
+
+                    <!-- Popular Options Slider (Down of Icons & Shown for Editors, Tutors, and Writers) -->
+                    ${activeSliderConfig ? `
+                    <div class="editor-slider-container">
+                        <div class="editor-slider-header">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span class="editor-slider-badge">${activeSliderConfig.badge}</span>
+                                <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 500;">🖱️ Scroll with mouse wheel or drag to slide</span>
+                            </div>
+                            <div class="editor-slider-arrows">
+                                <button type="button" class="slider-arrow-btn" onclick="const el=document.getElementById('category-popular-slider'); if(el) el.scrollBy({ left: -220, behavior: 'smooth' });" title="Slide Left">‹</button>
+                                <button type="button" class="slider-arrow-btn" onclick="const el=document.getElementById('category-popular-slider'); if(el) el.scrollBy({ left: 220, behavior: 'smooth' });" title="Slide Right">›</button>
+                            </div>
+                        </div>
+
+                        <div 
+                            class="editor-popular-slider-track" 
+                            id="category-popular-slider"
+                            onwheel="if (Math.abs(event.deltaY) > Math.abs(event.deltaX)) { this.scrollLeft += event.deltaY; event.preventDefault(); }"
+                            onmouseenter="window.__initSliderMouseDrag(this)"
+                        >
+                            ${(() => {
+                                const sItems = [...activeSliderConfig.items];
+                                if (searchQuery) {
+                                    const activeIdx = sItems.findIndex(o => searchQuery.toLowerCase() === o.query.toLowerCase());
+                                    if (activeIdx > -1) {
+                                        const [activeO] = sItems.splice(activeIdx, 1);
+                                        sItems.unshift(activeO);
+                                    }
+                                }
+                                return sItems.map((opt, idx) => {
+                                    const isSelected = searchQuery.toLowerCase() === opt.query.toLowerCase();
+                                    return `
+                                    <div 
+                                        class="editor-slide-card ${isSelected ? 'active' : ''}" 
+                                        onclick="${isSelected ? `window.__clearBuyerSearch()` : `window.__applyPopularTag('${escapeJs(opt.query)}', '${escapeJs(activeFilter)}')`}"
+                                        style="animation-delay: ${(idx * 0.04).toFixed(2)}s;"
+                                        title="Filter by ${opt.label}"
+                                    >
+                                        <div class="slide-card-top">
+                                            <span class="slide-card-icon">${getTypeIconSvg(opt.id, opt.icon, 28)}</span>
+                                            <span class="slide-card-arrow">→</span>
+                                        </div>
+                                        <div class="slide-card-title">${opt.label}</div>
+                                        <div class="slide-card-sub">${opt.sub}</div>
+                                    </div>
+                                    `;
+                                }).join('');
+                            })()}
+                        </div>
+                    </div>
+                    ` : ''}
+                </div>
+
+                <!-- Talent Showcase Header -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 8px;">
+                    <div class="section-title" style="margin: 0; font-size: 1.15rem; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+                        <span>✨</span> Available Talent &amp; Services (${totalItems})
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <span style="font-size: 0.8125rem; color: var(--text-muted); font-weight: 600;">🛡️ 100% Escrow Protected</span>
+                        <button class="btn btn-secondary btn-sm" onclick="router('/providers')" style="padding: 5px 12px; font-size: 0.78rem;">
+                            Browse Full Directory →
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Talent Showcase Grid or Empty State -->
+                ${totalItems === 0 ? `
+                    <div class="card" style="padding: 40px 24px; text-align: center; border: 1.5px dashed var(--border); border-radius: var(--radius);">
+                        <div style="font-size: 2.8rem; margin-bottom: 12px;">🔍</div>
+                        <h4 style="font-size: 1.15rem; font-weight: 800; margin-bottom: 6px; color: var(--text-primary);">No services matching your search</h4>
+                        <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 20px; max-width: 440px; margin-left: auto; margin-right: auto;">
+                            We couldn't find any creators matching "${escapeHTML(searchQuery)}". Try clearing your keywords or exploring our full talent directory.
+                        </p>
+                        <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                            <button class="btn btn-secondary btn-sm" onclick="window.__setBuyerFilter('all'); window.__clearBuyerSearch();">Reset Filters</button>
+                            <button class="btn btn-primary btn-sm" onclick="router('/providers')">Open Full Talent Directory</button>
+                        </div>
+                    </div>
+                ` : `
+                    <div class="grid grid-3" style="gap: 20px;">
+                        <!-- 1. Render Specific Service Packages (if any) -->
+                        ${filteredPackages.map(pkg => {
+                            const isTutor = (pkg.niche && pkg.niche.includes('tutor')) || (pkg.title && pkg.title.toLowerCase().includes('english'));
+                            const isAds = pkg.niche && ['business_ads', 'social_ads', 'ads_services', 'videography', 'social_media'].some(k => pkg.niche.includes(k));
+                            const nicheBadge = isTutor ? '🗣️ English Tutor' : (isAds ? '📢 Ads & Services' : '🎬 Video Editing');
+                            const providerName = pkg.provider_name || 'Verified Creator';
+                            const initial = providerName.charAt(0).toUpperCase();
+                            const providerObj = allProviders.find(pr => pr.id === pkg.provider_id);
+                            const thumb = getProviderThumbnail(providerObj, pkg);
+
+                            return `
+                            <div class="card fiverr-gig-card" style="overflow: hidden;">
+                                <!-- 16:9 Thumbnail (Dynamic Editor Portfolio Image / Reel Showcase) -->
+                                <div class="fiverr-gig-thumb-wrap" onclick="openFiverrPortfolioModal(${pkg.provider_id})">
+                                    ${renderMediaThumbnailOrVideo(thumb, { className: 'fiverr-gig-thumb-img', alt: pkg.title, autoplay: true })}
+                                    <span class="fiverr-gig-badge">${nicheBadge}</span>
+                                    <div class="fiverr-gig-play-hint">
+                                        <div class="fiverr-gig-play-btn">▶</div>
+                                    </div>
+                                </div>
+
+                                <!-- Card Body -->
+                                <div class="fiverr-gig-content">
+                                    <div>
+                                        <!-- Seller Row -->
+                                        <div class="fiverr-gig-creator" style="cursor: pointer;" onclick="openFiverrPortfolioModal(${pkg.provider_id}, '${escapeJs(providerName)}')" title="Tap to view creator profile">
+                                            <div class="fiverr-gig-avatar">${initial}</div>
+                                            <div style="overflow: hidden; flex: 1;">
+                                                <div class="fiverr-gig-creator-name" title="${escapeHTML(providerName)}">${escapeHTML(providerName)}</div>
+                                                <div style="font-size:0.63rem; color: var(--success); font-weight: 600;">🟢 Online now</div>
+                                            </div>
+                                            <span class="fiverr-gig-level-badge">${nicheBadge.split(' ')[0]}</span>
+                                        </div>
+
+                                        <!-- Title -->
+                                        <div class="fiverr-gig-title" onclick="openFiverrPortfolioModal(${pkg.provider_id})">${escapeHTML(pkg.title)}</div>
+
+                                        <!-- Rating -->
+                                        <div class="fiverr-gig-rating-row">
+                                            <span class="fiverr-gig-star">★</span>
+                                            <span class="fiverr-gig-rating-val">${pkg.rating ? pkg.rating.toFixed(1) : '5.0'}</span>
+                                            <span class="fiverr-gig-reviews">(${pkg.total_reviews || 0})</span>
+                                            <span style="color: var(--text-muted); margin: 0 3px;">·</span>
+                                            <span style="color: var(--accent); font-weight: 600; font-size: 0.65rem;">100% Escrow</span>
+                                        </div>
+
+                                        <!-- Skills chips -->
+                                        <div class="fiverr-gig-skills">
+                                            ${(pkg.tags || []).slice(0, 3).map(s => `<span class="fiverr-gig-skill">${escapeHTML(s)}</span>`).join('')}
+                                            ${(pkg.tags || []).length === 0 ? (isAds ? '<span class="fiverr-gig-skill">Ads & Services</span><span class="fiverr-gig-skill">Business Growth</span>' : '<span class="fiverr-gig-skill">Video Editing</span><span class="fiverr-gig-skill">Post Production</span>') : ''}
+                                        </div>
+                                    </div>
+
+                                    <!-- Footer: Price + Actions -->
+                                    <div class="fiverr-gig-footer">
+                                        <div class="fiverr-gig-price-display">
+                                            <span class="fiverr-gig-price-label">Starting at</span>
+                                            <span class="fiverr-gig-price-val">₹${(pkg.price || 0).toLocaleString()}</span>
+                                        </div>
+                                        <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap; min-width: 0;">
+                                            <span class="fiverr-gig-delivery">⚡ ${escapeHTML(pkg.turnaround || '24h')}</span>
+                                            <span class="fiverr-gig-delivery" style="color:var(--success);">🎁 ${pkg.free_sample_limit ?? 3} free sample${(pkg.free_sample_limit ?? 3) === 1 ? '' : 's'}</span>
+                                            <div style="display: flex; gap: 8px; flex: 1 1 auto; min-width: 0; justify-content: flex-end;">
+                                                <button class="btn btn-outline btn-sm" style="flex: 1 1 80px; min-width: 0; padding: 8px 14px; font-weight: 700; font-size: 0.78rem; min-height: 38px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" onclick="event.stopPropagation(); openPreBookingChat(${pkg.provider_id}, '${escapeJs(providerName)}')">
+                                                    💬 Chat
+                                                </button>
+                                                <button class="btn btn-primary btn-sm" style="flex: 1.2 1 90px; min-width: 0; padding: 8px 16px; font-weight: 700; font-size: 0.78rem; min-height: 38px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" onclick="event.stopPropagation(); selectProvider(${pkg.provider_id}, ${pkg.id})">
+                                                    Order
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            `;
+                        }).join('')}
+
+                        <!-- 2. Render Top Rated Best Editors Sidebar Showcase -->
+                        ${renderBestEditorsSidebar(allProviders)}
+
+                        <!-- 3. Render Verified Creators Showcase -->
+                        ${filteredProviders.map(pr => {
+                            const isTutor = pr.niche === 'tutors';
+                            const isWriter = pr.niche === 'writers';
+                            const isAds = pr.niche && ['business_ads', 'social_ads', 'ads_services', 'videography', 'social_media'].some(k => pr.niche.includes(k));
+                            const nicheBadge = isTutor ? '🗣️ English Tutor' : (isWriter ? '✍️ Copywriter' : (isAds ? '📢 Ads & Services' : '🎬 Video Editing'));
+                            const initial = (pr.name || 'C').charAt(0).toUpperCase();
+                            const startPrice = pr.starting_price || (isTutor ? 799 : (isWriter ? 1199 : 1499));
+                            const turnaround = pr.response_time || '24 hours';
+                            const headline = pr.specialization || (isTutor ? 'Conversational English & Fluency Coaching' : (isWriter ? 'High-Converting Copy & Content' : 'Professional Video Editing & Motion Graphics'));
+                            const prThumb = getProviderThumbnail(pr, null);
+                            const levelBadge = pr.creator_level || pr.profile?.creator_level || getCreatorLevelBadge(pr.total_bookings || pr.profile?.total_bookings, pr.rating || pr.profile?.rating);
+
+                            return `
+                            <div class="card fiverr-gig-card" style="display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg-card); transition: all 0.25s ease;">
+                                <!-- 16:9 Thumbnail Header -->
+                                <div class="fiverr-gig-thumb-wrap" onclick="openFiverrPortfolioModal(${pr.id})" style="cursor: pointer;">
+                                    ${renderMediaThumbnailOrVideo(prThumb, { className: 'fiverr-gig-thumb-img', alt: pr.name, autoplay: true })}
+                                    <span class="fiverr-gig-badge">${nicheBadge}</span>
+                                    <div class="fiverr-gig-play-hint">
+                                        <div class="fiverr-gig-play-btn">▶</div>
+                                    </div>
+                                </div>
+
+                                <div style="padding: 16px;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                                        <div style="display: flex; align-items: center; gap: 10px;">
+                                            <div style="width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #10b981, #059669); color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.9rem;">
+                                                ${initial}
+                                            </div>
+                                            <div>
+                                                <div style="font-weight: 700; font-size: 0.92rem; color: var(--text-primary); display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                                                    ${escapeHTML(pr.name)}
+                                                    <span title="Verified Talent" style="color: var(--accent); font-size: 0.8rem;">✓</span>
+                                                </div>
+                                                <div style="font-size: 0.72rem; color: var(--success); font-weight: 600; margin-top: 2px;">🟢 Online now</div>
+                                            </div>
+                                        </div>
+                                        ${renderCreatorLevelBadgeTag(levelBadge, 'sm')}
+                                    </div>
+
+                                    <h4 style="font-size: 1rem; font-weight: 700; margin-bottom: 8px; color: var(--text-primary); line-height: 1.4;">${escapeHTML(headline)}</h4>
+                                    <p style="font-size: 0.8125rem; color: var(--text-secondary); line-height: 1.45; margin-bottom: 14px; min-height: 40px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                                        100% Escrow Protected. Chat directly with ${escapeHTML(pr.name)} to discuss your requirements, custom footage, or turnaround.
+                                    </p>
+
+                                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 10px;">
+                                        <span>⚡ ${escapeHTML(turnaround)} turnaround</span>
+                                        <span style="color: var(--warning); font-weight: 700;">★ ${(Number(pr.rating || pr.profile?.rating || 5.0)).toFixed(1)} (Verified)</span>
+                                    </div>
+                                </div>
+
+                                <div class="card-footer" style="background: var(--bg-hover); padding: 14px 18px; border-top: 1px solid var(--border); display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; max-width: 100%; box-sizing: border-box;">
+                                    <div style="flex: 1 1 auto; min-width: 90px;">
+                                        <div style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Starting at</div>
+                                        <div style="font-size: 1.3rem; font-weight: 800; color: var(--accent);">₹${startPrice.toLocaleString()}</div>
+                                    </div>
+                                    <div style="display: flex; gap: 8px; flex: 1.5 1 200px; justify-content: flex-end; min-width: 0; flex-wrap: wrap;">
+                                        <button class="btn btn-secondary btn-sm" onclick="openPreBookingChat(${pr.id}, '${escapeJs(pr.name)}')" title="Message creator before ordering" style="padding: 10px 16px; min-height: 42px; font-size: 0.85rem; font-weight: 700; flex: 1 1 100px; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                            💬 Chat
+                                        </button>
+                                        <button class="btn btn-primary btn-sm" onclick="selectProvider(${pr.id})" style="padding: 10px 18px; min-height: 42px; font-size: 0.85rem; font-weight: 700; flex: 1.3 1 120px; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                            Hire Talent
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            `;
+                        }).join('')}
+                    </div>
+                `}
+            </div>
+        </div>`;
+    }
+
+    // Attach search and filter handlers to window
+    window.__updatePlaceholderVisibility = (forceHide = false) => {
+        const input = document.getElementById('buyer-search-input');
+        const holder = document.getElementById('search-animated-placeholder');
+        if (!holder) return;
+        if (forceHide || (input && (input.value.trim().length > 0 || document.activeElement === input))) {
+            holder.classList.add('hidden');
+        } else {
+            holder.classList.remove('hidden');
+        }
+    };
+
+    window.__handleBuyerSearchSubmit = (val) => {
+        if (!val || !val.trim()) {
+            const input = document.getElementById('buyer-search-input');
+            const bar = document.querySelector('.search-options-animated-bar');
+            if (bar) {
+                bar.classList.add('highlight-pulse');
+                setTimeout(() => bar.classList.remove('highlight-pulse'), 800);
+            }
+            if (input) {
+                input.focus();
+            }
+            return;
+        }
+        window.__handleBuyerSearch(val.trim());
+    };
+
+    window.__handleBuyerSearch = (val) => {
+        searchQuery = val || '';
+        mount(renderMarketplace());
+        const input = document.getElementById('buyer-search-input');
+        if (input) {
+            input.focus();
+            try {
+                input.setSelectionRange(searchQuery.length, searchQuery.length);
+            } catch (_) {}
+        }
+        window.__updatePlaceholderVisibility();
+    };
+
+    window.__handleBuyerSearchInput = (val) => {
+        clearTimeout(searchDebounceTimer);
+        searchDebounceTimer = setTimeout(() => {
+            window.__handleBuyerSearch(val);
+        }, 250);
+    };
+
+    window.__clearBuyerSearch = () => {
+        window.__handleBuyerSearch('');
+        setTimeout(() => window.__updatePlaceholderVisibility(), 30);
+    };
+
+    window.__setBuyerFilter = (filter) => {
+        activeFilter = filter;
+        window.__activeBuyerFilter = filter;
+        mount(renderMarketplace());
+        setTimeout(() => window.__updatePlaceholderVisibility(), 30);
+    };
+
+    window.__applyPopularTag = (keyword, filter = null) => {
+        searchQuery = keyword || '';
+        if (filter) {
+            activeFilter = filter;
+        }
+        mount(renderMarketplace());
+        const input = document.getElementById('buyer-search-input');
+        if (input) {
+            input.value = searchQuery;
+            input.focus();
+        }
+        window.__updatePlaceholderVisibility(true);
+    };
+
+    return renderMarketplace();
+}
+
+
+function providerWelcomeCard(profile) {
+    return el`<div class="card" style="box-shadow: 0 10px 30px rgba(0,0,0,0.12); margin-bottom: 24px;">
+        <div class="card-header">
+            <div>
+                <div class="card-title" style="font-size: 1.25rem; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <span>Welcome back, ${currentUser?.name || 'Creator'}</span>
+                    <span style="font-size: 0.8125rem; font-weight: 700; color: var(--accent); background: rgba(99, 102, 241, 0.14); padding: 3px 10px; border-radius: 999px; border: 1px solid rgba(99, 102, 241, 0.3);">
+                        @${currentUser?.username || 'creator'}
+                    </span>
+                </div>
+                <div style="font-size: 0.8125rem; color: var(--text-secondary); margin-top: 3px;">
+                    Creator &amp; Provider Command Center • 100% Escrow Protected • groovehub.com/@${currentUser?.username || 'creator'}
+                </div>
+            </div>
+            <span class="badge badge-success" style="font-weight: 700; padding: 6px 12px; font-size: 0.8rem;">PROVIDER</span>
+        </div>
+        <div class="grid grid-2" style="margin-top: 16px; gap: 14px;">
+            <div style="background: var(--bg-hover); padding: 16px; border-radius: var(--radius-sm); border: 1px solid var(--border);">
+                <div style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 6px;">Total Bookings</div>
+                <div style="font-size: 1.85rem; font-weight: 800; color: var(--text-primary); line-height: 1;">${profile?.total_bookings ?? profile?.review_count ?? 0}</div>
+                <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 4px;">Orders completed</div>
+            </div>
+            <div style="background: var(--bg-hover); padding: 16px; border-radius: var(--radius-sm); border: 1px solid var(--border);">
+                <div style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 6px;">Earnings (This Month)</div>
+                <div style="font-size: 1.85rem; font-weight: 800; color: var(--success); line-height: 1;">₹${(profile?.monthly_earnings || 0).toLocaleString()}</div>
+                <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 4px;">Net provider payout</div>
+            </div>
+            <div style="grid-column: span 2; background: var(--bg-hover); padding: 16px; border-radius: var(--radius-sm); border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <div>
+                    <div style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 4px;">Rating &amp; Reputation</div>
+                    <div style="font-size: 1.4rem; font-weight: 800; color: var(--warning); display: flex; align-items: center; gap: 6px;">
+                        <span>⭐</span>
+                        <span>${profile?.rating ? Number(profile.rating).toFixed(1) : '5.0'}</span>
+                        <span style="font-size: 0.8125rem; font-weight: 500; color: var(--text-secondary); margin-left: 4px;">(${profile?.review_count || 0} reviews)</span>
+                    </div>
+                </div>
+                <div style="font-size: 0.8125rem; color: var(--text-secondary); text-align: left; font-weight: 600;">
+                    Guaranteed 80% Payout • Direct Bank Transfer
+                </div>
+            </div>
+        </div>
+        <div class="dashboard-action-grid" style="margin-top: 18px;">
+            <button class="btn btn-primary" onclick="setSettingsTab('portfolio'); router('/settings');">📁 Upload Portfolio</button>
+            <button class="btn btn-secondary" onclick="router('/packages')">📦 Manage Packages</button>
+            <button class="btn btn-secondary" onclick="router('/payments')">💳 Earnings &amp; Payouts</button>
+            <button class="btn btn-secondary" onclick="router('/profile')">✏️ Edit Profile</button>
+        </div>
+    </div>`;
+}
+
+function buyerWelcomeCard(recentBookings = []) {
+    const list = Array.isArray(recentBookings) ? recentBookings : [];
+    const activeCount = list.filter(b => b.status === 'in_progress' || b.status === 'confirmed').length;
+    const deliveredCount = list.filter(b => b.status === 'delivered' || b.status === 'pending_approval').length;
+    const completedCount = list.filter(b => b.status === 'completed' || b.status === 'approved').length;
+    const escrowFunds = list.filter(b => b.status === 'in_progress' || b.status === 'confirmed' || b.status === 'delivered' || b.status === 'pending_approval').reduce((s, b) => s + (b.total_amount || 0), 0);
+
+    return el`<div>
+        <!-- Escrow Protection & Safe Communication Notice -->
+        <div style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(16, 185, 129, 0.08) 100%); border: 1px solid rgba(99, 102, 241, 0.25); border-radius: 14px; padding: 18px 22px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+            <div style="display: flex; align-items: center; gap: 14px; max-width: 720px;">
+                <div style="width: 44px; height: 44px; border-radius: 12px; background: #6366f1; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; flex-shrink: 0; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);">🛡️</div>
+                <div>
+                    <div style="font-weight: 800; font-size: 1.05rem; color: var(--text-primary); margin-bottom: 3px;">
+                        100% Escrow Protection & Direct In-App Chat Active
+                    </div>
+                    <div style="font-size: 0.8125rem; color: var(--text-secondary); line-height: 1.45;">
+                        You never send money directly to creators. Your payment is safely locked in Groove Hub escrow and released <strong>only after you inspect and approve</strong> the delivered files. Use our built-in chat for all messages, revisions, and files.
+                    </div>
+                </div>
+            </div>
+            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                <button class="btn btn-primary" onclick="router('/')">+ Hire Video Editor / Coach</button>
+                <button class="btn btn-secondary" onclick="router('/payments')">💳 Escrow Vault</button>
+            </div>
+        </div>
+
+        <!-- 4-Metric Command Center Bar -->
+        <div class="grid grid-4" style="margin-bottom: 24px;">
+            <div class="card" style="padding: 18px; border-left: 4px solid var(--accent);">
+                <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">📦 Total Bookings</div>
+                <div style="font-size: 1.75rem; font-weight: 800; color: var(--text-primary); margin-top: 4px;">${list.length}</div>
+                <div style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 2px;">Projects ordered</div>
+            </div>
+
+            <div class="card" style="padding: 18px; border-left: 4px solid #3b82f6;">
+                <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">⚡ In Progress</div>
+                <div style="font-size: 1.75rem; font-weight: 800; color: #3b82f6; margin-top: 4px;">${activeCount}</div>
+                <div style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 2px;">Creators editing now</div>
+            </div>
+
+            <div class="card" style="padding: 18px; border-left: 4px solid #f59e0b;">
+                <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">⏳ Needs Approval</div>
+                <div style="font-size: 1.75rem; font-weight: 800; color: #f59e0b; margin-top: 4px;">${deliveredCount}</div>
+                <div style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 2px;">Ready for your review</div>
+            </div>
+
+            <div class="card" style="padding: 18px; border-left: 4px solid #10b981;">
+                <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">🛡️ Held in Escrow</div>
+                <div style="font-size: 1.75rem; font-weight: 800; color: #10b981; margin-top: 4px;">₹${escrowFunds.toLocaleString()}</div>
+                <div style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 2px;">Protected money-back</div>
+            </div>
+        </div>
+    </div>`;
+}
+
+
+
+function providerSection(profile, recentPackages) {
+    return el`<div class="section">
+        <div class="section-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20" style="color: var(--accent);">
+                <rect x="3" y="3" width="18" height="18" rx="2"/>
+                <path d="M3 9h18"/>
+                <path d="M9 21V9"/>
+            </svg>
+            Quick Actions
+        </div>
+        <div class="grid grid-2">
+            <button type="button" class="card" onclick="router('/create-package')" style="cursor: pointer; border-color: rgba(99, 102, 241, 0.4); text-align: left; background: var(--bg-card); transition: all 0.25s ease;">
+                <div class="card-header" style="margin-bottom: 6px;">
+                    <div class="card-title" style="color: var(--text-primary); font-size: 1.05rem; font-weight: 700;">Create Package</div>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20" style="color: var(--accent);">
+                        <line x1="12" y1="5" x2="12" y2="19"/>
+                        <line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                </div>
+                <div class="card-body" style="color: var(--text-secondary); font-size: 0.875rem; line-height: 1.5;">Create a new service package for buyers</div>
+            </button>
+            <button type="button" class="card" onclick="router('/profile')" style="cursor: pointer; text-align: left; background: var(--bg-card); transition: all 0.25s ease;">
+                <div class="card-header" style="margin-bottom: 6px;">
+                    <div class="card-title" style="color: var(--text-primary); font-size: 1.05rem; font-weight: 700;">Edit Profile</div>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20" style="color: var(--text-secondary);">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>
+                </div>
+                <div class="card-body" style="color: var(--text-secondary); font-size: 0.875rem; line-height: 1.5;">Update your profile and availability</div>
+            </button>
+        </div>
+        ${recentPackages && recentPackages.length > 0 ? `
+        <div class="section-title mt-4" style="margin-top: 24px;">Your Recent Packages</div>
+        <div class="grid grid-2">
+            ${recentPackages.slice(0, 4).map(pkg => `
+                <div class="card">
+                    <div class="card-header" style="margin-bottom: 8px;">
+                        <div class="card-title" style="color: var(--text-primary); font-weight: 700; font-size: 1.05rem;">${pkg.title}</div>
+                        <span class="badge ${pkg.status === 'approved' ? 'badge-success' : 'badge-warning'}">${pkg.status}</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="price" style="color: var(--accent); font-weight: 800; font-size: 1.45rem; margin-bottom: 4px;">₹${pkg.price.toLocaleString()}</div>
+                        <div class="price-range" style="color: var(--text-secondary); font-size: 0.8125rem;">${pkg.turnaround || '24 hours'} • ${pkg.revision_limit || 1} revision${(pkg.revision_limit || 1) > 1 ? 's' : ''}</div>
+                    </div>
+                    <div class="card-footer" style="margin-top: 14px; padding-top: 12px;">
+                        <button class="btn btn-secondary btn-sm" onclick="router('/packages')" style="width: 100%;">View All</button>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+        ` : ''}
+    </div>`;
+}
+
+function buyerSection(recentBookings) {
+    const list = Array.isArray(recentBookings) ? recentBookings : [];
+
+    return el`<div class="section">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <div class="section-title" style="margin: 0;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M12 6v6l4 2"/>
+                </svg>
+                Your Project Bookings & Deadlines
+            </div>
+            ${list.length > 0 ? `<button class="btn btn-secondary btn-sm" onclick="router('/bookings')">View All (${list.length}) --></button>` : ''}
+        </div>
+
+        ${list.length > 0 ? `
+            <div class="grid grid-2">
+                ${list.slice(0, 4).map(booking => {
+        const deadline = getBookingDeadlineInfo(booking);
+        const providerName = booking.provider_name || 'Assigned Talent';
+        const pkgTitle = booking.package_title || booking.package?.title || 'Custom Video/Tutoring Service';
+
+        return `
+                    <div class="card" style="display: flex; flex-direction: column; justify-content: space-between; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border);">
+                        <div class="card-body" style="padding: 18px;">
+                            <!-- Header with ID & Status Badge -->
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                                <div>
+                                    <div style="font-weight: 800; font-size: 1rem; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+                                        <span>Booking #${booking.id}</span>
+                                        <span style="font-size: 0.75rem; font-weight: normal; color: var(--text-muted);">• ${new Date(booking.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
+                                    </div>
+                                    <div style="font-size: 0.8125rem; color: var(--accent); font-weight: 600; margin-top: 3px;">
+                                        👤 ${providerName}
+                                    </div>
+                                </div>
+                                <span class="badge ${getBookingBadge(booking.status)}">${booking.status.replace('_', ' ')}</span>
+                            </div>
+
+                            <!-- Package Title -->
+                            <div style="font-weight: 700; font-size: 0.9375rem; color: var(--text-primary); margin-bottom: 8px;">
+                                📦 ${pkgTitle}
+                            </div>
+
+                            <!-- PROMINENT DEADLINE COUNTDOWN -->
+                            <div style="background: var(--bg-hover); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; margin: 12px 0;">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <strong style="font-size: 0.85rem; color: var(--text-primary);">
+                                        ${deadline.text}
+                                    </strong>
+                                    <span class="badge ${deadline.badgeClass}" style="font-size: 0.72rem;">
+                                        ${deadline.statusLabel}
+                                    </span>
+                                </div>
+                                <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 4px;">
+                                    ${deadline.subtext}
+                                </div>
+                            </div>
+
+                            <!-- Escrow & Price info -->
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 8px; margin-bottom: 14px;">
+                                <span style="font-size: 0.78rem; color: var(--text-secondary); display: flex; align-items: center; gap: 5px;">
+                                    <span>🔒</span> 100% In Escrow
+                                </span>
+                                <span style="font-weight: 800; font-size: 1rem; color: #10b981;">₹${booking.total_amount.toLocaleString()}</span>
+                            </div>
+
+                            ${booking.delivery_file_link ? `
+                                <div style="padding: 10px 12px; background: rgba(99, 102, 241, 0.08); border: 1px solid var(--accent); border-radius: 8px; margin-bottom: 12px;">
+                                    <div style="font-size: 0.75rem; font-weight: 700; color: var(--accent); margin-bottom: 4px;">📂 Delivered Files:</div>
+                                    <a href="${sanitizeUrl(booking.delivery_file_link)}" target="_blank" rel="noopener noreferrer" style="color: var(--accent); font-size: 0.8125rem; font-weight: 600; text-decoration: underline; word-break: break-all;">
+                                        ${escapeHTML(booking.delivery_file_link)}
+                                    </a>
+                                </div>
+                            ` : ''}
+
+                            <!-- Action Buttons -->
+                            <div style="display: flex; flex-direction: column; gap: 8px;">
+                                <button class="btn btn-secondary btn-sm" onclick="openBookingChat(${booking.id}, '${providerName}')" style="font-weight: 600;">
+                                    💬 Chat with ${providerName}
+                                </button>
+
+                                ${(booking.status === 'delivered' || booking.status === 'pending_approval') ? `
+                                    <div style="display: flex; gap: 8px;">
+                                        <button class="btn btn-success btn-sm" style="flex: 1; font-weight: 700;" onclick="approveBooking(${booking.id})">
+                                            ✅ Approve & Release
+                                        </button>
+                                        <button class="btn btn-danger btn-sm" style="flex: 1;" onclick="disputeBooking(${booking.id})">
+                                            ⚠️ Revision / Dispute
+                                        </button>
+                                    </div>
+                                ` : ''}
+
+                                ${(booking.status === 'pending_payment' || booking.status === 'pending') ? `
+                                    <button class="btn btn-primary btn-sm" onclick="PaymentsPortal.payPendingOrder(${booking.id}, ${booking.total_amount})">
+                                        💳 Secure Payment in Escrow
+                                    </button>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>`;
+    }).join('')}
+            </div>
+        ` : `
+            <div class="card">
+                <div class="empty-state">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                        <line x1="16" y1="13" x2="8" y2="13"/>
+                        <line x1="16" y1="17" x2="8" y2="17"/>
+                        <polyline points="10 9 9 9 8 9"/>
+                    </svg>
+                    <h3>No active bookings yet</h3>
+                    <p>Browse top-rated video editors and English coaches, and hire with 100% escrow protection.</p>
+                    <button class="btn btn-primary" onclick="router('/')">Browse Talent Now</button>
+                </div>
+            </div>
+        `}
+    </div>`;
+}
+
+function getBookingBadge(status) {
+    const s = (status || '').toLowerCase().replace(' ', '_');
+    if (s === 'confirmed' || s === 'in_progress') return 'badge-info';
+    if (s === 'delivered' || s === 'pending_approval') return 'badge-warning';
+    if (s === 'approved' || s === 'completed') return 'badge-success';
+    if (s === 'disputed' || s === 'refunded') return 'badge-danger';
+    return 'badge-muted';
+}
+
+function adminSection() {
+    return el`<div class="section">
+        <div class="section-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                <path d="M2 17l10 5 10-5"/>
+                <path d="M2 12l10 5 10-5"/>
+            </svg>
+            Admin Controls
+        </div>
+        <div class="grid grid-3">
+            <button class="card" onclick="router('/admin')" style="cursor: pointer; border-color: var(--accent);">
+                <div class="card-header">
+                    <div class="card-title">Admin Dashboard</div>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20" style="color: var(--accent);">
+                        <path d="M12 20h9"/>
+                        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                    </svg>
+                </div>
+                <div class="card-body">Manage providers, bookings, and platform settings</div>
+            </button>
+            <button class="card" onclick="renderAdminSearchAnalytics()" style="cursor: pointer; border-color: #38bdf8;">
+                <div class="card-header">
+                    <div class="card-title" style="color: #38bdf8;">🔍 Search Demand Analytics</div>
+                    <span style="font-size: 1.2rem;">📈</span>
+                </div>
+                <div class="card-body">View real-time buyer search trends & zero-result demand queries</div>
+            </button>
+            <button class="card" onclick="router('/admin/niches')" style="cursor: pointer;">
+                <div class="card-header">
+                    <div class="card-title">Manage Niches</div>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                        <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+                        <polyline points="2 17 12 22 22 17"/>
+                        <polyline points="12 22 12 12"/>
+                    </svg>
+                </div>
+                <div class="card-body">Add or manage service categories</div>
+            </button>
+        </div>
+    </div>`;
+}
+
+function NotFound() {
+    return el`<div>
+        ${renderAppHeader(window.location.pathname)}
+        <div class="main" style="padding: 40px 16px;">
+            <div class="card" style="max-width: 480px; margin: 0 auto; text-align: center; padding: 36px 24px; box-shadow: var(--shadow-md);">
+                <div style="font-size: 3rem; margin-bottom: 12px;">🔍</div>
+                <h3 style="font-size: 1.4rem; font-weight: 800; color: var(--text-primary); margin-bottom: 8px;">Page Not Found</h3>
+                <p style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 24px;">The page you are looking for doesn't exist or may have been moved.</p>
+                <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                    <button class="btn btn-primary" onclick="router('/')">Return Home</button>
+                    <button class="btn btn-secondary" onclick="router('/providers')">Browse Talent</button>
+                </div>
+            </div>
+        </div>
+    </div>`;
+}
+
+// =============== SETTINGS & PROFILE ===============
+
+let activeSettingsTab = 'portfolio';
+
+function Settings() {
+    let profile = {};
+    let portfolioItems = [];
+    let error = '';
+    let success = '';
+    let loading = true;
+    let platformSettings = null;
+    
+    const storedTab = sessionStorage.getItem('settings_tab');
+    if (storedTab) {
+        activeSettingsTab = storedTab;
+        sessionStorage.removeItem('settings_tab');
+    } else if (window.location.pathname === '/portfolio') {
+        activeSettingsTab = 'portfolio';
+    } else if (window.location.pathname === '/profile') {
+        activeSettingsTab = currentUser?.user_type === 'PROVIDER' ? 'portfolio' : 'account';
+    } else if (currentUser?.user_type === 'PROVIDER' && !activeSettingsTab) {
+        activeSettingsTab = 'portfolio';
+    }
+
+    async function loadData() {
+        showLoading();
+        try {
+            currentUser = await apiFetch('/auth/me');
+            if (currentUser.user_type === 'PROVIDER') {
+                try {
+                    profile = await apiFetch('/profile');
+                } catch (_) {
+                    profile = {};
+                }
+                try {
+                    portfolioItems = await apiFetch(`/profile/${currentUser.id}/portfolio`);
+                } catch (_) {
+                    portfolioItems = [];
+                }
+            } else if (currentUser.user_type === 'ADMIN') {
+                try {
+                    platformSettings = await apiFetch('/admin/platform-settings');
+                } catch (_) {
+                    platformSettings = null;
+                }
+            }
+        } catch (e) {
+            error = e.message;
+        } finally {
+            loading = false;
+            mount(renderSettingsView());
+        }
+    }
+
+    window.setSettingsTab = (tab) => {
+        activeSettingsTab = tab;
+        error = '';
+        success = '';
+        mount(renderSettingsView());
+    };
+
+    window.handleAccountSave = async (e) => {
+        e.preventDefault();
+        const usernameInput = document.getElementById('setting-username');
+        const nameVal = (document.getElementById('setting-name')?.value || '').trim();
+        const emailVal = (document.getElementById('setting-email')?.value || '').trim();
+        const phoneVal = (document.getElementById('setting-phone')?.value || '').trim();
+        const usernameVal = usernameInput ? usernameInput.value.trim().replace(/^@/, '') : '';
+
+        if (!nameVal || nameVal.length < 2) {
+            showToast('Full Name is compulsory and must be at least 2 characters.', 'error');
+            return;
+        }
+        if (!usernameVal || usernameVal.length < 3) {
+            showToast('Creator Username (@handle) is required and must be at least 3 characters.', 'error');
+            return;
+        }
+
+        const data = {
+            name: nameVal,
+            username: usernameVal,
+            email: emailVal,
+            phone: phoneVal
+        };
+
+        let redirected = false;
+        try {
+            showLoading();
+            currentUser = await apiFetch('/auth/me', {
+                method: 'PATCH',
+                body: JSON.stringify(data)
+            });
+            localStorage.setItem('current_user', JSON.stringify(currentUser));
+            if (currentUser && currentUser.is_verified === false) {
+                showToast('Email changed — please verify your new address before your next sign-in.', 'info');
+                try { sessionStorage.removeItem('pending_verification'); } catch (_) {}
+                redirected = true;
+                router('/verify-email' + (currentUser.email ? `?email=${encodeURIComponent(currentUser.email)}` : ''));
+                return;
+            }
+            showToast('Account details & handle updated', 'success');
+        } catch (e) {
+            showToast(e.message || 'Update failed', 'error');
+        } finally {
+            hideLoading();
+            if (!redirected) mount(renderSettingsView());
+        }
+    };
+
+    window.handlePortfolioFileUpload = (file) => {
+        if (!file) return;
+        const MAX_SIZE = 1024 * 1024 * 1024; // 1 GB
+        if (file.size > MAX_SIZE) {
+            showToast('File is too large (max 1GB allowance)', 'error');
+            return;
+        }
+
+        const progressWrap = document.getElementById('port-upload-progress-wrap');
+        const progressBar = document.getElementById('port-upload-bar');
+        const progressPct = document.getElementById('port-upload-pct');
+        const statusText = document.getElementById('port-upload-status-text');
+        const previewWrap = document.getElementById('port-uploaded-preview');
+        const previewFileName = document.getElementById('port-preview-file-name');
+        const dropzoneContent = document.getElementById('port-dropzone-content');
+
+        if (progressWrap) progressWrap.style.display = 'block';
+        if (progressBar) progressBar.style.width = '0%';
+        if (progressPct) progressPct.textContent = '0%';
+        if (statusText) statusText.textContent = `Uploading ${file.name} (${(file.size / (1024 * 1024)).toFixed(1)} MB)...`;
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', '/api/upload', true);
+
+        const token = currentToken || localStorage.getItem('access_token');
+        if (token) {
+            xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+        }
+
+        xhr.upload.onprogress = (e) => {
+            if (e.lengthComputable) {
+                const percent = Math.round((e.loaded / e.total) * 100);
+                if (progressBar) progressBar.style.width = `${percent}%`;
+                if (progressPct) progressPct.textContent = `${percent}%`;
+                if (statusText) statusText.textContent = `Uploading: ${(e.loaded / (1024 * 1024)).toFixed(1)} MB / ${(e.total / (1024 * 1024)).toFixed(1)} MB (${percent}%)`;
+            }
+        };
+
+        xhr.onload = () => {
+            if (xhr.status === 200) {
+                try {
+                    const res = JSON.parse(xhr.responseText);
+                    const urlInput = document.getElementById('port-media-url');
+                    const titleInput = document.getElementById('port-title');
+                    const typeSelect = document.getElementById('port-media-type');
+
+                    const cleanName = file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
+                    const title = cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
+                    const media_type = file.type.startsWith('image/') ? 'image' : (file.type.startsWith('audio/') ? 'audio' : 'video');
+
+                    // Save uploaded URL to global window object so form submit picks it up automatically
+                    window.__lastUploadedPortfolioUrl = res.url;
+                    window.__lastUploadedPortfolioType = media_type;
+
+                    if (urlInput) urlInput.value = res.url;
+                    if (titleInput && !titleInput.value.trim()) titleInput.value = title;
+                    if (typeSelect) typeSelect.value = media_type;
+
+                    if (progressWrap) progressWrap.style.display = 'none';
+                    if (dropzoneContent) dropzoneContent.style.display = 'none';
+                    if (previewWrap) {
+                        previewWrap.style.display = 'block';
+                        if (previewFileName) previewFileName.textContent = `Attached: ${file.name} (${(file.size / (1024 * 1024)).toFixed(1)} MB)`;
+                    }
+
+                    showToast(`✅ "${file.name}" uploaded successfully! Now click "Add to My Profile Reels" below.`, 'success');
+                } catch (e) {
+                    showToast('Failed to parse upload response', 'error');
+                }
+            } else {
+                let errText = 'Upload failed';
+                try {
+                    const errRes = JSON.parse(xhr.responseText);
+                    errText = errRes.detail || errText;
+                } catch (_) {}
+                showToast(errText, 'error');
+                if (statusText) statusText.textContent = `❌ Upload failed: ${errText}`;
+            }
+        };
+
+        xhr.onerror = () => {
+            showToast('Network error while uploading 4K file', 'error');
+            if (statusText) statusText.textContent = '❌ Network error';
+        };
+
+        xhr.send(formData);
+    };
+
+    window.handleAddPortfolioItem = async (e) => {
+        if (e && e.preventDefault) e.preventDefault();
+        const titleInput = document.getElementById('port-title');
+        const mediaUrlInput = document.getElementById('port-media-url');
+        const mediaTypeSelect = document.getElementById('port-media-type');
+        const descInput = document.getElementById('port-desc');
+
+        const media_url = window.__lastUploadedPortfolioUrl || (mediaUrlInput?.value || '').trim();
+        let title = (titleInput?.value || '').trim();
+        const media_type = (mediaTypeSelect?.value || window.__lastUploadedPortfolioType || (isMediaVideo(media_url) ? 'video' : 'image'));
+        const description = (descInput?.value || '').trim() || 'Verified 4K sample reel deliverable';
+        const thumbnail_url = media_url; // Store actual media_url as thumbnail_url so native video tags and showcase player work everywhere
+
+        if (!media_url) {
+            showToast('Please upload a sample file above or provide a media URL/link', 'error');
+            return;
+        }
+
+        if (!title) {
+            title = 'Sample Video Reel';
+        }
+
+        try {
+            showLoading();
+            const item = await apiFetch('/profile/portfolio', {
+                method: 'POST',
+                body: JSON.stringify({
+                    title,
+                    media_url,
+                    media_type,
+                    thumbnail_url,
+                    description
+                })
+            });
+            showToast(`✨ "${title}" added live to your profile reels!`, 'success');
+            if (typeof portfolioItems !== 'undefined' && Array.isArray(portfolioItems)) {
+                portfolioItems.unshift(item);
+            }
+            window.__lastUploadedPortfolioUrl = null;
+            window.__lastUploadedPortfolioType = null;
+        } catch (err) {
+            showToast(err.message || 'Failed to add portfolio reel', 'error');
+        } finally {
+            hideLoading();
+            mount(renderSettingsView());
+        }
+    };
+
+    window.handleShowcaseFlyerUpload = async (file) => {
+        if (!file) return;
+        try {
+            showLoading();
+            const formData = new FormData();
+            formData.append('file', file);
+            const token = currentToken || localStorage.getItem('access_token');
+            const res = await fetch('/api/upload', {
+                method: 'POST',
+                headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+                body: formData
+            });
+            if (!res.ok) {
+                let errText = 'Flyer upload failed';
+                try { const errRes = await res.json(); errText = errRes.detail || errText; } catch (_) {}
+                throw new Error(errText);
+            }
+            const data = await res.json();
+            const flyerUrl = data.url;
+
+            // Save as top portfolio showcase item
+            const newItem = await apiFetch('/profile/portfolio', {
+                method: 'POST',
+                body: JSON.stringify({
+                    title: `${currentUser?.name || 'Creator'} Showcase Banner`,
+                    description: 'Custom verified homepage showcase flyer',
+                    media_url: flyerUrl,
+                    media_type: 'image',
+                    thumbnail_url: flyerUrl
+                })
+            });
+
+            try {
+                const updatedUser = await apiFetch('/auth/me', {
+                    method: 'PATCH',
+                    body: JSON.stringify({ profile_image: flyerUrl })
+                });
+                if (updatedUser) {
+                    currentUser = updatedUser;
+                    localStorage.setItem('current_user', JSON.stringify(updatedUser));
+                }
+            } catch (_) {}
+
+            if (currentUser) {
+                currentUser.profile_image = flyerUrl;
+                localStorage.setItem('current_user', JSON.stringify(currentUser));
+            }
+            if (typeof portfolioItems !== 'undefined' && Array.isArray(portfolioItems)) {
+                portfolioItems.unshift(newItem);
+            }
+            showToast('🎉 Showcase Flyer updated! It is now live on your homepage talent card.', 'success');
+        } catch (e) {
+            showToast(e.message || 'Upload failed', 'error');
+        } finally {
+            hideLoading();
+            mount(renderSettingsView());
+        }
+    };
+
+    window.handleRemoveShowcaseFlyer = async () => {
+        if (!confirm('Are you sure you want to remove your custom Showcase Flyer? Default visual will be restored.')) return;
+        try {
+            showLoading();
+            if (typeof portfolioItems !== 'undefined' && Array.isArray(portfolioItems)) {
+                const flyerItems = portfolioItems.filter(item => 
+                    (item.title && item.title.includes('Showcase Banner')) ||
+                    (item.description && item.description.includes('showcase flyer'))
+                );
+                for (const fItem of flyerItems) {
+                    try {
+                        await apiFetch(`/profile/portfolio/${fItem.id}`, { method: 'DELETE' });
+                    } catch (_) {}
+                }
+                portfolioItems = portfolioItems.filter(item => 
+                    !(item.title && item.title.includes('Showcase Banner')) &&
+                    !(item.description && item.description.includes('showcase flyer'))
+                );
+            }
+
+            try {
+                const updatedUser = await apiFetch('/auth/me', {
+                    method: 'PATCH',
+                    body: JSON.stringify({ profile_image: "" })
+                });
+                if (updatedUser) {
+                    currentUser = updatedUser;
+                    localStorage.setItem('current_user', JSON.stringify(updatedUser));
+                }
+            } catch (_) {}
+
+            if (currentUser) {
+                currentUser.profile_image = null;
+                localStorage.setItem('current_user', JSON.stringify(currentUser));
+            }
+
+            showToast('🗑️ Showcase Flyer removed successfully!', 'success');
+        } catch (e) {
+            showToast(e.message || 'Failed to remove flyer', 'error');
+        } finally {
+            hideLoading();
+            mount(renderSettingsView());
+        }
+    };
+
+    window.handleDeletePortfolioItem = async (itemId) => {
+        if (!confirm('Are you sure you want to remove this item from your showcase?')) return;
+        try {
+            showLoading();
+            await apiFetch(`/profile/portfolio/${itemId}`, { method: 'DELETE' });
+            showToast('Showcase item removed', 'success');
+            portfolioItems = portfolioItems.filter(i => i.id !== itemId);
+        } catch (err) {
+            showToast(err.message || 'Failed to remove item', 'error');
+        } finally {
+            hideLoading();
+            mount(renderSettingsView());
+        }
+    };
+
+    window.__addSkillTag = (tag) => {
+        const input = document.getElementById('setting-skills');
+        if (!input) return;
+        const current = input.value.split(',').map(s => s.trim()).filter(Boolean);
+        if (!current.includes(tag)) {
+            current.push(tag);
+            input.value = current.join(', ');
+        }
+    };
+
+    window.handleProfileSettingsSave = async (e) => {
+        e.preventDefault();
+        const skillsStr = document.getElementById('setting-skills')?.value || '';
+        const skills = skillsStr.split(',').map(s => s.trim()).filter(Boolean);
+        const niche = document.getElementById('setting-niche')?.value || 'editors_animators';
+        const service_area = document.getElementById('setting-service-area')?.value || 'online';
+        const availability = document.getElementById('setting-availability')?.value || 'flexible';
+        const response_time = document.getElementById('setting-response-time')?.value || '24 hours';
+        const bio = (document.getElementById('setting-bio')?.value || '').trim();
+
+        const data = {
+            niche,
+            service_area,
+            availability,
+            response_time,
+            skills,
+            bio
+        };
+
+        try {
+            showLoading();
+            profile = await apiFetch('/profile', {
+                method: 'PATCH',
+                body: JSON.stringify(data)
+            });
+            showToast('Creator Profile, Bio & Specialty saved successfully!', 'success');
+        } catch (e) {
+            showToast(e.message || 'Update failed', 'error');
+        } finally {
+            hideLoading();
+            mount(renderSettingsView());
+        }
+    };
+
+    // --- Buyer Bio Save ---
+    window.handleBioSave = async (e) => {
+        e.preventDefault();
+        const bio = (document.getElementById('setting-bio')?.value || '').trim();
+        const lookingFor = (document.getElementById('setting-looking-for')?.value || '').trim();
+        try {
+            showLoading();
+            await apiFetch('/profile/bio', {
+                method: 'PUT',
+                body: JSON.stringify({ bio: bio || '', looking_for: lookingFor || '' })
+            });
+            showToast('About Me updated!', 'success');
+            if (profile) {
+                profile.bio = bio || '';
+                profile.looking_for = lookingFor || '';
+            }
+        } catch (err) {
+            showToast(err.message || 'Failed to save bio', 'error');
+        } finally {
+            hideLoading();
+            mount(renderSettingsView());
+        }
+    };
+
+    window.handlePasswordChange = async (e) => {
+        e.preventDefault();
+        const curPw = document.getElementById('setting-current-pw')?.value || '';
+        const newPw = document.getElementById('setting-new-pw')?.value || '';
+        const confirmPw = document.getElementById('setting-confirm-pw')?.value || '';
+
+        if (newPw !== confirmPw) {
+            showToast('New passwords do not match', 'error');
+            return;
+        }
+
+        try {
+            showLoading();
+            await apiFetch('/auth/me', {
+                method: 'PATCH',
+                body: JSON.stringify({ current_password: curPw, new_password: newPw })
+            });
+            showToast('Password changed successfully', 'success');
+        } catch (e) {
+            showToast(e.message || 'Failed to change password', 'error');
+        } finally {
+            hideLoading();
+            mount(renderSettingsView());
+        }
+    };
+
+    window.handleBankSave = async (e) => {
+        e.preventDefault();
+        const holder = (document.getElementById('setting-bank-holder')?.value || '').trim();
+        const bank = (document.getElementById('setting-bank-name')?.value || '').trim();
+        const acc = (document.getElementById('setting-bank-acc')?.value || '').trim();
+        const ifsc = (document.getElementById('setting-bank-ifsc')?.value || '').trim();
+        const upi = (document.getElementById('setting-bank-upi')?.value || '').trim();
+        const rzpKey = (document.getElementById('setting-rzp-key')?.value || '').trim();
+        const rzpSecret = (document.getElementById('setting-rzp-secret')?.value || '').trim();
+        const googleId = (document.getElementById('setting-google-id')?.value || '').trim();
+
+        try {
+            showLoading();
+            if (currentUser?.user_type === 'ADMIN') {
+                await apiFetch('/admin/platform-settings', {
+                    method: 'PUT',
+                    body: JSON.stringify({
+                        owner_account_holder: holder,
+                        owner_bank_name: bank,
+                        owner_account_number: acc,
+                        owner_ifsc_code: ifsc,
+                        owner_upi_id: upi,
+                        commission_rate: platformSettings?.commission_rate ?? 0.20,
+                        razorpay_key_id: rzpKey,
+                        razorpay_key_secret: rzpSecret,
+                        google_client_id: googleId
+                    })
+                });
+                platformSettings = {
+                    ...(platformSettings || {}),
+                    owner_account_holder: holder,
+                    owner_bank_name: bank,
+                    owner_account_number: acc,
+                    owner_ifsc_code: ifsc,
+                    owner_upi_id: upi,
+                    razorpay_key_id: rzpKey,
+                    razorpay_key_secret: rzpSecret,
+                    google_client_id: googleId
+                };
+                if (window.publicConfig) {
+                    window.publicConfig.razorpay_key_id = rzpKey;
+                    window.publicConfig.google_client_id = googleId;
+                }
+            } else {
+                await apiFetch('/profile/bank-details', {
+                    method: 'PUT',
+                    body: JSON.stringify({
+                        bank_account_holder: holder,
+                        bank_name: bank,
+                        bank_account_number: acc,
+                        bank_ifsc_code: ifsc,
+                        upi_id: upi
+                    })
+                });
+                if (profile) {
+                    profile.bank_account_holder = holder;
+                    profile.bank_name = bank;
+                    profile.bank_account_number = acc;
+                    profile.bank_ifsc_code = ifsc;
+                    profile.upi_id = upi;
+                }
+            }
+            showToast('Bank details saved successfully!', 'success');
+        } catch (err) {
+            showToast(err.message || 'Failed to save bank details', 'error');
+        } finally {
+            hideLoading();
+            mount(renderSettingsView());
+        }
+    };
+
+    loadData();
+
+    function renderSettingsView() {
+        const isProvider = currentUser?.user_type === 'PROVIDER';
+        const isAdmin = currentUser?.user_type === 'ADMIN';
+        const skillsFormatted = Array.isArray(profile?.skills)
+            ? profile.skills.join(', ')
+            : (typeof profile?.skills === 'string' ? profile.skills : '');
+
+        return el`<div>
+            ${renderAppHeader('/settings')}
+            <div class="main">
+                <!-- Profile Avatar Card — shown for all users -->
+                <div style="margin-bottom: 20px;">
+                    <div style="display: flex; align-items: center; gap: 16px; padding: 16px 20px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow);">
+                        <div style="position: relative; flex-shrink: 0;">
+                            ${renderProfileAvatar(64)}
+                        </div>
+                        <div style="flex: 1; min-width: 0;">
+                            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                <h2 style="margin: 0; font-size: 1.25rem; font-weight: 800; color: var(--text-primary);">${escapeHTML(currentUser?.name || 'Your Profile')}</h2>
+                                <span class="badge" style="background: currentUser?.user_type === 'PROVIDER' ? 'rgba(16,185,129,0.12)' : currentUser?.user_type === 'ADMIN' ? 'rgba(239,68,68,0.12)' : 'rgba(99,102,241,0.12)'; color: currentUser?.user_type === 'PROVIDER' ? 'var(--success)' : currentUser?.user_type === 'ADMIN' ? 'var(--danger)' : 'var(--accent)'; font-size: 0.7rem; padding: 3px 8px; border-radius: 5px; border: 1px solid currentUser?.user_type === 'PROVIDER' ? 'rgba(16,185,129,0.25)' : currentUser?.user_type === 'ADMIN' ? 'rgba(239,68,68,0.25)' : 'rgba(99,102,241,0.25)';">
+                                    ${currentUser?.user_type || 'User'}
+                                </span>
+                                ${currentUser?.username ? `<span style="font-size:0.75rem;color:var(--text-muted);">@${escapeHTML(currentUser.username)}</span>` : ''}
+                            </div>
+                            <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px; display: flex; align-items: center; gap: 6px;">
+                                <span>📧 ${currentUser?.email || '—'}</span>
+                                ${currentUser?.phone ? `<span>📱 ${currentUser.phone}</span>` : ''}
+                            </div>
+                            <div style="margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap;">
+                                <button class="btn btn-outline btn-sm" onclick="openProfileIconPicker()" style="font-weight: 600;">
+                                    🖼️ Photo
+                                </button>
+                                <button class="btn btn-primary btn-sm" onclick="openBitmojiStudioModal()" style="background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%); font-weight: 700;">
+                                    🎨 Bitmoji Studio
+                                </button>
+                                <button class="btn btn-secondary btn-sm" onclick="router('/profile')" style="font-weight: 600;">
+                                    ✏️ Edit Profile
+                                </button>
+                                ${currentUser?.user_type === 'PROVIDER' ? `<button class="btn btn-secondary btn-sm" onclick="router('/packages')" style="font-weight: 600;">📦 Manage Packages</button>` : ''}
+                                ${currentUser?.user_type !== 'ADMIN' ? `<button class="btn btn-secondary btn-sm" onclick="toggleUserMode()" style="font-weight: 600;">${currentUser?.user_type === 'PROVIDER' ? '🛍️ Switch to Buyer' : '💼 Switch to Provider'}</button>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                    </svg>
+                    Settings & Account
+                </div>
+
+                <!-- Settings Tabs -->
+                <div class="tabs" style="margin-bottom: 20px; overflow-x: auto; white-space: nowrap;">
+                    <button type="button" class="tab ${activeSettingsTab === 'account' ? 'active' : ''}" onclick="setSettingsTab('account')">
+                        👤 Account
+                    </button>
+                    ${isProvider ? `
+                        <button type="button" class="tab ${activeSettingsTab === 'portfolio' ? 'active' : ''}" onclick="setSettingsTab('portfolio')">
+                            🖼️ Showcase Flyer &amp; 4K Reels (${portfolioItems.length})
+                        </button>
+                        <button type="button" class="tab ${activeSettingsTab === 'profile' ? 'active' : ''}" onclick="setSettingsTab('profile')">
+                            🎨 Specialty &amp; Skills
+                        </button>
+                    ` : `
+                        <button type="button" class="tab ${activeSettingsTab === 'bio' ? 'active' : ''}" onclick="setSettingsTab('bio')">
+                            📝 About Me
+                        </button>
+                    `}
+                    <button type="button" class="tab ${activeSettingsTab === 'bank' ? 'active' : ''}" onclick="setSettingsTab('bank')">
+                        🏦 Bank &amp; Payouts
+                    </button>
+                    <button type="button" class="tab ${activeSettingsTab === 'security' ? 'active' : ''}" onclick="setSettingsTab('security')">
+                        🔒 Security
+                    </button>
+                    <button type="button" class="tab ${activeSettingsTab === 'commission' ? 'active' : ''}" onclick="setSettingsTab('commission')">
+                        💰 Commission &amp; Escrow
+                    </button>
+                    <button type="button" class="tab ${activeSettingsTab === 'preferences' ? 'active' : ''}" onclick="setSettingsTab('preferences')">
+                        🌙 Display &amp; Theme
+                    </button>
+                </div>
+
+                <!-- Tab 1: Account -->
+                ${activeSettingsTab === 'account' ? `
+                    <div class="card" style="max-width: 580px;">
+                        <div class="card-header">
+                            <div class="card-title">Personal Information &amp; Creator Handle</div>
+                            <span class="badge badge-info">${currentUser?.user_type || 'User'}</span>
+                        </div>
+                        <form onsubmit="handleAccountSave(event)">
+                            <div class="form-group">
+                                <label class="form-label" style="font-weight: 800;">Full Name <span style="color: var(--danger);">* (Compulsory)</span></label>
+                                <input type="text" class="form-input" id="setting-name" value="${escapeHTML(currentUser?.name || '')}" required minlength="2" maxlength="60" placeholder="Enter your full name" style="font-weight: 700;">
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label" style="font-weight: 800;">Creator Username (@handle) <span style="color: var(--danger);">* (Required)</span></label>
+                                <div style="position: relative; display: flex; align-items: center;">
+                                    <span style="position: absolute; left: 14px; color: var(--accent); font-weight: 800; font-size: 1rem; pointer-events: none;">@</span>
+                                    <input type="text" class="form-input" id="setting-username" value="${escapeHTML(currentUser?.username || '')}" required minlength="3" maxlength="30" placeholder="your_unique_handle" style="padding-left: 32px; font-weight: 700;" pattern="[a-zA-Z0-9_]{3,30}" title="3-30 letters, numbers, or underscores">
+                                </div>
+                                <small style="color: var(--text-muted); font-size: 0.75rem; margin-top: 5px; display: block;">
+                                    Your unique creator link: <strong>groovehub.com/@${escapeHTML(currentUser?.username || 'username')}</strong>. Clients can search and find you directly.
+                                </small>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Email Address</label>
+                                    <input type="email" class="form-input" id="setting-email" value="${currentUser?.email || ''}" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Phone Number</label>
+                                    <input type="tel" class="form-input" id="setting-phone" value="${currentUser?.phone || ''}" required>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary" style="margin-top: 8px;">Save Changes</button>
+                        </form>
+                    </div>
+                ` : ''}
+
+                <!-- Tab 2: About Me (Buyer) -->
+                ${activeSettingsTab === 'bio' && !isProvider ? `
+                    <div class="card" style="max-width: 540px;">
+                        <div class="card-header">
+                            <div class="card-title">About Me</div>
+                            <span class="badge badge-info">Buyer</span>
+                        </div>
+                        <form onsubmit="handleBioSave(event)">
+                            <div class="form-group">
+                                <label class="form-label">Your Bio</label>
+                                <textarea class="form-textarea" id="setting-bio" rows="5" placeholder="Tell buyers and providers about yourself — what you're looking for, your preferences, your work style..." style="resize: vertical;">${profile?.bio || ''}</textarea>
+                                <small style="color: var(--text-muted); font-size: 0.75rem; margin-top: 4px; display: block;">
+                                    This bio is visible to providers when you book services. Share what you're looking for, your communication style, and any preferences.
+                                </small>
+                            </div>
+                            <div class="form-group" style="margin-top: 12px;">
+                                <label class="form-label">What I'm Looking For</label>
+                                <textarea class="form-textarea" id="setting-looking-for" rows="3" placeholder="e.g. I need a YouTube video editor who can turn raw footage into engaging shorts under 60 seconds..." style="resize: vertical;">${profile?.looking_for || ''}</textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary" style="margin-top: 8px;">Save Bio</button>
+                        </form>
+                    </div>
+                ` : ''}
+
+                <!-- Tab: Showcase Flyer & Portfolio (Provider Only) -->
+                ${activeSettingsTab === 'portfolio' && isProvider ? `
+                    <div style="display: flex; flex-direction: column; gap: 24px; max-width: 860px;">
+                        <!-- Banner Header -->
+                        <div class="card" style="padding: 20px 24px; background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(16, 185, 129, 0.08) 100%); border: 1px solid rgba(99, 102, 241, 0.25);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+                                <div>
+                                    <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--text-primary); margin-bottom: 4px; display: flex; align-items: center; gap: 8px;">
+                                        <span>🖼️</span> Creator Showcase Flyer &amp; Sample Video Reels
+                                    </h3>
+                                    <p style="font-size: 0.8125rem; color: var(--text-secondary); margin: 0; line-height: 1.45;">
+                                        Your <strong>Showcase Flyer</strong> displays prominently on your homepage marketplace card. Your <strong>Sample Reels</strong> play in-app when clients click to view your profile.
+                                    </p>
+                                </div>
+                                <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                                    <button type="button" class="btn btn-secondary btn-sm" onclick="openFiverrPortfolioModal(${currentUser.id}, '${escapeHTML(currentUser.name)}')">
+                                        👁️ Preview My Profile &amp; Reels
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 1. Showcase Flyer & Cover Banner Card -->
+                        <div class="card" style="padding: 24px; border: 1.5px solid var(--accent); background: var(--bg-card);">
+                            <div class="card-header" style="margin-bottom: 16px;">
+                                <div>
+                                    <div class="card-title" style="font-size: 1.05rem; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+                                        <span>🖼️</span> 1. Homepage Showcase Flyer / Cover Banner (16:9)
+                                    </div>
+                                    <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">
+                                        Displayed as the primary visual on your homepage marketplace card.
+                                    </div>
+                                </div>
+                                <span class="badge badge-success">Live on Homepage</span>
+                            </div>
+
+                            <!-- Live 16:9 Flyer Preview -->
+                            <div style="width: 100%; aspect-ratio: 16/9; max-height: 240px; border-radius: 12px; overflow: hidden; background: #000; position: relative; border: 1px solid var(--border); box-shadow: 0 8px 24px rgba(0,0,0,0.5); margin-bottom: 16px;">
+                                <img src="${sanitizeUrl(getProviderThumbnail(currentUser, null))}" alt="Showcase Flyer" style="width: 100%; height: 100%; object-fit: cover; display: block;">
+                                <div style="position: absolute; bottom: 10px; left: 12px; background: rgba(0,0,0,0.75); color: #fff; padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+                                    <span>⚡</span> Active Homepage Card Flyer
+                                </div>
+                            </div>
+
+                            <input type="file" id="flyer-file-input" style="display:none;" accept="image/*" onchange="if(this.files[0]) handleShowcaseFlyerUpload(this.files[0])" />
+                            <div style="display: flex; gap: 10px; align-items: center; justify-content: flex-end; flex-wrap: wrap;">
+                                <span style="font-size: 0.75rem; color: var(--text-muted);">Recommended: 16:9 ratio (.PNG / .JPG / .WEBP)</span>
+                                <button type="button" class="btn btn-secondary" onclick="handleRemoveShowcaseFlyer()" style="padding: 10px 18px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; color: #ef4444; border: 1.5px solid rgba(239, 68, 68, 0.4); background: rgba(239, 68, 68, 0.08);" title="Remove Showcase Flyer">
+                                    <span>🗑️</span> Remove Showcase Flyer
+                                </button>
+                                <button type="button" class="btn btn-primary" onclick="document.getElementById('flyer-file-input').click()" style="padding: 10px 20px; font-weight: 700; display: inline-flex; align-items: center; gap: 8px;">
+                                    <span>📤</span> Upload / Change Showcase Flyer
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 2. Sample Video Reels & Portfolio Showcase Card -->
+                        <div class="card" style="padding: 24px;">
+                            <div class="card-header" style="margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                                <div>
+                                    <div class="card-title" style="font-size: 1.05rem; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+                                        <span>🎬</span> 2. My 4K Sample Video Reels &amp; Portfolio Showcase (${portfolioItems.length})
+                                    </div>
+                                    <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">
+                                        Upload your best editing work. Playable in-app when buyers click your profile.
+                                    </div>
+                                </div>
+                                <button type="button" class="btn btn-secondary btn-sm" onclick="openFiverrPortfolioModal(${currentUser.id}, '${escapeHTML(currentUser.name)}')" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700;">
+                                    <span>👁️</span> Open Live Profile Player
+                                </button>
+                            </div>
+
+                            <!-- Direct 4K File Upload Dropzone -->
+                            <div class="portfolio-upload-dropzone" id="port-dropzone-box" style="border: 2px dashed var(--border); border-radius: 12px; padding: 22px; text-align: center; background: var(--bg-hover); cursor: pointer; margin-bottom: 18px; transition: all 0.2s ease;" onclick="document.getElementById('port-file-input').click()">
+                                <input type="file" id="port-file-input" style="display:none;" accept="video/*,image/*,audio/*" onchange="if(this.files[0]) handlePortfolioFileUpload(this.files[0])" />
+                                <div id="port-dropzone-content">
+                                    <div style="font-size: 2.2rem; margin-bottom: 6px;">📤</div>
+                                    <div style="font-weight: 800; font-size: 0.98rem; color: var(--text-primary); margin-bottom: 4px;">Click to Upload 4K Sample Video Reel from Device</div>
+                                    <div style="font-size: 0.8rem; color: var(--text-muted);">Supports MP4, MOV, MKV, WebM (up to 1GB 4K allowance with high-speed streaming)</div>
+                                </div>
+                                <div id="port-upload-progress-wrap" style="display: none; margin-top: 14px; text-align: left; background: var(--bg-card); padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border);">
+                                    <div style="display: flex; justify-content: space-between; font-size: 0.78rem; font-weight: 700; margin-bottom: 6px;">
+                                        <span id="port-upload-status-text" style="color: var(--text-primary);">Uploading 4K file...</span>
+                                        <span id="port-upload-pct" style="color: var(--accent);">0%</span>
+                                    </div>
+                                    <div style="width: 100%; height: 7px; background: var(--border); border-radius: 999px; overflow: hidden;">
+                                        <div id="port-upload-bar" style="width: 0%; height: 100%; background: var(--accent); transition: width 0.15s ease;"></div>
+                                    </div>
+                                </div>
+                                <div id="port-uploaded-preview" style="display: none; margin-top: 6px; text-align: center; background: rgba(16, 185, 129, 0.1); border: 1px dashed rgba(16, 185, 129, 0.5); padding: 14px 18px; border-radius: 10px;">
+                                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+                                        <div style="display: flex; align-items: center; gap: 10px; font-weight: 700; color: #10b981; font-size: 0.88rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                            <span style="font-size: 1.2rem;">✅</span>
+                                            <span id="port-preview-file-name">Sample File Attached</span>
+                                        </div>
+                                        <button type="button" class="btn btn-secondary btn-sm" onclick="event.stopPropagation(); document.getElementById('port-file-input').click();" style="padding: 4px 10px; font-size: 0.75rem;">
+                                            🔄 Change File
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <form onsubmit="handleAddPortfolioItem(event)" style="margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px solid var(--border);">
+                                <div class="form-group">
+                                    <label class="form-label">Reel / Deliverable Title <span style="font-weight: 400; color: var(--text-muted); font-size: 0.78rem;">(Optional — auto-generated from file name if empty)</span></label>
+                                    <input type="text" class="form-input" id="port-title" placeholder="Optional — e.g. High-Retention YouTube Shorts Edit">
+                                </div>
+
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label class="form-label">Media Type</label>
+                                        <select class="form-select" id="port-media-type">
+                                            <option value="video">🎬 Video (.MP4 / .MOV / 4K Reel)</option>
+                                            <option value="image">🖼️ Image (Showcase Poster / Flyer)</option>
+                                            <option value="audio">🎙️ Audio (Sound Design / Voiceover)</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Media File Path / External Link <span style="font-weight: 400; color: var(--text-muted); font-size: 0.78rem;">(Optional if uploaded above)</span></label>
+                                        <input type="text" class="form-input" id="port-media-url" placeholder="Auto-filled when you upload above, or paste YouTube/Drive link">
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">Project Description &amp; Editing Techniques</label>
+                                    <textarea class="form-textarea" id="port-desc" rows="2" placeholder="Describe the pacing, sound sync, color grading, tools used (Premiere Pro, CapCut, DaVinci), and turn-around time..."></textarea>
+                                </div>
+
+                                <div style="display: flex; justify-content: flex-end; margin-top: 14px;">
+                                    <button type="submit" class="btn btn-primary" style="padding: 10px 24px; font-weight: 700;">
+                                        ➕ Add to My Profile Reels
+                                    </button>
+                                </div>
+                            </form>
+
+                            ${portfolioItems.length === 0 ? `
+                                <div style="text-align: center; padding: 40px 20px; border: 1.5px dashed var(--border); border-radius: var(--radius);">
+                                    <div style="font-size: 2.5rem; margin-bottom: 10px;">🎨</div>
+                                    <h4 style="font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">No showcase projects added yet</h4>
+                                    <p style="font-size: 0.8125rem; color: var(--text-secondary); max-width: 440px; margin: 0 auto 16px;">
+                                        Creators who upload their showcase flyer and at least 1 video reel receive <strong>4x more client bookings</strong>. Add your first sample above!
+                                    </p>
+                                </div>
+                            ` : `
+                                <div class="grid grid-2" style="gap: 16px;">
+                                    ${portfolioItems.map(item => `
+                                        <div class="card" style="padding: 14px; background: var(--bg-hover); border: 1px solid var(--border); border-radius: var(--radius-sm); display: flex; flex-direction: column; justify-content: space-between;">
+                                            <div>
+                                                ${item.media_type === 'video' && item.media_url && (item.media_url.endsWith('.mp4') || item.media_url.endsWith('.mov') || item.media_url.endsWith('.webm') || item.media_url.startsWith('/static/')) ? `
+                                                    <div style="border-radius: 8px; overflow: hidden; margin-bottom: 10px; background: #000; cursor: pointer;" onclick="openFiverrPortfolioModal(${currentUser.id}, '${escapeHTML(currentUser.name)}')">
+                                                        <video src="${item.media_url}" controls preload="metadata" style="width: 100%; max-height: 180px; display: block;"></video>
+                                                    </div>
+                                                ` : item.media_type === 'video' && item.media_url && item.media_url.includes('youtube') ? `
+                                                    <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 8px; margin-bottom: 10px; background: #000;">
+                                                        <iframe src="${item.media_url.replace('watch?v=', 'embed/').split('&')[0]}" style="position: absolute; top:0; left: 0; width: 100%; height: 100%; border: 0;" allowfullscreen></iframe>
+                                                    </div>
+                                                ` : item.thumbnail_url || (item.media_type === 'image' && item.media_url) ? `
+                                                    <div style="height: 140px; overflow: hidden; border-radius: 8px; margin-bottom: 10px; background: #111; cursor: pointer;" onclick="openFiverrPortfolioModal(${currentUser.id}, '${escapeHTML(currentUser.name)}')">
+                                                        <img src="${item.thumbnail_url || item.media_url}" alt="${escapeHTML(item.title)}" style="width: 100%; height: 100%; object-fit: cover;">
+                                                    </div>
+                                                ` : `
+                                                    <div style="height: 90px; display: flex; align-items: center; justify-content: center; background: var(--bg-card); border-radius: 8px; margin-bottom: 10px; font-size: 2rem; cursor: pointer;" onclick="openFiverrPortfolioModal(${currentUser.id}, '${escapeHTML(currentUser.name)}')">
+                                                        ${item.media_type === 'video' ? '🎬' : item.media_type === 'image' ? '🖼️' : item.media_type === 'audio' ? '🎙️' : '🔗'}
+                                                    </div>
+                                                `}
+                                                <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 6px;">
+                                                    <h4 style="font-size: 0.92rem; font-weight: 700; color: var(--text-primary); margin: 0; cursor: pointer;" onclick="openFiverrPortfolioModal(${currentUser.id}, '${escapeHTML(currentUser.name)}')">${escapeHTML(item.title)}</h4>
+                                                    <span class="badge badge-info" style="font-size: 0.68rem; text-transform: uppercase;">${item.media_type}</span>
+                                                </div>
+                                                <p style="font-size: 0.78rem; color: var(--text-secondary); line-height: 1.4; margin: 0 0 10px 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                                                    ${escapeHTML(item.description || 'Verified project sample')}
+                                                </p>
+                                            </div>
+                                            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding-top: 8px; margin-top: 8px; flex-wrap: wrap; gap: 6px;">
+                                                <div style="display: flex; gap: 8px; align-items: center;">
+                                                    <button type="button" class="btn btn-primary btn-sm" onclick="openFiverrPortfolioModal(${currentUser.id}, '${escapeHTML(currentUser.name)}')" style="padding: 3px 10px; font-size: 0.72rem; font-weight: 700;">
+                                                        ▶ Play in Player
+                                                    </button>
+                                                    <a href="${escapeHTML(item.media_url)}" target="_blank" rel="noopener noreferrer" style="font-size: 0.72rem; color: var(--accent); font-weight: 600; text-decoration: none;">
+                                                        Download ↗
+                                                    </a>
+                                                </div>
+                                                <button type="button" class="btn btn-secondary btn-sm" onclick="handleDeletePortfolioItem(${item.id})" style="color: var(--danger); border-color: rgba(239, 68, 68, 0.3); padding: 3px 8px; font-size: 0.72rem;">
+                                                    🗑️ Delete
+                                                </button>
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            `}
+                ` : ''}
+
+                <!-- Tab 2: Profile (Provider) -->
+                ${activeSettingsTab === 'profile' && isProvider ? `
+                    <div style="display: flex; flex-direction: column; gap: 20px; max-width: 640px;">
+                        <div class="card">
+                            <div class="card-header">
+                                <div>
+                                    <div class="card-title">Provider Specialty, Bio &amp; Skills</div>
+                                    <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 2px;">
+                                        This information is shown to clients across the talent directory and on your public portfolio page.
+                                    </div>
+                                </div>
+                                <span class="badge badge-success">Active Creator</span>
+                            </div>
+                            <form onsubmit="handleProfileSettingsSave(event)">
+                                <div class="form-group">
+                                    <label class="form-label">Primary Category / Niche</label>
+                                    <select class="form-select" id="setting-niche">
+                                        <option value="editors_animators" ${profile?.niche === 'editors_animators' ? 'selected' : ''}>🎬 Video Editor</option>
+                                        <option value="business_ads" ${profile?.niche === 'business_ads' ? 'selected' : ''}>📢 Social Ads &amp; Services</option>
+                                        <option value="videography" ${profile?.niche === 'videography' ? 'selected' : ''}>📹 Real-Meet Videographer</option>
+                                        <option value="social_media" ${profile?.niche === 'social_media' ? 'selected' : ''}>📱 Social Media Manager</option>
+                                        <option value="tutors" ${profile?.niche === 'tutors' ? 'selected' : ''}>🗣️ English Tutor</option>
+                                        <option value="writers" ${profile?.niche === 'writers' ? 'selected' : ''}>✍️ Writer &amp; Copywriter</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">Creator Bio &amp; Experience Headline</label>
+                                    <textarea class="form-textarea" id="setting-bio" rows="3" placeholder="Describe your creative specialty, video editing style (YouTube retention, TikTok ads, color grading), experience level, and software tools...">${escapeHTML(profile?.bio || '')}</textarea>
+                                    <small style="color: var(--text-muted); font-size: 0.75rem; margin-top: 4px; display: block;">
+                                        Clients read this when deciding whether to hire you or open a direct chat.
+                                    </small>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">Skills &amp; Software Tags (Comma-separated)</label>
+                                    <input type="text" class="form-input" id="setting-skills" value="${skillsFormatted}" placeholder="e.g. Premiere Pro, After Effects, DaVinci Resolve, 4K Editing, Color Grading">
+                                    
+                                    <div style="margin-top: 8px;">
+                                        <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600; margin-bottom: 6px;">
+                                            ⚡ Quick Add Popular Skills (Click to add):
+                                        </div>
+                                        <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                                            ${['🎬 Video Editing', '🎨 Color Grading', '✨ Motion Graphics', '📱 Reels & Shorts', '🔊 Sound Design', '🎞️ 4K Editing', '🗣️ Spoken English', '✍️ Scriptwriting'].map(tag => `
+                                                <button type="button" class="btn btn-secondary btn-sm" onclick="window.__addSkillTag('${tag.replace(/^[^\w\s]+\s*/, '')}')" style="padding: 3px 8px; font-size: 0.72rem; border-radius: 999px;">
+                                                    + ${tag}
+                                                </button>
+                                            `).join('')}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label class="form-label">Service Area</label>
+                                        <select class="form-select" id="setting-service-area">
+                                            <option value="online" ${profile?.service_area === 'online' ? 'selected' : ''}>Online (Global)</option>
+                                            <option value="chennai" ${profile?.service_area === 'chennai' ? 'selected' : ''}>Chennai</option>
+                                            <option value="tn" ${profile?.service_area === 'tn' ? 'selected' : ''}>Tamil Nadu</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Availability</label>
+                                        <select class="form-select" id="setting-availability">
+                                            <option value="flexible" ${profile?.availability === 'flexible' ? 'selected' : ''}>Flexible</option>
+                                            <option value="weekdays" ${profile?.availability === 'weekdays' ? 'selected' : ''}>Weekdays Only</option>
+                                            <option value="weekends" ${profile?.availability === 'weekends' ? 'selected' : ''}>Weekends Only</option>
+                                            <option value="limited" ${profile?.availability === 'limited' ? 'selected' : ''}>Limited</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">Response Time</label>
+                                    <select class="form-select" id="setting-response-time">
+                                        <option value="1 hour" ${profile?.response_time === '1 hour' ? 'selected' : ''}>Within 1 hour</option>
+                                        <option value="4 hours" ${profile?.response_time === '4 hours' ? 'selected' : ''}>Within 4 hours</option>
+                                        <option value="12 hours" ${profile?.response_time === '12 hours' ? 'selected' : ''}>Within 12 hours</option>
+                                        <option value="24 hours" ${profile?.response_time === '24 hours' ? 'selected' : ''}>Within 24 hours</option>
+                                    </select>
+                                </div>
+
+                                <div style="display: flex; justify-content: flex-end; margin-top: 18px;">
+                                    <button type="submit" class="btn btn-primary" style="padding: 10px 24px; font-weight: 700;">
+                                        💾 Save Profile &amp; Specialty
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Live Profile Card Preview -->
+                        <div class="card" style="padding: 18px; border: 1.5px dashed var(--border); background: var(--bg-hover);">
+                            <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+                                <span>👁️</span> Public Marketplace Profile Preview
+                            </div>
+                            <div style="display: flex; gap: 14px; align-items: flex-start;">
+                                <div>${renderProfileAvatar(48)}</div>
+                                <div style="flex: 1; min-width: 0;">
+                                    <div style="font-weight: 800; font-size: 1.05rem; color: var(--text-primary); display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                                        <span>${escapeHTML(currentUser?.name || 'Your Name')}</span>
+                                        <span class="badge badge-primary" style="font-size: 0.68rem;">★ ${(profile?.rating || 5.0).toFixed(1)}</span>
+                                    </div>
+                                    <div style="font-size: 0.78rem; color: var(--accent); font-weight: 700; margin-top: 2px;">
+                                        ${profile?.niche === 'tutors' ? '🗣️ English Tutor & Coach' : (profile?.niche === 'writers' ? '✍️ Copywriter & Scriptwriter' : '🎬 Video Editor & Animator')}
+                                    </div>
+                                    <div style="font-size: 0.8125rem; color: var(--text-secondary); line-height: 1.4; margin-top: 6px;">
+                                        ${escapeHTML(profile?.bio || 'No bio provided yet. Add your headline above.')}
+                                    </div>
+                                    <div style="display: flex; gap: 4px; flex-wrap: wrap; margin-top: 10px;">
+                                        ${(Array.isArray(profile?.skills) ? profile.skills : (typeof profile?.skills === 'string' ? profile.skills.split(',') : [])).filter(Boolean).map(s => `
+                                            <span style="font-size: 0.68rem; padding: 2px 7px; border-radius: 4px; background: var(--bg-card); border: 1px solid var(--border); color: var(--text-primary); font-weight: 600;">
+                                                ${escapeHTML(String(s).trim())}
+                                            </span>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                ` : ''}
+
+                <!-- Tab 3: Security -->
+                ${activeSettingsTab === 'security' ? `
+                    <div class="card" style="max-width: 480px;">
+                        <div class="card-header">
+                            <div class="card-title">Change Password</div>
+                        </div>
+                        <form onsubmit="handlePasswordChange(event)">
+                            <div class="form-group">
+                                <label class="form-label">Current Password</label>
+                                <input type="password" class="form-input" id="setting-current-pw" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">New Password</label>
+                                <input type="password" class="form-input" id="setting-new-pw" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Confirm New Password</label>
+                                <input type="password" class="form-input" id="setting-confirm-pw" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Update Password</button>
+                        </form>
+                    </div>
+                ` : ''}
+
+                <!-- Tab: Bank & Payouts -->
+                ${activeSettingsTab === 'bank' ? `
+                    <div class="card" style="max-width: 580px;">
+                        <div class="card-header">
+                            <div class="card-title">${isAdmin ? '🏦 Bank Account' : '🏦 Provider Payout Account (80% Earnings)'}</div>
+                            <span class="badge ${isAdmin ? 'badge-danger' : 'badge-success'}">${isAdmin ? 'Full Payout' : '80% Provider Payout'}</span>
+                        </div>
+                        <div class="card-body">
+                            <div style="background: rgba(99, 102, 241, 0.08); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 16px; margin-bottom: 16px; font-size: 0.8125rem; color: var(--text-secondary);">
+                                ${isAdmin
+                    ? '📌 <strong>Payment Routing:</strong> Funds are held securely in escrow until you approve delivery.'
+                    : '📌 <strong>Direct Payout Routing:</strong> 80% of project funds are released to this bank account upon client approval.'}
+                            </div>
+                            <form onsubmit="handleBankSave(event)">
+                                <div class="form-group">
+                                    <label class="form-label">Account Holder Name</label>
+                                    <input type="text" class="form-input" id="setting-bank-holder" value="${(isAdmin ? platformSettings?.owner_account_holder : profile?.bank_account_holder) || ''}" placeholder="e.g. Full Legal Name" required>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label class="form-label">Bank Name</label>
+                                        <input type="text" class="form-input" id="setting-bank-name" value="${(isAdmin ? platformSettings?.owner_bank_name : profile?.bank_name) || ''}" placeholder="e.g. HDFC Bank, Chase" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Account Number</label>
+                                        <input type="text" class="form-input" id="setting-bank-acc" value="${(isAdmin ? platformSettings?.owner_account_number : profile?.bank_account_number) || ''}" placeholder="e.g. 50100492819281" required>
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label class="form-label">IFSC / Branch Routing Code</label>
+                                        <input type="text" class="form-input" id="setting-bank-ifsc" value="${(isAdmin ? platformSettings?.owner_ifsc_code : profile?.bank_ifsc_code) || ''}" placeholder="e.g. HDFC0001234">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">UPI ID / Virtual Payout Address</label>
+                                        <input type="text" class="form-input" id="setting-bank-upi" value="${(isAdmin ? platformSettings?.owner_upi_id : profile?.upi_id) || ''}" placeholder="e.g. name@okhdfcbank">
+                                    </div>
+                                </div>
+
+                                ${isAdmin ? `
+                                    <div class="divider" style="margin: 20px 0;"></div>
+                                    <h4 style="font-size: 0.9375rem; font-weight: 700; margin-bottom: 12px; color: var(--text-primary);">
+                                        ⚡ Live Payment Gateway & OAuth Credentials
+                                    </h4>
+                                    <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 14px;">
+                                        Enter your production or sandbox keys below. If left blank, the platform automatically runs in secure sandbox mode.
+                                    </p>
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label class="form-label">Razorpay Key ID</label>
+                                            <input type="text" class="form-input" id="setting-rzp-key" value="${platformSettings?.razorpay_key_id || ''}" placeholder="rzp_live_... or rzp_test_...">
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Razorpay Key Secret</label>
+                                            <input type="password" class="form-input" id="setting-rzp-secret" value="${platformSettings?.razorpay_key_secret || ''}" placeholder="Enter secret...">
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Google OAuth Client ID</label>
+                                        <input type="text" class="form-input" id="setting-google-id" value="${platformSettings?.google_client_id || ''}" placeholder="e.g. 123456789-xyz.apps.googleusercontent.com">
+                                        <small style="font-size: 0.75rem; color: var(--text-muted);">From Google Cloud Console -> APIs & Services -> Credentials</small>
+                                    </div>
+                                ` : ''}
+
+                                <button type="submit" class="btn btn-primary" style="margin-top: 8px;">Save Settings</button>
+                            </form>
+                        </div>
+                    </div>
+                ` : ''}
+
+                <!-- Tab 4: Commission & Escrow -->
+                ${activeSettingsTab === 'commission' ? `
+                    <div class="card" style="max-width: 540px;">
+                        <div class="card-header">
+                            <div class="card-title">Platform Commission & Escrow Model</div>
+                            <span class="badge badge-success">0% Platform Fee</span>
+                        </div>
+                        <div class="card-body">
+                            <div style="background: var(--bg-hover); padding: 16px; border-radius: var(--radius-sm); margin-bottom: 16px;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                    <span>Provider Payout (To Provider Bank)</span>
+                                    <strong style="color: var(--success); font-size: 1.125rem;">80%</strong>
+                                </div>
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span>Platform Commission (To Your Bank)</span>
+                                    <strong style="color: var(--success); font-size: 1.125rem;">0%</strong>
+                                </div>
+                            </div>
+                            <h4 style="font-size: 0.9375rem; margin-bottom: 8px; color: var(--text-primary);">How Escrow & Payout Routing Works:</h4>
+                            <ol style="padding-left: 20px; font-size: 0.8125rem; line-height: 1.6; color: var(--text-secondary);">
+                                <li><strong>Buyer Funds Project:</strong> Full amount is captured and securely held in escrow.</li>
+                                <li><strong>Provider Delivers:</strong> Provider submits the final video files, tutoring recordings, or assets.</li>
+                                <li><strong>Buyer Approves:</strong> Once buyer is satisfied, <strong>100% is instantly released to provider bank account.</strong> No commission charged.</li>
+                                <li><strong>Dispute Resolution:</strong> If quality standards aren't met, admin mediation ensures fair refunds or revisions.</li>
+                            </ol>
+                        </div>
+                    </div>
+                ` : ''}
+
+                <!-- Tab 5: Preferences & Theme Palette -->
+                ${activeSettingsTab === 'preferences' ? `
+                    <div class="card" style="max-width: 640px;">
+                        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                            <div>
+                                <div class="card-title">🎨 Theme &amp; Color Palette</div>
+                                <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 2px;">
+                                    Choose your workspace accent theme. Default is <strong>Lavender Pearl</strong>.
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="window.toggleThemeMode()" style="font-weight: 700; border-radius: 8px;">
+                                ${currentThemeMode === 'dark' ? '☀️ Switch to Light' : '🌙 Switch to Dark'}
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div id="theme-options-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; margin-bottom: 20px;">
+                                ${THEME_PRESETS.map(t => `
+                                    <div onclick="applyTheme('${t.id}');" style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 12px; border: 2px solid ${currentThemePreset === t.id ? 'var(--accent)' : 'var(--border)'}; background: ${currentThemePreset === t.id ? 'var(--bg-hover)' : 'var(--bg-card)'}; cursor: pointer; transition: all 0.2s ease; box-shadow: ${currentThemePreset === t.id ? 'var(--shadow)' : 'none'};">
+                                        <div style="width: 38px; height: 38px; border-radius: 10px; background: ${t.color}; display: flex; align-items: center; justify-content: center; color: #ffffff; font-size: 1rem; font-weight: 800; flex-shrink: 0; box-shadow: 0 4px 10px ${t.color}40;">
+                                            ${currentThemePreset === t.id ? '✓' : ''}
+                                        </div>
+                                        <div style="flex: 1; min-width: 0;">
+                                            <div style="display: flex; align-items: center; justify-content: space-between; gap: 4px;">
+                                                <strong style="font-size: 0.875rem; color: var(--text-primary);">${t.name}</strong>
+                                                <span class="badge ${currentThemePreset === t.id ? 'badge-primary' : 'badge-secondary'}" style="font-size: 0.65rem; padding: 2px 6px;">${t.badge}</span>
+                                            </div>
+                                            <p style="font-size: 0.72rem; color: var(--text-muted); margin: 3px 0 0; line-height: 1.3;">${t.desc}</p>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+
+                            <div style="padding: 12px 16px; border-radius: 10px; background: var(--bg-hover); border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <strong style="font-size: 0.825rem; color: var(--text-primary);">📱 App &amp; Device Sync</strong>
+                                    <p style="font-size: 0.72rem; color: var(--text-muted); margin: 2px 0 0;">Theme preferences persist automatically across mobile, PWA, and desktop.</p>
+                                </div>
+                                <span class="badge badge-success" style="font-size: 0.7rem;">Active</span>
+                            </div>
+                        </div>
+                    </div>
+                ` : ''}
+            </div>
+            </div>
+    </div>`;
+    }
+
+    mount(renderSettingsView());
+    return renderSettingsView();
+}
+window.Settings = Settings;
+window.Profile = Settings;
+
+// =============== PACKAGES ===============
+
+function MyPackages() {
+    let packages = [];
+    let loading = true;
+
+    async function loadPackages() {
+        showLoading();
+        try {
+            const provId = currentUser ? currentUser.id : '';
+            packages = await apiFetch(provId ? `/packages?provider_id=${provId}` : '/packages');
+        } catch (e) {
+            showToast(e.message, 'error');
+            packages = [];
+        } finally {
+            loading = false;
+            mount(renderMyPackages());
+        }
+    }
+
+    loadPackages();
+
+    function renderMyPackages() {
+        return el`<div>
+            ${renderAppHeader('/packages')}
+            <div class="main">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <div class="section-title" style="margin: 0;">My Packages</div>
+                <button class="btn btn-secondary btn-sm" onclick="router('/')">← Back to Dashboard</button>
+            </div>
+            <div class="flex items-center justify-between mb-4">
+                <span style="color: var(--text-secondary); font-size: 0.875rem;">${packages.length} package${packages.length !== 1 ? 's' : ''}</span>
+                <button class="btn btn-primary btn-sm" onclick="router('/create-package')">+ New Package</button>
+            </div>
+            ${loading ? '<div class="loading"><div class="spinner"></div></div>' : ''}
+            ${!loading && packages.length === 0 ? `
+                <div class="card">
+                    <div class="empty-state">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="5" x2="12" y2="19"/>
+                            <line x1="5" y1="12" x2="19" y2="12"/>
+                        </svg>
+                        <h3>No packages yet</h3>
+                        <p>Create your first package to start receiving bookings</p>
+                        <button class="btn btn-primary" onclick="router('/create-package')">Create Package</button>
+                    </div>
+                </div>
+            ` : `
+                <div class="grid grid-2">
+                    ${packages.map(pkg => `
+                        <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+                            <div>
+                                ${pkg.sample_reference ? `
+                                    <div style="position: relative; width: 100%; padding-top: 56.25%; border-radius: 8px; overflow: hidden; background: #000; margin-bottom: 12px; border: 1px solid var(--border);">
+                                        ${isMediaVideo(pkg.sample_reference) ? `
+                                            <video src="${sanitizeUrl(pkg.sample_reference)}" controls playsinline preload="metadata" style="position: absolute; top:0; left:0; width:100%; height:100%; object-fit: contain; background: #000;"></video>
+                                        ` : `
+                                            <img src="${sanitizeUrl(pkg.sample_reference)}" style="position: absolute; top:0; left:0; width:100%; height:100%; object-fit: cover;" alt="${escapeHTML(pkg.title)}">
+                                        `}
+                                    </div>
+                                ` : ''}
+                                <div class="card-header" style="margin-bottom: 8px;">
+                                    <div class="card-title" style="font-size: 1rem; font-weight: 800;">${escapeHTML(pkg.title)}</div>
+                                    <span class="badge ${pkg.status === 'approved' ? 'badge-success' : pkg.status === 'pending' ? 'badge-warning' : 'badge-danger'}">${pkg.status}</span>
+                                </div>
+                                <div class="card-body" style="padding: 0;">
+                                    <div class="price" style="font-size: 1.25rem; font-weight: 900; color: var(--text-primary); margin-bottom: 4px;">₹${(pkg.price || 0).toLocaleString()}</div>
+                                    <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:5px;">
+                                        <span class="badge badge-info" style="font-size:.68rem; text-transform:capitalize;">${escapeHTML(pkg.package_level || 'beginner')}</span>
+                                        <span class="badge badge-success" style="font-size:.68rem;">${pkg.free_sample_limit ?? 3} free sample${(pkg.free_sample_limit ?? 3) === 1 ? '' : 's'}</span>
+                                    </div>
+                                    <div class="price-range" style="font-size: 0.78rem; color: var(--text-muted);">${(pkg.package_type || 'per_deliverable').replace('_', ' ')} • ⚡ ${escapeHTML(pkg.turnaround || '24h')}</div>
+                                    <div class="divider" style="margin: 10px 0;"></div>
+                                    <div style="font-size: 0.8125rem; color: var(--text-secondary); line-height: 1.45;">${escapeHTML(pkg.scope || 'No description')}</div>
+                                </div>
+                            </div>
+                            <div class="card-footer" style="margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--border); display: flex; gap: 8px;">
+                                <button class="btn btn-secondary btn-sm" onclick="editPackage(${pkg.id})" style="flex: 1; font-weight: 700;">✏️ Edit</button>
+                                <button class="btn btn-danger btn-sm" onclick="deletePackage(${pkg.id})" style="font-weight: 700;">🗑️ Delete</button>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `}
+        </div>`;
+    }
+
+    window.editPackage = (id) => {
+        const pkg = packages.find(p => p.id === id);
+        if (!pkg) return;
+        // For simplicity, redirect to create with pre-filled data
+        sessionStorage.setItem('edit_package_id', id);
+        sessionStorage.setItem('edit_package_data', JSON.stringify(pkg));
+        router('/create-package');
+    };
+
+    window.deletePackage = async (id) => {
+        if (!confirm('Delete this package?')) return;
+        showLoading();
+        try {
+            await apiFetch(`/packages/${id}`, { method: 'DELETE' });
+            showToast('Package deleted', 'success');
+            packages = packages.filter(p => p.id !== id);
+            mount(renderMyPackages());
+        } catch (e) {
+            showToast(e.message, 'error');
+        }
+    };
+
+    mount(renderMyPackages());
+    return renderMyPackages();
+}
+
+// =============== CREATE PACKAGE & VETTING SYSTEM ===============
+
+const VETTING_TIERS_CONFIG = {
+    beginner: {
+        id: 'beginner',
+        name: 'Beginner Editor',
+        tagline: 'Level 1 • Starter',
+        badge: 'Level 1',
+        badgeColor: 'var(--success)',
+        reqCount: 3,
+        suggestedPrice: '₹500 – ₹1,500',
+        requirementText: 'You selected <strong>Beginner Editor</strong> — You will need to complete <strong>3 free sample edits</strong> for incoming clients to build your verified portfolio and unlock paid tasks.',
+        summary: 'Requires 3 free sample edits to qualify for client task assignments.',
+        tasks: [
+            {
+                id: 'beg_task_1',
+                title: '🏢 Test Task 1: Local Gym/Cafe 30s Brand Promo Reel',
+                objective: 'Edit a fast-paced 30-second vertical brand ad from raw smartphone footage.',
+                brief: 'Hook the viewer in the first 3 seconds with dynamic text. Cut dead air, sync video beats to upbeat royalty-free music, insert a clean lower-third with the business name/address, and design an end screen with a "Visit Today / 20% OFF" call-to-action.',
+                deliverables: '1080x1920 (9:16 vertical MP4), dynamic text hooks, sound design & SFX.',
+                sample_footage_url: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=800'
+            },
+            {
+                id: 'beg_task_2',
+                title: '🛍️ Test Task 2: E-Commerce 45s UGC Product Video Ad',
+                objective: 'Create a high-converting direct-response product demonstration ad.',
+                brief: 'Structure the edit into Problem -> Demonstration -> Solution -> Offer. Punch in zooms during key feature demonstrations, animate a 20% OFF coupon badge, and overlay positive customer review quotes.',
+                deliverables: '1080x1920 (9:16 vertical MP4), price tag callout, sound pops, and subtitle hooks.',
+                sample_footage_url: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800'
+            },
+            {
+                id: 'beg_task_3',
+                title: '📝 Test Task 3: Dynamic Animated Subtitles Reel (30s)',
+                objective: 'Add viral Alex Hormozi style dynamic animated captions to talking-head footage.',
+                brief: 'Accurately time every word with animated highlight pop colors (yellow/green), insert context emojis at emphasis words, and add subtle whoosh sound effects on key phrase transitions.',
+                deliverables: '1080x1920 MP4 with 100% accurate subtitle timing, high-contrast captions, and visual emoji pops.',
+                sample_footage_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800'
+            }
+        ]
+    },
+    intermediate: {
+        id: 'intermediate',
+        name: 'Intermediate Editor',
+        tagline: 'Level 2 • Commercial',
+        badge: 'Level 2',
+        badgeColor: 'var(--accent)',
+        reqCount: 2,
+        suggestedPrice: '₹1,500 – ₹3,500',
+        requirementText: 'You selected <strong>Intermediate Editor</strong> — You will need to complete <strong>2 free sample edits</strong> to demonstrate commercial grade quality and unlock higher-paying client jobs.',
+        summary: 'Requires 2 free sample edits to unlock commercial tier assignments.',
+        tasks: [
+            {
+                id: 'inter_task_1',
+                title: '⚡ Test Task 1: High-Retention Brand Commercial (45s)',
+                objective: 'Craft a cinematic high-retention commercial with advanced pacing & SFX layering.',
+                brief: 'Seamless speed ramps on dynamic camera motion, sound design with risers, impacts, and whooshes, animated motion graphic feature callouts, and multi-track audio leveling.',
+                deliverables: 'Cinema-level sound mastering, 9:16 vertical export, scroll-stopping hook.',
+                sample_footage_url: 'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=800'
+            },
+            {
+                id: 'inter_task_2',
+                title: '🎨 Test Task 2: Cinematic Multi-Angle Product Promo (60s)',
+                objective: 'Color-correct and grade log/flat footage into a punchy commercial look.',
+                brief: 'Apply custom LUTs to achieve deep cinematic contrast and balanced skin tones. Add branded split-screen transitions, animated logo sting, and high-energy music mix.',
+                deliverables: 'Professional color grading LUTs, audio normalization, 4K master export.',
+                sample_footage_url: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800'
+            }
+        ]
+    },
+    pro: {
+        id: 'pro',
+        name: 'Pro Master Editor',
+        tagline: 'Level 3 • Top Rated',
+        badge: 'Level 3',
+        badgeColor: '#f59e0b',
+        reqCount: 1,
+        suggestedPrice: '₹3,500 – ₹15,000+',
+        requirementText: 'You selected <strong>Pro Master Editor</strong> — You will need to complete <strong>1 benchmark test edit</strong> to qualify for instant Top-Rated status and high-ticket client jobs.',
+        summary: 'Requires 1 benchmark test edit to qualify for high-ticket clients.',
+        tasks: [
+            {
+                id: 'pro_task_1',
+                title: '👑 Benchmark Task: High-Ticket Brand Commercial Master',
+                objective: 'Master-grade commercial ad with 3 scroll-stopping hook variants and bespoke motion graphics.',
+                brief: 'Create 3 distinct 3-second hook openings (Question hook, Pattern interrupt, Bold claim), bespoke 2D motion graphic lower thirds, high-end sound engineering, and dual-format master exports (9:16 vertical & 16:9 widescreen).',
+                deliverables: 'Direct-response retention mastery, broadcast audio engineering, top-tier motion graphics.',
+                sample_footage_url: 'https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?w=800'
+            }
+        ]
+    }
+};
+
+window.openVettingTestModal = (tierKey = 'beginner') => {
+    const existingModal = document.getElementById('vetting-test-modal');
+    if (existingModal) existingModal.remove();
+
+    const tier = VETTING_TIERS_CONFIG[tierKey] || VETTING_TIERS_CONFIG.beginner;
+    const localSubmissions = JSON.parse(localStorage.getItem('groove_test_submissions') || '{}');
+
+    const modal = document.createElement('div');
+    modal.id = 'vetting-test-modal';
+    modal.className = 'modal-backdrop';
+    modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.75); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 16px;';
+
+    modal.innerHTML = `
+        <div class="card" style="max-width: 720px; width: 100%; max-height: 90vh; overflow-y: auto; border-radius: 20px; padding: 24px; position: relative; border: 2px solid ${tier.badgeColor}; box-shadow: 0 20px 50px rgba(0,0,0,0.5); background: var(--bg-card);">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 14px;">
+                <div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="font-size: 1.4rem;">🎯</span>
+                        <h2 style="font-size: 1.3rem; font-weight: 900; margin: 0; color: var(--text-primary);">
+                            ${tier.name} Vetting & Test Task Center
+                        </h2>
+                        <span style="background: ${tier.badgeColor}20; color: ${tier.badgeColor}; font-weight: 800; font-size: 0.75rem; padding: 3px 8px; border-radius: 6px;">
+                            ${tier.badge}
+                        </span>
+                    </div>
+                    <p style="font-size: 0.8125rem; color: var(--text-secondary); margin: 6px 0 0 0; line-height: 1.4;">
+                        ${tier.summary} Once submitted, our team reviews and approves your editor badge to match you with paying business clients.
+                    </p>
+                </div>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('vetting-test-modal').remove()" style="padding: 6px 10px; border-radius: 8px; font-weight: 800;">✕</button>
+            </div>
+
+            <!-- Tier Qualification Progress -->
+            <div style="background: var(--bg-hover); border: 1px solid var(--border); border-radius: 12px; padding: 12px 16px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <div>
+                    <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Qualification Requirement</div>
+                    <div style="font-size: 0.95rem; font-weight: 800; color: var(--text-primary); margin-top: 2px;">
+                        Complete ${tier.reqCount} Free Test Sample Edit${tier.reqCount > 1 ? 's' : ''}
+                    </div>
+                </div>
+                <div style="font-size: 0.8rem; font-weight: 700; color: var(--accent);">
+                    ⚡ Unlocks Verified Creator Status
+                </div>
+            </div>
+
+            <!-- List of Assigned Tasks -->
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+                ${tier.tasks.map((task, idx) => {
+                    const sub = localSubmissions[task.id] || null;
+                    const isSubmitted = !!sub;
+                    return `
+                        <div style="border: 1px solid var(--border); border-radius: 14px; padding: 18px; background: var(--bg-card); transition: all 0.2s ease;">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                                <div style="font-weight: 800; font-size: 0.95rem; color: var(--text-primary);">
+                                    ${task.title}
+                                </div>
+                                <span style="font-size: 0.72rem; font-weight: 800; padding: 3px 8px; border-radius: 6px; ${isSubmitted ? 'background: rgba(34, 197, 94, 0.15); color: var(--success);' : 'background: rgba(234, 179, 8, 0.15); color: #eab308;'}">
+                                    ${isSubmitted ? '✅ Submitted (In Review)' : '⏳ Action Required'}
+                                </span>
+                            </div>
+
+                            <div style="font-size: 0.8125rem; color: var(--text-secondary); margin-bottom: 10px; line-height: 1.45;">
+                                ${task.brief}
+                            </div>
+
+                            <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 12px; background: var(--bg-hover); padding: 6px 10px; border-radius: 8px;">
+                                <strong>🎯 Deliverables:</strong> ${task.deliverables}
+                            </div>
+
+                            <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 10px;">
+                                <a href="${task.sample_footage_url}" target="_blank" class="btn btn-secondary btn-sm" style="font-size: 0.75rem; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px;">
+                                    <span>📥</span> Sample Raw Clip / Brief
+                                </a>
+                                
+                                <div style="flex: 1; min-width: 220px; display: flex; gap: 6px;">
+                                    <input type="url" id="test-task-url-${task.id}" class="form-input" placeholder="Paste Google Drive / YouTube URL" value="${sub?.url ? escapeHTML(sub.url) : ''}" style="font-size: 0.78rem; padding: 6px 10px;">
+                                    <button type="button" class="btn btn-primary btn-sm" onclick="submitTestTask('${task.id}', '${tier.id}')" style="font-size: 0.78rem; font-weight: 700; white-space: nowrap; padding: 6px 12px;">
+                                        ${isSubmitted ? 'Update' : 'Submit'}
+                                    </button>
+                                </div>
+                            </div>
+                            ${sub?.url ? `
+                                <div style="font-size: 0.72rem; color: var(--success); margin-top: 6px; font-weight: 600;">
+                                    ✓ Submitted link: <a href="${sanitizeUrl(sub.url)}" target="_blank" style="color: var(--accent); text-decoration: underline;">${escapeHTML(sub.url)}</a>
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+
+            <div style="margin-top: 24px; text-align: right; border-top: 1px solid var(--border); padding-top: 16px; display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 0.78rem; color: var(--text-muted);">
+                    💡 Doing these free sample edits proves your reliability and gets you direct small business client tasks.
+                </span>
+                <button type="button" class="btn btn-primary" onclick="document.getElementById('vetting-test-modal').remove()" style="font-weight: 800; padding: 8px 20px; border-radius: 10px;">
+                    Done / Back to Package
+                </button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+};
+
+window.submitTestTask = async (taskId, tierKey) => {
+    const inputEl = document.getElementById(`test-task-url-${taskId}`);
+    if (!inputEl) return;
+    const url = inputEl.value.trim();
+    if (!url || (!url.startsWith('http://') && !url.startsWith('https://'))) {
+        showToast('Please enter a valid Google Drive, Dropbox, or YouTube video URL', 'error');
+        return;
+    }
+
+    try {
+        showLoading();
+        // Save to backend if authenticated
+        try {
+            await apiFetch('/provider/vetting-submit', {
+                method: 'POST',
+                body: JSON.stringify({ task_id: taskId, submission_url: url })
+            });
+        } catch (apiErr) {
+            console.warn('API submission fallback to local:', apiErr);
+        }
+
+        // Save to localStorage for instant UI feedback
+        const localSubmissions = JSON.parse(localStorage.getItem('groove_test_submissions') || '{}');
+        localSubmissions[taskId] = {
+            url,
+            tier: tierKey,
+            status: 'in_review',
+            submitted_at: new Date().toISOString()
+        };
+        localStorage.setItem('groove_test_submissions', JSON.stringify(localSubmissions));
+
+        hideLoading();
+        showToast('🎉 Test task submitted for admin review! Great job.', 'success');
+        openVettingTestModal(tierKey);
+    } catch (e) {
+        hideLoading();
+        showToast(e.message || 'Error submitting test task', 'error');
+    }
+};
+
+function CreatePackage() {
+    const editId = sessionStorage.getItem('edit_package_id');
+    const editData = editId ? JSON.parse(sessionStorage.getItem('edit_package_data') || '{}') : null;
+    let selectedType = editData?.package_type || 'per_deliverable';
+    let selectedTier = editData?.package_level || 'beginner';
+    let selectedCategory = 'small_business_ad';
+    let error = '';
+    let success = '';
+
+    if (editData) {
+        sessionStorage.removeItem('edit_package_id');
+        sessionStorage.removeItem('edit_package_data');
+    }
+
+    const SERVICE_CATEGORIES_BY_NICHE = {
+        editors_animators: [
+            { id: 'starter_reel', icon: '⚡', label: 'Quick Reel Cut', badge: '⚡ Starter', type: 'per_deliverable', title: 'Basic Video Editing, Trimming & Subtitles (Per Reel / Short)', price: 500, turnaround: '24 Hours', revisions: 1, scope: 'Clean cuts, dead-air removal, captions, music sync and 1080p 9:16 export.' },
+            { id: 'shorts', icon: '📱', label: 'Viral Reels & TikTok', badge: '🔥 High Demand', type: 'per_deliverable', title: 'High-Retention Reels & TikTok Edit', price: 1500, turnaround: '24 Hours', revisions: 2, scope: 'Hook pacing, dynamic captions, color grade, SFX and platform-ready 9:16 export.' },
+            { id: 'youtube', icon: '🎬', label: 'YouTube Full Video', badge: '🎬 Long Form', type: 'per_deliverable', title: 'Complete YouTube Video Editing & Sound Design', price: 4500, turnaround: '48 Hours', revisions: 3, scope: 'Assembly, pacing, B-roll, audio leveling, color grade and final master.' }
+        ],
+        business_ads: [
+            { id: 'meta_ads', icon: '📢', label: 'Instagram & Facebook Ads', badge: '📢 Meta', type: 'per_deliverable', title: 'Instagram & Facebook Ad Campaign Service', price: 2500, turnaround: '48 Hours', revisions: 2, scope: 'Campaign setup, audience targeting, creative guidance and basic performance review.' },
+            { id: 'local_shop_ads', icon: '🏪', label: 'Local Shop Brand Ad', badge: '🏪 Local', type: 'per_deliverable', title: 'Local Shop Promotional Ad Package', price: 2000, turnaround: '48 Hours', revisions: 2, scope: 'Ad concept, hook, branded creative, CTA and platform-ready delivery for a shop or local business.' },
+            { id: 'remote_footage_edit', icon: '📤', label: 'Remote Footage Upload & Edit', badge: '📤 Remote', type: 'per_deliverable', title: 'Remote Video Upload & Professional Edit', price: 1800, turnaround: '24-48 Hours', revisions: 2, scope: 'Customer uploads raw footage through Groove Hub; creator edits, captions, sound and exports the final ad/reel.' },
+            { id: 'real_meet_onsite', icon: '📹', label: 'Real-Meet Shoot + Edit', badge: '📹 On-Site', type: 'per_deliverable', title: 'On-Site Shop Videography + Full Promotional Edit', price: 3500, turnaround: '48 Hours', revisions: 2, scope: 'Creator visits the shop/business, captures footage, edits the promotional video and delivers 9:16 social-ready files.' },
+            { id: 'social_management', icon: '📱', label: 'Social Media Management', badge: '📱 Monthly', type: 'monthly', title: 'Local Business Social Media Management', price: 6000, turnaround: 'Monthly Retainer', revisions: 3, scope: 'Content planning, posts/reels, captions, basic community management and monthly reporting.' }
+        ],
+        videography: [
+            { id: 'real_meet_onsite', icon: '📹', label: 'Real-Meet Shoot + Edit', badge: '📹 On-Site', type: 'per_deliverable', title: 'On-Site Shop Videography + Full Promotional Edit', price: 3500, turnaround: '48 Hours', revisions: 2, scope: 'On-site filming, shot selection, editing, color, music and 9:16 promotional delivery.' },
+            { id: 'product_shoot', icon: '🛍️', label: 'Product Shoot + Edit', badge: '🛍️ Product', type: 'per_deliverable', title: 'Product / Store Shoot + Social Ad Edit', price: 3000, turnaround: '48 Hours', revisions: 2, scope: 'Product/store footage, short promotional edit, captions, CTA and social-ready exports.' }
+        ],
+        social_media: [
+            { id: 'social_management', icon: '📱', label: 'Social Media Management', badge: '📱 Monthly', type: 'monthly', title: 'Local Business Social Media Management', price: 6000, turnaround: 'Monthly Retainer', revisions: 3, scope: 'Content calendar, captions, posts/reels, scheduling support and monthly performance summary.' },
+            { id: 'ad_creatives', icon: '🎨', label: 'Ad Creative Pack', badge: '🎨 Creative', type: 'per_deliverable', title: 'Social Ad Creative Pack', price: 2500, turnaround: '48 Hours', revisions: 2, scope: 'Branded social ad creatives for Instagram/Facebook with multiple hook and CTA variations.' }
+        ],
+        writers: [
+            { id: 'script', icon: '✍️', label: 'Video Script & Hooks', badge: '✍️ Copy', type: 'per_deliverable', title: 'Brand Video Script with Scroll-Stopping Hook Options', price: 1800, turnaround: '24 Hours', revisions: 2, scope: 'Three hooks, structured script, visual cues, CTA and retention-focused messaging.' },
+            { id: 'ad_copy', icon: '📢', label: 'Social Ad Copy', badge: '📢 Ads', type: 'per_deliverable', title: 'Social Ad Copy & Campaign Messaging', price: 1500, turnaround: '24 Hours', revisions: 2, scope: 'Primary text, headlines, CTA variations and audience-focused ad messaging.' }
+        ],
+        tutors: [
+            { id: 'english_session', icon: '🗣️', label: 'English Coaching Session', badge: '🗣️ 1:1', type: 'per_deliverable', title: '1-on-1 English Fluency Coaching Session', price: 800, turnaround: 'Scheduled', revisions: 0, scope: 'One structured coaching session focused on speaking, fluency and personalized feedback.' }
+        ]
+    };
+
+    let SERVICE_CATEGORIES = SERVICE_CATEGORIES_BY_NICHE[window.__providerNiche || currentUser?.profile?.niche || 'editors_animators'] || SERVICE_CATEGORIES_BY_NICHE.editors_animators;
+    let profileHydrated = false;
+    // If this route was opened directly, fetch the saved profession once and refresh the form.
+    apiFetch('/profile').then(p => {
+        if (profileHydrated) return;
+        profileHydrated = true;
+        const niche = p?.niche || 'editors_animators';
+        window.__providerNiche = niche;
+        const next = SERVICE_CATEGORIES_BY_NICHE[niche] || SERVICE_CATEGORIES_BY_NICHE.editors_animators;
+        SERVICE_CATEGORIES = next;
+        if (!editId && !next.some(c => c.id === selectedCategory)) selectedCategory = next[0]?.id || selectedCategory;
+        if (!editId && p?.experience_tier && !sessionStorage.getItem('pkg_create_draft')) selectedTier = p.experience_tier;
+        mount(renderCreatePackage());
+    }).catch(() => { profileHydrated = true; });
+
+    window.applyServiceCategory = (catId) => {
+        const cat = SERVICE_CATEGORIES.find(c => c.id === catId);
+        if (!cat) return;
+        selectedCategory = catId;
+        selectedType = cat.type;
+
+        document.querySelectorAll('.service-cat-card').forEach(el => {
+            el.classList.toggle('active', el.dataset.id === catId);
+        });
+
+        const titleEl = document.getElementById('pkg-title');
+        const priceEl = document.getElementById('pkg-price');
+        const turnEl = document.getElementById('pkg-turnaround');
+        const revEl = document.getElementById('pkg-revisions');
+        const scopeEl = document.getElementById('pkg-scope');
+
+        if (titleEl) titleEl.value = cat.title;
+        if (priceEl) priceEl.value = cat.price;
+        if (turnEl) turnEl.value = cat.turnaround;
+        if (revEl) revEl.value = cat.revisions;
+        if (scopeEl) scopeEl.value = cat.scope;
+
+        updatePackageLivePreview();
+        showToast(`✨ Selected "${cat.label}"! Package details pre-filled.`, 'info');
+    };
+
+    window.selectExperienceTier = (tierKey) => {
+        selectedTier = tierKey;
+        const tier = VETTING_TIERS_CONFIG[tierKey];
+        if (!tier) return;
+
+        document.querySelectorAll('.vetting-tier-card').forEach(el => {
+            el.classList.toggle('active', el.dataset.tier === tierKey);
+        });
+
+        const infoEl = document.getElementById('tier-rule-info');
+        if (infoEl) {
+            infoEl.style.borderColor = tier.badgeColor;
+            infoEl.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                    <div>
+                        <div style="font-weight: 800; font-size: 0.88rem; color: var(--text-primary); display: flex; align-items: center; gap: 6px;">
+                            <span>🎯</span> Selected Tier: <span style="color: ${tier.badgeColor};">${tier.name}</span>
+                        </div>
+                        <div style="color: var(--text-secondary); font-size: 0.825rem; margin-top: 4px; line-height: 1.4;">
+                            ${tier.requirementText}
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="openVettingTestModal('${tier.id}')" style="font-weight: 800; font-size: 0.78rem; border-color: ${tier.badgeColor}; color: ${tier.badgeColor}; white-space: nowrap;">
+                        📋 View Test Briefs (${tier.reqCount} Task${tier.reqCount > 1 ? 's' : ''})
+                    </button>
+                </div>
+            `;
+        }
+
+
+
+        // Inform backend of tier selection if logged in
+        apiFetch('/provider/update-tier', {
+            method: 'POST',
+            body: JSON.stringify({ tier: tierKey })
+        }).catch(() => {});
+
+        updatePackageLivePreview();
+        autoSavePackageDraft();
+    };
+
+    window.addScopeFeature = (featureText) => {
+        const scopeEl = document.getElementById('pkg-scope');
+        if (!scopeEl) return;
+        const cur = scopeEl.value.trim();
+        if (cur.includes(featureText)) return;
+        scopeEl.value = cur ? `${cur}\n• ${featureText}` : `• ${featureText}`;
+        updatePackageLivePreview();
+    };
+
+    window.setTurnaroundPreset = (val) => {
+        const turnEl = document.getElementById('pkg-turnaround');
+        if (turnEl) {
+            turnEl.value = val;
+            updatePackageLivePreview();
+        }
+    };
+
+    window.setRevisionPreset = (val) => {
+        const revEl = document.getElementById('pkg-revisions');
+        if (revEl) {
+            revEl.value = val;
+            updatePackageLivePreview();
+        }
+    };
+
+    window.autoSavePackageDraft = () => {
+        if (editId) return;
+        try {
+            const draft = {
+                package_type: selectedType,
+                tier: selectedTier,
+                category: selectedCategory,
+                title: document.getElementById('pkg-title')?.value || '',
+                price: document.getElementById('pkg-price')?.value || '',
+                turnaround: document.getElementById('pkg-turnaround')?.value || '',
+                revisions: document.getElementById('pkg-revisions')?.value || '',
+                scope: document.getElementById('pkg-scope')?.value || '',
+                sample_reference: document.getElementById('pkg-sample')?.value || ''
+            };
+            sessionStorage.setItem('pkg_create_draft', JSON.stringify(draft));
+        } catch (_) {}
+    };
+
+    window.updatePackageLivePreview = () => {
+        const title = document.getElementById('pkg-title')?.value || 'Your Package Title';
+        const price = parseFloat(document.getElementById('pkg-price')?.value) || 0;
+        const turnaround = document.getElementById('pkg-turnaround')?.value || '24-48 Hours';
+        const revisions = document.getElementById('pkg-revisions')?.value || '2';
+        const scope = document.getElementById('pkg-scope')?.value || 'Package details and deliverables will appear here...';
+        const sample = document.getElementById('pkg-sample')?.value?.trim() || '';
+
+        const tierConfig = VETTING_TIERS_CONFIG[selectedTier] || VETTING_TIERS_CONFIG.beginner;
+
+        const prevTitle = document.getElementById('preview-pkg-title');
+        const prevPrice = document.getElementById('preview-pkg-price');
+        const prevTurn = document.getElementById('preview-pkg-turnaround');
+        const prevRev = document.getElementById('preview-pkg-revisions');
+        const prevScope = document.getElementById('preview-pkg-scope');
+        const prevPayout = document.getElementById('preview-payout-amount');
+        const prevTierBadge = document.getElementById('preview-pkg-tier-badge');
+        const mediaWrap = document.getElementById('preview-pkg-media-wrap');
+
+        if (prevTitle) prevTitle.textContent = title;
+        if (prevPrice) prevPrice.textContent = `₹${price.toLocaleString()}`;
+        if (prevTurn) prevTurn.textContent = `⚡ ${turnaround}`;
+        if (prevRev) prevRev.textContent = `🔄 ${revisions} Revisions`;
+        if (prevTierBadge) {
+            prevTierBadge.textContent = `${tierConfig.name} (${tierConfig.badge})`;
+            prevTierBadge.style.background = `${tierConfig.badgeColor}25`;
+            prevTierBadge.style.color = tierConfig.badgeColor;
+            prevTierBadge.style.borderColor = tierConfig.badgeColor;
+        }
+        if (prevScope) {
+            prevScope.innerHTML = scope.split('\n').filter(Boolean).map(l => `<div style="margin-bottom: 3px; display: flex; gap: 6px; align-items: flex-start;"><span style="color: var(--success); font-weight: 700;">✓</span><span>${escapeHTML(l.replace(/^[•\-\*]\s*/, ''))}</span></div>`).join('') || '<span style="color: var(--text-muted);">No description added yet</span>';
+        }
+        if (prevPayout) {
+            prevPayout.textContent = `₹${price.toLocaleString()}`;
+        }
+        if (mediaWrap) {
+            if (sample) {
+                mediaWrap.style.display = 'block';
+                if (isMediaVideo(sample)) {
+                    mediaWrap.innerHTML = `<video src="${sanitizeUrl(sample)}" controls autoplay muted playsinline preload="metadata" style="position: absolute; top:0; left:0; width:100%; height:100%; object-fit: contain; background: #000;"></video>`;
+                } else {
+                    mediaWrap.innerHTML = `<img src="${sanitizeUrl(sample)}" style="position: absolute; top:0; left:0; width:100%; height:100%; object-fit: cover;" alt="Sample">`;
+                }
+            } else {
+                mediaWrap.style.display = 'none';
+                mediaWrap.innerHTML = '';
+            }
+        }
+        autoSavePackageDraft();
+    };
+
+    async function handleSubmit(e) {
+        e.preventDefault();
+        try {
+            const title = document.getElementById('pkg-title').value.trim();
+            const price = parseFloat(document.getElementById('pkg-price').value);
+            const scope = document.getElementById('pkg-scope').value.trim();
+            const turnaround = document.getElementById('pkg-turnaround').value.trim();
+            const revision_limit = parseInt(document.getElementById('pkg-revisions').value) || 1;
+            const sample_reference = document.getElementById('pkg-sample')?.value?.trim() || null;
+
+            if (!title) {
+                showToast('Please enter a package title', 'error');
+                return;
+            }
+            if (!price || isNaN(price) || price < 100) {
+                showToast('Please set a valid price (minimum ₹100)', 'error');
+                return;
+            }
+
+            const data = {
+                package_type: selectedType,
+                title,
+                price,
+                scope: scope || 'Complete video editing & deliverable files included.',
+                turnaround: turnaround || '24-48 hours',
+                revision_limit,
+                sample_reference,
+                package_level: selectedTier,
+                niche: window.__providerNiche || undefined
+            };
+
+            showLoading();
+
+            const url = editId ? `/packages/${editId}` : '/packages';
+            const method = editId ? 'PATCH' : 'POST';
+
+            await apiFetch(url, {
+                method,
+                body: JSON.stringify(data)
+            });
+
+            // Also update tier on profile
+            try {
+                await apiFetch('/provider/update-tier', {
+                    method: 'POST',
+                    body: JSON.stringify({ tier: selectedTier })
+                });
+            } catch (_) {}
+
+            sessionStorage.removeItem('pkg_create_draft');
+            showToast(editId ? '🎉 Package updated successfully!' : '🎉 Package published to Talent Directory!', 'success');
+            router('/packages');
+        } catch (e) {
+            error = e.message;
+            hideLoading();
+            showToast(error, 'error');
+            mount(renderCreatePackage());
+        }
+    }
+
+    window.handleSubmit = handleSubmit;
+
+    function renderPackageSamplePreviewHtml(url) {
+        if (!url) {
+            return `
+                <div style="border: 1.5px dashed var(--border); border-radius: 12px; padding: 20px; text-align: center; background: var(--bg-hover); transition: all 0.2s ease;">
+                    <div style="font-size: 1.8rem; margin-bottom: 6px;">📥</div>
+                    <div style="font-weight: 800; font-size: 0.9rem; color: var(--text-primary); margin-bottom: 4px;">Attach 4K Showcase Reel or Sample Flyer</div>
+                    <div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 12px;">Showcase your editing work live on your gig card</div>
+                    <button type="button" class="btn btn-primary btn-sm" onclick="document.getElementById('pkg-sample-file').click()" style="padding: 8px 18px; font-weight: 700;">
+                        📥 Upload 4K Reel / Flyer
+                    </button>
+                </div>
+            `;
+        }
+        return `
+            <div style="border-radius: 12px; overflow: hidden; background: #000; position: relative; border: 1px solid var(--border); box-shadow: 0 4px 16px rgba(0,0,0,0.3);">
+                ${isMediaVideo(url) ? `
+                    <video src="${sanitizeUrl(url)}" controls playsinline style="width: 100%; max-height: 220px; object-fit: contain; background: #000; display: block;"></video>
+                ` : `
+                    <img src="${sanitizeUrl(url)}" style="width: 100%; max-height: 220px; object-fit: cover; display: block;" alt="Uploaded Reel Showcase">
+                `}
+                <div style="padding: 10px 14px; background: var(--bg-hover); display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+                    <span style="font-size: 0.78rem; font-weight: 700; color: var(--success); display: flex; align-items: center; gap: 6px;">
+                        <span>✅</span> Uploaded Reel Attached
+                    </span>
+                    <div style="display: flex; gap: 8px;">
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('pkg-sample-file').click()" style="padding: 4px 10px; font-size: 0.75rem; font-weight: 700;">
+                            🔄 Change
+                        </button>
+                        <button type="button" class="btn btn-danger btn-sm" onclick="handleRemovePackageSampleReel()" style="padding: 4px 10px; font-size: 0.75rem; font-weight: 700;">
+                            🗑️ Remove
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    window.renderPackageSamplePreviewHtml = renderPackageSamplePreviewHtml;
+
+    window.handleRemovePackageSampleReel = () => {
+        const inputEl = document.getElementById('pkg-sample');
+        if (inputEl) inputEl.value = '';
+        const statusEl = document.getElementById('pkg-sample-status');
+        if (statusEl) { statusEl.style.display = 'none'; statusEl.innerHTML = ''; }
+        const previewWrap = document.getElementById('pkg-sample-preview');
+        if (previewWrap) previewWrap.innerHTML = renderPackageSamplePreviewHtml('');
+        updatePackageLivePreview();
+        autoSavePackageDraft();
+        showToast('Sample reel removed', 'info');
+    };
+
+    window.handlePackageSampleUpload = async (file) => {
+        if (!file) return;
+        const statusEl = document.getElementById('pkg-sample-status');
+        const inputEl = document.getElementById('pkg-sample');
+        const previewWrap = document.getElementById('pkg-sample-preview');
+        if (statusEl) {
+            statusEl.style.display = 'block';
+            statusEl.textContent = `⏳ Uploading ${(file.size / (1024 * 1024)).toFixed(1)} MB sample...`;
+        }
+        const formData = new FormData();
+        formData.append('file', file);
+        try {
+            const token = currentToken || localStorage.getItem('access_token');
+            const res = await fetch('/api/upload', {
+                method: 'POST',
+                headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+                body: formData
+            });
+            if (!res.ok) throw new Error('Upload failed');
+            const data = await res.json();
+            if (inputEl) inputEl.value = data.url;
+            if (previewWrap) previewWrap.innerHTML = renderPackageSamplePreviewHtml(data.url);
+            if (statusEl) statusEl.style.display = 'none';
+            updatePackageLivePreview();
+            autoSavePackageDraft();
+            showToast('Sample reel / flyer uploaded successfully!', 'success');
+        } catch (err) {
+            if (statusEl) statusEl.textContent = `❌ Upload failed: ${err.message}`;
+            showToast(err.message || 'Upload failed', 'error');
+        }
+    };
+
+    window.selectPackageType = (type) => {
+        selectedType = type;
+        document.querySelectorAll('.pkg-type-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.type === type);
+        });
+
+        const turnEl = document.getElementById('pkg-turnaround');
+        if (turnEl) {
+            const currentTurn = turnEl.value.trim().toLowerCase();
+            if (!currentTurn || currentTurn.includes('24') || currentTurn.includes('hours') || currentTurn.includes('retainer') || currentTurn.includes('bundle')) {
+                if (type === 'monthly') turnEl.value = 'Monthly Retainer';
+                else if (type === 'quarterly') turnEl.value = '3-Month Bundle';
+                else if (type === 'per_deliverable') turnEl.value = '24-48 Hours';
+            }
+        }
+        updatePackageLivePreview();
+        autoSavePackageDraft();
+    };
+
+    function renderCreatePackage() {
+        const isEdit = !!editId;
+        const savedDraft = !isEdit ? JSON.parse(sessionStorage.getItem('pkg_create_draft') || 'null') : null;
+        if (savedDraft?.package_type) selectedType = savedDraft.package_type;
+        if (savedDraft?.tier) selectedTier = savedDraft.tier;
+        if (savedDraft?.category) selectedCategory = savedDraft.category;
+
+        const initialTitle = editData?.title || savedDraft?.title || SERVICE_CATEGORIES[0].title;
+        const initialPrice = editData?.price || savedDraft?.price || SERVICE_CATEGORIES[0].price;
+        const initialTurnaround = editData?.turnaround || savedDraft?.turnaround || (selectedType === 'monthly' ? 'Monthly Retainer' : selectedType === 'quarterly' ? '3-Month Bundle' : SERVICE_CATEGORIES[0].turnaround);
+        const initialRevisions = editData?.revision_limit || savedDraft?.revisions || 2;
+        const initialScope = editData?.scope || savedDraft?.scope || SERVICE_CATEGORIES[0].scope;
+        const initialSample = editData?.sample_reference || savedDraft?.sample_reference || '';
+
+        const view = el`<div>
+            ${renderAppHeader('/packages')}
+            <div class="main" style="max-width: 1080px; margin: 0 auto; padding-bottom: 60px;">
+                <!-- Header Bar -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
+                    <div>
+                        <button class="fiverr-back-btn" onclick="router('/packages')" style="margin-bottom: 8px;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
+                                <line x1="19" y1="12" x2="5" y2="12"></line>
+                                <polyline points="12 19 5 12 12 5"></polyline>
+                            </svg>
+                            <span>Back to My Packages</span>
+                        </button>
+                        <h1 style="font-size: 1.5rem; font-weight: 900; color: var(--text-primary); margin: 0; letter-spacing: -0.02em;">
+                            ${isEdit ? '✏️ Edit Service Package' : '📦 Create a New Service Package'}
+                        </h1>
+                        <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 4px 0 0 0;">
+                            Set up your video editing and brand ad packages. Clients hire and book you instantly via Escrow.
+                        </p>
+                    </div>
+                    <div style="background: rgba(108, 92, 231, 0.1); border: 1px solid var(--accent); padding: 8px 16px; border-radius: 12px; display: flex; align-items: center; gap: 8px;">
+                        <span style="font-size: 1.2rem;">🚀</span>
+                        <div style="font-size: 0.78rem; color: var(--text-primary);">
+                            <strong>100% Launch Special:</strong> You keep <strong>100% payout</strong> (0% platform fee)
+                        </div>
+                    </div>
+                </div>
+
+                ${error ? `<div class="toast toast-error" style="margin-bottom: 16px;">${error}</div>` : ''}
+
+                <!-- STEP 1: SERVICE CATEGORY SELECTION ("Tap what you are creating") -->
+                <div class="card" style="margin-bottom: 20px; border: 1px solid rgba(108, 92, 231, 0.35); background: linear-gradient(135deg, var(--bg-card), var(--bg-hover));">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="font-size: 1.3rem;">🎯</span>
+                            <div>
+                                <span style="font-weight: 900; font-size: 1rem; color: var(--text-primary);">Step 1: Tap What You Are Creating</span>
+                                <div style="font-size: 0.75rem; color: var(--text-secondary);">Tap any category to auto-fill high-converting deliverables and pricing:</div>
+                            </div>
+                        </div>
+                        <span style="font-size: 0.72rem; background: var(--accent); color: white; padding: 3px 10px; border-radius: 999px; font-weight: 800;">1-Tap Fill</span>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px;">
+                        ${SERVICE_CATEGORIES.map(cat => `
+                            <button type="button" class="service-cat-card btn btn-outline btn-sm ${selectedCategory === cat.id ? 'active' : ''}" data-id="${cat.id}" onclick="applyServiceCategory('${cat.id}')" style="display: flex; flex-direction: column; align-items: flex-start; text-align: left; padding: 12px; height: auto; border-radius: 12px; border: 2px solid ${selectedCategory === cat.id ? 'var(--accent)' : 'var(--border)'}; background: ${selectedCategory === cat.id ? 'var(--bg-hover)' : 'var(--bg-card)'}; gap: 4px; transition: all 0.2s ease;">
+                                <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                                    <span style="font-size: 1.25rem;">${cat.icon}</span>
+                                    <span style="font-size: 0.65rem; font-weight: 800; color: var(--accent); background: rgba(108, 92, 231, 0.12); padding: 2px 6px; border-radius: 4px;">${cat.badge}</span>
+                                </div>
+                                <div style="font-weight: 800; font-size: 0.8125rem; color: var(--text-primary); line-height: 1.25; margin-top: 4px;">${cat.label}</div>
+                                <div style="font-size: 0.72rem; color: var(--text-muted); font-weight: 600;">₹${cat.price.toLocaleString()} • ${cat.turnaround}</div>
+                            </button>
+                        `).join('')}
+                    </div>
+                </div>
+
+                <!-- STEP 2: EXPERIENCE LEVEL & VETTING TIER -->
+                <div class="card" style="margin-bottom: 24px; border: 1px solid var(--border); padding: 20px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="font-size: 1.25rem;">🎖️</span>
+                            <div>
+                                <span style="font-weight: 900; font-size: 1rem; color: var(--text-primary);">Step 2: Select Your Experience Tier</span>
+                                <div style="font-size: 0.75rem; color: var(--text-secondary);">Choose the level matching your video editing capabilities:</div>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="openVettingTestModal(selectedTier)" style="font-weight: 800; font-size: 0.75rem;">
+                            📋 View Test Briefs
+                        </button>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 14px;">
+                        <!-- Beginner Tier -->
+                        <div class="vetting-tier-card ${selectedTier === 'beginner' ? 'active' : ''}" data-tier="beginner" onclick="selectExperienceTier('beginner')" style="border: 2px solid ${selectedTier === 'beginner' ? 'var(--success)' : 'var(--border)'}; background: ${selectedTier === 'beginner' ? 'var(--bg-hover)' : 'var(--bg-card)'}; border-radius: 14px; padding: 14px; cursor: pointer; transition: all 0.2s ease;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="font-size: 1.2rem;">🟢</span>
+                                <span style="font-size: 0.7rem; font-weight: 800; color: var(--success); background: rgba(34, 197, 94, 0.15); padding: 2px 8px; border-radius: 6px;">Level 1</span>
+                            </div>
+                            <div style="font-weight: 800; font-size: 0.95rem; color: var(--text-primary); margin-top: 6px;">Beginner Editor</div>
+                            <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 3px; min-height: 32px;">For reels, dynamic captions, simple cuts &amp; basic promo videos.</div>
+                        </div>
+
+                        <!-- Intermediate Tier -->
+                        <div class="vetting-tier-card ${selectedTier === 'intermediate' ? 'active' : ''}" data-tier="intermediate" onclick="selectExperienceTier('intermediate')" style="border: 2px solid ${selectedTier === 'intermediate' ? 'var(--accent)' : 'var(--border)'}; background: ${selectedTier === 'intermediate' ? 'var(--bg-hover)' : 'var(--bg-card)'}; border-radius: 14px; padding: 14px; cursor: pointer; transition: all 0.2s ease;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="font-size: 1.2rem;">🟡</span>
+                                <span style="font-size: 0.7rem; font-weight: 800; color: var(--accent); background: rgba(108, 92, 231, 0.15); padding: 2px 8px; border-radius: 6px;">Level 2</span>
+                            </div>
+                            <div style="font-weight: 800; font-size: 0.95rem; color: var(--text-primary); margin-top: 6px;">Intermediate Editor</div>
+                            <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 3px; min-height: 32px;">For commercial storytelling, multi-track audio &amp; color grading.</div>
+                        </div>
+
+                        <!-- Pro Tier -->
+                        <div class="vetting-tier-card ${selectedTier === 'pro' ? 'active' : ''}" data-tier="pro" onclick="selectExperienceTier('pro')" style="border: 2px solid ${selectedTier === 'pro' ? '#f59e0b' : 'var(--border)'}; background: ${selectedTier === 'pro' ? 'var(--bg-hover)' : 'var(--bg-card)'}; border-radius: 14px; padding: 14px; cursor: pointer; transition: all 0.2s ease;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="font-size: 1.2rem;">👑</span>
+                                <span style="font-size: 0.7rem; font-weight: 800; color: #f59e0b; background: rgba(245, 158, 11, 0.15); padding: 2px 8px; border-radius: 6px;">Level 3</span>
+                            </div>
+                            <div style="font-weight: 800; font-size: 0.95rem; color: var(--text-primary); margin-top: 6px;">Pro Master Editor</div>
+                            <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 3px; min-height: 32px;">For cinematic high-ticket brand ads &amp; bespoke motion graphics.</div>
+                        </div>
+                    </div>
+
+                    <div id="tier-rule-info" style="background: var(--bg-hover); border: 1.5px solid ${VETTING_TIERS_CONFIG[selectedTier].badgeColor}; border-radius: 12px; padding: 12px 16px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                            <div>
+                                <div style="font-weight: 800; font-size: 0.88rem; color: var(--text-primary); display: flex; align-items: center; gap: 6px;">
+                                    <span>🎯</span> Selected Tier: <span style="color: ${VETTING_TIERS_CONFIG[selectedTier].badgeColor};">${VETTING_TIERS_CONFIG[selectedTier].name}</span>
+                                </div>
+                                <div style="color: var(--text-secondary); font-size: 0.825rem; margin-top: 4px; line-height: 1.4;">
+                                    ${VETTING_TIERS_CONFIG[selectedTier].requirementText}
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="openVettingTestModal('${selectedTier}')" style="font-weight: 800; font-size: 0.78rem; border-color: ${VETTING_TIERS_CONFIG[selectedTier].badgeColor}; color: ${VETTING_TIERS_CONFIG[selectedTier].badgeColor}; white-space: nowrap;">
+                                📋 View Test Briefs (${VETTING_TIERS_CONFIG[selectedTier].reqCount} Task${VETTING_TIERS_CONFIG[selectedTier].reqCount > 1 ? 's' : ''})
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="responsive-form-preview-grid">
+                    <!-- Main Creation Form -->
+                    <div class="card" style="padding: 24px;">
+                        <form id="create-pkg-form" onsubmit="handleSubmit(event)">
+                            
+                            <!-- Section 1: Package Type -->
+                            <div class="form-group" style="margin-bottom: 20px;">
+                                <label class="form-label" style="font-weight: 800; display: flex; justify-content: space-between;">
+                                    <span>1. Package Format</span>
+                                    <span style="font-weight: 500; font-size: 0.75rem; color: var(--text-muted);">How you will deliver this gig</span>
+                                </label>
+                                <div class="pkg-format-grid">
+                                    <button type="button" class="pkg-type-btn btn btn-outline ${selectedType === 'per_deliverable' ? 'active' : ''}" data-type="per_deliverable" onclick="selectPackageType('per_deliverable')" style="padding: 10px 8px; text-align: center; border-radius: 10px; font-weight: 700; font-size: 0.8125rem;">
+                                        📦 Single Project<br><span style="font-size: 0.7rem; font-weight: 400; color: var(--text-muted);">Per video / delivery</span>
+                                    </button>
+                                    <button type="button" class="pkg-type-btn btn btn-outline ${selectedType === 'monthly' ? 'active' : ''}" data-type="monthly" onclick="selectPackageType('monthly')" style="padding: 10px 8px; text-align: center; border-radius: 10px; font-weight: 700; font-size: 0.8125rem;">
+                                        📅 Monthly Retainer<br><span style="font-size: 0.7rem; font-weight: 400; color: var(--text-muted);">Ongoing monthly</span>
+                                    </button>
+                                    <button type="button" class="pkg-type-btn btn btn-outline ${selectedType === 'quarterly' ? 'active' : ''}" data-type="quarterly" onclick="selectPackageType('quarterly')" style="padding: 10px 8px; text-align: center; border-radius: 10px; font-weight: 700; font-size: 0.8125rem;">
+                                        📆 3-Month Bundle<br><span style="font-size: 0.7rem; font-weight: 400; color: var(--text-muted);">Quarterly contract</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Section 2: Package Title -->
+                            <div class="form-group" style="margin-bottom: 20px;">
+                                <label class="form-label" style="font-weight: 800;">
+                                    2. Package Title <span style="color: var(--danger);">*</span>
+                                </label>
+                                <input type="text" class="form-input" id="pkg-title" placeholder="e.g. Small Business & Local Store Promotional Brand Video Ad (30-60s)" value="${escapeHTML(initialTitle)}" required oninput="updatePackageLivePreview()" style="font-size: 0.95rem; font-weight: 600;">
+                                <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;">
+                                    💡 Make it clear and action-oriented so business owners instantly know what they are getting.
+                                </div>
+                            </div>
+
+                            <!-- Section 3: Pricing & Payout -->
+                            <div class="form-group" style="margin-bottom: 20px;">
+                                <label class="form-label" style="font-weight: 800; display: flex; justify-content: space-between;">
+                                    <span>3. Price (in ₹ INR) <span style="color: var(--danger);">*</span></span>
+                                    <span style="color: var(--success); font-weight: 700; font-size: 0.78rem;">0% Fee During Launch Promo</span>
+                                </label>
+                                <div style="position: relative;">
+                                    <span style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-weight: 800; color: var(--text-secondary); font-size: 1.1rem;">₹</span>
+                                    <input type="number" class="form-input" id="pkg-price" placeholder="500" value="${initialPrice}" min="100" step="50" required oninput="updatePackageLivePreview()" style="padding-left: 32px; font-size: 1.1rem; font-weight: 800; color: var(--text-primary);">
+                                </div>
+                                <div style="margin-top: 8px; background: rgba(34, 197, 94, 0.08); border: 1px solid rgba(34, 197, 94, 0.25); border-radius: 8px; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; font-size: 0.78rem;">
+                                    <span style="color: var(--text-secondary);">Your Guaranteed Payout (Direct to Bank / UPI):</span>
+                                    <span style="font-weight: 800; color: var(--success); font-size: 0.95rem;" id="preview-payout-amount">₹${initialPrice.toLocaleString()}</span>
+                                </div>
+                            </div>
+
+                            <!-- Section 4: Delivery Time & Revision Count -->
+                            <div class="form-row" style="margin-bottom: 20px;">
+                                <div class="form-group">
+                                    <label class="form-label" style="font-weight: 800;">
+                                        4. Delivery Speed <span style="color: var(--danger);">*</span>
+                                    </label>
+                                    <input type="text" class="form-input" id="pkg-turnaround" placeholder="e.g. 24-48 Hours" value="${escapeHTML(initialTurnaround)}" required oninput="updatePackageLivePreview()" style="font-weight: 600;">
+                                    <div style="display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap;">
+                                        <button type="button" class="btn btn-secondary btn-sm" onclick="setTurnaroundPreset('24 Hours')" style="padding: 2px 8px; font-size: 0.72rem; font-weight: 700;">⚡ 24h</button>
+                                        <button type="button" class="btn btn-secondary btn-sm" onclick="setTurnaroundPreset('48 Hours')" style="padding: 2px 8px; font-size: 0.72rem; font-weight: 700;">⏱️ 2 Days</button>
+                                        <button type="button" class="btn btn-secondary btn-sm" onclick="setTurnaroundPreset('3-5 Days')" style="padding: 2px 8px; font-size: 0.72rem; font-weight: 700;">📅 3-5 Days</button>
+                                        <button type="button" class="btn btn-secondary btn-sm" onclick="setTurnaroundPreset('1 Week')" style="padding: 2px 8px; font-size: 0.72rem; font-weight: 700;">🗓️ 1 Week</button>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label" style="font-weight: 800;">
+                                        5. Included Revisions <span style="color: var(--danger);">*</span>
+                                    </label>
+                                    <input type="number" class="form-input" id="pkg-revisions" min="1" max="15" value="${initialRevisions}" required oninput="updatePackageLivePreview()" style="font-weight: 600;">
+                                    <div style="display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap;">
+                                        <button type="button" class="btn btn-secondary btn-sm" onclick="setRevisionPreset(1)" style="padding: 2px 8px; font-size: 0.72rem; font-weight: 700;">1 Rev</button>
+                                        <button type="button" class="btn btn-secondary btn-sm" onclick="setRevisionPreset(2)" style="padding: 2px 8px; font-size: 0.72rem; font-weight: 700;">2 Revs</button>
+                                        <button type="button" class="btn btn-secondary btn-sm" onclick="setRevisionPreset(3)" style="padding: 2px 8px; font-size: 0.72rem; font-weight: 700;">3 Revs</button>
+                                        <button type="button" class="btn btn-secondary btn-sm" onclick="setRevisionPreset(5)" style="padding: 2px 8px; font-size: 0.72rem; font-weight: 700;">5 Revs</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Section 5: Scope & Deliverables -->
+                            <div class="form-group" style="margin-bottom: 20px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                                    <label class="form-label" style="font-weight: 800; margin: 0;">
+                                        6. What's Included (Scope & Features)
+                                    </label>
+                                    <span style="font-size: 0.72rem; color: var(--text-muted);">Tap tags below to insert</span>
+                                </div>
+                                <div style="display: flex; gap: 6px; margin-bottom: 8px; flex-wrap: wrap;">
+                                    <button type="button" class="btn btn-secondary btn-sm" onclick="addScopeFeature('🏢 Business branding & store logo sting included')" style="padding: 3px 8px; font-size: 0.72rem; font-weight: 600;">+ Brand Intro/Outro</button>
+                                    <button type="button" class="btn btn-secondary btn-sm" onclick="addScopeFeature('📝 Dynamic Styled Captions & Subtitles')" style="padding: 3px 8px; font-size: 0.72rem; font-weight: 600;">+ Dynamic Captions</button>
+                                    <button type="button" class="btn btn-secondary btn-sm" onclick="addScopeFeature('🎨 Pro Color Grading & Tone Matching')" style="padding: 3px 8px; font-size: 0.72rem; font-weight: 600;">+ Color Grade</button>
+                                    <button type="button" class="btn btn-secondary btn-sm" onclick="addScopeFeature('🎵 Sound Design, SFX & Commercial Music Track')" style="padding: 3px 8px; font-size: 0.72rem; font-weight: 600;">+ Sound Design</button>
+                                    <button type="button" class="btn btn-secondary btn-sm" onclick="addScopeFeature('🎬 4K 60fps Master Render Export (9:16 + 16:9)')" style="padding: 3px 8px; font-size: 0.72rem; font-weight: 600;">+ 4K Render</button>
+                                    <button type="button" class="btn btn-secondary btn-sm" onclick="addScopeFeature('🔥 High-CTR Clickable Thumbnail Cover')" style="padding: 3px 8px; font-size: 0.72rem; font-weight: 600;">+ Thumbnail</button>
+                                </div>
+                                <textarea class="form-textarea" id="pkg-scope" rows="5" placeholder="List exactly what the client receives..." oninput="updatePackageLivePreview()" style="font-family: inherit; font-size: 0.875rem; line-height: 1.5;">${escapeHTML(initialScope)}</textarea>
+                            </div>
+
+                            <!-- Section 6: Sample Video / Portfolio Reel -->
+                            <div class="form-group" style="margin-bottom: 24px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                    <label class="form-label" style="font-weight: 800; margin: 0;">
+                                        7. Showcase Reel or Sample Flyer (Optional)
+                                    </label>
+                                </div>
+                                <input type="file" id="pkg-sample-file" style="display:none;" accept="video/*,image/*" onchange="handlePackageSampleUpload(this.files[0])" />
+                                <input type="hidden" id="pkg-sample" value="${escapeHTML(initialSample)}">
+                                <div id="pkg-sample-preview" style="margin-top: 6px;">
+                                    ${renderPackageSamplePreviewHtml(initialSample)}
+                                </div>
+                                <div id="pkg-sample-status" style="display: none; font-size: 0.78rem; color: var(--accent); margin-top: 6px; font-weight: 600;"></div>
+                            </div>
+
+                            <!-- Submit Action -->
+                            <div style="display: flex; gap: 12px; flex-wrap: wrap; width: 100%; box-sizing: border-box;">
+                                <button type="submit" class="btn btn-primary" style="flex: 1 1 200px; padding: 14px; font-size: 0.95rem; font-weight: 800; border-radius: 12px; box-shadow: 0 6px 20px rgba(108, 92, 231, 0.35);">
+                                    ${isEdit ? '💾 Save Package Changes' : '🚀 Publish Service Package'}
+                                </button>
+                                <button type="button" class="btn btn-secondary" onclick="router('/packages')" style="flex: 0 0 auto; padding: 14px 20px; font-weight: 700; border-radius: 12px;">
+                                    Cancel
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Live Real-Time Card Preview -->
+                    <div style="position: sticky; top: 80px;">
+                        <div style="font-size: 0.8125rem; font-weight: 800; color: var(--text-secondary); margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+                            <span>👁️</span> Live Marketplace Preview
+                        </div>
+                        <div class="card" style="border: 2px solid var(--accent); border-radius: 16px; overflow: hidden; box-shadow: var(--shadow-lg); background: var(--bg-card);">
+                            <div style="background: linear-gradient(135deg, #6c5ce7, #a29bfe); padding: 16px 18px; color: white;">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px;">
+                                    <div style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 800; opacity: 0.9;">100% Escrow Protected</div>
+                                    <span id="preview-pkg-tier-badge" style="background: rgba(255,255,255,0.25); backdrop-filter: blur(4px); font-size: 0.7rem; font-weight: 800; padding: 2px 8px; border-radius: 6px; white-space: nowrap; border: 1px solid rgba(255,255,255,0.4);">
+                                        Level 1 (Beginner)
+                                    </span>
+                                </div>
+                                <h3 id="preview-pkg-title" style="font-size: 1.05rem; font-weight: 800; margin: 4px 0 0 0; color: white; line-height: 1.3;">
+                                    ${escapeHTML(initialTitle || 'Your Package Title')}
+                                </h3>
+                            </div>
+                            <div id="preview-pkg-media-wrap" style="position: relative; width: 100%; padding-top: 56.25%; background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%); overflow: hidden; ${initialSample ? '' : 'display: none;'}">
+                                ${initialSample && isMediaVideo(initialSample) ? `
+                                    <video src="${sanitizeUrl(initialSample)}" controls autoplay muted playsinline preload="metadata" style="position: absolute; top:0; left:0; width:100%; height:100%; object-fit: contain; background: #000;"></video>
+                                ` : initialSample ? `
+                                    <img src="${sanitizeUrl(initialSample)}" style="position: absolute; top:0; left:0; width:100%; height:100%; object-fit: cover;" alt="Sample">
+                                ` : ''}
+                            </div>
+                            <div style="padding: 18px;">
+                                <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--border);">
+                                    <span style="font-size: 0.8125rem; color: var(--text-muted); font-weight: 600;">Fixed Price</span>
+                                    <span id="preview-pkg-price" style="font-size: 1.35rem; font-weight: 900; color: var(--text-primary);">
+                                        ₹${initialPrice.toLocaleString()}
+                                    </span>
+                                </div>
+                                <div style="display: flex; gap: 10px; margin-bottom: 14px; font-size: 0.78rem;">
+                                    <span id="preview-pkg-turnaround" style="background: var(--bg-hover); padding: 4px 8px; border-radius: 6px; font-weight: 700; color: var(--text-primary);">
+                                        ⚡ ${escapeHTML(initialTurnaround)}
+                                    </span>
+                                    <span id="preview-pkg-revisions" style="background: var(--bg-hover); padding: 4px 8px; border-radius: 6px; font-weight: 700; color: var(--text-primary);">
+                                        🔄 ${initialRevisions} Revisions
+                                    </span>
+                                </div>
+                                <div style="font-size: 0.78rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 6px;">Included Deliverables:</div>
+                                <div id="preview-pkg-scope" style="font-size: 0.8125rem; color: var(--text-primary); line-height: 1.45; max-height: 150px; overflow-y: auto; margin-bottom: 16px;">
+                                    ${initialScope.split('\n').filter(Boolean).map(l => `<div style="margin-bottom: 3px; display: flex; gap: 6px; align-items: flex-start;"><span style="color: var(--success); font-weight: 700;">✓</span><span>${escapeHTML(l.replace(/^[•\-\*]\s*/, ''))}</span></div>`).join('')}
+                                </div>
+                                <button type="button" class="btn btn-primary" style="width: 100%; pointer-events: none; opacity: 0.85; font-weight: 800; padding: 10px; font-size: 0.875rem;">
+                                    📦 Hire / Book This Package
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+
+        const form = view.querySelector('#create-pkg-form');
+        if (form) {
+            form.removeAttribute('onsubmit');
+            form.addEventListener('submit', handleSubmit);
+        }
+        return view;
+    }
+
+    mount(renderCreatePackage());
+    return renderCreatePackage();
+}
+
+// =============== BOOKINGS ===============
+
+function BookingsList() {
+    let bookings = [];
+    let loading = true;
+
+    async function loadBookings() {
+        showLoading();
+        try {
+            bookings = await apiFetch('/bookings');
+        } catch (e) {
+            showToast(e.message, 'error');
+            bookings = [];
+        } finally {
+            loading = false;
+            mount(renderBookingsList());
+        }
+    }
+
+    loadBookings();
+
+    function renderBookingsList() {
+        const providerBookings = bookings.filter(b => b.provider_id === currentUser?.id);
+        const buyerBookings = bookings.filter(b => b.buyer_id === currentUser?.id);
+        const isProvider = currentUser?.user_type === 'PROVIDER';
+        const isBuyer = currentUser?.user_type === 'BUYER' || !currentUser?.user_type;
+
+        return el`<div>
+            ${renderAppHeader('/bookings')}
+            <div class="main">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+                    <button class="fiverr-back-btn" onclick="router('/')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
+                            <line x1="19" y1="12" x2="5" y2="12"></line>
+                            <polyline points="12 19 5 12 12 5"></polyline>
+                        </svg>
+                        <span><-- Back to Dashboard</span>
+                    </button>
+                    <div class="section-title" style="margin: 0;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                            <rect x="3" y="3" width="18" height="18" rx="2"/>
+                            <path d="M3 9h18"/>
+                            <path d="M9 21V9"/>
+                        </svg>
+                        My Bookings
+                    </div>
+                </div>
+
+                ${isProvider ? `
+                    <div class="section-title mb-4">Client Orders (${providerBookings.length})</div>
+                    ${providerBookings.length === 0 ? `
+                        <div class="card">
+                            <div class="empty-state">
+                                <h3>No client orders yet</h3>
+                                <p>When content creators book your packages or services, they will appear here.</p>
+                                <button class="btn btn-primary btn-sm mt-3" onclick="router('/packages')">Manage Packages</button>
+                            </div>
+                        </div>
+                    ` : renderBookingList(providerBookings, 'provider')}
+                ` : ''}
+
+                ${isBuyer ? `
+                    <div class="section-title mb-4">My Bookings (${buyerBookings.length})</div>
+                    ${buyerBookings.length === 0 ? `
+                        <div class="card">
+                            <div class="empty-state">
+                                <h3>No bookings yet</h3>
+                                <p>Browse verified editors and English tutors to find the right talent for your project.</p>
+                                <div class="flex gap-2 mt-4" style="justify-content: center;">
+                                    <button class="btn btn-primary btn-sm" onclick="router('/')">Browse Talent</button>
+                                    <button class="btn btn-secondary btn-sm" onclick="router('/create-booking')">New Booking</button>
+                                </div>
+                            </div>
+                        </div>
+                    ` : renderBookingList(buyerBookings, 'buyer')}
+                ` : ''}
+            </div>
+        </div>`;
+    }
+
+    function renderBookingList(list, role) {
+        return el`<div class="grid grid-2">
+            ${list.map(booking => {
+            const statusBadgeClass = getBookingBadge(booking.status);
+            const isClient = role === 'buyer';
+            const isTalent = role === 'provider';
+            const commission = booking.total_amount * 0.20;
+            const payout = booking.total_amount - commission;
+
+            return `
+                <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+                    <div class="card-body" style="padding: 16px;">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+                            <div>
+                                <div style="font-weight: 700; font-size: 0.9375rem; color: var(--text-primary);">
+                                    Booking #${booking.id}
+                                </div>
+                                <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">
+                                    ${new Date(booking.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
+                                </div>
+                            </div>
+                            <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end;">
+                                ${booking.is_free_sample ? '<span class="badge badge-success">🎁 FREE SAMPLE</span>' : ''}
+                                <span class="badge ${statusBadgeClass}">${booking.status.replace('_', ' ')}</span>
+                            </div>
+                        </div>
+
+                        ${booking.package ? `
+                            <div style="font-size: 0.875rem; font-weight: 600; color: var(--text-primary); margin-bottom: 6px;">
+                                📦 ${booking.package.title}
+                            </div>
+                            <div style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 8px;">
+                                ${booking.package.scope || 'Standard service scope'}
+                            </div>
+                        ` : ''}
+
+                        ${booking.is_free_sample ? `
+                            <div style="font-size:.78rem;color:var(--success);background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);padding:9px 11px;border-radius:8px;margin-bottom:10px;">
+                                🎁 Free sample task #${booking.sample_number || 1}. ${booking.client_notes ? escapeHTML(booking.client_notes) : 'Open the project chat for instructions.'}
+                            </div>
+                        ` : ''}
+                        ${booking.source_file_url ? `
+                            <a href="${sanitizeUrl(booking.source_file_url)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm" style="margin-bottom:10px;display:inline-flex;">📎 Open source files</a>
+                        ` : ''}
+
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: var(--bg-hover); border-radius: var(--radius-sm); margin-bottom: 12px;">
+                            <span style="font-size: 0.8125rem; color: var(--text-secondary);">Total Value</span>
+                            <span style="font-weight: 700; font-size: 1rem; color: var(--accent);">₹${booking.total_amount.toLocaleString()}</span>
+                        </div>
+
+                        ${isTalent ? `
+                            <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 8px;">
+                                Platform Fee: ₹0 • Full Payout: <strong style="color: var(--success);">₹${payout.toLocaleString()}</strong>
+                            </div>
+                        ` : ''}
+
+                        ${booking.delivery_file_link ? `
+                            <div style="margin-top: 10px; padding: 12px; background: rgba(108, 92, 231, 0.08); border: 1px solid var(--border); border-radius: var(--radius-sm);">
+                                <div style="font-size: 0.78rem; font-weight: 700; color: var(--accent); margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between;">
+                                    <span>📂 Project Delivery</span>
+                                    ${booking.delivery_file_link.match(/\.(mp4|mov|webm|mkv)$/i) || booking.delivery_file_link.startsWith('/static/') ? `<span class="badge badge-success" style="font-size:0.65rem;">4K Deliverable</span>` : ''}
+                                </div>
+                                ${booking.delivery_file_link.match(/\.(mp4|mov|webm|mkv)$/i) || (booking.delivery_file_link.startsWith('/static/') && !booking.delivery_file_link.endsWith('.zip') && !booking.delivery_file_link.endsWith('.pdf')) ? `
+                                    <video src="${sanitizeUrl(booking.delivery_file_link)}" controls preload="metadata" style="width: 100%; border-radius: 8px; max-height: 200px; background: #000; margin-bottom: 8px; display: block;"></video>
+                                    <div style="display: flex; gap: 8px;">
+                                        <a href="${sanitizeUrl(booking.delivery_file_link)}" download target="_blank" class="btn btn-outline btn-sm" style="flex: 1; text-align: center; font-size: 0.75rem; text-decoration: none;">
+                                            📥 Download 4K Original
+                                        </a>
+                                    </div>
+                                ` : `
+                                    <a href="${sanitizeUrl(booking.delivery_file_link)}" target="_blank" rel="noopener noreferrer" style="color: var(--accent); font-size: 0.8125rem; word-break: break-all; text-decoration: underline; font-weight: 600;">
+                                        🔗 ${escapeHTML(booking.delivery_file_link)}
+                                    </a>
+                                `}
+                            </div>
+                        ` : ''}
+
+                        <!-- Action Buttons -->
+                        <div style="margin-top: 14px; display: flex; flex-direction: column; gap: 8px;">
+                            <button class="btn btn-secondary btn-sm" onclick="openBookingChat(${booking.id}, '${isClient ? 'Editor / Provider' : 'Client / Buyer'}')">
+                                💬 Project Chat & Messages
+                            </button>
+
+                            <!-- On-Site Store Visit QR Check-In Verification -->
+                            ${booking.onsite_checkin_at ? `
+                                <div style="background: rgba(34, 197, 94, 0.12); border: 1px solid var(--success); border-radius: 8px; padding: 8px 10px; font-size: 0.78rem; color: var(--success); font-weight: 700; text-align: center;">
+                                    ✅ Verified On-Site Arrival via QR (${new Date(booking.onsite_checkin_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})})
+                                </div>
+                            ` : `
+                                ${isTalent ? `
+                                    <button class="btn btn-outline btn-sm" onclick="openOnSiteCheckInModal(${booking.id})" style="border-color: var(--accent); color: var(--accent); font-weight: 700;">
+                                        📱 Show On-Site Check-In QR Code
+                                    </button>
+                                ` : `
+                                    <button class="btn btn-outline btn-sm" onclick="openScanArrivalModal(${booking.id})" style="border-color: var(--success); color: var(--success); font-weight: 700;">
+                                        🔍 Verify Creator Arrival (QR Scan)
+                                    </button>
+                                `}
+                            `}
+
+                            ${isTalent && booking.status === 'confirmed' ? `
+                                <button class="btn btn-primary btn-sm" onclick="startProject(${booking.id})">
+                                    ▶️ Start Working on Project
+                                </button>
+                            ` : ''}
+
+                            ${isTalent && booking.status === 'in_progress' ? `
+                                <button class="btn btn-primary btn-sm" onclick="openDeliverWorkModal(${booking.id})">
+                                    🚀 Deliver Completed Work (4K / Link)
+                                </button>
+                            ` : ''}
+
+                            ${isTalent && booking.status === 'delivered' ? `
+                                <div style="font-size: 0.8125rem; color: var(--text-secondary); text-align: center; padding: 4px;">
+                                    ⏳ Waiting for buyer approval & payment release
+                                </div>
+                            ` : ''}
+
+                            ${isClient && (booking.status === 'delivered' || booking.status === 'pending_approval') ? `
+                                <div style="display: flex; gap: 8px;">
+                                    <button class="btn btn-success btn-sm" style="flex: 1;" onclick="approveBooking(${booking.id})">
+                                        ✅ Approve & Release
+                                    </button>
+                                    <button class="btn btn-danger btn-sm" style="flex: 1;" onclick="disputeBooking(${booking.id})">
+                                        ⚠️ Dispute
+                                    </button>
+                                </div>
+                            ` : ''}
+
+                            ${isClient && (booking.status === 'approved' || booking.status === 'completed') ? `
+                                <button class="btn btn-secondary btn-sm" onclick="openReviewModal(${booking.id})">
+                                    ⭐ Leave Review & Rating
+                                </button>
+                            ` : ''}
+
+                            ${isClient && (booking.status === 'pending_payment' || booking.status === 'pending') ? `
+                                <div style="display: flex; gap: 8px;">
+                                    <button class="btn btn-primary btn-sm" style="flex: 1;" onclick="PaymentsPortal.payPendingOrder(${booking.id}, ${booking.total_amount})">
+                                        💳 Pay & Secure in Escrow
+                                    </button>
+                                    <button class="btn btn-secondary btn-sm" onclick="cancelPendingBooking(${booking.id})">
+                                        ✕ Cancel
+                                    </button>
+                                </div>
+                            ` : ''}
+
+                            ${booking.status === 'disputed' ? `
+                                <div style="font-size: 0.75rem; color: var(--danger); background: rgba(225, 112, 85, 0.1); padding: 8px; border-radius: var(--radius-sm); text-align: center;">
+                                    ⚠️ Dispute opened. Marketplace admin is reviewing.
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>`;
+        }).join('')}
+        </div>`;
+    }
+
+    window.cancelPendingBooking = async (id) => {
+        if (!confirm('Cancel this unpaid booking?')) return;
+        showLoading();
+        try {
+            await apiFetch(`/bookings/${id}/status`, {
+                method: 'PATCH',
+                body: JSON.stringify({ status: 'cancelled' })
+            });
+            showToast('Booking cancelled.', 'info');
+            loadBookings();
+        } catch (e) {
+            showToast(e.message, 'error');
+            loadBookings();
+        }
+    };
+
+    window.openOnSiteCheckInModal = async (bookingId) => {
+        showLoading();
+        try {
+            const data = await apiFetch(`/bookings/${bookingId}/checkin-qr`);
+            hideLoading();
+
+            const existing = document.getElementById('qr-checkin-modal');
+            if (existing) existing.remove();
+
+            const overlay = document.createElement('div');
+            overlay.id = 'qr-checkin-modal';
+            overlay.className = 'modal-backdrop';
+            overlay.innerHTML = `
+                <div class="card" style="max-width: 440px; width: 100%; border-radius: 16px; padding: 24px; text-align: center; background: var(--bg-card); border: 1px solid var(--border); box-shadow: var(--shadow-lg);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                        <h3 style="font-size: 1.15rem; font-weight: 800; margin: 0; color: var(--text-primary);">📱 On-Site QR Check-In</h3>
+                        <button type="button" onclick="document.getElementById('qr-checkin-modal').remove()" style="background:none; border:none; color:var(--text-muted); font-size:1.4rem; cursor:pointer;">&times;</button>
+                    </div>
+                    <div style="font-size: 0.8125rem; color: var(--text-secondary); margin-bottom: 16px; line-height: 1.45;">
+                        Show this QR Code to <strong>${escapeHTML(data.buyer_name || 'Shop Owner')}</strong> when you arrive at their store/venue to verify your on-site arrival.
+                    </div>
+                    <div style="background: white; padding: 12px; border-radius: 14px; display: inline-block; box-shadow: 0 4px 16px rgba(0,0,0,0.12); margin-bottom: 16px;">
+                        <img src="${data.qr_image_url}" alt="On-Site Check-In QR" style="width: 220px; height: 220px; display: block; border-radius: 8px;">
+                    </div>
+                    <div id="checkin-verification-badge" style="margin-bottom: 16px;">
+                        ${data.is_verified ? `
+                            <div style="background: rgba(34, 197, 94, 0.12); border: 1px solid var(--success); border-radius: 10px; padding: 10px; color: var(--success); font-weight: 700; font-size: 0.85rem;">
+                                ✅ Verified On-Site Arrival at ${new Date(data.checkin_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}
+                            </div>
+                        ` : `
+                            <div style="background: rgba(245, 158, 11, 0.12); border: 1px solid #f59e0b; border-radius: 10px; padding: 10px; color: #f59e0b; font-weight: 700; font-size: 0.8125rem;">
+                                ⏳ Waiting for shop owner to scan QR code...
+                            </div>
+                        `}
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <button type="button" class="btn btn-secondary btn-sm" style="flex:1;" onclick="document.getElementById('qr-checkin-modal').remove()">Close</button>
+                        <button type="button" class="btn btn-primary btn-sm" style="flex:1;" onclick="openOnSiteCheckInModal(${bookingId})">🔄 Refresh Status</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+        } catch (e) {
+            hideLoading();
+            showToast(e.message || 'Error loading check-in QR', 'error');
+        }
+    };
+
+    window.openScanArrivalModal = async (bookingId) => {
+        showLoading();
+        try {
+            const res = await apiFetch(`/bookings/${bookingId}/verify-checkin`, { method: 'POST' });
+            hideLoading();
+            showToast('✅ Creator arrival verified! Escrow filming active.', 'success');
+            if (typeof loadBookings === 'function') loadBookings();
+        } catch (e) {
+            hideLoading();
+            showToast(e.message || 'Failed to verify arrival', 'error');
+        }
+    };
+
+    window.startProject = async (id) => {
+        showLoading();
+        try {
+            await apiFetch(`/bookings/${id}/status`, {
+                method: 'PATCH',
+                body: JSON.stringify({ status: 'in_progress' })
+            });
+            showToast('Project started! Status is now In Progress.', 'success');
+            loadBookings();
+        } catch (e) {
+            showToast(e.message, 'error');
+            loadBookings();
+        }
+    };
+
+    window.approveBooking = async (id) => {
+        if (!confirm('Approve this delivery and release full payment to provider?')) return;
+        showLoading();
+        try {
+            await apiFetch(`/bookings/${id}/approve`, { method: 'POST' });
+            showToast('Booking approved and payment released!', 'success');
+            loadBookings();
+        } catch (e) {
+            showToast(e.message, 'error');
+            loadBookings();
+        }
+    };
+
+    window.disputeBooking = async (id) => {
+        const reason = prompt('Please describe why you are disputing this booking:');
+        if (!reason) return;
+        showLoading();
+        try {
+            await apiFetch(`/bookings/${id}/dispute`, {
+                method: 'POST',
+                body: JSON.stringify({ description: reason })
+            });
+            showToast('Dispute opened. Admin has been notified.', 'success');
+            loadBookings();
+        } catch (e) {
+            showToast(e.message, 'error');
+            loadBookings();
+        }
+    };
+
+    window.openDeliverWorkModal = (id) => {
+        const existing = document.getElementById('deliver-work-modal-root');
+        if (existing) existing.remove();
+
+        const modalRoot = document.createElement('div');
+        modalRoot.id = 'deliver-work-modal-root';
+        modalRoot.className = 'fiverr-escrow-modal';
+        modalRoot.innerHTML = `
+            <div class="fiverr-escrow-card" style="max-width: 560px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <div>
+                        <h3 style="margin: 0; font-size: 1.15rem; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+                            <span>🚀</span> Deliver Work for Order #${id}
+                        </h3>
+                        <div style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 2px;">
+                            Upload final 4K video (up to 1GB) or attach project link.
+                        </div>
+                    </div>
+                    <button class="modal-close" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--text-muted);">&times;</button>
+                </div>
+
+                <!-- Direct 4K Delivery File Upload Dropzone -->
+                <div class="delivery-upload-zone" style="border: 2px dashed var(--border); border-radius: 12px; padding: 20px; text-align: center; background: var(--bg-hover); cursor: pointer; margin-bottom: 16px;" onclick="document.getElementById('delivery-file-input').click()">
+                    <input type="file" id="delivery-file-input" style="display:none;" accept="video/*,application/zip,image/*,application/pdf" onchange="handleDeliveryFileUpload(this.files[0])" />
+                    <div style="font-size: 2rem; margin-bottom: 4px;">📦</div>
+                    <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-primary);">Click to Attach 4K Export / Project Files</div>
+                    <div style="font-size: 0.76rem; color: var(--text-muted);">Direct streaming up to 1GB (MP4, MOV, MKV, ZIP, PDF)</div>
+                    <div id="delivery-upload-progress" style="display: none; margin-top: 12px; text-align: left; background: var(--bg-card); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border);">
+                        <div style="display: flex; justify-content: space-between; font-size: 0.75rem; font-weight: 700; margin-bottom: 4px;">
+                            <span id="delivery-upload-status">Uploading...</span>
+                            <span id="delivery-upload-pct">0%</span>
+                        </div>
+                        <div style="width: 100%; height: 6px; background: var(--border); border-radius: 999px; overflow: hidden;">
+                            <div id="delivery-upload-bar" style="width: 0%; height: 100%; background: var(--accent); transition: width 0.15s ease;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 14px;">
+                    <label class="form-label" style="font-weight: 700; font-size: 0.85rem;">Delivery Link / File URL <span style="color: var(--danger);">*</span></label>
+                    <input type="text" class="form-input" id="delivery-link-input" placeholder="Uploaded file path or Google Drive / Frame.io / Dropbox link" required style="font-size: 0.875rem;">
+                </div>
+
+                <div class="form-group" style="margin-bottom: 18px;">
+                    <label class="form-label" style="font-weight: 700; font-size: 0.85rem;">Delivery Notes / Client Instructions</label>
+                    <textarea class="form-textarea" id="delivery-notes-input" rows="3" placeholder="Describe the finished deliverables or revision notes for the client..." style="font-size: 0.85rem;"></textarea>
+                </div>
+
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('deliver-work-modal-root').remove()">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="btn-submit-delivery" onclick="submitWorkDelivery(${id})" style="padding: 10px 22px; font-weight: 700;">
+                        🚀 Complete &amp; Deliver Work
+                    </button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modalRoot);
+        modalRoot.querySelector('.modal-close').onclick = () => modalRoot.remove();
+        modalRoot.onclick = (e) => { if (e.target === modalRoot) modalRoot.remove(); };
+    };
+
+    window.handleDeliveryFileUpload = (file) => {
+        if (!file) return;
+        const MAX_SIZE = 1024 * 1024 * 1024; // 1GB
+        if (file.size > MAX_SIZE) {
+            showToast('File exceeds 1GB limit', 'error');
+            return;
+        }
+
+        const wrap = document.getElementById('delivery-upload-progress');
+        const bar = document.getElementById('delivery-upload-bar');
+        const pct = document.getElementById('delivery-upload-pct');
+        const status = document.getElementById('delivery-upload-status');
+        const submitBtn = document.getElementById('btn-submit-delivery');
+
+        if (wrap) wrap.style.display = 'block';
+        if (bar) bar.style.width = '0%';
+        if (pct) pct.textContent = '0%';
+        if (status) status.textContent = `Uploading ${file.name} (${(file.size / (1024 * 1024)).toFixed(1)} MB)...`;
+        if (submitBtn) submitBtn.disabled = true;
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', '/api/upload', true);
+
+        const token = currentToken || localStorage.getItem('access_token');
+        if (token) {
+            xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+        }
+
+        xhr.upload.onprogress = (e) => {
+            if (e.lengthComputable) {
+                const percent = Math.round((e.loaded / e.total) * 100);
+                if (bar) bar.style.width = `${percent}%`;
+                if (pct) pct.textContent = `${percent}%`;
+                if (status) status.textContent = `Uploading: ${(e.loaded / (1024 * 1024)).toFixed(1)} MB / ${(e.total / (1024 * 1024)).toFixed(1)} MB (${percent}%)`;
+            }
+        };
+
+        xhr.onload = () => {
+            if (submitBtn) submitBtn.disabled = false;
+            if (xhr.status === 200) {
+                try {
+                    const res = JSON.parse(xhr.responseText);
+                    const linkInput = document.getElementById('delivery-link-input');
+                    if (linkInput) linkInput.value = res.url;
+                    if (status) status.textContent = '✅ 4K File Attached!';
+                    if (bar) bar.style.width = '100%';
+                    if (pct) pct.textContent = '100%';
+                    showToast('4K File uploaded successfully!', 'success');
+                } catch (_) {
+                    showToast('Failed to parse upload response', 'error');
+                }
+            } else {
+                showToast('Upload failed', 'error');
+                if (status) status.textContent = '❌ Upload failed';
+            }
+        };
+
+        xhr.onerror = () => {
+            if (submitBtn) submitBtn.disabled = false;
+            showToast('Network error during upload', 'error');
+            if (status) status.textContent = '❌ Network error';
+        };
+
+        xhr.send(formData);
+    };
+
+    window.submitWorkDelivery = async (id) => {
+        const linkInput = document.getElementById('delivery-link-input');
+        const notesInput = document.getElementById('delivery-notes-input');
+        const link = linkInput ? linkInput.value.trim() : '';
+        const notes = notesInput ? notesInput.value.trim() : '';
+
+        if (!link) {
+            showToast('Please attach a file or provide a delivery link', 'error');
+            return;
+        }
+
+        showLoading();
+        try {
+            await apiFetch(`/bookings/${id}/delivery`, {
+                method: 'PATCH',
+                body: JSON.stringify({
+                    delivery_file_link: link,
+                    delivery_file_url: link
+                })
+            });
+
+            if (notes) {
+                try {
+                    await apiFetch(`/bookings/${id}/messages`, {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            content: `🚀 **Order Delivered:**\n${notes}\n\nDeliverable: ${link}`
+                        })
+                    });
+                } catch (_) {}
+            }
+
+            const modal = document.getElementById('deliver-work-modal-root');
+            if (modal) modal.remove();
+
+            showToast('Order delivered successfully! Client has been notified.', 'success');
+            loadBookings();
+        } catch (e) {
+            showToast(e.message || 'Delivery submission failed', 'error');
+        } finally {
+            hideLoading();
+        }
+    };
+
+    window.markDelivered = window.openDeliverWorkModal;
+
+    window.leaveReview = async (id) => {
+        const ratingStr = prompt('Rate provider (1 to 5 stars):', '5');
+        if (!ratingStr) return;
+        const rating = parseInt(ratingStr);
+        if (isNaN(rating) || rating < 1 || rating > 5) {
+            showToast('Please enter a rating between 1 and 5', 'error');
+            return;
+        }
+        const comment = prompt('Write a review comment (optional):') || 'Great work!';
+        showLoading();
+        try {
+            await apiFetch('/reviews', {
+                method: 'POST',
+                body: JSON.stringify({
+                    booking_id: id,
+                    rating: rating,
+                    comment: comment
+                })
+            });
+            showToast('Review submitted! Thank you.', 'success');
+            loadBookings();
+        } catch (e) {
+            showToast(e.message, 'error');
+            loadBookings();
+        }
+    };
+
+    mount(renderBookingsList());
+    return renderBookingsList();
+}
+
+// =============== CREATE BOOKING ===============
+
+function CreateBooking() {
+    let packages = [];
+    let providerMap = {};
+    let grouped = {};
+    let loading = true;
+    let error = '';
+
+    async function loadPackages() {
+        showLoading();
+        try {
+            packages = await apiFetch('/packages?status=approved');
+            packagesForFreeSample = packages;
+            grouped = {};
+            packages.forEach(p => {
+                if (!grouped[p.provider_id]) {
+                    grouped[p.provider_id] = {
+                        provider: null,
+                        packages: []
+                    };
+                }
+                grouped[p.provider_id].packages.push(p);
+            });
+
+            // Pre-fetch provider details
+            const distinctIds = Object.keys(grouped);
+            await Promise.all(
+                distinctIds.map(async id => {
+                    try {
+                        const user = await apiFetch(`/auth/${id}`);
+                        grouped[id].provider = {
+                            id: parseInt(id),
+                            name: user?.name || `Provider #${id}`,
+                            rating: user?.rating || 0
+                        };
+                    } catch {
+                        grouped[id].provider = {
+                            id: parseInt(id),
+                            name: `Provider #${id}`,
+                            rating: 0
+                        };
+                    }
+                })
+            );
+        } catch (e) {
+            error = e.message;
+            packages = [];
+        } finally {
+            loading = false;
+            mount(renderCreateBooking());
+        }
+    }
+
+    loadPackages();
+
+    async function handleSubmit(e) {
+        e.preventDefault();
+        try {
+            const packageId = parseInt(document.getElementById('booking-package').value);
+            const providerId = parseInt(document.getElementById('booking-provider').value);
+            const selectedPkg = packages.find(p => p.id === packageId);
+
+            if (!selectedPkg) {
+                showToast('Please select a valid package', 'error');
+                return;
+            }
+
+            showLoading();
+
+            // Step 1: Create commercial payment order
+            const orderData = await apiFetch('/payments/create-order', {
+                method: 'POST',
+                body: JSON.stringify({
+                    package_id: packageId,
+                    niche: selectedPkg.niche || 'editors_animators',
+                    notes: document.getElementById('booking-notes')?.value?.trim() || null,
+                    source_file_url: document.getElementById('booking-source-url')?.value?.trim() || null
+                })
+            });
+            hideLoading();
+
+            // Step 2: Launch Razorpay Standard Checkout (if configured with live key)
+            const rzpKey = orderData.razorpay_key_id;
+
+            if (typeof Razorpay !== 'undefined' && rzpKey && rzpKey.trim().length > 0) {
+                const options = {
+                    key: rzpKey,
+                    amount: orderData.amount_paise,
+                    currency: "INR",
+                    name: "Groove Hub",
+                    description: `${selectedPkg.title} (100% Escrow Protected)`,
+                    image: "/static/icons/icon-192.png",
+                    order_id: orderData.order_id && orderData.order_id.startsWith('order_') ? orderData.order_id : undefined,
+                    prefill: {
+                        name: currentUser?.name || orderData.buyer_name || 'Client',
+                        email: currentUser?.email || orderData.buyer_email || '',
+                        contact: currentUser?.phone || orderData.buyer_phone || ''
+                    },
+                    theme: {
+                        color: "#6c5ce7"
+                    },
+                    handler: async function (response) {
+                        showLoading();
+                        try {
+                            await apiFetch('/payments/verify', {
+                                method: 'POST',
+                                body: JSON.stringify({
+                                    booking_id: orderData.booking_id,
+                                    razorpay_payment_id: response.razorpay_payment_id || `pay_${Date.now()}`,
+                                    razorpay_order_id: response.razorpay_order_id || orderData.order_id,
+                                    razorpay_signature: response.razorpay_signature || ''
+                                })
+                            });
+                            showToast(`🎉 Payment of ₹${selectedPkg.price.toLocaleString()} secured in Escrow! Provider notified.`, 'success');
+                            sessionStorage.removeItem('selected_provider_id');
+                            sessionStorage.removeItem('selected_package_id');
+                            router('/bookings');
+                        } catch (err) {
+                            showToast('Payment verification note: ' + err.message, 'error');
+                            router('/bookings');
+                        } finally {
+                            hideLoading();
+                        }
+                    },
+                    modal: {
+                        ondismiss: function () {
+                            showToast('Payment window closed. Order is pending in your bookings.', 'info');
+                        }
+                    }
+                };
+
+                const rzp = new Razorpay(options);
+                rzp.on('payment.failed', function (resp) {
+                    showToast('Payment failed: ' + (resp.error?.description || 'Unknown payment error'), 'error');
+                });
+                rzp.open();
+            } else {
+                hideLoading();
+                showToast('Online payment is not configured yet. Please try again later.', 'error');
+            }
+        } catch (e) {
+            error = e.message;
+            hideLoading();
+            showToast(error, 'error');
+            if (error) mount(renderCreateBooking());
+        }
+    }
+
+    window.handleSubmit = handleSubmit;
+
+    function renderCreateBooking() {
+        const view = el`<div>
+            ${renderAppHeader('/create-booking')}
+            <div class="main">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+                    <button class="fiverr-back-btn" onclick="router('/')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
+                            <line x1="19" y1="12" x2="5" y2="12"></line>
+                            <polyline points="12 19 5 12 12 5"></polyline>
+                        </svg>
+                        <span><-- Back to Talent Directory</span>
+                    </button>
+                    <div class="section-title" style="margin: 0;">Create Booking Order</div>
+                </div>
+                ${error ? `<div class="toast toast-error" style="margin-bottom: 12px;">${error}</div>` : ''}
+                <div class="card" style="max-width: 520px;">
+                    <form onsubmit="handleSubmit(event)">
+                        <div class="form-group">
+                            <label class="form-label">Select Provider</label>
+                            <select class="form-select" id="booking-provider" required onchange="filterPackagesByProvider()">
+                                <option value="">Choose a provider...</option>
+                                ${Object.keys(grouped).map(id => `
+                                    <option value="${id}">${grouped[id].provider?.name || `Provider #${id}`}</option>
+                                `).join('')}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Select Package</label>
+                            <select class="form-select" id="booking-package" required onchange="updateProviderForPackage()">
+                                <option value="">Choose a package...</option>
+                                ${packages.map(p => `
+                                    <option value="${p.id}" data-provider="${p.provider_id}">
+                                        ${p.title} — ${p.package_level ? p.package_level.toUpperCase() : 'BEGINNER'} • ₹${p.price.toLocaleString()} (${p.turnaround})
+                                    </option>
+                                `).join('')}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">What should the creator do?</label>
+                            <textarea class="form-textarea" id="booking-notes" rows="4" maxlength="5000" placeholder="Example: Turn my shop footage into a 30-second Instagram ad with our logo and WhatsApp CTA."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Source video / files (optional)</label>
+                            <input class="form-input" id="booking-source-url" type="url" placeholder="Paste your Drive, Dropbox or uploaded Groove Hub file link">
+                            <div style="font-size:.72rem;color:var(--text-muted);margin-top:5px;">For large files, upload them through Groove Hub and paste the returned file link here.</div>
+                        </div>
+                        <div id="free-sample-panel" style="display:none; background:rgba(16,185,129,.08); border:1px solid rgba(16,185,129,.25); border-radius:12px; padding:14px; margin-bottom:14px;">
+                            <div style="font-weight:800;color:var(--text-primary);">🎁 Free sample available</div>
+                            <div id="free-sample-text" style="font-size:.8rem;color:var(--text-secondary);margin-top:4px;"></div>
+                            <button type="button" class="btn btn-success" id="free-sample-btn" style="width:100%;margin-top:10px;">Request Free Sample</button>
+                        </div>
+                        <div class="form-group" id="total-amount" style="display: none; background: var(--bg-hover); padding: 12px 16px; border-radius: var(--radius-sm);">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span class="form-label" style="margin: 0;">Total Amount (Escrow)</span>
+                                <div style="font-size: 1.25rem; font-weight: 700; color: var(--accent);">₹<span id="amount-display">0</span></div>
+                            </div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">
+                                Payment held securely in escrow until you approve delivery
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary" style="display: none; margin-top: 14px;" id="submit-booking">Confirm Booking & Hold Escrow</button>
+                    </form>
+                </div>
+                <div class="card" style="margin-top: 16px; max-width: 520px;">
+                    <div class="card-header">
+                        <div class="card-title">How Escrow Protection Works</div>
+                    </div>
+                    <div class="card-body">
+                        <ol style="padding-left: 20px; font-size: 0.8125rem; color: var(--text-secondary); line-height: 1.6;">
+                            <li>Select a provider and package</li>
+                            <li>Order is confirmed and payment is held safely in escrow</li>
+                            <li>Provider delivers the completed project files</li>
+                            <li>You review the work and click <strong>Approve</strong> to release the payout</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+        const form = view.querySelector('form');
+        if (form) { form.removeAttribute('onsubmit'); form.addEventListener('submit', handleSubmit); }
+
+        const savedProv = sessionStorage.getItem('selected_provider_id');
+        const savedPkg = sessionStorage.getItem('selected_package_id');
+        if (savedProv) {
+            const provSelect = view.querySelector('#booking-provider');
+            if (provSelect) provSelect.value = savedProv;
+        }
+        if (savedPkg) {
+            const pkgSelect = view.querySelector('#booking-package');
+            if (pkgSelect) {
+                pkgSelect.value = savedPkg;
+                setTimeout(() => window.updateProviderForPackage?.(), 0);
+            }
+        }
+        return view;
+    }
+
+    window.filterPackagesByProvider = () => {
+        const provId = document.getElementById('booking-provider')?.value;
+        const pkgSelect = document.getElementById('booking-package');
+        if (!pkgSelect) return;
+        if (!provId) {
+            pkgSelect.innerHTML = '<option value="">Choose a package...</option>' + packages.map(p => `
+                <option value="${p.id}" data-provider="${p.provider_id}">
+                    ${p.title} — ${p.package_level ? p.package_level.toUpperCase() : 'BEGINNER'} • ₹${p.price.toLocaleString()} (${p.turnaround})
+                </option>
+            `).join('');
+            return;
+        }
+        const filtered = packages.filter(p => p.provider_id === parseInt(provId));
+        pkgSelect.innerHTML = '<option value="">Choose a package...</option>' + filtered.map(p => `
+            <option value="${p.id}" data-provider="${p.provider_id}">
+                ${p.title} — ₹${p.price.toLocaleString()} (${p.turnaround})
+            </option>
+        `).join('');
+        window.updateProviderForPackage();
+    };
+
+    window.updateProviderForPackage = () => {
+        const pkgSelect = document.getElementById('booking-package');
+        if (!pkgSelect || pkgSelect.selectedIndex < 0) return;
+        const selectedOption = pkgSelect.options[pkgSelect.selectedIndex];
+        const providerId = selectedOption?.getAttribute('data-provider');
+
+        const amountDisplay = document.getElementById('amount-display');
+        const submitBtn = document.getElementById('submit-booking');
+        const totalAmountGroup = document.getElementById('total-amount');
+
+        if (providerId && selectedOption.value) {
+            const pkg = packages.find(p => p.id === parseInt(selectedOption.value));
+            if (pkg) {
+                amountDisplay.textContent = pkg.price.toLocaleString();
+                totalAmountGroup.style.display = 'block';
+                submitBtn.style.display = 'block';
+                const samplePanel = document.getElementById('free-sample-panel');
+                const sampleText = document.getElementById('free-sample-text');
+                const sampleBtn = document.getElementById('free-sample-btn');
+                const level = (pkg.package_level || 'beginner').toLowerCase();
+                const limit = Number(pkg.free_sample_limit || (level === 'pro' ? 1 : level === 'intermediate' ? 2 : 3));
+                if (samplePanel && sampleText && sampleBtn) {
+                    samplePanel.style.display = 'block';
+                    sampleText.textContent = `${level.charAt(0).toUpperCase()+level.slice(1)} providers offer up to ${limit} free sample task${limit === 1 ? '' : 's'} to help a shop test the service.`;
+                    sampleBtn.onclick = requestFreeSample;
+                }
+            }
+        } else {
+            amountDisplay.textContent = '0';
+            totalAmountGroup.style.display = 'none';
+            submitBtn.style.display = 'none';
+        }
+    };
+}
+
+// =============== PAYMENTS & ESCROW PORTAL ===============
+function PaymentsPortal() {
+    let payments = [];
+    let loading = true;
+    let activeFilter = 'all';
+    let searchQuery = '';
+
+    async function loadPayments() {
+        showLoading();
+        try {
+            payments = await apiFetch('/payments');
+        } catch (e) {
+            showToast(e.message || 'Failed to load payments', 'error');
+            payments = [];
+        } finally {
+            loading = false;
+            mount(renderPaymentsPortal());
+        }
+    }
+
+    loadPayments();
+
+    function renderPaymentsPortal() {
+        const isBuyer = currentUser?.user_type === 'BUYER' || !currentUser?.user_type;
+        const isProvider = currentUser?.user_type === 'PROVIDER';
+        const isAdmin = currentUser?.user_type === 'ADMIN';
+
+        // Filter counts
+        const heldList = payments.filter(p => p.status === 'held' || p.status === 'held_in_escrow');
+        const releasedList = payments.filter(p => p.status === 'released');
+        const pendingList = payments.filter(p => p.status === 'pending');
+        const refundedList = payments.filter(p => p.status === 'refunded' || p.status === 'disputed');
+
+        // Financial Metrics based on role
+        let stat1 = { label: 'Total Volume', value: '₹0', subtext: '0 transactions', icon: '💳' };
+        let stat2 = { label: 'In Escrow', value: '₹0', subtext: 'Protected funds', icon: '🔒' };
+        let stat3 = { label: 'Released', value: '₹0', subtext: 'Direct to bank', icon: '🏦' };
+        let stat4 = { label: 'Total Transactions', value: '0', subtext: 'Orders processed', icon: '📦' };
+
+        if (isAdmin) {
+            const gmv = payments.reduce((acc, p) => acc + (p.amount || 0), 0);
+            const comm = payments.reduce((acc, p) => acc + (p.platform_commission || 0), 0);
+            const payouts = payments.reduce((acc, p) => acc + (p.provider_payout || 0), 0);
+            const inEscrow = heldList.reduce((acc, p) => acc + (p.amount || 0), 0);
+
+            stat1 = { label: 'Gross Merchandise Value', value: `₹${gmv.toLocaleString()}`, subtext: `${payments.length} total orders`, icon: '🌐' };
+            stat2 = { label: 'Platform Revenue (20%)', value: `₹${comm.toLocaleString()}`, subtext: 'Earned marketplace commission', icon: '🏦' };
+            stat3 = { label: '80% Provider Payouts', value: `₹${payouts.toLocaleString()}`, subtext: `${releasedList.length} released orders`, icon: '💸' };
+            stat4 = { label: 'Active Escrow Vault', value: `₹${inEscrow.toLocaleString()}`, subtext: `${heldList.length} orders in escrow`, icon: '🔒' };
+        } else if (isProvider) {
+            const netEarnings = releasedList.reduce((acc, p) => acc + (p.provider_payout || 0), 0);
+            const escrowEarnings = heldList.reduce((acc, p) => acc + (p.provider_payout || 0), 0);
+            const platformFee = payments.reduce((acc, p) => acc + (p.platform_commission || 0), 0);
+
+            stat1 = { label: 'Net Earnings (80%)', value: `₹${netEarnings.toLocaleString()}`, subtext: 'Released to your bank', icon: '💰' };
+            stat2 = { label: 'Pending in Escrow', value: `₹${escrowEarnings.toLocaleString()}`, subtext: 'Locked until client approval', icon: '⏳' };
+            stat3 = { label: 'Platform Fee (20%)', value: `₹${platformFee.toLocaleString()}`, subtext: '20% platform escrow fee', icon: '🏷️' };
+            stat4 = { label: 'Completed Orders', value: releasedList.length.toString(), subtext: `${heldList.length} ongoing in escrow`, icon: '✅' };
+        } else {
+            // Buyer
+            const totalSpent = payments.reduce((acc, p) => acc + (p.amount || 0), 0);
+            const inEscrow = heldList.reduce((acc, p) => acc + (p.amount || 0), 0);
+            const pendingAmount = pendingList.reduce((acc, p) => acc + (p.amount || 0), 0);
+
+            stat1 = { label: 'Total Paid', value: `₹${totalSpent.toLocaleString()}`, subtext: `${payments.length} total bookings`, icon: '💳' };
+            stat2 = { label: 'Protected in Escrow', value: `₹${inEscrow.toLocaleString()}`, subtext: '100% safe until delivery', icon: '🛡️' };
+            stat3 = { label: 'Completed Orders', value: releasedList.length.toString(), subtext: 'Approved & released', icon: '🎉' };
+            stat4 = { label: 'Pending Checkout', value: `₹${pendingAmount.toLocaleString()}`, subtext: `${pendingList.length} orders awaiting payment`, icon: '⏳' };
+        }
+
+        // Filter and Search
+        let filtered = payments;
+        if (activeFilter === 'held') {
+            filtered = heldList;
+        } else if (activeFilter === 'released') {
+            filtered = releasedList;
+        } else if (activeFilter === 'pending') {
+            filtered = pendingList;
+        } else if (activeFilter === 'refunded') {
+            filtered = refundedList;
+        }
+
+        if (searchQuery.trim()) {
+            const q = searchQuery.toLowerCase().trim();
+            filtered = filtered.filter(p => {
+                const pkg = (p.package_title || '').toLowerCase();
+                const buyer = (p.buyer_name || '').toLowerCase();
+                const prov = (p.provider_name || '').toLowerCase();
+                const txn = (p.gateway_txn_id || '').toLowerCase();
+                const bid = `booking #${p.booking_id}`.toLowerCase();
+                return pkg.includes(q) || buyer.includes(q) || prov.includes(q) || txn.includes(q) || bid.includes(q);
+            });
+        }
+
+        return el`<div>
+            ${renderAppHeader('/payments')}
+            <div class="payments-container">
+                <!-- Page Navigation -->
+                <div class="fiverr-nav-top" style="margin-top: 14px; margin-bottom: 8px;">
+                    <button class="fiverr-back-btn" onclick="router('/')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
+                            <line x1="19" y1="12" x2="5" y2="12"></line>
+                            <polyline points="12 19 5 12 12 5"></polyline>
+                        </svg>
+                        <span><-- Back to Dashboard</span>
+                    </button>
+                    <button class="fiverr-back-btn" onclick="router('/')" style="opacity: 0.85;">
+                        <span>🌟 Browse Talent</span>
+                    </button>
+                </div>
+
+                <!-- Page Header -->
+                <div class="payments-header" style="margin-top: 14px;">
+                    <div class="payments-title-group">
+                        <h1>
+                            <span>💳 Payments & Escrow Hub</span>
+                        </h1>
+                        <p>100% Escrow Protection Guarantee • 80% Provider Payout • 20% Platform Fee</p>
+                    </div>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <span class="badge badge-success" style="font-size: 0.8rem; padding: 6px 12px;">🛡️ Bank-Grade Escrow Vault</span>
+                        <button class="btn btn-secondary btn-sm" onclick="PaymentsPortal.refresh()">🔄 Refresh</button>
+                    </div>
+                </div>
+
+                <!-- Escrow Explainer Banner -->
+                <div class="escrow-guarantee-banner" id="escrow-guarantee-banner">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                        <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-primary); display: flex; align-items: center; gap: 6px;">
+                            <span style="font-size: 1.2rem;">🔒</span> How Escrow & 80/20 Revenue Split Works
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span style="font-size: 0.75rem; color: var(--text-muted);">Zero Risk for Buyers • Guaranteed Payout for Creators</span>
+                            <button class="btn btn-secondary btn-sm" onclick="document.getElementById('escrow-guarantee-banner')?.remove()" style="padding: 2px 8px; font-size: 0.72rem; font-weight: 600;">✕ Remove</button>
+                        </div>
+                    </div>
+                    <div class="escrow-steps-grid">
+                        <div class="escrow-step-item">
+                            <div class="escrow-step-number">1</div>
+                            <div class="escrow-step-text">
+                                <h4>Payment Locked in Escrow</h4>
+                                <p>Buyer books service with Razorpay (UPI/Cards). Funds are safely held in escrow vault.</p>
+                            </div>
+                        </div>
+                        <div class="escrow-step-item">
+                            <div class="escrow-step-number">2</div>
+                            <div class="escrow-step-text">
+                                <h4>Creator Works & Delivers</h4>
+                                <p>Editor/Tutor delivers work and project files. Buyer reviews revisions and final result.</p>
+                            </div>
+                        </div>
+                        <div class="escrow-step-item">
+                            <div class="escrow-step-number">3</div>
+                            <div class="escrow-step-text">
+                                <h4>Instant Split Release</h4>
+                                <p>Buyer approves: <strong>80% is paid to Provider</strong> bank account & <strong>20% platform commission</strong> is routed to owner.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Financial Stats Cards -->
+                <div class="payment-stats-grid">
+                    <div class="payment-stat-card">
+                        <div class="payment-stat-top">
+                            <span class="payment-stat-label">${stat1.label}</span>
+                            <div class="payment-stat-icon">${stat1.icon}</div>
+                        </div>
+                        <div class="payment-stat-value">${stat1.value}</div>
+                        <div class="payment-stat-subtext">${stat1.subtext}</div>
+                    </div>
+                    <div class="payment-stat-card">
+                        <div class="payment-stat-top">
+                            <span class="payment-stat-label">${stat2.label}</span>
+                            <div class="payment-stat-icon">${stat2.icon}</div>
+                        </div>
+                        <div class="payment-stat-value" style="color: #6c5ce7;">${stat2.value}</div>
+                        <div class="payment-stat-subtext">${stat2.subtext}</div>
+                    </div>
+                    <div class="payment-stat-card">
+                        <div class="payment-stat-top">
+                            <span class="payment-stat-label">${stat3.label}</span>
+                            <div class="payment-stat-icon">${stat3.icon}</div>
+                        </div>
+                        <div class="payment-stat-value" style="color: var(--success);">${stat3.value}</div>
+                        <div class="payment-stat-subtext">${stat3.subtext}</div>
+                    </div>
+                    <div class="payment-stat-card">
+                        <div class="payment-stat-top">
+                            <span class="payment-stat-label">${stat4.label}</span>
+                            <div class="payment-stat-icon">${stat4.icon}</div>
+                        </div>
+                        <div class="payment-stat-value">${stat4.value}</div>
+                        <div class="payment-stat-subtext">${stat4.subtext}</div>
+                    </div>
+                </div>
+
+                <!-- Filter & Search Bar -->
+                <div class="payment-filters-bar">
+                    <div class="payment-tabs">
+                        <button class="payment-tab-btn ${activeFilter === 'all' ? 'active' : ''}" onclick="PaymentsPortal.setFilter('all')">
+                            All (${payments.length})
+                        </button>
+                        <button class="payment-tab-btn ${activeFilter === 'held' ? 'active' : ''}" onclick="PaymentsPortal.setFilter('held')">
+                            🔒 In Escrow (${heldList.length})
+                        </button>
+                        <button class="payment-tab-btn ${activeFilter === 'released' ? 'active' : ''}" onclick="PaymentsPortal.setFilter('released')">
+                            ✅ Released (${releasedList.length})
+                        </button>
+                        <button class="payment-tab-btn ${activeFilter === 'pending' ? 'active' : ''}" onclick="PaymentsPortal.setFilter('pending')">
+                            ⏳ Pending (${pendingList.length})
+                        </button>
+                        ${refundedList.length > 0 ? `
+                        <button class="payment-tab-btn ${activeFilter === 'refunded' ? 'active' : ''}" onclick="PaymentsPortal.setFilter('refunded')">
+                            ↩️ Refunded (${refundedList.length})
+                        </button>` : ''}
+                    </div>
+
+                    <div class="payment-search-box" style="position: relative; min-width: 260px; max-width: 360px; flex: 1;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" id="payment-search-icon">
+                            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                        </svg>
+                        <input 
+                            type="text" 
+                            id="payment-search-input" 
+                            placeholder="Search transactions..." 
+                            value="${searchQuery || ''}" 
+                            oninput="PaymentsPortal.setSearch(this.value)" 
+                            autocomplete="off"
+                        />
+                        ${searchQuery ? `
+                            <button type="button" onclick="PaymentsPortal.setSearch('')" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 0.95rem; line-height: 1; padding: 2px;" title="Clear search">✕</button>
+                        ` : ''}
+                    </div>
+                </div>
+
+                <!-- Transactions List -->
+                ${filtered.length === 0 ? `
+                    <div class="card" style="padding: 40px 20px; text-align: center;">
+                        <div class="empty-state">
+                            <div style="font-size: 2.5rem; margin-bottom: 12px;">💳</div>
+                            <h3 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 8px;">No transactions found</h3>
+                            <p style="color: var(--text-secondary); max-width: 420px; margin: 0 auto 18px; font-size: 0.875rem;">
+                                ${isProvider
+                    ? 'When clients book your services, payments will appear here safely held in escrow until completion.'
+                    : 'When you book talent, your payments will be protected in escrow until you approve the finished work.'}
+                            </p>
+                            ${isProvider
+                    ? '<button class="btn btn-primary btn-sm" onclick="router(\'/packages\')">Manage Packages</button>'
+                    : '<button class="btn btn-primary btn-sm" onclick="router(\'/providers\')">Browse Talent & Book</button>'}
+                        </div>
+                    </div>
+                ` : `
+                    <div class="payment-transactions-list">
+                        ${filtered.map(p => renderTransactionCard(p, isBuyer, isProvider, isAdmin)).join('')}
+                    </div>
+                `}
+            </div>
+        </div>`;
+    }
+
+    function renderTransactionCard(p, isBuyer, isProvider, isAdmin) {
+        const isHeld = p.status === 'held' || p.status === 'held_in_escrow';
+        const isReleased = p.status === 'released';
+        const isPending = p.status === 'pending';
+        const isRefunded = p.status === 'refunded' || p.status === 'disputed';
+
+        let badgeClass = 'badge-escrow-held';
+        let badgeText = '🔒 Held in Escrow';
+        if (isReleased) {
+            badgeClass = 'badge-escrow-released';
+            badgeText = '✅ Released to Bank';
+        } else if (isPending) {
+            badgeClass = 'badge-escrow-pending';
+            badgeText = '⏳ Pending Payment';
+        } else if (isRefunded) {
+            badgeClass = 'badge-escrow-refunded';
+            badgeText = '↩️ Refunded';
+        }
+
+        const txnCode = p.gateway_txn_id || `TXN-${String(p.id).padStart(6, '0')}`;
+        const dateStr = new Date(p.created_at).toLocaleDateString(undefined, {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+
+        return `
+        <div class="txn-card">
+            <div class="txn-card-header">
+                <div class="txn-id-date">
+                    <span class="txn-code">${txnCode}</span>
+                    <span class="txn-date">${dateStr}</span>
+                    <span style="font-size: 0.75rem; color: var(--text-muted);">• Booking #${p.booking_id}</span>
+                </div>
+                <div>
+                    <span class="${badgeClass}">${badgeText}</span>
+                </div>
+            </div>
+
+            <div class="txn-body-grid">
+                <div class="txn-service-info">
+                    <h4>📦 ${p.package_title || 'Service Booking'}</h4>
+                    <p>Protected by 100% Escrow Guarantee</p>
+                </div>
+
+                <div class="txn-parties">
+                    <div>Client: <strong>${p.buyer_name || 'Client'}</strong></div>
+                    <div>Provider: <strong>${p.provider_name || 'Provider'}</strong></div>
+                </div>
+
+                <div class="txn-financial-breakdown">
+                    <div class="txn-amount-total">₹${p.amount.toLocaleString()}</div>
+                    <div class="txn-split-details">
+                        Provider 80%: <strong>₹${(p.provider_payout || (p.amount * 0.8)).toLocaleString()}</strong><br>
+                        Platform Fee: <strong>₹0</strong>
+                    </div>
+                </div>
+            </div>
+
+            <div class="txn-actions-row">
+                <button class="btn btn-secondary btn-sm" onclick="PaymentsPortal.showInvoice(${p.id})">
+                    📄 View Tax Invoice & Escrow Receipt
+                </button>
+                <button class="btn btn-secondary btn-sm" onclick="openBookingChat(${p.booking_id}, '${isBuyer ? (p.provider_name || 'Provider') : (p.buyer_name || 'Client')}')">
+                    💬 Project Chat
+                </button>
+
+                ${isHeld && isBuyer && (p.booking_status === 'delivered' || p.booking_status === 'pending_approval') ? `
+                    <button class="btn btn-success btn-sm" onclick="PaymentsPortal.approveAndRelease(${p.booking_id})">
+                        ✅ Approve & Release 80% Payout
+                    </button>
+                ` : ''}
+
+                ${isPending && isBuyer ? `
+                    <button class="btn btn-primary btn-sm" onclick="PaymentsPortal.payPendingOrder(${p.booking_id}, ${p.amount})">
+                        💳 Pay Now & Secure in Escrow
+                    </button>
+                    <button class="btn btn-secondary btn-sm" onclick="PaymentsPortal.cancelPending(${p.booking_id})">
+                        ✕ Cancel
+                    </button>
+                ` : ''}
+            </div>
+        </div>`;
+    }
+
+    PaymentsPortal.cancelPending = async (bookingId) => {
+        if (!confirm('Cancel this unpaid order?')) return;
+        showLoading();
+        try {
+            await apiFetch(`/bookings/${bookingId}/status`, {
+                method: 'PATCH',
+                body: JSON.stringify({ status: 'cancelled' })
+            });
+            showToast('Order cancelled.', 'info');
+            loadPayments();
+        } catch (e) {
+            showToast(e.message, 'error');
+            loadPayments();
+        }
+    };
+
+    PaymentsPortal.setFilter = (filter) => {
+        activeFilter = filter;
+        mount(renderPaymentsPortal());
+    };
+
+    PaymentsPortal.setSearch = (val) => {
+        searchQuery = val;
+        mount(renderPaymentsPortal());
+        const input = document.getElementById('payment-search-input');
+        if (input) {
+            input.focus();
+            try {
+                input.setSelectionRange(input.value.length, input.value.length);
+            } catch (_) {}
+        }
+    };
+
+    PaymentsPortal.toggleSearchCard = () => {};
+
+    PaymentsPortal.refresh = () => {
+        loadPayments();
+    };
+
+    PaymentsPortal.showInvoice = (paymentId) => {
+        const p = payments.find(item => item.id === paymentId);
+        if (!p) return;
+        showInvoiceModal(p);
+    };
+
+    PaymentsPortal.approveAndRelease = async (bookingId) => {
+        if (!confirm('Approve this delivery and release full payment to provider?')) return;
+        showLoading();
+        try {
+            await apiFetch(`/bookings/${bookingId}/approve`, { method: 'POST' });
+            showToast('🎉 Delivery approved! Full payment released to provider.', 'success');
+            loadPayments();
+        } catch (e) {
+            showToast(e.message, 'error');
+            loadPayments();
+        }
+    };
+
+    PaymentsPortal.payPendingOrder = async (bookingId, amount) => {
+        showLoading();
+        try {
+            const rzpKey = typeof window.publicConfig?.razorpay_key_id === 'string'
+                ? window.publicConfig.razorpay_key_id.trim()
+                : '';
+
+            if (!/^rzp_(live|test)_[A-Za-z0-9]+$/.test(rzpKey)) {
+                hideLoading();
+                showToast('Online payment is not configured yet. Please try again later.', 'error');
+                return;
+            }
+
+            const amountPaise = Math.round(Number(amount) * 100);
+
+            if (typeof Razorpay !== 'undefined') {
+                const options = {
+                    key: rzpKey,
+                    amount: amountPaise,
+                    currency: "INR",
+                    name: "Groove Hub",
+                    description: `Booking #${bookingId} (100% Escrow Protected)`,
+                    image: "/static/icons/icon-192.png",
+                    prefill: {
+                        name: currentUser?.name || 'Client',
+                        email: currentUser?.email || 'client@example.com',
+                        contact: currentUser?.phone || '9999999999'
+                    },
+                    theme: { color: "#6c5ce7" },
+                    handler: async function (response) {
+                        showLoading();
+                        try {
+                            await apiFetch('/payments/verify', {
+                                method: 'POST',
+                                body: JSON.stringify({
+                                    booking_id: bookingId,
+                                    razorpay_payment_id: response.razorpay_payment_id || `pay_${Date.now()}`,
+                                    razorpay_order_id: response.razorpay_order_id || `order_${bookingId}`,
+                                    razorpay_signature: response.razorpay_signature || ''
+                                })
+                            });
+                            showToast(`🎉 Payment of ₹${amount.toLocaleString()} secured in Escrow!`, 'success');
+                            loadPayments();
+                        } catch (err) {
+                            showToast('Payment verification failed: ' + err.message, 'error');
+                        } finally {
+                            hideLoading();
+                        }
+                    }
+                };
+                const rzp = new Razorpay(options);
+                rzp.open();
+                hideLoading();
+            } else {
+                hideLoading();
+                showToast('Payment provider is unavailable. Please try again later.', 'error');
+            }
+        } catch (e) {
+            hideLoading();
+            showToast(e.message, 'error');
+        }
+    };
+
+    function showInvoiceModal(p) {
+        const modal = document.createElement('div');
+        modal.className = 'invoice-modal-overlay';
+
+        const isHeld = p.status === 'held' || p.status === 'held_in_escrow';
+        const isReleased = p.status === 'released';
+        const isPending = p.status === 'pending';
+
+        let statusText = '🔒 HELD IN ESCROW';
+        let statusColor = '#6c5ce7';
+        if (isReleased) {
+            statusText = '✅ RELEASED TO BANK';
+            statusColor = '#00b894';
+        } else if (isPending) {
+            statusText = '⏳ PENDING PAYMENT';
+            statusColor = '#e17055';
+        }
+
+        const dateStr = new Date(p.created_at).toLocaleDateString(undefined, {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+
+        const invoiceNumber = `INV-EM-${String(p.id).padStart(6, '0')}`;
+        const txnId = p.gateway_txn_id || `pay_sim_${p.id}_${Date.now()}`;
+
+        modal.innerHTML = `
+            <div class="invoice-modal-card">
+                <div class="invoice-modal-header">
+                    <div style="font-weight: 700; font-size: 1rem; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+                        <span>📄 Official Tax Invoice & Escrow Receipt</span>
+                    </div>
+                    <button id="close-invoice-modal-btn" style="background: transparent; border: none; font-size: 1.25rem; color: var(--text-muted); cursor: pointer;">✕</button>
+                </div>
+
+                <div class="invoice-modal-body">
+                    <div class="invoice-paper">
+                        <div class="invoice-paper-header">
+                            <div>
+                                <span class="brand-title">Groove Hub</span>
+                                <div style="font-size: 0.75rem; color: #636e72; margin-top: 2px;">
+                                    Premier Video Editing & Tutoring Platform<br>
+                                    Escrow Protected Commercial Hub
+                                </div>
+                            </div>
+                            <div class="doc-title">
+                                <h2>TAX INVOICE / RECEIPT</h2>
+                                <span><strong>${invoiceNumber}</strong></span><br>
+                                <span>Date: ${dateStr}</span>
+                            </div>
+                        </div>
+
+                        <div class="invoice-meta-grid">
+                            <div class="invoice-meta-block">
+                                <h5>Billed To (Buyer / Client)</h5>
+                                <p><strong>${p.buyer_name || 'Client'}</strong></p>
+                                <p>${p.buyer_email || 'rahura2026@gmail.com'}</p>
+                                ${p.buyer_phone ? `<p>Phone: ${p.buyer_phone}</p>` : ''}
+                            </div>
+                            <div class="invoice-meta-block">
+                                <h5>Service Provider / Creator</h5>
+                                <p><strong>${p.provider_name || 'Provider'}</strong></p>
+                                <p>Booking Reference: #BK-${p.booking_id}</p>
+                                <p>Gateway Txn: <span style="font-family: monospace; font-size: 0.8rem;">${txnId}</span></p>
+                            </div>
+                        </div>
+
+                        <div style="margin-bottom: 16px;">
+                            <span style="font-size: 0.75rem; font-weight: 700; color: ${statusColor}; background: ${statusColor}18; padding: 4px 10px; border-radius: 999px; border: 1px solid ${statusColor}40;">
+                                STATUS: ${statusText}
+                            </span>
+                        </div>
+
+                        <table class="invoice-items-table">
+                            <thead>
+                                <tr>
+                                    <th>Description / Service</th>
+                                    <th style="text-align: right;">Rate / Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>
+                                        <strong>${p.package_title || 'Creative Service Package'}</strong><br>
+                                        <span style="font-size: 0.75rem; color: #636e72;">Booking #${p.booking_id} • 100% Escrow Protection</span>
+                                    </td>
+                                    <td style="text-align: right; font-weight: 600;">₹${p.amount.toLocaleString()}</td>
+                                </tr>
+                                <tr>
+                                    <td style="font-size: 0.8rem; color: #636e72; padding-left: 20px;">
+                                        ↳ Provider Earnings (80% Direct Payout)
+                                    </td>
+                                    <td style="text-align: right; font-size: 0.8rem; color: #636e72;">
+                                        ₹${(p.provider_payout || (p.amount * 0.8)).toLocaleString()}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="font-size: 0.8rem; color: #636e72; padding-left: 20px;">
+                                        ↳ Platform Fee (₹0)
+                                    </td>
+                                    <td style="text-align: right; font-size: 0.8rem; color: #636e72;">
+                                        ₹0
+                                    </td>
+                                </tr>
+                                <tr class="total-row">
+                                    <td>Total Amount Paid</td>
+                                    <td style="text-align: right;">₹${p.amount.toLocaleString()}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <div class="invoice-escrow-seal">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                                <path d="M9 12l2 2 4-4"/>
+                            </svg>
+                            <div>
+                                <strong>100% Escrow Protected Transaction</strong><br>
+                                Funds are safely held in escrow until the client reviews and approves final delivery. For any queries, contact rahura2026@gmail.com.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="invoice-modal-footer">
+                    <button class="btn btn-secondary" id="print-invoice-btn">
+                        🖨️ Print / Save as PDF
+                    </button>
+                    <button class="btn btn-primary" id="dismiss-invoice-btn">
+                        Done
+                    </button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        const close = () => modal.remove();
+        modal.querySelector('#close-invoice-modal-btn').onclick = close;
+        modal.querySelector('#dismiss-invoice-btn').onclick = close;
+        modal.querySelector('#print-invoice-btn').onclick = () => {
+            window.print();
+        };
+    }
+}
+window.PaymentsPortal = PaymentsPortal;
+
+// =============== PROVIDERS LIST ===============
+
+// Search & filter state
+let providerSearchState = {
+    q: '',
+    niche: '',
+    subType: '',          // selected subclassification (video type, lesson type, or writing type)
+    serviceOption: '',
+    sellerDetail: '',
+    budget: '',
+    deliveryTime: '',
+    minRating: '',
+    sortBy: 'rating',
+    proOnly: false,
+    onlineOnly: false
+};
+
+const fiverrCategoryConfigs = {
+    'editors_animators': {
+        niche: 'editors_animators',
+        title: 'Video Editing',
+        parentCategory: 'Video & Animation',
+        description: 'Create or improve your videos with video editing and post-production services.',
+        selectTypeLabel: 'Select video type',
+        searchPlaceholder: 'Search video editing, shorts, YouTube, Premiere Pro, motion design...',
+        types: [
+            { id: '', label: 'All Video Types', icon: '✨' },
+            { id: 'youtube', label: 'YouTube & Long-form', icon: '📺', keywords: ['youtube', 'long-form', 'vlog', 'retention', 'mrbeast', 'podcast', 'documentary', 'shorts'] },
+                        { id: 'gaming', label: 'Gaming & Stream Edits', icon: '🎮', keywords: ['gaming', 'twitch', 'montage', 'meme', 'stream', 'gameplay', 'valorant', 'gta', 'esports', 'minecraft', 'highlight'] },
+            { id: 'animations', label: '2D/3D Animations', icon: '🎨', keywords: ['animation', '2d', '3d', 'character', 'whiteboard', 'explainer', 'blender', 'animated'] },
+            { id: 'motion_graphics', label: 'Motion Graphics & VFX', icon: '✨', keywords: ['motion graphics', 'motion', 'vfx', 'after effects', 'intro', 'titles', 'visual effects'] },
+            { id: 'music', label: 'Music Videos & Cinematic', icon: '🎬', keywords: ['music', 'rap', 'beat-sync', 'trippy', 'vfx', 'cinematic', 'band', 'song', 'hip-hop'] },
+            { id: 'corporate', label: 'Corporate & Commercials', icon: '🏢', keywords: ['corporate', 'b2b', 'commercial', 'brand', 'presentation', 'business', 'event', 'promo'] }
+        ],
+        serviceOptions: [
+            { id: '', label: 'All Styles & Services' },
+            { id: 'youtube_cuts', label: '📺 YouTube Long-form & Retention Cuts', match: ['youtube', 'long-form', 'vlog', 'podcast', 'retention'] },
+            { id: 'reels_tiktok_editing', label: '📱 Reels & TikTok Editing', match: ['reel', 'short', 'tiktok', 'editing'] },
+            { id: 'gaming_montages', label: '🎮 Gaming Montages & Stream Highlights', match: ['gaming', 'gameplay', 'montage', 'stream', 'twitch', 'esports'] },
+            { id: '2d_3d_animation', label: '🎨 2D & 3D Character Animation', match: ['animation', '2d', '3d', 'animated', 'character', 'explainer'] },
+            { id: 'motion_vfx', label: '✨ Motion Graphics, Intros & VFX', match: ['motion', 'after effects', 'vfx', 'visual effects', 'graphics'] },
+            { id: 'color_grading', label: '🌈 Color Grading & Cinematic LUTs', match: ['color', 'grade', 'lut', 'davinci', 'cinematic'] },
+            { id: 'sound_design', label: '🔊 Sound Design & SFX Audio Mixing', match: ['sound', 'audio', 'sfx', 'mix', 'voiceover', 'music'] },
+            { id: 'corporate_promo', label: '🏢 Corporate Commercials & Promos', match: ['corporate', 'commercial', 'brand', 'b2b', 'promo'] }
+        ],
+        sellerDetails: [
+            { id: '', label: 'Any Seller' },
+            { id: 'top_rated', label: '⭐ Top Rated (4.9+)' },
+            { id: 'level_2', label: '💎 Level 2 (30+ Orders)' },
+            { id: 'pro_verified', label: '👑 Pro Verified' },
+            { id: 'fast_turnaround', label: '⚡ 24h Turnaround' }
+        ],
+        budgets: [
+            { id: '', label: 'Any Budget' },
+            { id: 'under2000', label: 'Under ₹2,000' },
+            { id: '2000to5000', label: '₹2,000 - ₹5,000' },
+            { id: 'above5000', label: '₹5,000+' }
+        ],
+        deliveryTimes: [
+            { id: '', label: 'Any Delivery Time' },
+            { id: '24h', label: '⚡ 24 Hours' },
+            { id: '3d', label: '⏱️ Up to 3 Days' },
+            { id: '7d', label: '📅 Up to 7 Days' }
+        ],
+        defaultBadge: 'PRO VIDEO EDITING',
+        primaryBtnText: 'Book Talent',
+        secondaryBtnText: '🎨 Showreel',
+        showreelLabel: 'Featured Video Editing Reel',
+        unitLabel: 'project'
+    },
+
+    'tutors': {
+        niche: 'tutors',
+        title: 'English Tutoring & Coaching',
+        parentCategory: 'Language & Lessons',
+        description: 'Master conversational fluency, IELTS/TOEFL exam prep, business communication, and interview coaching with certified English coaches.',
+        selectTypeLabel: 'Select lesson type',
+        searchPlaceholder: 'Search IELTS, conversational English, business fluency, accent training...',
+        types: [
+            { id: '', label: 'All Lesson Types', icon: '✨' },
+            { id: 'conversational', label: 'Conversational English', icon: '🗣️', keywords: ['conversational', 'fluency', 'speaking', 'small talk', 'vocabulary'] },
+            { id: 'ielts_toefl', label: 'IELTS & TOEFL Prep', icon: '🎓', keywords: ['ielts', 'toefl', 'exam', 'band', 'cambridge', 'test'] },
+            { id: 'business_english', label: 'Business English', icon: '💼', keywords: ['business', 'executive', 'presentation', 'corporate', 'meeting', 'negotiation'] },
+            { id: 'interview_prep', label: 'Interview Coaching', icon: '🎯', keywords: ['interview', 'mock', 'star', 'faang', 'behavioral', 'q&a'] },
+            { id: 'kids_english', label: 'English for Kids', icon: '👶', keywords: ['kids', 'children', 'phonics', 'storytelling', 'beginner', 'games'] },
+            { id: 'accent_training', label: 'Accent Neutralization', icon: '🎙️', keywords: ['accent', 'neutralization', 'pronunciation', 'intonation', 'speech', 'vowel'] }
+        ],
+        serviceOptions: [
+            { id: '', label: 'All Lessons' },
+            { id: 'speaking', label: '1-on-1 Speaking Practice', match: ['speaking', 'conversational', 'fluency'] },
+            { id: 'exam_prep', label: 'IELTS Mock Test & Scoring', match: ['ielts', 'toefl', 'exam', 'mock'] },
+            { id: 'accent', label: 'Accent & Speech Clinic', match: ['accent', 'pronunciation', 'vowel'] },
+            { id: 'executive', label: 'Executive Business Drill', match: ['business', 'executive', 'presentation'] },
+            { id: 'interview', label: 'Job Interview Simulation', match: ['interview', 'behavioral', 'star'] }
+        ],
+        sellerDetails: [],
+        budgets: [
+            { id: '', label: 'Any Budget' },
+            { id: 'under1000', label: 'Under ₹1,000 / session' },
+            { id: '1000to2000', label: '₹1,000 - ₹2,000 / session' },
+            { id: 'above2000', label: '₹2,000+ / session' }
+        ],
+        deliveryTimes: [
+            { id: '', label: 'Any Availability' },
+            { id: 'flexible', label: '🗓️ Flexible Schedule' }
+        ],
+        defaultBadge: 'CERTIFIED ENGLISH COACH',
+        primaryBtnText: 'Book Lesson',
+        secondaryBtnText: '🎧 Sample Class',
+        showreelLabel: 'Live Class Recording Sample',
+        unitLabel: 'session'
+    },
+
+    'writers': {
+        niche: 'writers',
+        title: 'Content & Copywriting',
+        parentCategory: 'Writing & Translation',
+        description: 'Grow your traffic and sales with high-ranking SEO blog posts, high-converting landing page copy, viral social posts, and email newsletters.',
+        selectTypeLabel: 'Select writing type',
+        searchPlaceholder: 'Search SEO articles, website copywriting, email sequences, video scripts...',
+        types: [
+            { id: '', label: 'All Writing Types', icon: '✨' },
+            { id: 'seo_articles', label: 'SEO Blog Posts & Articles', icon: '📝', keywords: ['seo', 'blog', 'article', 'surfer', 'keyword', 'ranking'] },
+            { id: 'landing_copy', label: 'Website Copy & Landing Pages', icon: '🚀', keywords: ['website', 'landing page', 'copy', 'hero', 'conversion', 'saas', 'sales'] },
+            { id: 'social_copy', label: 'Social Media & Ad Copy', icon: '📱', keywords: ['social', 'ad', 'linkedin', 'twitter', 'meta', 'viral', 'hook', 'facebook'] },
+            { id: 'email_copy', label: 'Email Marketing & Newsletters', icon: '📧', keywords: ['email', 'newsletter', 'sequence', 'outreach', 'klaviyo', 'drip'] },
+            { id: 'video_scripts', label: 'YouTube & Video Scripts', icon: '🎬', keywords: ['script', 'youtube', 'storytelling', 'retention', 'video script', 'b-roll'] },
+            { id: 'tech_creative', label: 'Creative & Technical Writing', icon: '📖', keywords: ['technical', 'whitepaper', 'case study', 'ebook', 'research', 'report'] }
+        ],
+        serviceOptions: [
+            { id: '', label: 'All Writing Formats' },
+            { id: 'seo_blog', label: 'SEO Articles & Long-form', match: ['seo', 'blog', 'article'] },
+            { id: 'sales_copy', label: 'Landing Page & Sales Copy', match: ['landing', 'copy', 'sales', 'website'] },
+            { id: 'social_ads', label: 'Viral Social Posts & Ad Hooks', match: ['social', 'linkedin', 'twitter', 'ad'] },
+            { id: 'email_drip', label: 'Email Flows & Newsletters', match: ['email', 'newsletter', 'sequence'] },
+            { id: 'scripts', label: 'YouTube & Video Scripting', match: ['script', 'youtube', 'video'] },
+            { id: 'case_studies', label: 'Whitepapers & Case Studies', match: ['whitepaper', 'case study', 'technical'] }
+        ],
+        sellerDetails: [],
+        budgets: [
+            { id: '', label: 'Any Budget' },
+            { id: 'under1500', label: 'Under ₹1,500' },
+            { id: '1500to3500', label: '₹1,500 - ₹3,500' },
+            { id: 'above3500', label: '₹3,500+' }
+        ],
+        deliveryTimes: [
+            { id: '', label: 'Any Delivery Time' },
+            { id: '24h', label: '⚡ 24 Hours' },
+            { id: '3d', label: '⏱️ Up to 3 Days' },
+            { id: '7d', label: '📅 Up to 7 Days' }
+        ],
+        defaultBadge: 'PRO VERIFIED COPYWRITER',
+        primaryBtnText: 'Hire Writer',
+        secondaryBtnText: '📄 Read Sample',
+        showreelLabel: 'Published Writing Portfolio & Case Studies',
+        unitLabel: 'deliverable'
+    }
+};
+
+const providerCategoryOptionsMap = {
+    all: [
+        { label: '🏢 Small Business & Brand Ads', query: 'business_ads' },
+        { label: 'Video Editors & Animators', query: 'editors' },
+        { label: 'English Tutors & Coaches', query: 'tutors' },
+        { label: 'Scriptwriters & Copywriters', query: 'writers' },
+        { label: 'YouTube Shorts & Reels', query: 'shorts' },
+        { label: 'IELTS Band 8+ Prep', query: 'ielts' },
+        { label: 'Gaming Montages & VFX', query: 'gaming' },
+        { label: '2D & 3D Animation', query: 'animation' }
+    ],
+    business_ads: [
+        { label: 'Local Business & Store Promos', query: 'local business' },
+        { label: 'Restaurant & Cafe Reels', query: 'restaurant' },
+        { label: 'Product & UGC Video Ads', query: 'product ads' },
+        { label: 'Real Estate Walkthroughs', query: 'real estate' },
+        { label: 'Gym & Fitness Promos', query: 'gym' },
+        { label: 'Corporate & Brand Story', query: 'corporate' }
+    ],
+    editors_animators: [
+        { label: 'Reels & TikTok Editing', query: 'reels' },
+        { label: 'Gaming Montages', query: 'gaming' },
+        { label: 'YouTube Longform', query: 'youtube' },
+        { label: '2D & 3D Animation', query: 'animation' },
+        { label: 'Motion Graphics VFX', query: 'vfx' },
+        { label: 'Cinematic Color Grading', query: 'cinematic' },
+        { label: 'Premiere Pro & After Effects', query: 'premiere' },
+        { label: '24h Rush Delivery', query: 'rush' }
+    ],
+    tutors: [
+        { label: 'IELTS & TOEFL Prep', query: 'ielts' },
+        { label: 'Accent Reduction', query: 'accent' },
+        { label: 'Business English Drill', query: 'business' },
+        { label: 'Daily Fluency Practice', query: 'conversational' },
+        { label: 'Job Interview Coaching', query: 'interview' },
+        { label: 'Instant Trial Lesson', query: 'trial' }
+    ],
+    writers: [
+        { label: 'YouTube Video Scripts', query: 'youtube scripts' },
+        { label: 'Social Ad Copy & Hooks', query: 'ad copy' },
+        { label: 'SEO Blog Posts & Articles', query: 'seo' },
+        { label: 'Social Media Captions', query: 'captions' },
+        { label: 'Email Newsletters', query: 'newsletter' },
+        { label: '24h Rush Scripts', query: 'rush' }
+    ]
+};
+window.__providerCategoryOptionsMap = providerCategoryOptionsMap;
+
+// (getCategoryPeekIconSvg is globally defined with size and animation support)
+
+function ProvidersList() {
+    let providers = [];
+    let loading = true;
+
+    async function loadProviders() {
+        showLoading();
+        try {
+            const params = new URLSearchParams();
+            if (providerSearchState.q && providerSearchState.q.trim()) {
+                params.append('q', providerSearchState.q.trim());
+            }
+            if (providerSearchState.niche) {
+                params.append('niche', providerSearchState.niche);
+            }
+            if (providerSearchState.minRating) {
+                params.append('min_rating', providerSearchState.minRating);
+            }
+            if (providerSearchState.sortBy) {
+                params.append('sort_by', providerSearchState.sortBy);
+            }
+
+            if (providerSearchState.budget === 'under1000') {
+                params.append('max_price', '1000');
+            } else if (providerSearchState.budget === 'under1500') {
+                params.append('max_price', '1500');
+            } else if (providerSearchState.budget === 'under2000') {
+                params.append('max_price', '2000');
+            } else if (providerSearchState.budget === '1000to2000') {
+                params.append('min_price', '1000');
+                params.append('max_price', '2000');
+            } else if (providerSearchState.budget === '1500to3500') {
+                params.append('min_price', '1500');
+                params.append('max_price', '3500');
+            } else if (providerSearchState.budget === '2000to5000') {
+                params.append('min_price', '2000');
+                params.append('max_price', '5000');
+            } else if (providerSearchState.budget === 'above2000') {
+                params.append('min_price', '2000');
+            } else if (providerSearchState.budget === 'above3500') {
+                params.append('min_price', '3500');
+            } else if (providerSearchState.budget === 'above5000') {
+                params.append('min_price', '5000');
+            }
+
+            providers = await apiFetch(`/educators/summary?${params.toString()}`);
+        } catch (e) {
+            showToast(e.message || 'Failed to load talent', 'error');
+            providers = [];
+        } finally {
+            loading = false;
+            mount(renderProvidersList());
+        }
+    }
+
+    window.setProviderNiche = (niche) => {
+        providerSearchState.niche = niche;
+        providerSearchState.subType = '';
+        providerSearchState.serviceOption = '';
+        providerSearchState.sellerDetail = '';
+        providerSearchState.budget = '';
+        providerSearchState.deliveryTime = '';
+        window.__currentProviderNiche = niche || 'all';
+        const opts = (window.__providerCategoryOptionsMap || {})[niche || 'all'] || [];
+        const textEl = document.getElementById('provider-placeholder-dynamic-text');
+        if (textEl && opts[0]) {
+            textEl.textContent = `"${opts[0].label}"`;
+        }
+        if (window.location.pathname !== '/providers' && window.location.pathname !== '/explore' && window.location.pathname !== '/talent') {
+            router('/providers');
+        } else {
+            loadProviders();
+        }
+    };
+
+    window.setFiverrSubType = (typeId) => {
+        providerSearchState.subType = (providerSearchState.subType === typeId ? '' : typeId);
+        mount(renderProvidersList());
+        setTimeout(() => {
+            const scrollEl = document.getElementById('fiverr-type-scroll');
+            if (scrollEl) {
+                scrollEl.scrollTo({ left: 0, behavior: 'smooth' });
+            }
+        }, 50);
+    };
+    window.setFiverrVideoType = window.setFiverrSubType;
+
+    window.scrollFiverrTypes = (offset) => {
+        const el = document.getElementById('fiverr-type-scroll');
+        if (el) el.scrollBy({ left: offset, behavior: 'smooth' });
+    };
+
+    window.toggleFiverrFilterMenu = (menuId) => {
+        const menu = document.getElementById(menuId);
+        const isOpen = menu && menu.classList.contains('open');
+        document.querySelectorAll('.fiverr-filter-menu.open').forEach(m => m.classList.remove('open'));
+        if (menu && !isOpen) {
+            menu.classList.add('open');
+        }
+    };
+
+    window.setFiverrFilter = (key, value) => {
+        providerSearchState[key] = value;
+        document.querySelectorAll('.fiverr-filter-menu.open').forEach(m => m.classList.remove('open'));
+        if (key === 'budget') {
+            loadProviders();
+        } else {
+            mount(renderProvidersList());
+        }
+    };
+
+    window.toggleFiverrProOnly = (checked) => {
+        providerSearchState.proOnly = checked;
+        mount(renderProvidersList());
+    };
+
+    window.toggleFiverrOnlineOnly = (checked) => {
+        providerSearchState.onlineOnly = checked;
+        mount(renderProvidersList());
+    };
+
+    window.toggleFiverrFavorite = (providerId, event) => {
+        if (event) event.stopPropagation();
+        const key = `fiverr_fav_${providerId}`;
+        const isFav = localStorage.getItem(key) === 'true';
+        localStorage.setItem(key, isFav ? 'false' : 'true');
+        const btn = event?.currentTarget || document.querySelector(`#fav-btn-${providerId}`);
+        if (btn) {
+            btn.classList.toggle('active', !isFav);
+            btn.innerHTML = !isFav ? '❤️' : '🤍';
+            btn.style.transform = 'scale(1.25)';
+            setTimeout(() => { btn.style.transform = 'scale(1)'; }, 180);
+        }
+        showToast(!isFav ? 'Saved to your Saved Gigs ❤️' : 'Removed from Saved Gigs', 'info');
+    };
+
+    window.openFiverrEscrowModal = () => {
+        const modal = document.createElement('div');
+        modal.className = 'fiverr-escrow-modal';
+        modal.innerHTML = `
+            <div class="fiverr-escrow-card">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
+                    <div style="display: flex; align-items: flex-start; gap: 10px;">
+                        <button class="modal-back-btn" onclick="this.closest('.fiverr-escrow-modal').remove()" style="margin-top: 2px;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14">
+                                <line x1="19" y1="12" x2="5" y2="12"></line>
+                                <polyline points="12 19 5 12 12 5"></polyline>
+                            </svg>
+                            <span>Back</span>
+                        </button>
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span style="font-size: 1.4rem;">🛡️</span>
+                                <h3 style="margin: 0; font-size: 1.15rem; font-weight: 800; color: var(--text-primary);">How Escrow Protection Works</h3>
+                            </div>
+                            <p style="margin: 4px 0 0 0; font-size: 0.8125rem; color: var(--text-secondary);">100% Risk-Free freelance services for clients & talent</p>
+                        </div>
+                    </div>
+                    <button class="modal-close" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--text-muted);">&times;</button>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 14px; margin-bottom: 24px;">
+                    <div style="display: flex; gap: 12px; align-items: flex-start;">
+                        <div style="width: 32px; height: 32px; border-radius: 50%; background: rgba(99, 102, 241, 0.1); color: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: 800; flex-shrink: 0;">1</div>
+                        <div>
+                            <div style="font-weight: 700; font-size: 0.9375rem; color: var(--text-primary);">Funds Locked in Escrow Vault</div>
+                            <div style="font-size: 0.8125rem; color: var(--text-secondary); line-height: 1.4;">When you place an order, your payment is held securely in the RBI/Bank compliant vault. The provider does not get paid upfront.</div>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 12px; align-items: flex-start;">
+                        <div style="width: 32px; height: 32px; border-radius: 50%; background: rgba(16, 185, 129, 0.1); color: var(--success); display: flex; align-items: center; justify-content: center; font-weight: 800; flex-shrink: 0;">2</div>
+                        <div>
+                            <div style="font-weight: 700; font-size: 0.9375rem; color: var(--text-primary);">Guaranteed Turnaround Countdown</div>
+                            <div style="font-size: 0.8125rem; color: var(--text-secondary); line-height: 1.4;">The provider starts working immediately with a live deadline clock (24h, 48h, etc.). You can message and request progress drafts.</div>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 12px; align-items: flex-start;">
+                        <div style="width: 32px; height: 32px; border-radius: 50%; background: rgba(245, 158, 11, 0.1); color: var(--warning); display: flex; align-items: center; justify-content: center; font-weight: 800; flex-shrink: 0;">3</div>
+                        <div>
+                            <div style="font-weight: 700; font-size: 0.9375rem; color: var(--text-primary);">Inspect Deliverable First</div>
+                            <div style="font-size: 0.8125rem; color: var(--text-secondary); line-height: 1.4;">Review the video export, live tutoring session, or written draft with zero risk. You get included revisions with every order.</div>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 12px; align-items: flex-start;">
+                        <div style="width: 32px; height: 32px; border-radius: 50%; background: rgba(16, 185, 129, 0.1); color: var(--success); display: flex; align-items: center; justify-content: center; font-weight: 800; flex-shrink: 0;">4</div>
+                        <div>
+                            <div style="font-weight: 700; font-size: 0.9375rem; color: var(--text-primary);">Release Payout or 100% Refund</div>
+                            <div style="font-size: 0.8125rem; color: var(--text-secondary); line-height: 1.4;">Only when you are completely satisfied do you click "Approve &amp; Release". If unsatisfied, our Admin resolution team guarantees a 100% refund.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end;">
+                    <button class="btn btn-primary" onclick="this.closest('.fiverr-escrow-modal').remove()" style="width: 100%; min-height: 46px; font-weight: 700;">
+                        <-- Back to Exploring Talent
+                    </button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        modal.querySelector('.modal-close').onclick = () => modal.remove();
+        modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+    };
+
+    window.openPreBookingChat = (providerId, providerName) => {
+        if (!currentToken) {
+            showToast('Please log in to chat with creators', 'info');
+            sessionStorage.setItem('redirect_after_login', `/messages?user_id=${providerId}`);
+            router('/login');
+            return;
+        }
+        window.__selectedChatUserId = providerId;
+        window.__selectedChatUserName = providerName;
+        router('/messages');
+    };
+    window.openProviderChatModal = window.openPreBookingChat;
+
+    window.triggerCardAnim = (cardEl, type) => {
+        const overlay = cardEl.querySelector('.anim-overlay');
+        if (!overlay) return;
+        overlay.style.opacity = '1';
+        setTimeout(() => { overlay.style.opacity = '0'; }, 1200);
+    };
+
+    window.__handleProviderSearchInput = (val) => {
+        providerSearchState.q = val;
+        window.__updateProviderPlaceholderVisibility();
+    };
+
+    window.__updateProviderPlaceholderVisibility = (forceHide = false) => {
+        const input = document.getElementById('provider-search-input');
+        const holder = document.getElementById('provider-search-animated-placeholder');
+        if (!holder) return;
+        if (forceHide || (input && (input.value.trim().length > 0 || document.activeElement === input))) {
+            holder.classList.add('hidden');
+        } else {
+            holder.classList.remove('hidden');
+        }
+    };
+
+    window.__clearProviderSearch = () => {
+        providerSearchState.q = '';
+        const input = document.getElementById('provider-search-input');
+        if (input) {
+            input.value = '';
+        }
+        window.__updateProviderPlaceholderVisibility();
+        loadProviders();
+    };
+
+    window.handleProviderSearch = (e) => {
+        if (e) e.preventDefault();
+        const input = document.getElementById('provider-search-input');
+        if (input) {
+            providerSearchState.q = input.value.trim();
+            window.__updateProviderPlaceholderVisibility();
+            loadProviders();
+        }
+    };
+
+    window.handleFilterChange = (filterType, value) => {
+        providerSearchState[filterType] = value;
+        loadProviders();
+    };
+
+    window.clearProviderFilters = () => {
+        providerSearchState = {
+            q: '',
+            niche: providerSearchState.niche,
+            subType: '',
+            serviceOption: '',
+            sellerDetail: '',
+            budget: '',
+            deliveryTime: '',
+            minRating: '',
+            sortBy: 'rating',
+            proOnly: false,
+            onlineOnly: false
+        };
+        loadProviders();
+    };
+
+    window.selectProvider = (providerId, packageId = null) => {
+        sessionStorage.setItem('selected_provider_id', providerId);
+        if (packageId) {
+            sessionStorage.setItem('selected_package_id', packageId);
+        } else {
+            sessionStorage.removeItem('selected_package_id');
+        }
+        router('/create-booking');
+    };
+
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.fiverr-filter-dropdown-wrap')) {
+            document.querySelectorAll('.fiverr-filter-menu.open').forEach(m => m.classList.remove('open'));
+        }
+    });
+
+    loadProviders();
+
+    function getActiveServiceOptionLabel(cfg) {
+        if (!cfg || !providerSearchState.serviceOption) return '';
+        const found = cfg.serviceOptions.find(o => o.id === providerSearchState.serviceOption);
+        return found ? found.label : '';
+    }
+
+    function getActiveSellerDetailLabel(cfg) {
+        if (!cfg || !providerSearchState.sellerDetail) return '';
+        const found = cfg.sellerDetails.find(d => d.id === providerSearchState.sellerDetail);
+        return found ? found.label : '';
+    }
+
+    function getActiveBudgetLabel(cfg) {
+        if (!cfg || !providerSearchState.budget) return '';
+        const found = cfg.budgets.find(b => b.id === providerSearchState.budget);
+        return found ? found.label : '';
+    }
+
+    function getActiveDeliveryTimeLabel(cfg) {
+        if (!cfg || !providerSearchState.deliveryTime) return '';
+        const found = cfg.deliveryTimes.find(t => t.id === providerSearchState.deliveryTime);
+        return found ? found.label : '';
+    }
+
+    function getProviderThumbnail(provider) {
+        return (typeof window.getProviderThumbnail === 'function')
+            ? window.getProviderThumbnail(provider, null)
+            : '/static/banners/ab_pradeep_reel_editor.png';
+    }
+
+    function getGigBadge(provider, cfg) {
+        const text = `${(provider.skills || []).join(' ')} ${(provider.packages || []).map(p => p.title).join(' ')}`.toLowerCase();
+
+        if (text.includes('animation') || text.includes('2d') || text.includes('3d') || text.includes('blender') || text.includes('character')) return '🎨 2D/3D ANIMATION MASTER';
+        if (text.includes('gaming') || text.includes('twitch') || text.includes('montage') || text.includes('gameplay')) return '🎮 GAMING & STREAM EDITS';
+        if (text.includes('tiktok') || text.includes('reels') || text.includes('ads & social') || text.includes('ugc') || text.includes('hook')) return '📱 VIRAL REELS & SOCIAL ADS';
+        if (text.includes('youtube') || text.includes('long-form') || text.includes('retention') || text.includes('podcast')) return '📺 YOUTUBE & LONG-FORM PRO';
+        if (text.includes('corporate') || text.includes('b2b') || text.includes('commercial')) return '🏢 CORPORATE & B2B PROMO';
+        if (text.includes('travel')) return '✈️ CINEMATIC 4K TRAVEL';
+        if (text.includes('music')) return '🎬 MUSIC & TRIPPY VFX';
+
+        if (text.includes('conversational')) return '1-ON-1 FLUENCY COACH';
+        if (text.includes('ielts') || text.includes('toefl')) return 'IELTS BAND 8+ MASTER';
+        if (text.includes('business')) return 'EXECUTIVE COACHING';
+        if (text.includes('interview')) return 'FAANG INTERVIEW PREP';
+        if (text.includes('kids')) return 'KIDS PHONICS & FUN';
+        if (text.includes('accent')) return 'ACCENT CLINIC';
+
+        if (text.includes('seo') || text.includes('blog')) return 'SURFER SEO 80+';
+        if (text.includes('landing') || text.includes('website')) return 'CONVERSION COPY';
+        if (text.includes('social') || text.includes('linkedin')) return 'VIRAL SOCIAL PACK';
+        if (text.includes('email')) return '5-PART EMAIL FLOW';
+        if (text.includes('script')) return 'RETENTION SCRIPT';
+        if (text.includes('whitepaper') || text.includes('case study')) return 'B2B AUTHORITY';
+
+        return cfg?.defaultBadge || 'PRO VERIFIED TALENT';
+    }
+
+    function getSellerLevelBadge(provider) {
+        if (provider.rating >= 4.95 || provider.review_count >= 50) return 'Top Rated';
+        if (provider.review_count >= 30) return 'Level 2';
+        if (provider.review_count >= 10) return 'Level 1';
+        return 'Rising Star';
+    }
+
+    function filterClassifiedProviders(list, cfg) {
+        return list.filter(provider => {
+            const text = `${provider.name || ''} ${(provider.skills || []).join(' ')} ${(provider.packages || []).map(p => (p.title + ' ' + (p.scope || ''))).join(' ')}`.toLowerCase();
+
+            if (providerSearchState.q && providerSearchState.q.trim()) {
+                const qLower = providerSearchState.q.trim().toLowerCase();
+                if (!text.includes(qLower)) return false;
+            }
+
+            if (providerSearchState.subType && cfg?.types) {
+                const subObj = cfg.types.find(t => t.id === providerSearchState.subType);
+                if (subObj && subObj.keywords) {
+                    const matched = subObj.keywords.some(kw => text.includes(kw));
+                    if (!matched) return false;
+                }
+            }
+
+            if (providerSearchState.serviceOption && cfg?.serviceOptions) {
+                const sOpt = cfg.serviceOptions.find(o => o.id === providerSearchState.serviceOption);
+                if (sOpt && sOpt.match) {
+                    const matched = sOpt.match.some(kw => text.includes(kw));
+                    if (!matched) return false;
+                }
+            }
+
+            if (providerSearchState.sellerDetail) {
+                const sd = providerSearchState.sellerDetail;
+                if (sd === 'top_rated' && provider.rating < 4.9) return false;
+                if (sd === 'level_2' && provider.review_count < 30) return false;
+                if (sd === 'pro_verified' && (provider.rating < 4.8 || provider.review_count < 40)) return false;
+                if (sd === 'fast_turnaround') {
+                    const hasFast = (provider.packages || []).some(p => {
+                        const t = (p.turnaround || '').toLowerCase();
+                        return t.includes('24') || t.includes('hour') || t.includes('immediate');
+                    });
+                    if (!hasFast) return false;
+                }
+            }
+
+            if (providerSearchState.deliveryTime) {
+                const dt = providerSearchState.deliveryTime;
+                if (dt === 'instant') {
+                    const ok = (provider.packages || []).some(p => (p.turnaround || '').toLowerCase().includes('immediate') || (p.turnaround || '').toLowerCase().includes('instant'));
+                    if (!ok) return false;
+                } else if (dt === '24h') {
+                    const ok = (provider.packages || []).some(p => {
+                        const t = (p.turnaround || '').toLowerCase();
+                        return t.includes('24') || t.includes('immediate') || t.includes('1 day');
+                    });
+                    if (!ok) return false;
+                } else if (dt === '3d') {
+                    const ok = (provider.packages || []).some(p => {
+                        const t = (p.turnaround || '').toLowerCase();
+                        return t.includes('24') || t.includes('48') || t.includes('3 day') || t.includes('2 day') || t.includes('immediate');
+                    });
+                    if (!ok) return false;
+                }
+            }
+
+            if (providerSearchState.proOnly && provider.rating < 4.9) {
+                return false;
+            }
+
+            if (providerSearchState.onlineOnly) {
+                const resp = (provider.response_time || '').toLowerCase();
+                const ok = resp.includes('15') || resp.includes('30') || resp.includes('1 hour') || provider.availability === 'immediate';
+                if (!ok) return false;
+            }
+
+            return true;
+        });
+    }
+
+    function renderFiverrGigCard(provider, activeCfg) {
+        const mainPkg = provider.packages?.[0];
+        const thumb = getProviderThumbnail(provider, mainPkg);
+        const cfg = activeCfg || fiverrCategoryConfigs[provider.niche] || fiverrCategoryConfigs['editors_animators'];
+        const badge = getGigBadge(provider, cfg);
+        const level = getSellerLevelBadge(provider);
+        const isFav = localStorage.getItem(`fiverr_fav_${provider.id}`) === 'true';
+        const hookTitle = mainPkg?.title || `${provider.specialization || 'Professional verified services'} with 100% escrow protection`;
+        const startPrice = provider.starting_price || mainPkg?.price || (provider.niche === 'tutors' ? 799 : (provider.niche === 'writers' ? 1199 : 1499));
+        const turnaround = mainPkg?.turnaround || (provider.niche === 'tutors' ? 'Immediate' : '24 hours');
+
+        const primaryText = {
+            'tutors': 'Book Lesson',
+            'writers': 'Hire Writer',
+            'editors_animators': 'Book Talent'
+        }[provider.niche] || (cfg?.primaryBtnText || 'Book Talent');
+
+        const secondaryText = {
+            'tutors': '🎧 Sample Class',
+            'writers': '📄 Read Sample',
+            'editors_animators': '🎨 Showreel'
+        }[provider.niche] || (cfg?.secondaryBtnText || '🎨 Showcase');
+
+        const nicheTag = {
+            'editors_animators': '🎬 Video',
+            'tutors': '🗣️ Tutor',
+            'writers': '✍️ Writer'
+        }[provider.niche] || '';
+
+        return `
+        <div class="fiverr-gig-card">
+            <!-- 16:9 Thumbnail Showcase with Badges & Fav Heart -->
+            <div class="fiverr-gig-thumb-wrap" onclick="openFiverrPortfolioModal(${provider.id})">
+                ${renderMediaThumbnailOrVideo(thumb, { className: 'fiverr-gig-thumb-img', alt: provider.name, autoplay: true })}
+                <span class="fiverr-gig-badge">${escapeHTML(badge)}</span>
+                <button
+                    class="fiverr-gig-heart ${isFav ? 'active' : ''}"
+                    id="fav-btn-${provider.id}"
+                    onclick="toggleFiverrFavorite(${provider.id}, event)"
+                    title="Save to favorites"
+                >
+                    ${isFav ? '❤️' : '🤍'}
+                </button>
+                <div class="fiverr-gig-play-hint">
+                    <div class="fiverr-gig-play-btn">▶</div>
+                </div>
+            </div>
+
+            <!-- Gig Card Body -->
+            <div class="fiverr-gig-content">
+                <div>
+                    <!-- Seller row -->
+                    <div class="fiverr-gig-creator" style="cursor: pointer;" onclick="openFiverrPortfolioModal(${provider.id})" title="Tap to view creator profile">
+                        <div class="fiverr-gig-avatar">
+                            ${escapeHTML(provider.name ? String(provider.name).charAt(0) : 'P')}
+                        </div>
+                        <div style="overflow: hidden; flex: 1;">
+                            <div class="fiverr-gig-creator-name">${escapeHTML(provider.name || 'Provider')}</div>
+                            <div style="font-size: 0.6875rem; color: var(--success); font-weight: 600;">🟢 Online now</div>
+                        </div>
+                        <div style="display: flex; gap: 4px; align-items: center;">
+                            ${nicheTag ? `<span style="font-size: 0.65rem; font-weight: 700; padding: 2px 6px; border-radius: 4px; background: rgba(99, 102, 241, 0.1); color: var(--accent); border: 1px solid rgba(99, 102, 241, 0.2);">${nicheTag}</span>` : ''}
+                            <span class="fiverr-gig-level-badge">${level}</span>
+                        </div>
+                    </div>
+
+                    <!-- Hook Title -->
+                    <div class="fiverr-gig-title" onclick="openFiverrPortfolioModal(${provider.id})" title="${escapeHTML(hookTitle)}">
+                        ${escapeHTML(hookTitle)}
+                    </div>
+
+                    <!-- Rating Row -->
+                    <div class="fiverr-gig-rating-row">
+                        <span class="fiverr-gig-star">★</span>
+                        <span class="fiverr-gig-rating-val">${(provider.rating || 5.0).toFixed(1)}</span>
+                        <span class="fiverr-gig-reviews">(${provider.review_count || 24})</span>
+                        <span style="color: var(--text-muted); margin: 0 4px;">•</span>
+                        <span style="color: var(--accent); font-weight: 600; font-size: 0.75rem;">100% Escrow</span>
+                    </div>
+
+                    <!-- Software / Skills chips -->
+                    <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 12px;">
+                        ${(provider.skills || []).slice(0, 3).map(skill => `
+                            <span style="background: var(--bg-hover); color: var(--text-secondary); padding: 2px 7px; border-radius: 4px; font-size: 0.65rem; border: 1px solid var(--border);">${escapeHTML(skill)}</span>
+                        `).join('')}
+                    </div>
+                </div>
+
+                <div>
+                    <!-- Price & Delivery Footer -->
+                    <div class="fiverr-gig-footer">
+                        <div>
+                            <div class="fiverr-gig-price-label">Starting at</div>
+                            <div class="fiverr-gig-price-val">₹${startPrice.toLocaleString()}</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">⚡ ${escapeHTML(turnaround)}</span>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons: Chat & Order -->
+                    <div class="fiverr-gig-actions" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; width: 100%; min-width: 0; box-sizing: border-box;">
+                        <button class="btn btn-outline btn-sm" style="flex: 1 1 100px; min-width: 0; max-width: 100%; font-weight: 700; border-color: var(--accent); color: var(--accent); display: flex; align-items: center; justify-content: center; gap: 6px; padding: 10px 16px; min-height: 44px; font-size: 0.875rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" onclick="event.stopPropagation(); openPreBookingChat(${provider.id})" title="Chat with ${escapeHTML(provider.name || 'Provider')} before booking">
+                            💬 Chat
+                        </button>
+                        <button class="btn btn-primary btn-sm" style="flex: 1.4 1 130px; min-width: 0; max-width: 100%; font-weight: 700; padding: 10px 18px; min-height: 44px; font-size: 0.875rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" onclick="selectProvider(${provider.id}, ${mainPkg ? mainPkg.id : 'null'})">
+                            ${primaryText}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+    }
+
+    function renderProvidersList() {
+        const activeCfg = fiverrCategoryConfigs[providerSearchState.niche];
+        const isClassified = Boolean(activeCfg);
+
+        const hasActiveFilters = Boolean(
+            providerSearchState.q ||
+            providerSearchState.subType ||
+            providerSearchState.serviceOption ||
+            providerSearchState.sellerDetail ||
+            providerSearchState.budget ||
+            providerSearchState.deliveryTime ||
+            providerSearchState.minRating ||
+            providerSearchState.proOnly ||
+            providerSearchState.onlineOnly ||
+            providerSearchState.sortBy !== 'rating'
+        );
+
+        const activeSubTypeObj = activeCfg ? activeCfg.types.find(t => t.id === providerSearchState.subType) : null;
+        const activeServiceOptionLabel = getActiveServiceOptionLabel(activeCfg);
+        const activeSellerDetailLabel = getActiveSellerDetailLabel(activeCfg);
+        const activeBudgetLabel = getActiveBudgetLabel(activeCfg);
+        const activeDeliveryLabel = getActiveDeliveryTimeLabel(activeCfg);
+
+        const hasSpecificFilter = Boolean(
+            providerSearchState.subType ||
+            providerSearchState.serviceOption ||
+            providerSearchState.sellerDetail ||
+            providerSearchState.budget ||
+            providerSearchState.deliveryTime ||
+            providerSearchState.proOnly ||
+            providerSearchState.onlineOnly
+        );
+
+        let displayedProviders = isClassified ? filterClassifiedProviders(providers, activeCfg) : providers;
+        if (!isClassified) {
+            if (providerSearchState.proOnly) {
+                displayedProviders = displayedProviders.filter(p => p.rating >= 4.9);
+            }
+            if (providerSearchState.onlineOnly) {
+                displayedProviders = displayedProviders.filter(p => {
+                    const resp = (p.response_time || '').toLowerCase();
+                    return resp.includes('15') || resp.includes('30') || resp.includes('1 hour') || p.availability === 'immediate';
+                });
+            }
+        }
+
+        window.__currentProviderNiche = providerSearchState.niche || 'all';
+        const currentProviderOptions = (window.__providerCategoryOptionsMap || {})[providerSearchState.niche || 'all'] || (window.__providerCategoryOptionsMap || {}).all || [];
+        const initialProviderTerm = currentProviderOptions[0]?.label || 'Video Editors & Animators';
+
+        if (!window.__providerPlaceholderBlinkLoopStarted) {
+            window.__providerPlaceholderBlinkLoopStarted = true;
+            let providerOptIdx = 0;
+            setInterval(() => {
+                const input = document.getElementById('provider-search-input');
+                const textEl = document.getElementById('provider-placeholder-dynamic-text');
+                const holder = document.getElementById('provider-search-animated-placeholder');
+
+                if (input && (input.value.trim().length > 0 || document.activeElement === input)) {
+                    if (holder && !holder.classList.contains('hidden')) {
+                        holder.classList.add('hidden');
+                    }
+                    return;
+                }
+
+                if (holder && holder.classList.contains('hidden')) {
+                    holder.classList.remove('hidden');
+                }
+
+                if (!textEl) return;
+
+                const map = window.__providerCategoryOptionsMap || {};
+                const currentNiche = window.__currentProviderNiche || 'all';
+                const opts = map[currentNiche] || map.all || [];
+                if (!opts.length) return;
+
+                providerOptIdx = (providerOptIdx + 1) % opts.length;
+                const nextOpt = opts[providerOptIdx];
+
+                // 1. Blink out smoothly
+                textEl.classList.add('blink-out');
+                textEl.classList.remove('blink-in');
+
+                setTimeout(() => {
+                    // 2. Change text while faded
+                    textEl.textContent = `"${nextOpt.label}"`;
+                    textEl.classList.remove('blink-out');
+                    textEl.classList.add('blink-in');
+
+                    setTimeout(() => {
+                        textEl.classList.remove('blink-in');
+                    }, 400);
+                }, 280);
+            }, 2600);
+        }
+
+        return el`<div>
+            ${renderAppHeader('/providers')}
+            <div class="main">
+                <!-- Back button when viewing a specific category -->
+                ${isClassified ? `
+                    <div style="margin-bottom: 14px;">
+                        <button type="button" class="fiverr-back-btn" onclick="setProviderNiche('');" style="cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
+                                <line x1="19" y1="12" x2="5" y2="12"></line>
+                                <polyline points="12 19 5 12 12 5"></polyline>
+                            </svg>
+                            <span>← All Categories</span>
+                        </button>
+                    </div>
+                ` : ''}
+
+                <!-- Search Bar with Dynamic Animated Rotating Placeholder & Blinking Search Button -->
+                <div class="card provider-search-bar-card" style="padding: 14px 16px; margin-bottom: 20px;">
+                    <form onsubmit="handleProviderSearch(event)" class="provider-search-form" style="display: flex; gap: 8px; align-items: center;">
+                        <div class="buyer-search-input-wrap">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18" class="buyer-search-icon">
+                                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                            </svg>
+                            <div class="search-animated-placeholder ${providerSearchState.q ? 'hidden' : ''}" id="provider-search-animated-placeholder" onclick="const i=document.getElementById('provider-search-input'); if(i){ i.focus(); }">
+                                <span class="placeholder-prefix">Search</span>
+                                <span class="placeholder-dynamic-text" id="provider-placeholder-dynamic-text">"${initialProviderTerm}"</span>
+                                <span class="placeholder-cursor">|</span>
+                            </div>
+                            <input
+                                type="text"
+                                class="form-input buyer-search-input"
+                                id="provider-search-input"
+                                value="${escapeHTML(providerSearchState.q || '')}"
+                                oninput="window.__handleProviderSearchInput(this.value); window.__updateProviderPlaceholderVisibility();"
+                                onfocus="window.__updateProviderPlaceholderVisibility(true);"
+                                onblur="window.__updateProviderPlaceholderVisibility();"
+                                autocomplete="off"
+                            />
+                            ${providerSearchState.q ? `
+                                <button type="button" class="buyer-search-clear-btn" onclick="window.__clearProviderSearch()" title="Clear search">✕</button>
+                            ` : ''}
+                        </div>
+                        <button type="submit" class="btn btn-primary buyer-search-btn buyer-search-btn-blinking" title="Click to search talent">
+                            <span class="search-btn-beacon"></span>
+                            <span class="search-btn-icon-sparkle">✨</span>
+                            <span>Search</span>
+                        </button>
+                        ${hasActiveFilters ? `
+                            <button type="button" class="btn btn-secondary" onclick="clearProviderFilters()" style="height: 44px; width: auto; padding: 0 14px; font-weight: 600;" title="Reset filters">
+                                ✕ Clear
+                            </button>
+                        ` : ''}
+                    </form>
+                </div>
+
+                <!-- FIVERR CLASSIFIED CATEGORY VIEW -->
+                ${isClassified ? `
+
+                    <!-- Category Header -->
+                    <div class="fiverr-cat-header">
+                        <h1 class="fiverr-cat-title">${activeCfg.title}</h1>
+                        <div class="fiverr-cat-desc">
+                            <span>${activeCfg.description}</span>
+                            <button class="fiverr-how-it-works-btn" onclick="openFiverrEscrowModal()">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <polygon points="10 8 16 12 10 16 10 8" fill="currentColor"/>
+                                </svg>
+                                How Escrow Works
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- "Select type" Carousel -->
+                    <div class="fiverr-type-section">
+                        <div class="fiverr-type-header">
+                            <h2 class="fiverr-type-title">${activeCfg.selectTypeLabel}</h2>
+                            <div class="fiverr-scroll-arrows">
+                                <button class="fiverr-scroll-btn" onclick="scrollFiverrTypes(-240)" title="Scroll left">‹</button>
+                                <button class="fiverr-scroll-btn" onclick="scrollFiverrTypes(240)" title="Scroll right">›</button>
+                            </div>
+                        </div>
+                        <div class="fiverr-type-scroll" id="fiverr-type-scroll">
+                            ${(() => {
+                                const typesList = [...activeCfg.types];
+                                if (providerSearchState.subType) {
+                                    const selIdx = typesList.findIndex(t => t.id === providerSearchState.subType);
+                                    if (selIdx > -1) {
+                                        const [selItem] = typesList.splice(selIdx, 1);
+                                        typesList.unshift(selItem);
+                                    }
+                                }
+                                return typesList.map(vt => `
+                                    <div
+                                        class="fiverr-type-pill ${providerSearchState.subType === vt.id ? 'active' : ''}"
+                                        onclick="setFiverrSubType('${vt.id}')"
+                                    >
+                                        <div class="fiverr-type-icon">${getTypeIconSvg(vt.id, vt.icon, 34)}</div>
+                                        <div class="fiverr-type-label-box">
+                                            <div class="fiverr-type-label">${vt.label}</div>
+                                        </div>
+                                    </div>
+                                `).join('');
+                            })()}
+                        </div>
+                    </div>
+
+                    <!-- Fiverr Filter Dropdown Bar -->
+                    <div class="fiverr-filter-bar">
+                        <div class="fiverr-filter-left">
+
+
+                            ${providerSearchState.niche !== 'tutors' && providerSearchState.niche !== 'writers' && activeCfg.sellerDetails && activeCfg.sellerDetails.length > 0 ? `
+                            <!-- Seller details dropdown -->
+                            <div class="fiverr-filter-dropdown-wrap">
+                                <button class="fiverr-filter-btn ${providerSearchState.sellerDetail ? 'active' : ''}" onclick="toggleFiverrFilterMenu('menu-seller-details')">
+                                    <span>${getActiveSellerDetailLabel(activeCfg) || 'Seller details'}</span>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="6 9 12 15 18 9"/></svg>
+                                </button>
+                                <div class="fiverr-filter-menu" id="menu-seller-details">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 8px; margin-bottom: 8px; border-bottom: 1px solid var(--border);">
+                                        <span style="font-weight: 700; font-size: 0.82rem; color: var(--text-primary);">Seller Details</span>
+                                        <button type="button" class="modal-back-btn" onclick="document.querySelectorAll('.fiverr-filter-menu.open').forEach(m => m.classList.remove('open'))">✕ Close</button>
+                                    </div>
+                                    ${activeCfg.sellerDetails.map(sd => `
+                                        <div class="fiverr-filter-option ${providerSearchState.sellerDetail === sd.id ? 'selected' : ''}" onclick="setFiverrFilter('sellerDetail', '${sd.id}')">
+                                            ${sd.label}
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                            ` : ''}
+
+                            <!-- Budget dropdown -->
+                            <div class="fiverr-filter-dropdown-wrap">
+                                <button class="fiverr-filter-btn ${providerSearchState.budget ? 'active' : ''}" onclick="toggleFiverrFilterMenu('menu-budget')">
+                                    <span>${getActiveBudgetLabel(activeCfg) || 'Budget'}</span>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="6 9 12 15 18 9"/></svg>
+                                </button>
+                                <div class="fiverr-filter-menu" id="menu-budget">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 8px; margin-bottom: 8px; border-bottom: 1px solid var(--border);">
+                                        <span style="font-weight: 700; font-size: 0.82rem; color: var(--text-primary);">Budget</span>
+                                        <button type="button" class="modal-back-btn" onclick="document.querySelectorAll('.fiverr-filter-menu.open').forEach(m => m.classList.remove('open'))">✕ Close</button>
+                                    </div>
+                                    ${activeCfg.budgets.map(b => `
+                                        <div class="fiverr-filter-option ${providerSearchState.budget === b.id ? 'selected' : ''}" onclick="setFiverrFilter('budget', '${b.id}')">
+                                            ${b.label}
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+
+                            <!-- Delivery time / schedule dropdown -->
+                            <div class="fiverr-filter-dropdown-wrap">
+                                <button class="fiverr-filter-btn ${providerSearchState.deliveryTime ? 'active' : ''}" onclick="toggleFiverrFilterMenu('menu-delivery-time')">
+                                    <span>${getActiveDeliveryTimeLabel(activeCfg) || (providerSearchState.niche === 'tutors' ? 'Schedule' : 'Delivery time')}</span>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="6 9 12 15 18 9"/></svg>
+                                </button>
+                                <div class="fiverr-filter-menu" id="menu-delivery-time">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 8px; margin-bottom: 8px; border-bottom: 1px solid var(--border);">
+                                        <span style="font-weight: 700; font-size: 0.82rem; color: var(--text-primary);">${providerSearchState.niche === 'tutors' ? 'Schedule' : 'Delivery time'}</span>
+                                        <button type="button" class="modal-back-btn" onclick="document.querySelectorAll('.fiverr-filter-menu.open').forEach(m => m.classList.remove('open'))">✕ Close</button>
+                                    </div>
+                                    ${activeCfg.deliveryTimes.map(dt => `
+                                        <div class="fiverr-filter-option ${providerSearchState.deliveryTime === dt.id ? 'selected' : ''}" onclick="setFiverrFilter('deliveryTime', '${dt.id}')">
+                                            ${dt.label}
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+
+                            ${hasActiveFilters ? `
+                                <button class="btn btn-secondary btn-sm" onclick="clearProviderFilters()" style="padding: 7px 12px; font-size: 0.78125rem;">
+                                    ✕ Reset
+                                </button>
+                            ` : ''}
+                        </div>
+
+                        <div class="fiverr-filter-right">
+                            <label class="fiverr-toggle-item">
+                                <span>Pro services</span>
+                                <div class="fiverr-switch">
+                                    <input type="checkbox" ${providerSearchState.proOnly ? 'checked' : ''} onchange="toggleFiverrProOnly(this.checked)">
+                                    <span class="fiverr-slider"></span>
+                                </div>
+                            </label>
+                            <label class="fiverr-toggle-item">
+                                <span>Online now</span>
+                                <div class="fiverr-switch">
+                                    <input type="checkbox" ${providerSearchState.onlineOnly ? 'checked' : ''} onchange="toggleFiverrOnlineOnly(this.checked)">
+                                    <span class="fiverr-slider"></span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Active Sub-Filter Chips Bar (Back Option for Specific Selections) -->
+                    ${hasSpecificFilter ? `
+                        <div class="fiverr-active-filters-bar">
+                            <span style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted); display: inline-flex; align-items: center; gap: 4px;">
+                                <span>Active Filters:</span>
+                            </span>
+                            ${activeSubTypeObj ? `
+                                <button class="fiverr-active-filter-chip" onclick="setFiverrSubType('')" title="Remove filter">
+                                    <span>Type: ${activeSubTypeObj.label}</span>
+                                    <span class="chip-x">✕</span>
+                                </button>
+                            ` : ''}
+                            ${activeServiceOptionLabel ? `
+                                <button class="fiverr-active-filter-chip" onclick="setFiverrFilter('serviceOption', '')" title="Remove filter">
+                                    <span>Service: ${activeServiceOptionLabel}</span>
+                                    <span class="chip-x">✕</span>
+                                </button>
+                            ` : ''}
+                            ${activeSellerDetailLabel && providerSearchState.niche !== 'tutors' && providerSearchState.niche !== 'writers' ? `
+                                <button class="fiverr-active-filter-chip" onclick="setFiverrFilter('sellerDetail', '')" title="Remove filter">
+                                    <span>Seller: ${activeSellerDetailLabel}</span>
+                                    <span class="chip-x">✕</span>
+                                </button>
+                            ` : ''}
+                            ${activeBudgetLabel ? `
+                                <button class="fiverr-active-filter-chip" onclick="setFiverrFilter('budget', '')" title="Remove filter">
+                                    <span>Budget: ${activeBudgetLabel}</span>
+                                    <span class="chip-x">✕</span>
+                                </button>
+                            ` : ''}
+                            ${activeDeliveryLabel ? `
+                                <button class="fiverr-active-filter-chip" onclick="setFiverrFilter('deliveryTime', '')" title="Remove filter">
+                                    <span>${providerSearchState.niche === 'tutors' ? 'Schedule' : 'Delivery'}: ${activeDeliveryLabel}</span>
+                                    <span class="chip-x">✕</span>
+                                </button>
+                            ` : ''}
+                            ${providerSearchState.proOnly ? `
+                                <button class="fiverr-active-filter-chip" onclick="toggleFiverrProOnly(false)" title="Remove filter">
+                                    <span>Pro Only</span>
+                                    <span class="chip-x">✕</span>
+                                </button>
+                            ` : ''}
+                            ${providerSearchState.onlineOnly ? `
+                                <button class="fiverr-active-filter-chip" onclick="toggleFiverrOnlineOnly(false)" title="Remove filter">
+                                    <span>Online Now</span>
+                                    <span class="chip-x">✕</span>
+                                </button>
+                            ` : ''}
+                            <button class="fiverr-clear-all-btn" onclick="clearProviderFilters()">
+                                <-- Reset / Show All
+                            </button>
+                        </div>
+                    ` : ''}
+
+                    <!-- Results Count & Sorting Row -->
+                    <div class="fiverr-results-bar">
+                        <div class="fiverr-results-count">
+                            ${displayedProviders.length} results <span style="font-weight: 400; color: var(--text-muted); margin-left: 6px;">• Showing verified talent</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="font-size: 0.8125rem; color: var(--text-secondary);">Sort by:</span>
+                            <select class="fiverr-sort-select" onchange="handleFilterChange('sortBy', this.value)">
+                                <option value="rating" ${providerSearchState.sortBy === 'rating' ? 'selected' : ''}>Best selling</option>
+                                <option value="price_asc" ${providerSearchState.sortBy === 'price_asc' ? 'selected' : ''}>Price: Low to High</option>
+                                <option value="price_desc" ${providerSearchState.sortBy === 'price_desc' ? 'selected' : ''}>Price: High to Low</option>
+                                <option value="bookings" ${providerSearchState.sortBy === 'bookings' ? 'selected' : ''}>Most Bookings</option>
+                            </select>
+                        </div>
+                    </div>
+                ` : `
+                    <!-- STANDARD CATEGORY SELECTION CARDS (All Talent Overview) -->
+                    <div class="provider-category-grid">
+                        ${[
+                    { niche: 'editors_animators', label: 'Video Editors', color: 'linear-gradient(135deg, #7c3aed, #4f46e5)', sub: 'Reels, YouTube, VFX' },
+                    { niche: 'business_ads', label: 'Social Ads & Services', color: 'linear-gradient(135deg, #f59e0b, #ea580c)', sub: 'Ads, Shops, Videography' },
+                    { niche: 'tutors', label: 'English Tutors', color: 'linear-gradient(135deg, #10b981, #059669)', sub: 'Fluency, IELTS, Accent' },
+                    { niche: 'writers', label: 'Writers', color: 'linear-gradient(135deg, #0284c7, #0369a1)', sub: 'SEO, Scripts, Blogs' },
+                    { niche: '', label: 'All Talent', color: 'linear-gradient(135deg, #f59e0b, #d97706)', sub: 'All Verified Creators' },
+                ].map(cat => `
+                            <div
+                                class="provider-category-card ${cat.niche === providerSearchState.niche ? 'active' : ''}"
+                                style="cursor: pointer; background: ${cat.niche === providerSearchState.niche ? cat.color : 'var(--bg-card)'}; border: 2.5px solid ${cat.niche === providerSearchState.niche ? 'transparent' : 'var(--border)'}; border-radius: 16px; padding: 18px 14px; display: flex; flex-direction: column; align-items: center; gap: 8px; transition: transform 0.25s var(--ease-spring), box-shadow 0.25s ease, background 0.2s ease; user-select: none;"
+                                onclick="setProviderNiche('${cat.niche}')"
+                            >
+                                <div class="card-icon-circle"
+                                     style="width: 56px; height: 56px; border-radius: 16px; background: var(--bg-hover); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.06); transition: transform 0.3s var(--ease-bounce);">
+                                    ${getCategoryPeekIconSvg(cat.niche)}
+                                </div>
+                                <div style="font-weight: 700; font-size: 0.875rem; color: ${cat.niche === providerSearchState.niche ? 'white' : 'var(--text-primary)'}; text-align: center;">
+                                    ${cat.label}
+                                </div>
+                                <div style="font-size: 0.72rem; color: ${cat.niche === providerSearchState.niche ? 'rgba(255,255,255,0.85)' : 'var(--text-muted)'}; text-align: center;">
+                                    ${cat.sub}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `}
+
+                ${loading ? '<div class="loading"><div class="spinner"></div></div>' : ''}
+
+                ${!loading && displayedProviders.length === 0 ? `
+                    <div class="card" style="padding: 48px 24px; text-align: center; max-width: 600px; margin: 32px auto; border: 1.5px dashed var(--border); box-shadow: var(--shadow);">
+                        <div style="font-size: 3rem; margin-bottom: 14px;">✨</div>
+                        <h3 style="font-size: 1.35rem; font-weight: 800; margin-bottom: 8px; color: var(--text-primary);">Fresh Marketplace — Join as a Creator</h3>
+                        <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 24px; line-height: 1.5; max-width: 460px; margin-left: auto; margin-right: auto;">
+                            Are you a Video Editor, Motion Designer, or English Coach? Be among the first verified creators to offer services with 100% Escrow protected payouts.
+                        </p>
+                        <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+                            <button class="btn btn-primary" onclick="startJourney('PROVIDER')" style="padding: 12px 26px; font-weight: 700; background: #5b34ea;">
+                                Become a Creator &amp; List Services -->
+                            </button>
+                            ${hasActiveFilters ? `<button class="btn btn-secondary" onclick="clearProviderFilters()">Reset Filters</button>` : ''}
+                        </div>
+                    </div>
+                ` : ''}
+
+                <!-- RESULTS BAR FOR ALL TALENT OVERVIEW -->
+                ${!loading && !isClassified && displayedProviders.length > 0 ? `
+                    <div class="fiverr-results-bar">
+                        <div class="fiverr-results-count">
+                            ${displayedProviders.length} verified talents <span style="font-weight: 400; color: var(--text-muted); margin-left: 6px;">• Showing visual portfolios &amp; work showcases</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="font-size: 0.8125rem; color: var(--text-secondary);">Sort by:</span>
+                            <select class="fiverr-sort-select" onchange="handleFilterChange('sortBy', this.value)">
+                                <option value="rating" ${providerSearchState.sortBy === 'rating' ? 'selected' : ''}>Best selling</option>
+                                <option value="price_asc" ${providerSearchState.sortBy === 'price_asc' ? 'selected' : ''}>Price: Low to High</option>
+                                <option value="price_desc" ${providerSearchState.sortBy === 'price_desc' ? 'selected' : ''}>Price: High to Low</option>
+                                <option value="bookings" ${providerSearchState.sortBy === 'bookings' ? 'selected' : ''}>Most Bookings</option>
+                            </select>
+                        </div>
+                    </div>
+                ` : ''}
+
+                <!-- VISUAL PORTFOLIO GIG CARDS GRID (Unified for All Talent & Classified Categories) -->
+                ${!loading && displayedProviders.length > 0 ? `
+                    <div class="fiverr-gig-grid">
+                        ${displayedProviders.map(provider => renderFiverrGigCard(provider, activeCfg)).join('')}
+                    </div>
+                ` : ''}
+            </div>
+        </div>`;
+    }
+
+    mount(renderProvidersList());
+    return renderProvidersList();
+}
+
+// =============== ADMIN DASHBOARD ===============
+
+function AdminDashboard() {
+    let stats = {};
+    let loading = true;
+
+    async function loadStats() {
+        showLoading();
+        try {
+            stats = await apiFetch('/admin/stats');
+        } catch (e) {
+            showToast(e.message, 'error');
+            stats = {};
+        } finally {
+            loading = false;
+            mount(renderAdminDashboard());
+        }
+    }
+
+    loadStats();
+
+    function renderAdminDashboard() {
+        return el`<div>
+            ${renderAppHeader('/admin')}
+            <div class="main">
+                <!-- Admin Command Center Banner -->
+                <div style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(99, 102, 241, 0.08) 100%); border: 1.5px solid rgba(239, 68, 68, 0.35); border-radius: var(--radius-md); padding: 22px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+                    <div style="display: flex; align-items: center; gap: 14px;">
+                        <div style="width: 48px; height: 48px; border-radius: 14px; background: #ef4444; color: white; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; flex-shrink: 0; box-shadow: 0 4px 14px rgba(239, 68, 68, 0.35);">
+                            🛡️
+                        </div>
+                        <div>
+                            <div style="font-size: 1.25rem; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                <span>Groove Hub Admin Command Console</span>
+                                <span class="mode-badge-pill mode-badge-admin">Exclusive Admin Access</span>
+                            </div>
+                            <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 3px;">
+                                Signed in as <strong>${currentUser?.email || 'rahura2026@gmail.com'}</strong> • Complete oversight of chats, escrow, orders & talent.
+                            </div>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        <button class="btn btn-secondary btn-sm" onclick="router('/admin/chats')">💬 Inspect Chats</button>
+                        <button class="btn btn-primary btn-sm" onclick="router('/payments')">💳 Escrow & Revenue</button>
+                    </div>
+                </div>
+
+                <div class="section-title">Platform Overview</div>
+                ${loading ? '<div class="loading"><div class="spinner"></div></div>' : ''}
+                ${!loading ? `
+                    <div class="grid grid-4" style="margin-bottom: 24px;">
+                        <div class="card" style="border-left: 4px solid var(--accent); padding: 20px;">
+                            <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Total Users</div>
+                            <div style="font-size: 2rem; font-weight: 800; color: var(--text-primary); margin-top: 4px;">${stats.total_users || 0}</div>
+                            <div style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 2px;">Registered accounts</div>
+                        </div>
+                        <div class="card" style="border-left: 4px solid #3b82f6; padding: 20px;">
+                            <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Active Providers</div>
+                            <div style="font-size: 2rem; font-weight: 800; color: #3b82f6; margin-top: 4px;">${stats.total_providers || 0}</div>
+                            <div style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 2px;">Verified talent</div>
+                        </div>
+                        <div class="card" style="border-left: 4px solid #f59e0b; padding: 20px;">
+                            <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Total Bookings</div>
+                            <div style="font-size: 2rem; font-weight: 800; color: #f59e0b; margin-top: 4px;">${stats.total_bookings || 0}</div>
+                            <div style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 2px;">Marketplace orders</div>
+                        </div>
+                        <div class="card" style="border-left: 4px solid #10b981; padding: 20px;">
+                            <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Platform Revenue</div>
+                            <div style="font-size: 2rem; font-weight: 800; color: #10b981; margin-top: 4px;">₹${(stats.total_commissions || 0).toLocaleString()}</div>
+                            <div style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 2px;">20% commissions</div>
+                        </div>
+                    </div>
+
+                    <div class="section-title">Management Modules</div>
+                    <div class="grid grid-2">
+                        <button class="card" onclick="router('/admin/chats')" style="cursor: pointer; text-align: left; border-color: rgba(99, 102, 241, 0.4);">
+                            <div class="card-header" style="margin-bottom: 6px;">
+                                <div class="card-title" style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary);">💬 Chats & Safety Guard</div>
+                                <span class="badge badge-primary">Moderation</span>
+                            </div>
+                            <div class="card-body" style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;">
+                                Inspect buyer-provider messages, review phone-sharing auto-blocks, and unblock accounts with 1 click.
+                            </div>
+                        </button>
+                        <button class="card" onclick="router('/admin/providers')" style="cursor: pointer; text-align: left;">
+                            <div class="card-header" style="margin-bottom: 6px;">
+                                <div class="card-title" style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary);">👥 Provider Management</div>
+                                <span class="badge badge-info">${stats.total_providers || 0} Providers</span>
+                            </div>
+                            <div class="card-body" style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;">
+                                Verify credentials, review applicant portfolios, and manage active creator status.
+                            </div>
+                        </button>
+                        <button class="card" onclick="router('/admin/bookings')" style="cursor: pointer; text-align: left;">
+                            <div class="card-header" style="margin-bottom: 6px;">
+                                <div class="card-title" style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary);">📋 All Bookings & Escrow Monitor</div>
+                                <span class="badge badge-info">${stats.total_bookings || 0} Orders</span>
+                            </div>
+                            <div class="card-body" style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;">
+                                Monitor all transactions across the platform, verify file deliveries, and force-release escrow.
+                            </div>
+                        </button>
+                        <button class="card" onclick="router('/admin/disputes')" style="cursor: pointer; text-align: left;">
+                            <div class="card-header" style="margin-bottom: 6px;">
+                                <div class="card-title" style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary);">⚖️ Dispute Resolution Center</div>
+                                <span class="badge badge-danger">Arbitration</span>
+                            </div>
+                            <div class="card-body" style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;">
+                                Review client dispute claims, inspect deliverables, and issue full refunds or provider releases.
+                            </div>
+                        </button>
+                        <button class="card" onclick="router('/payments')" style="cursor: pointer; text-align: left;">
+                            <div class="card-header" style="margin-bottom: 6px;">
+                                <div class="card-title" style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary);">💳 Escrow Vault & Financials</div>
+                                <span class="badge badge-success">Audit</span>
+                            </div>
+                            <div class="card-body" style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;">
+                                View gross volume, platform commissions, 80% provider disbursements, and funds currently locked.
+                            </div>
+                        </button>
+                        <button class="card" onclick="router('/admin/niches')" style="cursor: pointer; text-align: left;">
+                            <div class="card-header" style="margin-bottom: 6px;">
+                                <div class="card-title" style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary);">🗂️ Niches & Service Categories</div>
+                                <span class="badge badge-info">${stats.active_niches || 0} Active</span>
+                            </div>
+                            <div class="card-body" style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;">
+                                Configure video editing and English tutoring categories, pricing floors, and provider supply caps.
+                            </div>
+                        </button>
+                    </div>
+                ` : ''}
+            </div>
+        </div>`;
+    }
+
+    mount(renderAdminDashboard());
+    return renderAdminDashboard();
+}
+
+// =============== ADMIN NICHES ===============
+
+function AdminNiches() {
+    let niches = [];
+    let loading = true;
+
+    async function loadNiches() {
+        showLoading();
+        try {
+            niches = await apiFetch('/admin/niches');
+        } catch (e) {
+            showToast(e.message, 'error');
+            niches = [];
+        } finally {
+            loading = false;
+            mount(renderAdminNiches());
+        }
+    }
+
+    loadNiches();
+
+    async function handleCreateNiche(e) {
+        e.preventDefault();
+        const name = document.getElementById('niche-slug').value.trim();
+        const displayName = document.getElementById('niche-display').value.trim();
+        const supplyCap = parseInt(document.getElementById('niche-cap').value) || 100;
+
+        showLoading();
+        try {
+            await apiFetch('/admin/niches', {
+                method: 'POST',
+                body: JSON.stringify({
+                    name: name,
+                    display_name: displayName,
+                    is_active: true,
+                    supply_cap: supplyCap
+                })
+            });
+            showToast('Niche created successfully', 'success');
+            loadNiches();
+        } catch (e) {
+            showToast(e.message, 'error');
+            loadNiches();
+        }
+    }
+
+    window.toggleNicheActive = async (id, currentStatus) => {
+        showLoading();
+        try {
+            await apiFetch(`/admin/niches/${id}`, {
+                method: 'PATCH',
+                body: JSON.stringify({ is_active: !currentStatus })
+            });
+            showToast('Niche status updated', 'success');
+            loadNiches();
+        } catch (e) {
+            showToast(e.message, 'error');
+            loadNiches();
+        }
+    };
+
+    function renderAdminNiches() {
+        return el`<div>
+            ${renderAppHeader('/admin/niches')}
+            <div class="main">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <div class="section-title" style="margin: 0;">Manage Service Niches</div>
+                    <button class="btn btn-secondary btn-sm" onclick="router('/admin')"><-- Back to Admin</button>
+                </div>
+
+                <div class="grid grid-2" style="margin-bottom: 24px;">
+                    <!-- Create Niche Form -->
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">Add New Niche</div>
+                        </div>
+                        <div class="card-body">
+                            <form id="create-niche-form" onsubmit="window.handleCreateNiche(event)">
+                                <div class="form-group">
+                                    <label class="form-label">Key / Slug (e.g. voiceover_artists)</label>
+                                    <input type="text" class="form-input" id="niche-slug" placeholder="voiceover_artists" required />
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Display Name</label>
+                                    <input type="text" class="form-input" id="niche-display" placeholder="Voiceover Artists" required />
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Supply Cap</label>
+                                    <input type="number" class="form-input" id="niche-cap" value="100" min="1" required />
+                                </div>
+                                <button type="submit" class="btn btn-primary btn-sm" style="margin-top: 10px;">Create Niche</button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Information Card -->
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">Niche Guidelines</div>
+                        </div>
+                        <div class="card-body" style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.6;">
+                            <p><strong>Supply Caps:</strong> Limit provider saturation per niche to preserve quality and high earnings for top talent.</p>
+                            <p style="margin-top: 8px;"><strong>Core Niches:</strong> Focus on video editors, animators, English tutors, and thumbnail designers to maximize platform synergy.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Niches List Table -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">All Registered Niches (${niches.length})</div>
+                    </div>
+                    <div class="table-container">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Slug</th>
+                                    <th>Display Name</th>
+                                    <th>Supply Cap</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${niches.map(n => `
+                                    <tr>
+                                        <td>#${n.id}</td>
+                                        <td><code>${n.name}</code></td>
+                                        <td><strong>${n.display_name}</strong></td>
+                                        <td>${n.supply_cap}</td>
+                                        <td>
+                                            <span class="badge ${n.is_active ? 'badge-success' : 'badge-danger'}">
+                                                ${n.is_active ? 'Active' : 'Inactive'}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-secondary btn-sm" onclick="toggleNicheActive(${n.id}, ${n.is_active})">
+                                                ${n.is_active ? 'Deactivate' : 'Activate'}
+                                            </button>
+                                        </td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+    }
+
+    window.handleCreateNiche = handleCreateNiche;
+}
+
+// =============== ADMIN PROVIDERS ===============
+
+function AdminProviders() {
+    let providers = [];
+    let loading = true;
+
+    async function loadProviders() {
+        showLoading();
+        try {
+            providers = await apiFetch('/admin/providers');
+        } catch (e) {
+            showToast(e.message, 'error');
+            providers = [];
+        } finally {
+            loading = false;
+            mount(renderAdminProviders());
+        }
+    }
+
+    loadProviders();
+
+    window.approveProvider = async (id) => {
+        showLoading();
+        try {
+            await apiFetch(`/admin/providers/${id}/approve`, { method: 'POST' });
+            showToast('Provider verified successfully', 'success');
+            loadProviders();
+        } catch (e) {
+            showToast(e.message, 'error');
+            loadProviders();
+        }
+    };
+
+    window.toggleProviderActive = async (id) => {
+        showLoading();
+        try {
+            await apiFetch(`/admin/providers/${id}/toggle-active`, { method: 'POST' });
+            showToast('Provider status updated', 'success');
+            loadProviders();
+        } catch (e) {
+            showToast(e.message, 'error');
+            loadProviders();
+        }
+    };
+
+    // Global unblock (also defined in AdminChatsView) so Providers page can reinstate safety-blocked accounts
+    if (!window.__adminUnblockUser) {
+        window.__adminUnblockUser = async (userId, userName) => {
+            if (!confirm(`Unblock "${userName}" (ID: ${userId})? Messaging access will be reinstated.`)) return;
+            try {
+                const res = await apiFetch(`/admin/users/${userId}/unblock`, { method: 'POST' });
+                showToast(res.message || 'User unblocked', 'success');
+                loadProviders();
+            } catch (err) { showToast(err.message, 'error'); }
+        };
+    }
+
+    function renderAdminProviders() {
+        return el`<div>
+            ${renderAppHeader('/admin/providers')}
+            <div class="main">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <div class="section-title" style="margin: 0;">Provider Management</div>
+                    <button class="btn btn-secondary btn-sm" onclick="router('/admin')"><-- Back to Admin</button>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">All Providers (${providers.length})</div>
+                    </div>
+                    <div class="table-container">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Name</th>
+                                    <th>Contact</th>
+                                    <th>Specialty / Niche</th>
+                                    <th>Rating</th>
+                                    <th>Bookings</th>
+                                    <th>Status</th>
+                                    <th>Verified</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${providers.map(p => {
+                                    const jsName = (p.name || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+                                    const blocked = !!p.is_blocked;
+                                    return `
+                                    <tr>
+                                        <td>#${p.id}</td>
+                                        <td><strong>${escapeHTML(p.name || '')}</strong>${blocked ? ' <span class="badge badge-danger" style="font-size:0.65rem;">BLOCKED</span>' : ''}</td>
+                                        <td>
+                                            <div style="font-size: 0.8125rem;">${escapeHTML(p.phone || '-')}</div>
+                                            <div style="font-size: 0.75rem; color: var(--text-muted);">${escapeHTML(p.email || '-')}</div>
+                                        </td>
+                                        <td><span class="badge badge-info">${escapeHTML(p.niche || p.service_area || 'General')}</span></td>
+                                        <td>${p.rating > 0 ? `${p.rating} ⭐` : 'New'}</td>
+                                        <td>${p.total_bookings}</td>
+                                        <td>
+                                            <span class="badge ${!blocked && p.is_active ? 'badge-success' : 'badge-danger'}">
+                                                ${blocked ? 'Safety-blocked' : (p.is_active ? 'Active' : 'Suspended')}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="badge ${p.is_verified ? 'badge-success' : 'badge-warning'}">
+                                                ${p.is_verified ? 'Verified' : 'Pending'}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+                                                ${!p.is_verified ? `
+                                                    <button class="btn btn-primary btn-sm" onclick="approveProvider(${p.id})">Verify</button>
+                                                ` : ''}
+                                                <button class="btn btn-secondary btn-sm" onclick="toggleProviderActive(${p.id})">
+                                                    ${p.is_active ? 'Suspend' : 'Activate'}
+                                                </button>
+                                                ${blocked ? `
+                                                    <button class="btn btn-primary btn-sm" style="background:#10b981;border-color:#10b981;" onclick="window.__adminUnblockUser(${p.id}, '${jsName}')">Unblock</button>
+                                                ` : ''}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                `;}).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+    }
+}
+
+// =============== ADMIN BOOKINGS ===============
+
+function AdminBookings() {
+    let bookings = [];
+    let loading = true;
+    let currentFilter = '';
+
+    async function loadBookings() {
+        showLoading();
+        try {
+            const url = currentFilter ? `/admin/bookings?status=${currentFilter}` : '/admin/bookings';
+            bookings = await apiFetch(url);
+        } catch (e) {
+            showToast(e.message, 'error');
+            bookings = [];
+        } finally {
+            loading = false;
+            mount(renderAdminBookings());
+        }
+    }
+
+    loadBookings();
+
+    window.filterAdminBookings = (status) => {
+        currentFilter = status;
+        loadBookings();
+    };
+
+    window.forceApproveBooking = async (id) => {
+        if (!confirm('Force approve this booking and immediately release payment to provider?')) return;
+        showLoading();
+        try {
+            await apiFetch(`/admin/bookings/${id}/force-approve`, { method: 'POST' });
+            showToast('Booking force approved and payment released', 'success');
+            loadBookings();
+        } catch (e) {
+            showToast(e.message, 'error');
+            loadBookings();
+        }
+    };
+
+    function renderAdminBookings() {
+        return el`<div>
+            ${renderAppHeader('/admin/bookings')}
+            <div class="main">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <div class="section-title" style="margin: 0;">Platform Bookings & Escrow</div>
+                    <button class="btn btn-secondary btn-sm" onclick="router('/admin')"><-- Back to Admin</button>
+                </div>
+
+                <!-- Filters -->
+                <div class="card" style="padding: 12px 16px; margin-bottom: 16px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                    <label class="form-label" style="margin: 0;">Filter by Status:</label>
+                    <select class="form-select" style="width: auto; margin: 0; padding: 6px 12px;" onchange="filterAdminBookings(this.value)">
+                        <option value="" ${currentFilter === '' ? 'selected' : ''}>All Statuses</option>
+                        <option value="confirmed" ${currentFilter === 'confirmed' ? 'selected' : ''}>Confirmed</option>
+                        <option value="in_progress" ${currentFilter === 'in_progress' ? 'selected' : ''}>In Progress</option>
+                        <option value="delivered" ${currentFilter === 'delivered' ? 'selected' : ''}>Delivered</option>
+                        <option value="pending_approval" ${currentFilter === 'pending_approval' ? 'selected' : ''}>Pending Approval</option>
+                        <option value="approved" ${currentFilter === 'approved' ? 'selected' : ''}>Approved</option>
+                        <option value="completed" ${currentFilter === 'completed' ? 'selected' : ''}>Completed</option>
+                        <option value="disputed" ${currentFilter === 'disputed' ? 'selected' : ''}>Disputed</option>
+                        <option value="refunded" ${currentFilter === 'refunded' ? 'selected' : ''}>Refunded</option>
+                    </select>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Bookings List (${bookings.length})</div>
+                    </div>
+                    <div class="table-container">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Buyer ID</th>
+                                    <th>Provider ID</th>
+                                    <th>Total Value</th>
+                                    <th>Platform Fee</th>
+                                    <th>Payout (80%)</th>
+                                    <th>Status</th>
+                                    <th>Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${bookings.map(b => {
+            const fee = b.total_amount * 0.20;
+            const payout = b.total_amount - fee;
+            return `
+                                    <tr>
+                                        <td>#${b.id}</td>
+                                        <td>Buyer #${b.buyer_id}</td>
+                                        <td>Provider #${b.provider_id}</td>
+                                        <td><strong>₹${b.total_amount.toLocaleString()}</strong></td>
+                                        <td style="color: var(--success); font-weight: 600;">₹${fee.toLocaleString()}</td>
+                                        <td>₹${payout.toLocaleString()}</td>
+                                        <td><span class="badge ${getBookingBadge(b.status)}">${escapeHTML(String(b.status || 'unknown').replace('_', ' '))}</span></td>
+                                        <td>${new Date(b.created_at).toLocaleDateString()}</td>
+                                        <td>
+                                            ${b.status !== 'approved' && b.status !== 'completed' && b.status !== 'refunded' ? `
+                                                <button class="btn btn-success btn-sm" onclick="forceApproveBooking(${b.id})">Force Approve</button>
+                                            ` : '<span style="color: var(--text-muted); font-size: 0.75rem;">Settled</span>'}
+                                        </td>
+                                    </tr>`;
+        }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+    }
+}
+
+// =============== ADMIN DISPUTES ===============
+
+function AdminDisputes() {
+    let disputes = [];
+    let loading = true;
+
+    async function loadDisputes() {
+        showLoading();
+        try {
+            disputes = await apiFetch('/disputes');
+        } catch (e) {
+            showToast(e.message, 'error');
+            disputes = [];
+        } finally {
+            loading = false;
+            mount(renderAdminDisputes());
+        }
+    }
+
+    loadDisputes();
+
+    window.resolveDispute = async (id, action) => {
+        const resolution = action === 'refund' ? 'Refunded to Buyer' : 'Released to Provider';
+        const notes = prompt('Admin notes for resolution:', `Dispute resolved in favor of ${action === 'refund' ? 'buyer (100% refund)' : 'provider (funds released)'}`);
+        if (notes === null) return;
+
+        showLoading();
+        try {
+            await apiFetch(`/disputes/${id}/resolve`, {
+                method: 'PATCH',
+                body: JSON.stringify({
+                    dispute_id: id,
+                    status: 'resolved',
+                    resolution: resolution,
+                    admin_notes: notes
+                })
+            });
+            showToast(`Dispute resolved: ${resolution}`, 'success');
+            loadDisputes();
+        } catch (e) {
+            showToast(e.message, 'error');
+            loadDisputes();
+        }
+    };
+
+    function renderAdminDisputes() {
+        return el`<div>
+            ${renderAppHeader('/admin/disputes')}
+            <div class="main">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <div class="section-title" style="margin: 0;">Dispute Resolution Center</div>
+                    <button class="btn btn-secondary btn-sm" onclick="router('/admin')"><-- Back to Admin</button>
+                </div>
+
+                ${disputes.length === 0 ? `
+                    <div class="card">
+                        <div class="empty-state">
+                            <h3>No active disputes</h3>
+                            <p>All client and provider transactions are operating normally without conflicts.</p>
+                        </div>
+                    </div>
+                ` : `
+                    <div class="grid grid-2">
+                        ${disputes.map(d => `
+                            <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+                                <div class="card-body">
+                                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                                        <div>
+                                            <div style="font-weight: 700; font-size: 1rem;">Dispute #${d.id}</div>
+                                            <div style="font-size: 0.75rem; color: var(--text-muted);">Booking #${d.booking_id} • ${new Date(d.created_at).toLocaleDateString()}</div>
+                                        </div>
+                                        <span class="badge ${d.status === 'open' ? 'badge-danger' : 'badge-success'}">${d.status}</span>
+                                    </div>
+
+                                    <div style="background: var(--bg-hover); padding: 12px; border-radius: var(--radius-sm); margin-bottom: 12px; font-size: 0.875rem;">
+                                        <strong>Reason:</strong>
+                                        <p style="margin: 4px 0 0; color: var(--text-secondary);">${d.description || 'No description provided'}</p>
+                                    </div>
+
+                                    ${d.resolution ? `
+                                        <div style="font-size: 0.8125rem; color: var(--text-muted); margin-bottom: 8px;">
+                                            <strong>Resolution:</strong> ${d.resolution}
+                                        </div>
+                                    ` : ''}
+
+                                    ${d.status === 'open' ? `
+                                        <div style="display: flex; gap: 8px; margin-top: 14px;">
+                                            <button class="btn btn-danger btn-sm" style="flex: 1;" onclick="resolveDispute(${d.id}, 'refund')">
+                                                Refund Buyer
+                                            </button>
+                                            <button class="btn btn-success btn-sm" style="flex: 1;" onclick="resolveDispute(${d.id}, 'release')">
+                                                Release Payout
+                                            </button>
+                                        </div>
+                                    ` : `
+                                        <div style="font-size: 0.75rem; color: var(--success); text-align: center; margin-top: 8px;">
+                                            ✓ Resolved by Admin
+                                        </div>
+                                    `}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `}
+            </div>
+        </div>`;
+    }
+}
+
+// =============== LEGAL & COMPLIANCE ===============
+
+function PrivacyPolicy() {
+    return el`<div>
+        <div class="header">
+            ${renderLogo(32, true)}
+            <div class="header-nav">
+                <button class="nav-btn" onclick="router('/')">Home</button>
+                <button class="nav-btn" onclick="router('/login')">Sign In</button>
+            </div>
+        </div>
+        <div class="main" style="max-width: 800px; margin: 0 auto; padding: 24px 20px;">
+            <div class="card" style="padding: 28px;">
+                <h1 style="font-size: 1.75rem; font-weight: 800; margin-bottom: 8px;">Privacy Policy</h1>
+                <p style="color: var(--text-muted); font-size: 0.8125rem; margin-bottom: 24px;">Last updated: September 21, 2026</p>
+
+                <div style="color: var(--text-secondary); line-height: 1.7; font-size: 0.9375rem; display: flex; flex-direction: column; gap: 16px;">
+                    <p>At <strong>Groove Hub</strong>, your privacy and data security are our top priorities. This Privacy Policy describes how we collect, use, and protect your personal information when you use our platform and mobile applications.</p>
+
+                    <h3 style="color: var(--text-primary); margin-top: 12px;">1. Information We Collect</h3>
+                    <p>We collect information necessary to connect creators with video editors and tutors, including:
+                        <br>• <strong>Account Details:</strong> Full name, verified mobile phone number, and email address.
+                        <br>• <strong>Provider Profiles:</strong> Skills, portfolio links, service areas, and package pricing.
+                        <br>• <strong>Transaction & Escrow Data:</strong> Booking milestones, delivery files, and escrow payment statuses.
+                    </p>
+
+                    <h3 style="color: var(--text-primary); margin-top: 12px;">2. How We Use Your Information</h3>
+                    <p>Your information is used strictly to:
+                        <br>• Match creators with suitable video editors and English coaches.
+                        <br>• Facilitate 100% escrow payment protection and release full payouts upon buyer approval.
+                        <br>• Prevent fraud, resolve disputes, and maintain platform integrity.
+                    </p>
+
+                    <h3 style="color: var(--text-primary); margin-top: 12px;">3. Data Security & Payment Protection</h3>
+                    <p>All sensitive transactions are processed using industry-standard encryption. We do not store plaintext passwords. Passwords are protected using salted cryptographic hashes.</p>
+
+                    <h3 style="color: var(--text-primary); margin-top: 12px;">4. User Rights & Data Deletion</h3>
+                    <p>Users have the right to access, update, or request the deletion of their account and personal data at any time through Account Settings or by contacting our support team.</p>
+
+                    <h3 style="color: var(--text-primary); margin-top: 12px;">5. Contact Us</h3>
+                    <p>If you have any questions regarding this Privacy Policy, contact us at <strong>rahura2026@gmail.com</strong>.</p>
+                </div>
+                <div style="margin-top: 24px; border-top: 1px solid var(--border); padding-top: 16px;">
+                    <button class="btn btn-secondary btn-sm" onclick="router('/')"><-- Back to Marketplace</button>
+                </div>
+            </div>
+        </div>
+    </div>`;
+}
+
+function TermsOfService() {
+    return el`<div>
+        <div class="header">
+            ${renderLogo(32, true)}
+            <div class="header-nav">
+                <button class="nav-btn" onclick="router('/')">Home</button>
+                <button class="nav-btn" onclick="router('/login')">Sign In</button>
+            </div>
+        </div>
+        <div class="main" style="max-width: 800px; margin: 0 auto; padding: 24px 20px;">
+            <div class="card" style="padding: 28px;">
+                <h1 style="font-size: 1.75rem; font-weight: 800; margin-bottom: 8px;">Terms of Service</h1>
+                <p style="color: var(--text-muted); font-size: 0.8125rem; margin-bottom: 24px;">Last updated: September 21, 2026</p>
+
+                <div style="color: var(--text-secondary); line-height: 1.7; font-size: 0.9375rem; display: flex; flex-direction: column; gap: 16px;">
+                    <p>Welcome to <strong>Groove Hub</strong>. By accessing our platform, website, or mobile application, you agree to be bound by these Terms of Service.</p>
+
+                    <h3 style="color: var(--text-primary); margin-top: 12px;">1. Marketplace Services</h3>
+                    <p>Groove Hub provides a connection platform connecting content creators ("Buyers") with freelance video editors, animators, and English tutors ("Providers").</p>
+
+                    <h3 style="color: var(--text-primary); margin-top: 12px;">2. Platform Commission & Escrow</h3>
+                    <p>• The platform charges <strong>no commission</strong> on any bookings.
+                        <br>• When a booking is placed, funds are held securely in escrow.
+                        <br>• Upon buyer approval, 100% is released to the provider's payout account.
+                    </p>
+
+                    <h3 style="color: var(--text-primary); margin-top: 12px;">3. Disputes & Resolutions</h3>
+                    <p>In the event of a disagreement regarding delivered work, either party may open a dispute. The marketplace admin team reviews project scope and deliverables to issue either a full refund to the buyer or release the payout to the provider.</p>
+                </div>
+                <div style="margin-top: 24px; border-top: 1px solid var(--border); padding-top: 16px;">
+                    <button class="btn btn-secondary btn-sm" onclick="router('/')"><-- Back to Marketplace</button>
+                </div>
+			</div>
+		</div>
+	</div>
+</div>`;
+}
+
+// =============== AUTH PORTAL PAGES ===============
+
+window.handleForgotPasswordSubmit = async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('forgot-email').value.trim();
+    const errBox = document.getElementById('forgot-error-container');
+    const successBox = document.getElementById('forgot-success-container');
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    if (errBox) errBox.innerHTML = '';
+    if (successBox) successBox.style.display = 'none';
+    if (!email) {
+        if (errBox) errBox.innerHTML = '<div style="background: rgba(239,68,68,0.12); border:1px solid #ef4444; color:#ef4444; padding:10px 14px; border-radius:8px; margin-bottom:14px; font-size:0.85rem;">⚠️ Please enter your email or phone number.</div>';
+        return;
+    }
+    if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Sending...'; }
+    try {
+        const res = await apiFetch('/auth/forgot-password', {
+            method: 'POST',
+            body: JSON.stringify({ email_or_phone: email })
+        });
+        const msg = res.message || '';
+        const match = msg.match(/token[:\s]+([a-zA-Z0-9_-]+)/);
+        const token = res.reset_token || (match ? match[1] : '');
+        if (token) {
+            const td = document.getElementById('reset-token-display');
+            if (td) td.textContent = token;
+            const linkEl = document.getElementById('reset-token-link');
+            if (linkEl) {
+                linkEl.href = `/reset-password?token=${encodeURIComponent(token)}`;
+                linkEl.onclick = (ev) => {
+                    ev.preventDefault();
+                    router(`/reset-password?token=${encodeURIComponent(token)}`);
+                };
+            }
+            const sc = document.getElementById('forgot-success-container');
+            if (sc) sc.style.display = 'block';
+        } else {
+            if (errBox) errBox.innerHTML = `<div style="background: rgba(16,185,129,0.12); border:1px solid #10b981; color:#10b981; padding:10px 14px; border-radius:8px; margin-bottom:14px; font-size:0.85rem;">✓ ${escapeHTML(msg || 'If an account exists, a reset link has been sent.')}</div>`;
+        }
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Send Reset Link'; }
+    } catch (err) {
+        if (errBox) errBox.innerHTML = `<div style="background: rgba(239,68,68,0.12); border:1px solid #ef4444; color:#ef4444; padding:10px 14px; border-radius:8px; margin-bottom:14px; font-size:0.85rem;">⚠️ ${escapeHTML(err.message || 'Failed to send reset link.')}</div>`;
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Send Reset Link'; }
+    }
+};
+
+function ForgotPassword() {
+    return el`<div>
+		<div class="header">
+			${renderLogo(32, true)}
+			<div class="header-nav">
+				<button class="nav-btn" onclick="router('/')">Home</button>
+				<button class="nav-btn" onclick="router('/login')">Sign In</button>
+			</div>
+		</div>
+		<div class="main" style="max-width: 440px; margin: 0 auto; padding: 24px 16px;">
+			<div class="card" style="box-shadow: var(--shadow-lg); border: 1px solid var(--border);">
+				<div class="card-body" style="padding: 32px 24px;">
+					<div style="text-align: center; margin-bottom: 24px;">
+						${renderLogo(48, true)}
+						<h1 style="font-size: 1.5rem; font-weight: 700; margin-top: 12px;">Forgot Password?</h1>
+						<p style="color: var(--text-muted); font-size: 0.875rem; margin-top: 4px;">Enter your email or phone and we'll send you a reset link.</p>
+					</div>
+					<div id="forgot-error-container"></div>
+					<form id="forgot-form" onsubmit="handleForgotPasswordSubmit(event)">
+					    <div class="form-group">
+					        <label for="forgot-email" class="form-label">Email or Phone</label>
+					        <input type="text" class="form-input" id="forgot-email" placeholder="Your email or phone number" required autocomplete="email">
+					    </div>
+					    <button type="submit" class="btn btn-primary" style="width: 100%; padding: 13px; font-weight: 700; margin-top: 12px;">Send Reset Link</button>
+					</form>
+					<div id="forgot-success-container" style="margin-top: 16px; display: none;">
+					    <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid #10b981; border-radius: 8px; padding: 14px; font-size: 0.85rem; color: #10b981;">
+					        <div style="font-weight: 700; margin-bottom: 8px;">✅ Reset link sent!</div>
+					        <div style="color: var(--text-secondary); margin-bottom: 10px;">Use the token below to reset your password:</div>
+					        <code id="reset-token-display" style="display: block; background: var(--bg-hover); padding: 8px 12px; border-radius: 6px; font-size: 0.8rem; word-break: break-all; border: 1px dashed var(--border);"></code>
+					        <div style="margin-top: 10px;"><a id="reset-token-link" href="/reset-password" onclick="event.preventDefault(); router('/reset-password')" style="color: var(--accent); font-weight: 600;">Go to Reset Password →</a></div>
+					    </div>
+					</div>
+					<div style="margin-top: 20px; text-align: center;">
+					    <button class="btn btn-secondary" onclick="router('/login')" style="font-size: 0.85rem;">← Back to Sign In</button>
+					</div>
+				</div>
+			</div>
+		</div>
+		</div>`}
+function ResetPasswordPage() {
+    window.handleResetPasswordSubmit = async (e) => {
+        e.preventDefault();
+        const tokenInput = document.getElementById('reset-token');
+        const tokenFromUrl = new URLSearchParams(window.location.search).get('token') || '';
+        const token = (tokenInput ? tokenInput.value.trim() : '') || tokenFromUrl;
+        const newPw = document.getElementById('reset-password').value;
+        const confirmPw = document.getElementById('reset-confirm').value;
+        const errBox = document.getElementById('reset-error-container');
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        if (errBox) errBox.innerHTML = '';
+        if (!token) {
+            if (errBox) errBox.innerHTML = '<div style="background: rgba(239,68,68,0.12); border:1px solid #ef4444; color:#ef4444; padding:10px 14px; border-radius:8px; font-size:0.85rem;">⚠️ Reset token is missing. Please enter your reset token or request a new one.</div>';
+            return;
+        }
+        if (!newPw || !confirmPw) {
+            if (errBox) errBox.innerHTML = '<div style="background: rgba(239,68,68,0.12); border:1px solid #ef4444; color:#ef4444; padding:10px 14px; border-radius:8px; font-size:0.85rem;">⚠️ Please fill in both password fields.</div>';
+            return;
+        }
+        if (newPw !== confirmPw) {
+            if (errBox) errBox.innerHTML = '<div style="background: rgba(239,68,68,0.12); border:1px solid #ef4444; color:#ef4444; padding:10px 14px; border-radius:8px; font-size:0.85rem;">⚠️ Passwords do not match.</div>';
+            return;
+        }
+        if (newPw.length < 6) {
+            if (errBox) errBox.innerHTML = '<div style="background: rgba(239,68,68,0.12); border:1px solid #ef4444; color:#ef4444; padding:10px 14px; border-radius:8px; font-size:0.85rem;">⚠️ Password must be at least 6 characters.</div>';
+            return;
+        }
+        if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Resetting...'; }
+        try {
+            const res = await apiFetch('/auth/reset-password/confirm', {
+                method: 'POST',
+                body: JSON.stringify({ token, new_password: newPw })
+            });
+            if (errBox) errBox.innerHTML = `<div style="background: rgba(16,185,129,0.12); border:1px solid #10b981; color:#10b981; padding:10px 14px; border-radius:8px; font-size:0.85rem;">✓ ${escapeHTML(res.message || 'Password reset successfully! Redirecting...')}</div>`;
+            if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Reset Password'; }
+            setTimeout(() => router('/login'), 1500);
+        } catch (err) {
+            if (errBox) errBox.innerHTML = `<div style="background: rgba(239,68,68,0.12); border:1px solid #ef4444; color:#ef4444; padding:10px 14px; border-radius:8px; font-size:0.85rem;">⚠️ ${escapeHTML(err.message || 'Failed to reset password.')}</div>`;
+            if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Reset Password'; }
+        }
+    };
+
+    const initialToken = new URLSearchParams(window.location.search).get('token') || '';
+
+    return el`<div>
+        <div class="header">
+            ${renderLogo(32, true)}
+            <div class="header-nav">
+                <button class="nav-btn" onclick="router('/')">Home</button>
+                <button class="nav-btn" onclick="router('/login')">Sign In</button>
+            </div>
+        </div>
+        <div class="main" style="max-width: 440px; margin: 0 auto; padding: 24px 16px;">
+            <div class="card" style="box-shadow: var(--shadow-lg); border: 1px solid var(--border);">
+                <div class="card-body" style="padding: 32px 24px;">
+                    <div style="text-align: center; margin-bottom: 24px;">
+                        ${renderLogo(48, true)}
+                        <h1 style="font-size: 1.5rem; font-weight: 700; margin-top: 12px;">Reset Password</h1>
+                        <p style="color: var(--text-muted); font-size: 0.875rem; margin-top: 4px;">Enter your reset token and new password below.</p>
+                    </div>
+                    <div id="reset-error-container"></div>
+                    <form id="reset-form" onsubmit="handleResetPasswordSubmit(event)">
+                        <div class="form-group" style="${initialToken ? 'display: none;' : ''}">
+                            <label class="form-label">Reset Token</label>
+                            <input type="text" class="form-input" id="reset-token" placeholder="Paste your reset token" value="${initialToken}" autocomplete="off">
+                        </div>
+                        <div class="form-group" style="margin-top: 8px;">
+                            <label class="form-label">New Password</label>
+                            <input type="password" class="form-input" id="reset-password" placeholder="Enter new password (min 8 chars)" required minlength="8" autocomplete="new-password">
+                        </div>
+                        <div class="form-group" style="margin-top: 8px;">
+                            <label class="form-label">Confirm Password</label>
+                            <input type="password" class="form-input" id="reset-confirm" placeholder="Confirm new password" required minlength="8" autocomplete="new-password">
+                        </div>
+                        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 13px; font-weight: 700; margin-top: 12px;">Reset Password</button>
+                    </form>
+                    <div style="margin-top: 20px; text-align: center;">
+                        <button class="btn btn-secondary" onclick="router('/login')" style="font-size: 0.85rem;">← Back to Sign In</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>`;
+}
+
+function VerifyEmailPage() {
+    const urlParams = new URLSearchParams(window.location.search);
+    let pending = null;
+    try { pending = JSON.parse(sessionStorage.getItem('pending_verification') || 'null'); } catch (_) {}
+    const emailParam = urlParams.get('email') || (pending && pending.email) || '';
+    const tokenParam = urlParams.get('token') || (pending && pending.token) || '';
+
+    window.handleVerifyEmailSubmit = async (e) => {
+        if (e) e.preventDefault();
+        const token = (document.getElementById('verify-token')?.value || '').trim();
+        const errBox = document.getElementById('verify-error-container');
+        const btn = document.getElementById('verify-email-btn');
+        if (errBox) errBox.innerHTML = '';
+        if (!token) {
+            if (errBox) errBox.innerHTML = '<div style="background: rgba(239,68,68,0.12); border:1px solid #ef4444; color:#ef4444; padding:10px 14px; border-radius:8px; font-size:0.85rem;">⚠️ Please enter your verification code.</div>';
+            return;
+        }
+        if (btn) { btn.disabled = true; btn.textContent = 'Verifying...'; }
+        try {
+            const res = await apiFetch('/auth/verify-email', { method: 'POST', body: JSON.stringify({ token }) });
+            currentToken = res.access_token;
+            localStorage.setItem('access_token', currentToken);
+            currentUser = await apiFetch('/auth/me');
+            localStorage.setItem('current_user', JSON.stringify(currentUser));
+            try { sessionStorage.removeItem('pending_verification'); } catch (_) {}
+            showToast('Email verified! Welcome to Groove Hub.', 'success');
+            router(currentUser?.user_type === 'ADMIN' ? '/admin' : '/');
+        } catch (err) {
+            if (errBox) errBox.innerHTML = `<div style="background: rgba(239,68,68,0.12); border:1px solid #ef4444; color:#ef4444; padding:10px 14px; border-radius:8px; font-size:0.85rem;">⚠️ ${escapeHTML(err.message || 'Verification failed.')}</div>`;
+            if (btn) { btn.disabled = false; btn.textContent = 'Verify Email'; }
+        }
+    };
+
+    window.handleResendVerification = async () => {
+        const email = (document.getElementById('verify-email')?.value || '').trim();
+        const errBox = document.getElementById('verify-error-container');
+        if (!email) {
+            if (errBox) errBox.innerHTML = '<div style="background: rgba(239,68,68,0.12); border:1px solid #ef4444; color:#ef4444; padding:10px 14px; border-radius:8px; font-size:0.85rem;">⚠️ Enter your email first.</div>';
+            return;
+        }
+        try {
+            const res = await apiFetch('/auth/resend-verification', { method: 'POST', body: JSON.stringify({ email_or_phone: email }) });
+            if (res.reset_token) {
+                try { sessionStorage.setItem('pending_verification', JSON.stringify({ email, token: res.reset_token })); } catch (_) {}
+            }
+            showToast(res.message || 'Verification code sent.', 'success');
+        } catch (err) {
+            if (errBox) errBox.innerHTML = `<div style="background: rgba(239,68,68,0.12); border:1px solid #ef4444; color:#ef4444; padding:10px 14px; border-radius:8px; font-size:0.85rem;">⚠️ ${escapeHTML(err.message || 'Could not resend code.')}</div>`;
+        }
+    };
+
+    return el`<div>
+		<div class="header">
+			${renderLogo(32, true)}
+			<div class="header-nav">
+				<button class="nav-btn" onclick="router('/')">Home</button>
+				<button class="nav-btn" onclick="router('/login')">Sign In</button>
+			</div>
+		</div>
+		<div class="main" style="max-width: 440px; margin: 0 auto; padding: 24px 16px;">
+			<div class="card" style="box-shadow: var(--shadow-lg); border: 1px solid var(--border);">
+				<div class="card-body" style="padding: 32px 24px; text-align: center;">
+					<div style="margin-bottom: 20px;">${renderLogo(48, true)}</div>
+					<h1 style="font-size: 1.5rem; font-weight: 700;">Verify Your Email</h1>
+					<p style="color: var(--text-muted); font-size: 0.875rem; margin: 8px 0 20px;">Enter the verification code for your email address.</p>
+					<div id="verify-error-container"></div>
+					<form onsubmit="handleVerifyEmailSubmit(event)" style="text-align: left;">
+						<div class="form-group">
+							<label class="form-label">Email Address</label>
+							<input type="email" class="form-input" id="verify-email" placeholder="name@example.com" value="${emailParam}" required autocomplete="email">
+						</div>
+						<div class="form-group" style="margin-top: 8px;">
+							<label class="form-label">Verification Code</label>
+							<input type="text" class="form-input" id="verify-token" placeholder="Paste your verification code" value="${tokenParam}" required autocomplete="off" style="font-family: monospace;">
+						</div>
+						<button type="submit" class="btn btn-primary" style="width: 100%; padding: 13px; font-weight: 700; margin-top: 12px;" id="verify-email-btn">Verify Email</button>
+					</form>
+					<div style="margin-top: 14px; font-size: 0.85rem; color: var(--text-secondary);">
+						Didn't get a code? <button onclick="handleResendVerification()" style="background:none;border:none;color:var(--accent);font-weight:700;cursor:pointer;padding:0;">Resend code</button>
+					</div>
+					<div style="margin-top: 16px;">
+						<button class="btn btn-secondary" onclick="router('/login')" style="font-size: 0.85rem;">← Back to Sign In</button>
+					</div>
+				</div>
+			</div>
+		</div>
+		</div>`}
+function LogoutPage() {
+    return el`<div>
+		<div class="header">
+			${renderLogo(32, true)}
+			<div class="header-nav">
+				<button class="nav-btn" onclick="router('/')">Home</button>
+			</div>
+		</div>
+		<div class="main" style="max-width: 440px; margin: 0 auto; padding: 24px 16px; text-align: center;">
+			<div class="card" style="box-shadow: var(--shadow-lg); border: 1px solid var(--border);">
+				<div class="card-body" style="padding: 32px 24px;">
+					<div style="margin-bottom: 20px;">${renderLogo(48, true)}</div>
+					<h1 style="font-size: 1.5rem; font-weight: 700;">Logged Out</h1>
+					<p style="color: var(--text-muted); font-size: 0.875rem; margin: 8px 0 24px;">You have been successfully logged out.</p>
+					<button class="btn btn-primary" style="width: 100%; padding: 13px; font-weight: 700;" onclick="router('/login')">Sign In Again</button>
+				</div>
+			</div>
+		</div>
+		</div>`;
+}
+// =============== LOGOUT ===============
+window.logout = () => {
+    currentToken = null;
+    currentUser = null;
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('current_user');
+    localStorage.removeItem('grove_hub_active_mode');
+    sessionStorage.clear();
+    router('/login');
+};
+
+// =============== MODALS & FEATURE EXTENSIONS ===============
+
+// --- In-App Chat Modal ---
+let chatPollInterval = null;
+
+window.openBookingChat = async (bookingId, partyName = 'Collaborator') => {
+    const existing = document.getElementById('chat-modal-root');
+    if (existing) existing.remove();
+
+    const modalRoot = document.createElement('div');
+    modalRoot.id = 'chat-modal-root';
+    modalRoot.className = 'modal-overlay';
+    modalRoot.innerHTML = `
+        <div class="modal" style="max-width: 550px; height: 600px; display: flex; flex-direction: column;">
+            <div class="modal-header">
+                <div>
+                    <h2 style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary);">💬 Project Chat - Booking #${bookingId}</h2>
+                    <div style="font-size: 0.75rem; color: var(--text-muted);">Collaborating with ${escapeHTML(partyName || 'Collaborator')}</div>
+                </div>
+                <button class="modal-close" onclick="closeBookingChat()">✕</button>
+            </div>
+            <div style="background: rgba(99, 102, 241, 0.08); border-bottom: 1px solid var(--border); padding: 8px 14px; font-size: 0.75rem; color: var(--text-secondary); display: flex; align-items: center; gap: 8px;">
+                <span>🛡️</span>
+                <span><strong>Escrow Protection Active:</strong> Never send personal payments or UPI outside Groove Hub. Funds remain safely protected until you approve the work.</span>
+            </div>
+            <div class="chat-messages" id="chat-messages-container">
+                <div class="loading"><div class="spinner"></div></div>
+            </div>
+            <form onsubmit="handleSendChatMessage(event, ${bookingId})" class="chat-input-bar">
+                <input type="text" id="chat-input-text" placeholder="Type your message..." required autocomplete="off" />
+                <input type="text" id="chat-file-url" placeholder="Attachment/Drive link..." style="max-width: 140px; font-size: 0.75rem;" />
+                <button type="submit" class="btn btn-primary btn-sm">Send</button>
+            </form>
+        </div>
+    `;
+    modalRoot.onclick = (e) => { if (e.target === modalRoot) closeBookingChat(); };
+    document.body.appendChild(modalRoot);
+
+    await loadChatMessages(bookingId);
+
+    if (chatPollInterval) clearInterval(chatPollInterval);
+    chatPollInterval = setInterval(() => loadChatMessages(bookingId, false), 4000);
+};
+
+window.closeBookingChat = () => {
+    if (chatPollInterval) {
+        clearInterval(chatPollInterval);
+        chatPollInterval = null;
+    }
+    const modal = document.getElementById('chat-modal-root');
+    if (modal) modal.remove();
+};
+
+async function loadChatMessages(bookingId, showSpinner = true) {
+    const container = document.getElementById('chat-messages-container');
+    if (!container) return;
+
+    try {
+        const messages = await apiFetch(`/bookings/${bookingId}/messages`);
+        if (messages.length === 0) {
+            container.innerHTML = `
+                <div style="text-align: center; color: var(--text-muted); font-size: 0.8125rem; margin-top: 40px;">
+                    No messages yet in this project chat. Say hello or share your work!
+                </div>
+            `;
+            return;
+        }
+
+        const isScrolledToBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 50;
+
+        container.innerHTML = messages.map(msg => {
+            const isMe = msg.sender_id === currentUser?.id;
+            const timeStr = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            return `
+                <div class="chat-bubble ${isMe ? 'chat-bubble-sent' : 'chat-bubble-received'}">
+                    <div style="font-weight: 600; font-size: 0.75rem; margin-bottom: 2px;">${isMe ? 'You' : escapeHTML(msg.sender_name || 'User')}</div>
+                    <div>${escapeHTML(msg.message || '')}</div>
+                    ${msg.file_url ? (() => {
+                        const safeFileUrl = validateUrl(msg.file_url);
+                        return safeFileUrl ? `
+                        <a href="${escapeHTML(safeFileUrl)}" target="_blank" rel="noopener noreferrer" class="chat-file-link">
+                            📎 ${escapeHTML(safeFileUrl)}
+                        </a>
+                    ` : '';
+                    })() : ''}
+                    <div class="chat-bubble-meta">
+                        <span>${timeStr}</span>
+                        ${isMe ? `<span>${msg.is_read ? '✓✓ Read' : '✓ Sent'}</span>` : ''}
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        if (isScrolledToBottom || showSpinner) {
+            container.scrollTop = container.scrollHeight;
+        }
+    } catch (e) {
+        if (showSpinner) {
+            container.innerHTML = `<div style="color: var(--danger); font-size: 0.8rem;">Failed to load messages. Please try again.</div>`;
+        }
+    }
+}
+
+window.handleSendChatMessage = async (e, bookingId) => {
+    e.preventDefault();
+    const textInput = document.getElementById('chat-input-text');
+    const fileInput = document.getElementById('chat-file-url');
+    if (!textInput || !textInput.value.trim()) return;
+
+    const message = textInput.value.trim();
+    const fileUrl = fileInput?.value?.trim() || null;
+    textInput.value = '';
+    if (fileInput) fileInput.value = '';
+
+    try {
+        await apiFetch(`/bookings/${bookingId}/messages`, {
+            method: 'POST',
+            body: JSON.stringify({ message, file_url: fileUrl })
+        });
+        await loadChatMessages(bookingId, false);
+    } catch (err) {
+        showToast(err.message || 'Failed to send message', 'error');
+    }
+};
+
+// --- Portfolio Viewer Modal ---
+window.viewProviderPortfolio = async (providerId, providerName = 'Provider') => {
+    const existing = document.getElementById('portfolio-modal-root');
+    if (existing) existing.remove();
+
+    const modalRoot = document.createElement('div');
+    modalRoot.id = 'portfolio-modal-root';
+    modalRoot.className = 'modal-overlay';
+    modalRoot.innerHTML = `
+        <div class="modal" style="max-width: 750px; max-height: 85vh; display: flex; flex-direction: column;">
+            <div class="modal-header">
+                <div>
+                    <h2 style="font-size: 1.15rem; font-weight: 700; color: var(--text-primary);">🎨 ${providerName}'s Work & Portfolio</h2>
+                    <div style="font-size: 0.75rem; color: var(--text-muted);">Verified projects, sample reels, and deliverables</div>
+                </div>
+                <button class="modal-close" onclick="document.getElementById('portfolio-modal-root').remove()">✕</button>
+            </div>
+            <div class="modal-body" id="portfolio-modal-body" style="overflow-y: auto;">
+                <div class="loading"><div class="spinner"></div></div>
+            </div>
+        </div>
+    `;
+    modalRoot.onclick = (e) => { if (e.target === modalRoot) modalRoot.remove(); };
+    document.body.appendChild(modalRoot);
+
+    try {
+        const items = await apiFetch(`/profile/${providerId}/portfolio`);
+        const body = document.getElementById('portfolio-modal-body');
+        if (!body) return;
+
+        // Load reviews, bookings, and provider profile in parallel
+        let reviews = [];
+        let bookings = [];
+        let providerProfile = {};
+        try { reviews = await apiFetch(`/profile/${providerId}/reviews`); } catch (e) { reviews = []; }
+        try { bookings = await apiFetch(`/bookings?provider_id=${providerId}&limit=10`); } catch (e) { bookings = []; }
+        try { providerProfile = await apiFetch(`/profile/${providerId}`); } catch (e) { providerProfile = {}; }
+
+        if (items.length === 0 && reviews.length === 0 && bookings.length === 0) {
+            body.innerHTML = `
+                <div class="empty-state" style="padding: 30px;">
+                    <h3>No portfolio, reviews, or orders yet</h3>
+                    <p>This talent hasn't published anything yet. Check back later or contact them directly.</p>
+                </div>
+            `;
+            return;
+        }
+
+        const tabContent = `
+            <div style="display: flex; gap: 4px; margin-bottom: 16px; flex-wrap: wrap;">
+                <button class="tab-btn active" data-tab="portfolio" onclick="switchProviderTab(this, '${providerId}')">📁 Portfolio (${items.length})</button>
+                <button class="tab-btn ${reviews.length === 0 ? 'inactive' : ''}" data-tab="reviews" onclick="switchProviderTab(this, '${providerId}')" ${reviews.length === 0 ? 'disabled' : ''}>⭐ Reviews (${reviews.length})</button>
+                <button class="tab-btn ${bookings.length === 0 ? 'inactive' : ''}" data-tab="orders" onclick="switchProviderTab(this, '${providerId}')" ${bookings.length === 0 ? 'disabled' : ''}>📋 Orders (${bookings.length})</button>
+            </div>
+            <div id="provider-tab-portfolio-${providerId}">
+                <div class="portfolio-grid">
+                    ${items.map(item => {
+            let mediaHtml = '';
+            const url = validateUrl(item.media_url);
+            const thumbnailUrl = validateUrl(item.thumbnail_url);
+            const youtubeEmbed = getYouTubeEmbedUrl(item.media_url);
+            if (youtubeEmbed) {
+                mediaHtml = `<iframe src="${sanitizeUrl(youtubeEmbed)}" allowfullscreen></iframe>`;
+            } else if (thumbnailUrl && (thumbnailUrl.match(/\.(jpeg|jpg|gif|png|webp)($|\?)/i) || item.thumbnail_url)) {
+                mediaHtml = `<img src="${sanitizeUrl(thumbnailUrl)}" alt="${escapeHTML(item.title || '')}" />`;
+            } else {
+                mediaHtml = `
+                                <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--bg-hover);">
+                                    <span style="font-size: 2rem;">🔗</span>
+                                    <a href="${sanitizeUrl(url)}" target="_blank" rel="noopener noreferrer" style="font-size: 0.8rem; color: var(--accent); margin-top: 6px;">Open Sample</a>
+                                </div>
+                            `;
+            }
+
+            return `
+                            <div class="portfolio-card">
+                                <div class="portfolio-media-container">
+                                    ${mediaHtml}
+                                </div>
+                                <div class="portfolio-info">
+                                    <div class="portfolio-title">${escapeHTML(item.title || '')}</div>
+                                    <div class="portfolio-desc">${escapeHTML(item.description || '')}</div>
+                                    <a href="${sanitizeUrl(url)}" target="_blank" rel="noopener noreferrer" style="font-size: 0.75rem; color: var(--accent); display: inline-block; margin-top: 6px;">View Original ↗</a>
+                                </div>
+                            </div>
+                        `;
+        }).join('')}
+                </div>
+            </div>
+            ${reviews.length > 0 ? `
+            <div id="provider-tab-reviews-${providerId}" style="display: none;">
+                <div style="display: flex; flex-direction: column; gap: 14px;">
+                    ${reviews.map(r => `
+                        <div class="card" style="padding: 16px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                <div style="font-weight: 700; font-size: 0.9rem;">${escapeHTML(r.reviewer_name || 'Anonymous')}</div>
+                                <div style="color: var(--warning);">${'★'.repeat(r.rating || 5)}${'☆'.repeat((5 - (r.rating || 5)))}</div>
+                            </div>
+                            <div style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 4px;">${escapeHTML(r.comment || 'No comment')}</div>
+                            <div style="font-size: 0.7rem; color: var(--text-muted);">Booking #${r.booking_id} · ${new Date(r.created_at || Date.now()).toLocaleDateString()}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            ` : ''}
+            ${bookings.length > 0 ? `
+            <div id="provider-tab-orders-${providerId}" style="display: none;">
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    ${bookings.map(b => `
+                        <div class="card" style="padding: 14px 16px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <div style="font-weight: 700; font-size: 0.9rem; margin-bottom: 2px;">${escapeHTML(b.provider_name || 'Provider')}</div>
+                                    <div style="font-size: 0.8rem; color: var(--text-secondary);">${escapeHTML(b.title || 'Project')}</div>
+                                </div>
+                                <div style="text-align: right;">
+                                    <div style="font-weight: 700; color: var(--success); font-size: 0.95rem;">₹${(b.total_amount || 0).toLocaleString()}</div>
+                                    <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px; text-transform: capitalize;">${escapeHTML(b.status || 'unknown')}</div>
+                                </div>
+                            </div>
+                            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 6px;">
+                                Booked: ${new Date(b.created_at || Date.now()).toLocaleDateString()}
+                                ${b.payment_status ? ` · Payment: ${escapeHTML(b.payment_status)}` : ''}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            ` : ''}
+        `;
+
+        body.innerHTML = `
+            <div style="position: sticky; top: 0; background: var(--bg-primary); z-index: 5; padding-bottom: 4px; border-bottom: 1px solid var(--border); margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 36px; height: 36px; border-radius: 50%; background: var(--accent); color: white; display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0;">👤</div>
+                    <div>
+                        <div style="font-weight: 700; font-size: 0.95rem;">${escapeHTML(providerName || 'Provider')}</div>
+                        <div style="font-size: 0.7rem; color: var(--text-muted);">${reviews.reduce((s, r) => s + (r.rating || 0), 0) / (reviews.length || 1) > 0 ? (reviews.reduce((s, r) => s + (r.rating || 0), 0) / reviews.length).toFixed(1) + ' ⭐' : 'No reviews yet'} · ${reviews.length} reviews</div>
+                    </div>
+                </div>
+                <button class="btn btn-primary btn-sm" onclick="window.openInAppChat(${providerId})" style="gap: 4px;">
+                    💬 Message
+                </button>
+            </div>
+            ${tabContent}
+        `;
+    } catch (e) {
+        const body = document.getElementById('portfolio-modal-body');
+        if (body) body.innerHTML = `<div style="color: var(--danger);">Failed to load portfolio. Please try again.</div>`;
+    }
+};
+
+// --- Quick Chat with Provider ---
+window.startChatWithProvider = async (providerId) => {
+    window._currentChatProviderId = providerId;
+    const existing = document.getElementById('chat-modal-root');
+    if (existing) existing.remove();
+
+    const modalRoot = document.createElement('div');
+    modalRoot.id = 'chat-modal-root';
+    modalRoot.className = 'modal-overlay';
+    modalRoot.innerHTML = `
+        <div class="modal" style="max-width: 520px; max-height: 85vh; display: flex; flex-direction: column;">
+            <!-- Chat Header (Telegram-style) -->
+            <div style="padding: 12px 16px; border-bottom: 1px solid var(--border); background: var(--bg-primary); display: flex; align-items: center; gap: 10px; flex-shrink: 0;">
+                <button onclick="document.getElementById('chat-modal-root').remove()" style="background: none; border: none; font-size: 1.3rem; cursor: pointer; color: var(--text-primary); padding: 2px 6px; display: flex; align-items: center; flex-shrink: 0;">←</button>
+                <div class="inbox-item-avatar" style="width: 38px; height: 38px; font-size: 0.95rem; flex-shrink: 0; position: relative;">
+                    ${initial}
+                    <div class="online-dot"></div>
+                </div>
+                <div style="flex: 1; min-width: 0;">
+                    <div style="font-weight: 800; font-size: 0.95rem; color: var(--text-primary); display: flex; align-items: center; gap: 6px;">
+                        <span>${escapeHTML(providerName)}</span>
+                        <span style="font-size: 0.65rem; padding: 1px 6px; border-radius: 4px; background: rgba(16, 185, 129, 0.1); color: var(--success); font-weight: 700; white-space: nowrap;">last seen recently</span>
+                    </div>
+                    <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 1px;">
+                        100% Escrow Protected • Instant In-App Chat
+                    </div>
+                </div>
+                <button class="btn btn-primary btn-sm" onclick="selectProvider(${providerId})" style="font-weight: 700; display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
+                    <span>📦</span> View Packages / Hire
+                </button>
+            </div>
+
+            <div class="modal-body" style="padding: 0; overflow: hidden; display: flex; flex-direction: column; flex: 1;">
+                <!-- Loading -->
+                <div id="chat-loading" class="loading" style="padding: 20px; text-align: center;">
+                    <div class="spinner"></div>
+                    <div style="margin-top: 8px; font-size: 0.8rem; color: var(--text-muted);">Connecting to chat...</div>
+                </div>
+                <!-- Messages Stream -->
+                <div id="chat-messages" style="display: none; flex: 1; overflow-y: auto; padding: 12px; background: var(--bg-secondary); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); margin: 0 12px 12px;"></div>
+                <!-- Input -->
+                <div id="chat-input-area" style="display: none; padding: 10px 12px; background: var(--bg-primary); border-top: 1px solid var(--border);">
+                    <form onsubmit="sendChatMessage(event)" style="display: flex; gap: 8px;">
+                        <input type="text" id="chat-input" class="form-input" style="flex: 1; padding: 10px 14px; border-radius: 20px; border: 1px solid var(--border);" placeholder="Type your message..." autocomplete="off">
+                        <button type="submit" class="btn btn-primary" style="width: 40px; height: 40px; border-radius: 50%; padding: 0; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    `;
+    modalRoot.onclick = (e) => { if (e.target === modalRoot) modalRoot.remove(); };
+    document.body.appendChild(modalRoot);
+
+    try {
+        const msgs = await apiFetch(`/chat/${providerId}/messages`);
+        const chatLoading = document.getElementById('chat-loading');
+        const chatMessages = document.getElementById('chat-messages');
+        const chatInputArea = document.getElementById('chat-input-area');
+
+        chatLoading.style.display = 'none';
+        chatMessages.style.display = 'block';
+        chatInputArea.style.display = 'block';
+        chatMessages.style.margin = '0 12px 12px';
+
+        if (msgs.length > 0) {
+            let html = '';
+            let lastDateKey = '';
+            const dayLabel = (d) => {
+                const today = new Date(); today.setHours(0,0,0,0);
+                const yesterday = new Date(today); yesterday.setDate(today.getDate() - 1);
+                const dd = new Date(d); dd.setHours(0,0,0,0);
+                if (dd.getTime() === today.getTime()) return 'Today';
+                if (dd.getTime() === yesterday.getTime()) return 'Yesterday';
+                return new Date(d).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+            };
+            msgs.forEach((m, idx) => {
+                const isMe = m.sender_id === currentUser?.id;
+                const msgDate = new Date(m.created_at);
+                const dateKey = msgDate.toDateString();
+                if (dateKey !== lastDateKey) {
+                    lastDateKey = dateKey;
+                    html += `<div style="display:flex;justify-content:center;margin:10px 0 6px;"><span style="font-size:0.65rem;color:var(--text-muted);background:var(--bg-hover);padding:2px 10px;border-radius:8px;font-weight:600;">${dayLabel(m.created_at)}</span></div>`;
+                }
+                const timeStr = msgDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                const next = msgs[idx + 1];
+                const grouped = next && next.sender_id === m.sender_id && new Date(next.created_at).toDateString() === dateKey;
+                html += `<div class="inbox-msg-row ${isMe ? 'sent' : 'received'} ${grouped ? 'grouped' : ''}">
+                    ${!isMe && !grouped ? `<div class="inbox-msg-avatar" style="width:28px;height:28px;font-size:0.7rem;border-radius:50%;background:var(--accent-gradient);color:white;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;">${(m.sender_name || 'U').charAt(0).toUpperCase()}</div>` : (!isMe ? '<div style="width:28px;flex-shrink:0;"></div>' : '')}
+                    <div class="inbox-msg-bubble-wrap" style="margin-bottom: 2px;">
+                        <div class="inbox-msg-bubble">
+                            <div class="inbox-msg-bubble-content">
+                                <div class="inbox-msg-text">${escapeHTML(m.content || m.message || '')}</div>
+                            </div>
+                        </div>
+                        <div class="inbox-msg-timestamp" style="font-size:0.6rem;opacity:0.6;">${timeStr}${isMe ? (m.is_read ? ' ✓✓' : ' ✓') : ''}</div>
+                    </div>
+                </div>`;
+            });
+            chatMessages.innerHTML = html;
+        } else {
+            chatMessages.innerHTML = `<div style="margin: auto; text-align: center; padding: 24px; color: var(--text-muted); max-width: 380px;">
+                <div style="font-size: 2.2rem; margin-bottom: 8px;">👋</div>
+                <div style="font-weight: 700; color: var(--text-primary); margin-bottom: 4px;">Say hi to ${escapeHTML(providerName)}!</div>
+                <p style="font-size: 0.8125rem; line-height: 1.45;">Discuss project requirements, turnaround times, or revision expectations. When you're ready, click <strong>"View Packages / Hire"</strong> at the top to place your order with 100% Escrow Protection.</p>
+            </div>`;
+        }
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    } catch (e) {
+        const chatLoading = document.getElementById('chat-loading');
+        if (chatLoading) {
+            chatLoading.style.display = 'none';
+            chatLoading.innerHTML = `<div style="color: var(--danger); font-size: 0.875rem;">Failed to load chat. Please try again.</div>`;
+        }
+    }
+};
+
+// Send a chat message
+window.sendChatMessage = async (e) => {
+    e.preventDefault();
+    const input = document.getElementById('chat-input');
+    const providerId = window._currentChatProviderId;
+    if (!input || !input.value.trim() || !providerId) return;
+
+    const content = input.value.trim();
+    input.value = '';
+
+    const chatMessages = document.getElementById('chat-messages');
+    const chatLoading = document.getElementById('chat-loading');
+
+    // Add our message immediately with Telegram-style bubble
+    const ourMsg = document.createElement('div');
+    ourMsg.className = 'inbox-msg-row sent';
+    ourMsg.style.marginBottom = '2px';
+    ourMsg.innerHTML = `<div class="inbox-msg-bubble-wrap" style="margin-bottom:2px;">
+        <div class="inbox-msg-bubble">
+            <div class="inbox-msg-bubble-content">
+                <div class="inbox-msg-text">${escapeHTML(content)}</div>
+            </div>
+        </div>
+        <div class="inbox-msg-timestamp" style="font-size:0.6rem;opacity:0.6;">just now ✓</div>
+    </div>`;
+    chatMessages.appendChild(ourMsg);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+
+    try {
+        await apiFetch(`/chat/${providerId}/messages`, {
+            method: 'POST',
+            body: JSON.stringify({ content: content })
+        });
+    } catch (e) {
+        showToast('Failed to send message', 'error');
+    }
+};
+
+// --- Inbox / Conversations Page ---
+window.OpenInbox = async () => {
+    const existing = document.getElementById('inbox-modal-root');
+    if (existing) existing.remove();
+
+    const modalRoot = document.createElement('div');
+    modalRoot.id = 'inbox-modal-root';
+    modalRoot.className = 'modal-overlay';
+    modalRoot.innerHTML = `
+        <div class="modal" style="max-width: 680px; max-height: 85vh; display: flex; flex-direction: column;">
+            <div class="modal-header">
+                <div>
+                    <h2 style="font-size: 1.15rem; font-weight: 700; color: var(--text-primary);">📬 Message Inbox</h2>
+                    <div style="font-size: 0.75rem; color: var(--text-muted);">All your conversations in one place</div>
+                </div>
+                <button class="modal-close" onclick="document.getElementById('inbox-modal-root').remove()">✕</button>
+            </div>
+            <div class="modal-body" id="inbox-body" style="overflow-y: auto; padding: 16px;">
+                <div class="loading"><div class="spinner"></div></div>
+            </div>
+        </div>
+    `;
+    modalRoot.onclick = (e) => { if (e.target === modalRoot) modalRoot.remove(); };
+    document.body.appendChild(modalRoot);
+
+    try {
+        const conversations = await apiFetch('/chat/conversations');
+        const body = document.getElementById('inbox-body');
+        if (!body) return;
+
+        if (conversations.length === 0) {
+            body.innerHTML = `<div style="text-align: center; padding: 40px 20px; color: var(--text-muted);">
+                <div style="font-size: 2.5rem; margin-bottom: 12px;">💬</div>
+                <h3 style="font-weight: 700; margin-bottom: 8px;">No conversations yet</h3>
+                <p style="font-size: 0.875rem;">Start a Quick Chat with a provider to begin messaging.</p>
+            </div>`;
+            return;
+        }
+
+        body.innerHTML = `<div style="display: flex; flex-direction: column; gap: 10px;">
+            ${conversations.map(c => `
+                <div class="card" style="padding: 14px 16px; cursor: pointer;" onclick="resumeChat(${c.provider_id}, '${c.provider_name.replace(/'/g, "\\'")}')">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="width: 40px; height: 40px; border-radius: 50%; background: var(--accent); color: white; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0;">👤</div>
+                        <div style="flex: 1;">
+                            <div style="font-weight: 700; font-size: 0.9rem;">${c.provider_name}</div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">
+                                ${c.unread_count > 0 ? `<span style="background: var(--accent); color: white; padding: 1px 6px; border-radius: 10px; font-size: 0.65rem; margin-right: 6px;">${c.unread_count} new</span>` : ''}
+                                ${c.last_message ? c.last_message.substring(0, 50) + (c.last_message.length > 50 ? '...' : '') : 'No messages yet'}
+                            </div>
+                        </div>
+                        <div style="font-size: 0.7rem; color: var(--text-muted); flex-shrink: 0;">${c.last_message_at ? new Date(c.last_message_at).toLocaleDateString() : '—'}</div>
+                    </div>
+                </div>
+            `).join('')}
+        </div>`;
+    } catch (e) {
+        const body = document.getElementById('inbox-body');
+        if (body) body.innerHTML = `<div style="color: var(--danger);">Failed to load inbox. Please try again.</div>`;
+    }
+};
+
+// Resume a conversation
+window.resumeChat = (providerId, providerName) => {
+    window._currentChatProviderId = providerId;
+    document.getElementById('inbox-modal-root')?.remove();
+    window.startChatWithProvider(providerId);
+};
+
+// --- Switch Provider Tab (Portfolio / Reviews / Orders) ---
+window.switchProviderTab = (btn, providerId) => {
+    const parent = btn.closest('div[style*="flex-wrap"]') || btn.parentElement;
+    parent.querySelectorAll('.tab-btn').forEach(b => {
+        b.classList.remove('active');
+        b.classList.add('inactive');
+        b.disabled = true;
+    });
+    btn.classList.remove('inactive');
+    btn.classList.add('active');
+    btn.disabled = false;
+
+    const pid = providerId;
+    ['portfolio', 'reviews', 'orders'].forEach(tab => {
+        const el = document.getElementById(`provider-tab-${tab}-${pid}`);
+        if (el) el.style.display = tab === btn.dataset.tab ? 'block' : 'none';
+    });
+};
+
+// --- Star Rating & Review Modal ---
+window.openReviewModal = (bookingId) => {
+    const existing = document.getElementById('review-modal-root');
+    if (existing) existing.remove();
+
+    let selectedRating = 5;
+
+    const modalRoot = document.createElement('div');
+    modalRoot.id = 'review-modal-root';
+    modalRoot.className = 'modal-overlay';
+    modalRoot.innerHTML = `
+        <div class="modal" style="max-width: 480px;">
+            <div class="modal-header">
+                <h2 style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary);">⭐ Leave a Review</h2>
+                <button class="modal-close" onclick="document.getElementById('review-modal-root').remove()">✕</button>
+            </div>
+            <form onsubmit="handleReviewSubmit(event, ${bookingId})" style="padding: 20px;">
+                <div class="form-group" style="text-align: center; margin-bottom: 20px;">
+                    <label class="form-label" style="margin-bottom: 8px;">Your Rating</label>
+                    <div class="star-rating" id="review-stars">
+                        <span data-star="1" class="active">★</span>
+                        <span data-star="2" class="active">★</span>
+                        <span data-star="3" class="active">★</span>
+                        <span data-star="4" class="active">★</span>
+                        <span data-star="5" class="active">★</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Review Comment</label>
+                    <textarea class="form-textarea" id="review-comment" rows="4" placeholder="Share your experience working with this talent..." required>Exceptional work, delivered on time!</textarea>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Submit Verified Review</button>
+            </form>
+        </div>
+    `;
+
+    modalRoot.onclick = (e) => { if (e.target === modalRoot) modalRoot.remove(); };
+    document.body.appendChild(modalRoot);
+
+    const stars = modalRoot.querySelectorAll('#review-stars span');
+    stars.forEach(star => {
+        star.onclick = () => {
+            selectedRating = parseInt(star.getAttribute('data-star'));
+            stars.forEach((s, idx) => {
+                if (idx < selectedRating) s.classList.add('active');
+                else s.classList.remove('active');
+            });
+        };
+    });
+
+    window.handleReviewSubmit = async (e, bId) => {
+        e.preventDefault();
+        const comment = document.getElementById('review-comment')?.value || '';
+        showLoading();
+        try {
+            await apiFetch('/reviews', {
+                method: 'POST',
+                body: JSON.stringify({
+                    booking_id: bId,
+                    rating: selectedRating,
+                    comment: comment
+                })
+            });
+            showToast('Review submitted! Thank you.', 'success');
+            modalRoot.remove();
+            router('/bookings');
+        } catch (err) {
+            showToast(err.message || 'Failed to submit review', 'error');
+            router('/bookings');
+        }
+    };
+};
+
+// Initial render - detect current URL path with query parameters
+const currentPath = window.location.pathname + window.location.search + window.location.hash;
+router(currentPath || '/', false);
+
+// =============== GROOVE CHATBOT (VANILLA JS) ===============
+function GrooveChat() {
+    let chatVisible = false;
+    let messages = [];
+    let inputValue = '';
+    let loading = false;
+    let chatBox = null;
+
+    // Show the chat button + panel
+    const container = el`<div style="position: fixed; bottom: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; align-items: flex-end; gap: 8px;">
+        <button id="groove-chat-toggle" onclick="GrooveChat.toggle()" style="width: 52px; height: 52px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #a855f7); color: white; border: none; cursor: pointer; box-shadow: 0 4px 20px rgba(99,102,241,0.4); display: flex; align-items: center; justify-content: center; font-size: 1.4rem; transition: transform 0.15s ease, opacity 0.2s ease; z-index: 10000;">💬</button>
+        <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 4px 10px; margin-top: 8px; white-space: nowrap; font-size: 0.7rem; color: var(--text-secondary); box-shadow: 0 4px 12px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 6px;">
+            <span>🤖</span> Groove · Ask me anything
+        </div>
+    </div>`;
+
+    // Chat modal
+    function showChat() {
+        if (chatBox) return;
+        chatVisible = true;
+        messages = [];
+        loading = false;
+        inputValue = '';
+
+        chatBox = document.createElement('div');
+        chatBox.id = 'groove-chat-modal';
+        chatBox.style.cssText = 'position: fixed; bottom: 85px; right: 20px; width: 380px; height: 520px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.25); z-index: 9999; display: flex; flex-direction: column; font-family: var(--font-main); overflow: hidden;';
+
+        // Header
+        const header = document.createElement('div');
+        header.style.cssText = 'padding: 14px 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(168,85,247,0.08));';
+        header.innerHTML = '<div style="display: flex; align-items: center; gap: 8px;"><span style="font-size: 1.2rem;">🤖</span><span style="font-weight: 700; font-size: 0.95rem; color: var(--text-primary);">Groove Chat</span></div><button onclick="GrooveChat.hide()" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 1.2rem; padding: 0; line-height: 1;">✕</button>';
+        chatBox.appendChild(header);
+
+        // Messages area
+        const msgArea = document.createElement('div');
+        msgArea.id = 'groove-msg-area';
+        msgArea.style.cssText = 'flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 8px; background: var(--bg-primary);';
+        chatBox.appendChild(msgArea);
+
+        // Input area
+        const inputRow = document.createElement('div');
+        inputRow.style.cssText = 'padding: 10px 12px; border-top: 1px solid var(--border); display: flex; gap: 8px; align-items: flex-end; background: var(--bg-card);';
+        const textarea = document.createElement('textarea');
+        textarea.id = 'groove-input';
+        textarea.style.cssText = 'flex: 1; padding: 9px 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-primary); color: var(--text-primary); font-size: 0.85rem; resize: none; font-family: var(--font-main); outline: none; max-height: 70px; line-height: 1.4;';
+        textarea.placeholder = 'Ask Groove anything... (Try: "I need a video editor right now")';
+        textarea.onkeydown = (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); GrooveChat.send(); } };
+        inputRow.appendChild(textarea);
+
+        const sendBtn = document.createElement('button');
+        sendBtn.id = 'groove-send';
+        sendBtn.style.cssText = 'width: 40px; height: 40px; border-radius: 12px; background: linear-gradient(135deg, #6366f1, #a855f7); color: white; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; transition: transform 0.15s ease, opacity 0.2s ease; flex-shrink: 0;';
+        sendBtn.innerHTML = '➤';
+        sendBtn.onclick = () => GrooveChat.send();
+        inputRow.appendChild(sendBtn);
+        chatBox.appendChild(inputRow);
+
+        document.body.appendChild(chatBox);
+        addBotMessage('👋 Hey there! I\'m Groove, your Groove Hub assistant. Ask me anything — try "I need a video editor right now" or "Find me an English tutor"!');
+        textarea.focus();
+    }
+
+    function hideChat() {
+        chatVisible = false;
+        if (chatBox) { chatBox.remove(); chatBox = null; }
+    }
+
+    function addBotMessage(text) {
+        if (!chatBox) return;
+        const area = document.getElementById('groove-msg-area');
+        if (!area) return;
+        const div = document.createElement('div');
+        div.style.cssText = 'display: flex; gap: 8px; align-self: flex-start; animation: fadeIn 0.2s ease;';
+        const safeText = escapeHTML(text || '').replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        div.innerHTML = `<div style="width: 28px; height: 28px; border-radius: 50%; background: var(--bg-hover); display: flex; align-items: center; justify-content: center; font-size: 0.75rem; color: var(--text-secondary); flex-shrink: 0;">🤖</div><div style="background: var(--bg-card); color: var(--text-primary); padding: 8px 12px; border-radius: 12px; border-bottom-left-radius: 4px; font-size: 0.825rem; line-height: 1.4; word-break: break-word; box-shadow: 0 1px 4px rgba(0,0,0,0.06); max-width: 90%;">${safeText}</div>`;
+        area.appendChild(div);
+        area.scrollTop = area.scrollHeight;
+    }
+
+    function addUserMessage(text) {
+        if (!chatBox) return;
+        const area = document.getElementById('groove-msg-area');
+        if (!area) return;
+        const div = document.createElement('div');
+        div.style.cssText = 'display: flex; gap: 8px; align-self: flex-end; flex-direction: row-reverse; animation: fadeIn 0.2s ease;';
+        const safeText = escapeHTML(text || '').replace(/\n/g, '<br>');
+        div.innerHTML = `<div style="width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #a855f7); display: flex; align-items: center; justify-content: center; font-size: 0.75rem; color: white; flex-shrink: 0;">👤</div><div style="background: linear-gradient(135deg, #6366f1, #a855f7); color: white; padding: 8px 12px; border-radius: 12px; border-bottom-right-radius: 4px; font-size: 0.825rem; line-height: 1.4; word-break: break-word; box-shadow: 0 2px 8px rgba(99,102,241,0.3); max-width: 90%;">${safeText}</div>`;
+        area.appendChild(div);
+        area.scrollTop = area.scrollHeight;
+    }
+
+    function showLoadingIndicator() {
+        if (!chatBox) return;
+        const area = document.getElementById('groove-msg-area');
+        if (!area) return;
+        const div = document.createElement('div');
+        div.style.cssText = 'display: flex; gap: 8px; align-self: flex-start; animation: fadeIn 0.2s ease;';
+        div.innerHTML = `<div style="width: 28px; height: 28px; border-radius: 50%; background: var(--bg-hover); display: flex; align-items: center; justify-content: center; font-size: 0.75rem; color: var(--text-muted); flex-shrink: 0;">🤖</div><div style="background: var(--bg-card); padding: 10px 14px; border-radius: 12px; border-bottom-left-radius: 4px; display: flex; gap: 4px; box-shadow: 0 1px 4px rgba(0,0,0,0.06);"><div style="width: 6px; height: 6px; border-radius: 50%; background: var(--text-muted); animation: bounce 1.4s ease-in-out infinite; animation-delay: 0s;"></div><div style="width: 6px; height: 6px; border-radius: 50%; background: var(--text-muted); animation: bounce 1.4s ease-in-out infinite; animation-delay: 0.2s;"></div><div style="width: 6px; height: 6px; border-radius: 50%; background: var(--text-muted); animation: bounce 1.4s ease-in-out infinite; animation-delay: 0.4s;"></div></div>`;
+        area.appendChild(div);
+        area.scrollTop = area.scrollHeight;
+    }
+
+    function removeLoadingIndicator() {
+        if (!chatBox) return;
+        const area = document.getElementById('groove-msg-area');
+        if (!area) return;
+        const indicators = area.querySelectorAll('div > div > div[style*="animation: bounce"]');
+        // Remove the last loading indicator (the parent flex div)
+        const children = area.children;
+        for (let i = children.length - 1; i >= 0; i--) {
+            const child = children[i];
+            if (child.querySelector('[style*="animation: bounce"]')) {
+                child.remove();
+                break;
+            }
+        }
+    }
+
+    async function send() {
+        const input = document.getElementById('groove-input');
+        if (!input || !input.value.trim() || loading) return;
+        const text = input.value.trim();
+        input.value = '';
+        addUserMessage(text);
+        loading = true;
+        showLoadingIndicator();
+
+        // Simulate natural response delay
+        await new Promise(r => setTimeout(r, 400 + Math.random() * 300));
+
+        loading = false;
+        removeLoadingIndicator();
+
+        // NLP intent detection
+        const reply = GrooveChat.detectReply(text);
+        addBotMessage(reply.text);
+
+        // Execute navigation action
+        if (reply.action) {
+            setTimeout(() => { window.router(reply.action); }, 500);
+        }
+    }
+
+    // NLP intent detection and reply generation
+    function detectReply(text) {
+        const lower = text.toLowerCase().trim();
+        let intent = 'unknown';
+        let action = null;
+
+        // Video editor — urgent/right away
+        if (lower.includes('video') && (lower.includes('right away') || lower.includes('now') || lower.includes('immediate') || lower.includes('fast') || lower.includes('urgent'))) {
+            intent = 'find_video_editor_urgent';
+        }
+        // Video editor
+        else if (lower.includes('video') || lower.includes('edit') || lower.includes('editor') || (lower.includes('video editor'))) {
+            intent = 'find_video_editor';
+        }
+        // English tutor
+        else if (lower.includes('english') || lower.includes('tutor') || lower.includes('coaching') || lower.includes('ielts') || lower.includes('speak') || lower.includes('language') || lower.includes('accent')) {
+            intent = 'find_english_tutor';
+        }
+        // Writer
+        else if (lower.includes('write') || lower.includes('writer') || lower.includes('content') || lower.includes('copy') || lower.includes('article') || lower.includes('blog')) {
+            intent = 'find_writer';
+        }
+        // Profile / settings
+        else if (lower.includes('profile') || lower.includes('edit') || lower.includes('update') || lower.includes('change') || (lower.includes('setting') && !lower.includes('payment'))) {
+            intent = 'edit_profile';
+            action = '/profile';
+        }
+        // Help
+        else if (lower.includes('help') || lower.includes('what can') || lower.includes('support') || lower.includes('how') || lower.includes('need') || lower.includes('want')) {
+            intent = 'show_help';
+        }
+        // Greeting
+        else if (lower.match(/^(hi|hello|hey|yo|gm|good morning|good evening|sup|howdy)/)) {
+            intent = 'greeting';
+        }
+        // Payment / money
+        else if (lower.includes('payment') || lower.includes('money') || lower.includes('escrow') || lower.includes('bank') || lower.includes('balance') || lower.includes('where') && lower.includes("'s")) {
+            intent = 'payment_status';
+            action = '/payments';
+        }
+        // Booking
+        else if (lower.includes('book') || lower.includes('booking') || lower.includes('hire') || lower.includes('order') || lower.includes('project') || lower.includes('create booking')) {
+            intent = 'create_booking';
+            action = '/create-booking';
+        }
+        // Package
+        else if (lower.includes('package') || lower.includes('create service') || lower.includes('offer')) {
+            intent = 'create_package';
+            action = '/create-package';
+        }
+        // Admin
+        else if (lower.includes('admin') || lower.includes('manage') || lower.includes('provider') && (lower.includes('manage') || lower.includes('approve'))) {
+            intent = 'admin_panel';
+            action = '/admin';
+        }
+        // Browse talent
+        else if (lower.includes('browse') || lower.includes('talent') || lower.includes('marketplace') || lower.includes('find') || lower.includes('search')) {
+            intent = 'browse';
+            action = '/providers';
+        }
+        // Fallback
+        else {
+            intent = 'unknown';
+        }
+
+        const replies = {
+            greeting: { text: '👋 Hey there! Welcome to Groove Hub. What can I help you with today? Try asking for a "video editor" or "English tutor"!' },
+            find_video_editor_urgent: { text: '🎬 Here are active video editors available RIGHT NOW:\n\n' },
+            find_video_editor: { text: '🎬 I can help you find video editors! Try these:\n\n• Browse all editors: click "Browse Talent" below\n• Create a booking: click "Create Booking" below\n\nWant me to take you to the marketplace?' },
+            find_english_tutor: { text: '🗣️ I can help you find English tutors! Try these:\n\n• Browse tutors: click "Browse Talent" below\n• Create a booking: click "Create Booking" below\n\nLooking for IELTS prep, spoken English, or business English?' },
+            find_writer: { text: '✍️ I can help you find writers! Try these:\n\n• Browse writers: click "Browse Talent" below\n• Create a booking: click "Create Booking" below\n\nNeed content writing, copywriting, or creative writing?' },
+            edit_profile: { text: '👤 I\'ll take you to your profile page where you can edit your details, bio, and settings.' },
+            show_help: { text: '🤖 I\'m Groove, your Groove Hub assistant! Here\'s what I can help with:\n\n🎬 **Video Editors** — "I need a video editor right now"\n🗣️ **English Tutors** — "I want an English coach"\n✍️ **Writers** — "I need someone to write content"\n📦 **Create Package** — "I want to create a service"\n📋 **Create Booking** — "I want to book someone"\n💳 **Payments** — "Where\'s my money" or "payment status"\n👤 **Edit Profile** — "change my profile"\n🔧 **Admin Panel** — "admin" (admins only)\n\nJust type what you need!' },
+            payment_status: { text: '💳 I\'ll take you to your payments dashboard where you can see your escrow balance, pending payments, and transaction history.' },
+            create_booking: { text: '📋 I\'ll take you to the booking page where you can select a provider and package to get started!' },
+            create_package: { text: '📦 I\'ll take you to the package creation page where you can define your service offerings for buyers!' },
+            admin_panel: { text: '🔧 I\'ll take you to the admin panel where you can manage providers, bookings, disputes, and platform settings.' },
+            browse: { text: '🔍 I\'ll take you to the marketplace where you can browse all available talent. Try filtering by category!' },
+            unknown: { text: '🤔 I didn\'t quite catch that. Can you rephrase? Try saying something like:\n\n• "I need a video editor right now"\n• "Find me an English tutor"\n• "I want to hire a writer"\n• "Where\'s my payment"\n• "Take me to admin"\n\nOr just tell me what you\'re looking for in your own words!' }
+        };
+
+        const reply = replies[intent] || replies.unknown;
+        if (intent === 'find_video_editor_urgent' || intent === 'find_video_editor') {
+            reply.text += '\n👉 Click "Browse Talent" below to see all available providers!';
+            reply.action = '/providers';
+        }
+        if (intent === 'find_english_tutor') {
+            reply.text += '\n👉 Click "Browse Talent" below to see all available tutors!';
+            reply.action = '/providers';
+        }
+        if (intent === 'find_writer') {
+            reply.text += '\n👉 Click "Browse Talent" below to see all available writers!';
+            reply.action = '/providers';
+        }
+        return reply;
+    }
+
+    GrooveChat.toggle = function() {
+        if (chatVisible) hideChat(); else showChat();
+    };
+    GrooveChat.hide = hideChat;
+    GrooveChat.send = send;
+
+    return container;
+}
+
+
+// =============== FIVERR-STYLE INBOX & DIRECT CHAT COMPONENT ===============
+
+function escapeHTML(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+function formatRelativeTime(dateStr) {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffSec = Math.floor((now - date) / 1000);
+    if (diffSec < 60) return 'Just now';
+    if (diffSec < 3600) return `${Math.floor(diffSec / 60)}m ago`;
+    if (diffSec < 86400) return `${Math.floor(diffSec / 3600)}h ago`;
+    if (diffSec < 172800) return 'Yesterday';
+    return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
+function MessagesInbox() {
+    let conversations = [];
+    const searchParams = typeof window !== 'undefined' && window.location ? new URLSearchParams(window.location.search) : null;
+    const urlUserId = searchParams ? (searchParams.get('user_id') || searchParams.get('user')) : null;
+    let activeUserId = window.__selectedChatUserId ? parseInt(window.__selectedChatUserId) : (urlUserId ? parseInt(urlUserId) : null);
+    let activeUserName = window.__selectedChatUserName || '';
+    let activeUserRole = 'PROVIDER';
+    let messages = [];
+    let loadingConvos = true;
+    let loadingMsgs = false;
+    let pollInterval = null;
+    let searchQuery = '';
+
+    async function loadConversations(isPolling = false) {
+        if (!currentToken) return;
+        if (!isPolling) loadingConvos = true;
+        try {
+            conversations = await apiFetch('/conversations');
+            if (activeUserId) {
+                const found = conversations.find(c => c.other_user_id === activeUserId);
+                if (found) {
+                    activeUserName = found.other_user_name;
+                    activeUserRole = found.other_user_type;
+                }
+            } else if (conversations.length > 0) {
+                activeUserId = conversations[0].other_user_id;
+                activeUserName = conversations[0].other_user_name;
+                activeUserRole = conversations[0].other_user_type;
+            }
+        } catch (e) {
+            console.error('Failed to load conversations', e);
+        } finally {
+            loadingConvos = false;
+            if (!isPolling) {
+                mount(renderInbox());
+                if (activeUserId) loadMessages();
+            } else {
+                updateInboxDOM();
+            }
+        }
+    }
+
+    async function loadMessages(isPolling = false) {
+        if (!activeUserId || !currentToken) return;
+        if (!isPolling) loadingMsgs = true;
+        try {
+            const fetched = await apiFetch(`/messages/user/${activeUserId}`);
+            messages = fetched;
+            updateUnreadCountBadge();
+        } catch (e) {
+            console.error('Failed to load messages', e);
+        } finally {
+            loadingMsgs = false;
+            renderMessagesStream();
+        }
+    }
+
+    function startPolling() {
+        stopPolling();
+        pollInterval = setInterval(() => {
+            if (window.location.pathname !== '/messages') {
+                stopPolling();
+                return;
+            }
+            if (activeUserId) {
+                loadMessages(true);
+            }
+            loadConversations(true);
+        }, 3500);
+    }
+
+    function stopPolling() {
+        if (pollInterval) {
+            clearInterval(pollInterval);
+            pollInterval = null;
+        }
+    }
+
+    async function sendMessage(text, fileUrl = null) {
+        if (!text || !text.trim() || !activeUserId) return;
+        const clean = text.trim();
+        // Client-side masking (server-side also applies)
+        const maskedText = window.__maskMessageText(clean);
+        const inputEl = document.getElementById('inbox-message-input');
+        if (inputEl) inputEl.value = '';
+
+        const tempId = Date.now();
+        messages.push({
+            id: tempId,
+            sender_id: currentUser?.id,
+            receiver_id: activeUserId,
+            sender_name: currentUser?.name || 'You',
+            message: maskedText,
+            file_url: fileUrl,
+            created_at: new Date().toISOString(),
+            is_read: false,
+            is_flagged: false
+        });
+        renderMessagesStream();
+
+        try {
+            const body = { message: maskedText };
+            if (fileUrl) body.file_url = fileUrl;
+            const res = await apiFetch(`/messages/user/${activeUserId}`, {
+                method: 'POST',
+                body: JSON.stringify(body)
+            });
+            const idx = messages.findIndex(m => m.id === tempId);
+            if (idx !== -1) messages[idx] = res;
+            renderMessagesStream();
+            loadConversations(true);
+        } catch (err) {
+            messages = messages.filter(m => m.id !== tempId);
+            renderMessagesStream();
+            const isWarning = /warning\s*\(strike 1\)/i.test(err.message || '');
+            showToast(err.message, isWarning ? 'info' : 'error');
+            // Reload so the sender sees the flagged/388-blocked bubble + admin trail
+            try { await loadMessages(true); } catch (_) {}
+            loadConversations(true);
+        }
+    }
+
+    window.__inboxSendMessage = sendMessage;
+
+    // --- Video upload from gallery ---
+    window.__inboxUploadVideo = async () => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'video/*,image/*';
+        input.onchange = async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            if (file.size > 1024 * 1024 * 1024) {
+                showToast('Video too large (max 1GB)', 'error');
+                return;
+            }
+            showToast('Uploading video...', 'info');
+            try {
+                const formData = new FormData();
+                formData.append('video', file);
+                formData.append('file', file);
+                const res = await fetch('/api/messages/upload', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${currentToken}`
+                    },
+                    body: formData
+                });
+                if (!res.ok) throw new Error('Upload failed');
+                const data = await res.json();
+                const videoUrl = data.url || data.file_url;
+                if (!videoUrl) throw new Error('Invalid upload response');
+
+                const inputEl = document.getElementById('inbox-message-input');
+                const note = (inputEl && inputEl.value && inputEl.value.trim()) ? inputEl.value.trim() : '📹 Video sent';
+                if (inputEl) inputEl.value = '';
+
+                await sendMessage(note, videoUrl);
+                showToast('Video sent successfully', 'success');
+            } catch (err) {
+                showToast('Video upload failed: ' + err.message, 'error');
+            }
+        };
+        input.click();
+    };
+
+    // --- Message masking on client side (in addition to server-side) ---
+    window.__maskMessageText = (text) => {
+        if (!text) return text;
+        // Mask phone numbers (continuous digit streams 10+ chars, with optional +91/0 prefix)
+        let masked = text.replace(/(?<!\w)(\+?\d[\s\-\.]?){7,}\d(?!\w)/g, (m) => {
+            const digits = m.replace(/\D/g, '');
+            if (digits.length >= 10) {
+                return '📞 [contact hidden - ' + digits.length + ' digits]';
+            }
+            return m;
+        });
+        // Mask @usernames (Instagram/Facebook style)
+        masked = masked.replace(/(@[a-zA-Z0-9_]{2,30})(?!\w)/g, (m) => {
+            return '[🔗 ' + m.slice(0, 2) + '…' + m.slice(-2) + ']';
+        });
+        // Mask instagram.com / facebook.com URLs
+        masked = masked.replace(/https?:\/\/(?:www\.)?(instagram\.com|facebook\.com)\/@?[a-zA-Z0-9_.+-]+/gi, '[🔗 social link hidden]');
+        masked = masked.replace(/(?<!\w)(instagram\.com|facebook\.com)\/@?[a-zA-Z0-9_.+-]+/gi, '[🔗 social link hidden]');
+        return masked;
+    };
+
+    window.__selectInboxConversation = (otherId, otherName, otherRole) => {
+        activeUserId = otherId;
+        activeUserName = otherName;
+        activeUserRole = otherRole || 'PROVIDER';
+        window.__selectedChatUserId = otherId;
+        window.__selectedChatUserName = otherName;
+
+        const container = document.querySelector('.inbox-container');
+        if (container) {
+            container.classList.add('show-chat');
+            try {
+                history.pushState({ path: '/messages', isChat: true, userId: otherId }, '', '/messages');
+            } catch (_) {}
+        }
+
+        document.querySelectorAll('.inbox-item').forEach(item => {
+            item.classList.toggle('active', item.dataset.userId == otherId);
+        });
+
+        loadMessages();
+    };
+
+    window.__inboxMobileBackToList = () => {
+        const container = document.querySelector('.inbox-container');
+        if (container) container.classList.remove('show-chat');
+        window.__selectedChatUserId = null;
+    };
+
+    function renderInbox() {
+        startPolling();
+
+        return el`<div>
+            ${renderAppHeader('/messages')}
+            <div class="main inbox-main-page">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <div class="section-title" style="margin: 0;">💬 Direct Messages</div>
+                    <button class="btn btn-secondary btn-sm" onclick="router('/')">← Back to Dashboard</button>
+                </div>
+                <div class="inbox-wrapper">
+                <div class="inbox-container ${activeUserId ? 'show-chat' : ''}">
+                    <!-- Left Sidebar: Conversations List -->
+                    <div class="inbox-sidebar">
+                        <div class="inbox-sidebar-header">
+                            <h3 style="margin: 0; font-size: 1.1rem; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+                                <span>💬</span> Direct Messages
+                            </h3>
+                            <span class="badge badge-info" style="font-size: 0.72rem;">Escrow Protected</span>
+                        </div>
+                        <div class="inbox-search-box">
+                            <input
+                                type="text"
+                                class="inbox-search-input"
+                                placeholder="Search conversations..."
+                                oninput="window.__filterInboxConversations(this.value)"
+                            />
+                        </div>
+                        <div class="inbox-conversations-list" id="inbox-conversations-list">
+                            ${renderConversationsListHTML()}
+                        </div>
+                    </div>
+
+                    <!-- Right Pane: Active Chat Conversation -->
+                    <div class="inbox-chat-pane">
+                        ${renderChatPaneHTML()}
+                    </div>
+                </div>
+            </div>
+        </div>`;
+    }
+
+    function renderConversationsListHTML() {
+        if (loadingConvos) {
+            return '<div style="padding: 24px; text-align: center; color: var(--text-muted);"><div class="spinner"></div></div>';
+        }
+
+        let filtered = conversations;
+        if (searchQuery && searchQuery.trim()) {
+            const q = searchQuery.toLowerCase().trim();
+            filtered = conversations.filter(c => (c.other_user_name || '').toLowerCase().includes(q) || (c.last_message && c.last_message.toLowerCase().includes(q)));
+        }
+
+        if (activeUserId && !conversations.some(c => c.other_user_id === activeUserId)) {
+            filtered = [{
+                other_user_id: activeUserId,
+                other_user_name: activeUserName || 'Talent',
+                other_user_type: activeUserRole || 'PROVIDER',
+                last_message: 'Start talking before ordering a package...',
+                last_message_at: new Date().toISOString(),
+                unread_count: 0,
+                is_draft: true
+            }, ...filtered];
+        }
+
+        if (filtered.length === 0) {
+            return `
+                <div style="padding: 36px 20px; text-align: center; color: var(--text-muted); flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                    <div style="font-size: 2.5rem; margin-bottom: 10px;">💬</div>
+                    <div style="font-weight: 700; color: var(--text-primary); margin-bottom: 6px; font-size: 1rem;">No messages yet</div>
+                    <p style="font-size: 0.8rem; line-height: 1.4; margin-bottom: 14px; text-align: center;">Browse verified video editors and english tutors to start talking directly.</p>
+                    <button class="btn btn-primary btn-sm" onclick="router('/')">Browse Talent</button>
+                </div>
+            `;
+        }
+
+        return filtered.map(c => {
+            const isActive = c.other_user_id === activeUserId;
+            const timeStr = formatRelativeTime(c.last_message_at);
+            const initial = escapeHTML((c.other_user_name || 'U').charAt(0).toUpperCase());
+            const safeName = escapeHTML(c.other_user_name || 'User');
+            const jsName = (c.other_user_name || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+            const roleBadge = c.other_user_type === 'PROVIDER' ? 'Creator' : 'Client';
+
+            return `
+                <div class="inbox-item ${isActive ? 'active' : ''}" data-user-id="${c.other_user_id}" onclick="window.__selectInboxConversation(${c.other_user_id}, '${jsName}', '${c.other_user_type}')">
+                    <div class="inbox-item-avatar">
+                        ${initial}
+                        <div class="online-dot"></div>
+                    </div>
+                    <div class="inbox-item-content">
+                        <div class="inbox-item-name">
+                            <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${safeName}</span>
+                            <span class="inbox-item-time">${timeStr}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 2px;">
+                            <div class="inbox-item-snippet">
+                                <span style="font-size: 0.65rem; background: var(--bg-hover); padding: 1px 4px; border-radius: 4px; margin-right: 4px; border: 1px solid var(--border);">${roleBadge}</span>
+                                ${escapeHTML(c.last_message || 'No messages')}
+                            </div>
+                            ${c.unread_count > 0 ? `<span class="inbox-item-unread-badge">${c.unread_count}</span>` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function renderChatPaneHTML() {
+        if (!activeUserId) {
+            return `
+                <div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; text-align: center; color: var(--text-muted);">
+                    <div style="width: 64px; height: 64px; border-radius: 50%; background: rgba(99, 102, 241, 0.1); color: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 2rem; margin-bottom: 14px;">
+                        💬
+                    </div>
+                    <h3 style="margin: 0 0 6px 0; color: var(--text-primary); font-weight: 800;">Your Groove Hub Inbox</h3>
+                    <p style="font-size: 0.85rem; max-width: 380px; line-height: 1.45; margin: 0 0 18px 0;">Select a conversation on the left, or browse talent to talk with creators before placing your order.</p>
+                    <button class="btn btn-primary" onclick="router('/')">Explore Creators</button>
+                </div>
+            `;
+        }
+
+        const initial = escapeHTML((activeUserName || 'U').charAt(0).toUpperCase());
+        const safeActiveName = escapeHTML(activeUserName || 'Chat');
+        const isProviderChat = (activeUserRole || 'PROVIDER') === 'PROVIDER';
+
+        return `
+            <!-- Chat Header -->
+            <div class="inbox-chat-header">
+                <div style="display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1;">
+                    <button class="inbox-mobile-back-btn" onclick="window.__inboxMobileBackToList()" style="display: none; background: none; border: none; font-size: 1.3rem; cursor: pointer; color: var(--text-primary); padding: 4px; line-height: 1;">
+                        ←
+                    </button>
+                    <div style="display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1; cursor: pointer;" onclick="openFiverrPortfolioModal(${activeUserId}, '${escapeJs(safeActiveName)}')" title="Tap to view provider profile & showcase">
+                        <div class="inbox-item-avatar" style="width: 38px; height: 38px; font-size: 0.95rem; flex-shrink: 0;">
+                            ${initial}
+                            <div class="online-dot"></div>
+                        </div>
+                        <div style="min-width: 0; flex: 1;">
+                            <div style="font-weight: 800; font-size: 0.92rem; color: var(--text-primary); display: flex; align-items: center; gap: 6px;">
+                                <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 140px;">${safeActiveName}</span>
+                                <span style="font-size: 0.62rem; padding: 1px 5px; border-radius: 4px; background: rgba(16, 185, 129, 0.1); color: var(--success); font-weight: 700; white-space: nowrap; flex-shrink: 0;">online</span>
+                            </div>
+                            <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                👤 Tap to view profile & showcase
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="flex-shrink: 0; margin-left: 8px; display: flex; align-items: center; gap: 6px;">
+                    <button class="btn btn-secondary btn-sm" onclick="openFiverrPortfolioModal(${activeUserId}, '${escapeJs(safeActiveName)}')" style="font-weight: 700; font-size: 0.75rem; padding: 6px 10px; display: flex; align-items: center; gap: 4px;" title="View Creator Profile">
+                        <span>👤 Profile</span>
+                    </button>
+                    ${isProviderChat
+                        ? `<button class="btn btn-primary btn-sm" onclick="selectProvider(${activeUserId})" style="font-weight: 700; font-size: 0.75rem; padding: 6px 10px; display: flex; align-items: center; gap: 4px;"><span>📦 Hire</span></button>`
+                        : ''}
+                </div>
+            </div>
+
+            <!-- Messages Stream -->
+            <div class="inbox-messages-stream" id="inbox-messages-stream">
+                ${renderMessagesHTML()}
+            </div>
+
+            <!-- Bottom Input Bar (Telegram-style: auto-resize, Enter=send, Shift+Enter=newline) -->
+            <div class="inbox-chat-input-bar">
+                <button class="inbox-attach-btn" onclick="window.__inboxUploadVideo()" title="Send video from gallery" style="background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--text-secondary);padding:4px;line-height:1;">
+                    📎
+                </button>
+                <textarea
+                    id="inbox-message-input"
+                    class="inbox-chat-textarea"
+                    placeholder="Write a message..."
+                    rows="1"
+                    oninput="this.style.height='auto'; this.style.height=Math.min(this.scrollHeight,120)+'px'"
+                    onkeydown="if(event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); window.__inboxSendMessage(this.value); }"
+                ></textarea>
+                <button class="inbox-send-btn" onclick="window.__inboxSendMessage(document.getElementById('inbox-message-input')?.value)" title="Send Message">
+                    ➤
+                </button>
+            </div>
+        `;
+    }
+
+    function renderMessagesHTML() {
+        if (loadingMsgs && messages.length === 0) {
+            return '<div style="padding: 24px; text-align: center; color: var(--text-muted);"><div class="spinner"></div></div>';
+        }
+
+        if (messages.length === 0) {
+            return `
+                <div style="margin: auto; text-align: center; padding: 24px; color: var(--text-muted); max-width: 420px;">
+                    <div style="font-size: 2.2rem; margin-bottom: 8px;">👋</div>
+                    <div style="font-weight: 700; color: var(--text-primary); margin-bottom: 4px;">Say hi to ${escapeHTML(activeUserName || 'this creator')}!</div>
+                    <p style="font-size: 0.8125rem; line-height: 1.45;">Discuss project requirements, turnaround times, or revision expectations. When you're ready, click <strong>"View Packages / Hire"</strong> at the top to place your order with 100% Escrow Protection.</p>
+                </div>
+            `;
+        }
+
+        // Telegram-style: date separators + grouped bubbles + video/media players
+        let html = '';
+        let lastDateKey = '';
+        const dayLabel = (d) => {
+            const today = new Date(); today.setHours(0,0,0,0);
+            const yesterday = new Date(today); yesterday.setDate(today.getDate() - 1);
+            const dd = new Date(d); dd.setHours(0,0,0,0);
+            if (dd.getTime() === today.getTime()) return 'Today';
+            if (dd.getTime() === yesterday.getTime()) return 'Yesterday';
+            return new Date(d).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+        };
+        const safeUrl = (u) => {
+            const s = String(u || '').trim();
+            if (!s) return '#';
+            if (s.startsWith('/') || s.startsWith('./') || /^https?:\/\//i.test(s)) {
+                return s.replace(/"/g, '%22');
+            }
+            return '#';
+        };
+        const renderAttachmentHTML = (rawUrl) => {
+            if (!rawUrl) return '';
+            const cleanUrl = safeUrl(rawUrl);
+            if (cleanUrl === '#') return '';
+            const lower = rawUrl.toLowerCase();
+            const isVideo = lower.endsWith('.mp4') || lower.endsWith('.mov') || lower.endsWith('.webm') || lower.endsWith('.mkv') || lower.endsWith('.avi') || lower.includes('/chat_uploads/');
+            const isImage = lower.endsWith('.jpg') || lower.endsWith('.jpeg') || lower.endsWith('.png') || lower.endsWith('.webp') || lower.endsWith('.gif');
+
+            if (isVideo) {
+                return `
+                    <div class="inbox-msg-video-wrap" style="margin-top: 8px; border-radius: 10px; overflow: hidden; max-width: 320px; background: #000; box-shadow: 0 4px 14px rgba(0,0,0,0.25);">
+                        <video controls playsinline preload="metadata" src="${cleanUrl}" style="width: 100%; max-height: 240px; display: block; border-radius: 10px; background: #000;"></video>
+                        <div style="padding: 4px 8px; font-size: 0.72rem; display: flex; justify-content: space-between; align-items: center; background: rgba(15, 23, 42, 0.85); color: #fff;">
+                            <span style="font-weight: 600;">📹 Video Deliverable</span>
+                            <a href="${cleanUrl}" download target="_blank" rel="noopener" style="color: #60a5fa; text-decoration: none; font-weight: 700;">Download ⬇</a>
+                        </div>
+                    </div>
+                `;
+            } else if (isImage) {
+                return `
+                    <div class="inbox-msg-img-wrap" style="margin-top: 8px; border-radius: 10px; overflow: hidden; max-width: 280px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+                        <img src="${cleanUrl}" alt="Attachment" style="width: 100%; max-height: 220px; object-fit: cover; display: block; border-radius: 10px; cursor: pointer;" onclick="window.open('${cleanUrl}', '_blank')" />
+                    </div>
+                `;
+            } else {
+                const fileName = rawUrl.split('/').pop() || 'Attachment';
+                return `
+                    <div class="inbox-msg-attachment" style="margin-top: 6px;">
+                        <a href="${cleanUrl}" download target="_blank" rel="noopener noreferrer" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 8px; background: rgba(99, 102, 241, 0.1); color: var(--accent); text-decoration: none; font-size: 0.8rem; font-weight: 700; border: 1px solid rgba(99, 102, 241, 0.2);">
+                            <span>📎</span> ${escapeHTML(fileName)}
+                        </a>
+                    </div>
+                `;
+            }
+        };
+
+        messages.forEach((m, idx) => {
+            const isMe = m.sender_id === currentUser?.id;
+            const msgDate = new Date(m.created_at);
+            const dateKey = msgDate.toDateString();
+            if (dateKey !== lastDateKey) {
+                lastDateKey = dateKey;
+                html += `<div class="tg-date-separator"><span>${dayLabel(m.created_at)}</span></div>`;
+            }
+            const timeStr = msgDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const initial = escapeHTML((m.sender_name || (isMe ? 'You' : 'U')).charAt(0).toUpperCase());
+            const next = messages[idx + 1];
+            const grouped = next && next.sender_id === m.sender_id && new Date(next.created_at).toDateString() === dateKey;
+
+            if (m.is_flagged) {
+                html += `
+                    <div class="inbox-msg-row sent flagged">
+                        <div class="inbox-msg-bubble-wrap">
+                            <div class="inbox-msg-bubble">
+                                <div class="inbox-msg-bubble-content">
+                                    <div style="display: flex; align-items: center; gap: 6px; font-weight: 700; margin-bottom: 4px;">
+                                        <span>🛑 Message Blocked by Safety Guard</span>
+                                    </div>
+                                    <div style="text-decoration: line-through; opacity: 0.7;">${escapeHTML(m.message)}</div>
+                                    <div style="font-size: 0.75rem; margin-top: 4px; font-weight: 600;">
+                                        Reason: ${escapeHTML(m.flag_reason || 'Personal contact sharing policy violation')}
+                                    </div>
+                                </div>
+                                <div class="inbox-msg-timestamp" style="color: #ef4444;">Blocked • Not delivered</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            html += `
+                <div class="inbox-msg-row ${isMe ? 'sent' : 'received'} ${!isMe && !m.is_read ? 'unread' : ''} ${grouped ? 'grouped' : ''}">
+                    ${!isMe && !grouped ? `<div class="inbox-msg-avatar">${initial}</div>` : (!isMe ? '<div class="inbox-msg-avatar inbox-msg-avatar-spacer"></div>' : '')}
+                    <div class="inbox-msg-bubble-wrap">
+                        <div class="inbox-msg-bubble">
+                            <div class="inbox-msg-bubble-content">
+                                ${m.message && m.message !== '📹 Video sent' ? `<div class="inbox-msg-text">${escapeHTML(m.message)}</div>` : (!m.file_url ? `<div class="inbox-msg-text">${escapeHTML(m.message)}</div>` : '')}
+                                ${renderAttachmentHTML(m.file_url)}
+                            </div>
+                        </div>
+                        <div class="inbox-msg-timestamp">
+                            ${timeStr}
+                            ${isMe ? (m.is_read ? '<span class="tg-ticks tg-ticks-read">✓✓</span>' : '<span class="tg-ticks">✓</span>') : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        return html;
+    }
+
+    function renderMessagesStream() {
+        const streamEl = document.getElementById('inbox-messages-stream');
+        if (streamEl) {
+            streamEl.innerHTML = renderMessagesHTML();
+            streamEl.scrollTop = streamEl.scrollHeight;
+        }
+    }
+
+    function updateInboxDOM() {
+        const listEl = document.getElementById('inbox-conversations-list');
+        if (listEl) listEl.innerHTML = renderConversationsListHTML();
+    }
+
+    window.__filterInboxConversations = (q) => {
+        searchQuery = q;
+        updateInboxDOM();
+    };
+
+    loadConversations();
+    return renderInbox();
+}
+
+// =============== ADMIN CHATS & SAFETY MODERATION VIEW ===============
+
+function AdminChatsView() {
+    let chats = [];
+    let flaggedMessages = [];
+    let loading = true;
+    let activeTab = 'all';
+
+    async function loadData() {
+        showLoading();
+        try {
+            const [cList, fList] = await Promise.all([
+                apiFetch('/admin/chats'),
+                apiFetch('/admin/flagged-messages')
+            ]);
+            chats = cList || [];
+            flaggedMessages = fList || [];
+        } catch (e) {
+            showToast(e.message, 'error');
+        } finally {
+            loading = false;
+            mount(renderAdminChatsView());
+        }
+    }
+
+    window.__adminUnblockUser = async (userId, userName) => {
+        if (!confirm(`Are you sure you want to unblock user "${userName}" (ID: ${userId})? Their account and messaging access will be reinstated.`)) return;
+        try {
+            const res = await apiFetch(`/admin/users/${userId}/unblock`, { method: 'POST' });
+            showToast(res.message || 'User unblocked successfully', 'success');
+            loadData();
+        } catch (err) {
+            showToast(err.message, 'error');
+        }
+    };
+
+    // --- Admin: Toggle mask a message ---
+    window.__adminMaskMessage = async (messageId) => {
+        try {
+            const res = await apiFetch(`/admin/messages/${messageId}/mask`, { method: 'POST' });
+            showToast(res.message || (res.is_masked ? 'Message masked' : 'Message unmasked'), 'success');
+            window.__adminRefreshFlagged();
+            // Reload the transcript modal if open
+            const modal = document.querySelector('.fiverr-escrow-modal');
+            if (modal) modal.remove();
+            if (window.__lastTranscriptData) {
+                openTranscriptModal(window.__lastTranscriptData);
+            }
+        } catch (err) {
+            showToast(err.message, 'error');
+        }
+    };
+
+    // --- Admin: Delete a message (soft-delete) ---
+    window.__adminDeleteMessage = async (messageId) => {
+        if (!confirm('Delete this message? It will be removed from users but kept for admin audit.')) return;
+        try {
+            const res = await apiFetch(`/admin/messages/${messageId}`, { method: 'DELETE' });
+            showToast(res.message || 'Message deleted', 'success');
+            window.__adminRefreshFlagged();
+            const modal = document.querySelector('.fiverr-escrow-modal');
+            if (modal) modal.remove();
+            if (window.__lastTranscriptData) {
+                openTranscriptModal(window.__lastTranscriptData);
+            }
+        } catch (err) {
+            showToast(err.message, 'error');
+        }
+    };
+
+    // --- Admin: Delete entire conversation ---
+    window.__adminDeleteConversation = async (user1Id, user2Id) => {
+        if (!confirm('Delete this entire conversation? All messages will be removed from users but kept for admin audit.')) return;
+        try {
+            const res = await apiFetch(`/admin/chats/user/${user1Id}/with/${user2Id}`, { method: 'DELETE' });
+            showToast(res.message || 'Conversation deleted', 'success');
+            loadData();
+        } catch (err) {
+            showToast(err.message, 'error');
+        }
+    };
+
+    // --- Admin: Refresh flagged messages ---
+    window.__adminRefreshFlagged = async () => {
+        try {
+            const res = await apiFetch('/admin/flagged-messages');
+            flaggedMessages = res || [];
+        } catch (err) { /* silent */ }
+    };
+
+    window.__adminInspectChatTranscript = async (user1Id, user2Id) => {
+        try {
+            const data = await apiFetch(`/admin/chats/user/${user1Id}/with/${user2Id}`);
+            window.__lastTranscriptData = data;
+            openTranscriptModal(data);
+        } catch (err) {
+            showToast(err.message, 'error');
+        }
+    };
+
+    function openTranscriptModal(data) {
+        const u1 = data.user1;
+        const u2 = data.user2;
+        const msgs = data.messages || [];
+
+        const modal = document.createElement('div');
+        modal.className = 'fiverr-escrow-modal';
+        modal.innerHTML = `
+            <div class="fiverr-escrow-card" style="max-width: 680px; max-height: 85vh; display: flex; flex-direction: column;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid var(--border);">
+                    <div>
+                        <h3 style="margin: 0; font-size: 1.15rem; color: var(--text-primary); font-weight: 800;">
+                            Conversation Transcript
+                        </h3>
+                        <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 3px;">
+                            ${u1.name} (${u1.email}) &harr; ${u2.name} (${u2.email})
+                        </div>
+                    </div>
+                    <button class="modal-close" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--text-muted);">&times;</button>
+                </div>
+
+                <div style="flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 10px; background: var(--bg-hover); border-radius: 10px; margin-bottom: 16px;">
+                    ${msgs.length === 0 ? '<div style="text-align: center; color: var(--text-muted); padding: 20px;">No messages</div>' : msgs.map(m => {
+                        const isFlagged = m.is_flagged;
+                        const isMasked = m.is_masked;
+                        const isU1 = m.sender_id === u1.id;
+                        const isDeleted = m.is_deleted;
+                        return `
+                            <div class="admin-msg-card" style="padding: 10px 14px; border-radius: 12px; background: ${isFlagged ? 'rgba(239, 68, 68, 0.12)' : (isU1 ? 'var(--bg-card)' : 'rgba(99, 102, 241, 0.08)')}; border: 1px solid ${isFlagged ? 'rgba(239, 68, 68, 0.4)' : 'var(--border)'}; position: relative;">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px;">
+                                    <div style="display: flex; gap: 6px; font-size: 0.75rem; align-items: center;">
+                                        <strong>${m.sender_name}</strong>
+                                        <span style="color: var(--text-muted);">${m.created_at ? new Date(m.created_at).toLocaleString() : ''}</span>
+                                        ${isMasked ? '<span style="color: #f59e0b; font-weight: 700; font-size: 0.65rem;">🔒 Masked</span>' : ''}
+                                        ${isDeleted ? '<span style="color: #ef4444; font-weight: 700; font-size: 0.65rem;">🗑️ Deleted</span>' : ''}
+                                    </div>
+                                    <div style="display: flex; gap: 4px;">
+                                        ${!isDeleted ? `<button class="btn btn-sm btn-outline" style="padding:2px 8px;font-size:0.7rem;" onclick="window.__adminMaskMessage(${m.id})" title="${isMasked ? 'Unmask' : 'Mask'} this message">${isMasked ? '🔓 Unmask' : '🔒 Mask'}</button>` : ''}
+                                        ${!isDeleted ? `<button class="btn btn-sm btn-danger" style="padding:2px 8px;font-size:0.7rem;" onclick="window.__adminDeleteMessage(${m.id})" title="Delete this message">🗑️ Delete</button>` : ''}
+                                    </div>
+                                </div>
+                                <div class="admin-msg-text" style="font-size: 0.875rem; color: var(--text-primary); word-break: break-word; ${isMasked ? 'color: var(--text-muted); font-style: italic;' : ''}">
+                                    ${isMasked ? '[message hidden by admin]' : escapeHTML(m.message)}
+                                </div>
+                                ${isFlagged ? `<div style="font-size: 0.75rem; color: #ef4444; font-weight: 700; margin-top: 4px;">🛑 Flagged Violation: ${m.flag_reason || 'Contact exchange attempt'}</div>` : ''}
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; gap: 8px;">
+                        ${u1.is_blocked ? `<button class="btn btn-sm btn-danger" onclick="window.__adminUnblockUser(${u1.id}, '${u1.name}'); this.closest('.fiverr-escrow-modal').remove();">Unblock ${u1.name}</button>` : ''}
+                        ${u2.is_blocked ? `<button class="btn btn-sm btn-danger" onclick="window.__adminUnblockUser(${u2.id}, '${u2.name}'); this.closest('.fiverr-escrow-modal').remove();">Unblock ${u2.name}</button>` : ''}
+                        <button class="btn btn-sm btn-primary" style="background:#ef4444;border-color:#ef4444;" onclick="window.__adminDeleteConversation(${u1.id}, ${u2.id}); this.closest('.fiverr-escrow-modal').remove();" title="Delete entire conversation">🗑️ Delete Conversation</button>
+                    </div>
+                    <button class="btn btn-secondary" onclick="this.closest('.fiverr-escrow-modal').remove()">Close</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        modal.querySelector('.modal-close').onclick = () => modal.remove();
+        modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+    }
+
+    function renderAdminChatsView() {
+        return el`<div>
+            ${renderAppHeader('/admin')}
+            <div class="main">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <div>
+                        <div class="section-title" style="margin: 0;">💬 Platform Chats & Safety Moderation</div>
+                        <p style="color: var(--text-secondary); font-size: 0.85rem; margin: 4px 0 0 0;">Inspect user conversations, investigate anti-disintermediation violations, and unblock reinstated users.</p>
+                    </div>
+                    <button class="btn btn-secondary btn-sm" onclick="router('/admin')">← Back to Admin</button>
+                </div>
+
+                <!-- Tabs -->
+                <div class="tabs mb-4" style="display: flex; gap: 8px; border-bottom: 1px solid var(--border); padding-bottom: 8px;">
+                    <button class="tab-btn ${activeTab === 'all' ? 'active' : ''}" onclick="window.__setAdminChatTab('all')">
+                        All Conversations (${chats.length})
+                    </button>
+                    <button class="tab-btn ${activeTab === 'flagged' ? 'active' : ''}" onclick="window.__setAdminChatTab('flagged')">
+                        ⚠️ Flagged Violations (${flaggedMessages.length})
+                    </button>
+                </div>
+
+                ${activeTab === 'all' ? renderAllChatsTable() : renderFlaggedViolationsTable()}
+            </div>
+        </div>`;
+    }
+
+    window.__setAdminChatTab = (tab) => {
+        activeTab = tab;
+        mount(renderAdminChatsView());
+    };
+
+    function renderAllChatsTable() {
+        if (chats.length === 0) {
+            return '<div class="card" style="padding: 30px; text-align: center; color: var(--text-muted);">No chat conversations found on platform.</div>';
+        }
+
+        return `
+            <div class="card" style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem;">
+                    <thead>
+                        <tr style="border-bottom: 1px solid var(--border); background: var(--bg-hover);">
+                            <th style="padding: 12px 16px;">Participant 1</th>
+                            <th style="padding: 12px 16px;">Participant 2</th>
+                            <th style="padding: 12px 16px;">Messages</th>
+                            <th style="padding: 12px 16px;">Safety Status</th>
+                            <th style="padding: 12px 16px;">Last Activity</th>
+                            <th style="padding: 12px 16px; text-align: right;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${chats.map(c => {
+                            const u1 = c.user1;
+                            const u2 = c.user2;
+                            const hasViolation = c.has_violation;
+                            const u1js = (u1.name || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+                            const u2js = (u2.name || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+
+                            return `
+                                <tr style="border-bottom: 1px solid var(--border); transition: background 0.15s ease;">
+                                    <td style="padding: 12px 16px;">
+                                        <strong>${escapeHTML(u1.name || '')}</strong> <span class="badge ${u1.user_type === 'PROVIDER' ? 'badge-primary' : 'badge-secondary'}" style="font-size: 0.65rem;">${escapeHTML(u1.user_type || '')}</span>
+                                        ${u1.is_blocked ? '<span class="badge badge-danger" style="margin-left: 4px; font-size: 0.65rem;">BLOCKED</span>' : ''}
+                                        <div style="font-size: 0.72rem; color: var(--text-muted);">${escapeHTML(u1.email || '')}</div>
+                                    </td>
+                                    <td style="padding: 12px 16px;">
+                                        <strong>${escapeHTML(u2.name || '')}</strong> <span class="badge ${u2.user_type === 'PROVIDER' ? 'badge-primary' : 'badge-secondary'}" style="font-size: 0.65rem;">${escapeHTML(u2.user_type || '')}</span>
+                                        ${u2.is_blocked ? '<span class="badge badge-danger" style="margin-left: 4px; font-size: 0.65rem;">BLOCKED</span>' : ''}
+                                        <div style="font-size: 0.72rem; color: var(--text-muted);">${escapeHTML(u2.email || '')}</div>
+                                    </td>
+                                    <td style="padding: 12px 16px;">
+                                        ${c.total_messages} msgs
+                                    </td>
+                                    <td style="padding: 12px 16px;">
+                                        ${hasViolation ? `<span class="badge badge-danger" style="font-size: 0.72rem;">⚠️ ${c.flagged_count} Flagged</span>` : '<span class="badge badge-success" style="font-size: 0.72rem;">✓ Clean</span>'}
+                                    </td>
+                                    <td style="padding: 12px 16px; color: var(--text-muted); font-size: 0.78rem;">
+                                        ${formatRelativeTime(c.latest_message_at)}
+                                    </td>
+                                    <td style="padding: 12px 16px; text-align: right;">
+                                        <div style="display: flex; gap: 6px; justify-content: flex-end;">
+                                            <button class="btn btn-secondary btn-sm" onclick="window.__adminInspectChatTranscript(${u1.id}, ${u2.id})">
+                                                Inspect
+                                            </button>
+                                            ${u1.is_blocked ? `<button class="btn btn-primary btn-sm" style="background: #10b981; border-color: #10b981;" onclick="window.__adminUnblockUser(${u1.id}, '${u1js}')">Unblock ${escapeHTML((u1.name || '').split(' ')[0])}</button>` : ''}
+                                            ${u2.is_blocked ? `<button class="btn btn-primary btn-sm" style="background: #10b981; border-color: #10b981;" onclick="window.__adminUnblockUser(${u2.id}, '${u2js}')">Unblock ${escapeHTML((u2.name || '').split(' ')[0])}</button>` : ''}
+                                        </div>
+                                    </td>
+                                </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
+            </div>
+        `;
+    }
+
+    function renderFlaggedViolationsTable() {
+        if (flaggedMessages.length === 0) {
+            return '<div class="card" style="padding: 30px; text-align: center; color: var(--text-muted);">🎉 Zero flagged violations! All platform chats are complying with platform safety rules.</div>';
+        }
+
+        return `
+            <div class="card" style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem;">
+                    <thead>
+                        <tr style="border-bottom: 1px solid var(--border); background: var(--bg-hover);">
+                            <th style="padding: 12px 16px;">Offending Sender</th>
+                            <th style="padding: 12px 16px;">Target Receiver</th>
+                            <th style="padding: 12px 16px;">Blocked Content</th>
+                            <th style="padding: 12px 16px;">Violation Type</th>
+                            <th style="padding: 12px 16px;">User Status</th>
+                            <th style="padding: 12px 16px; text-align: right;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${flaggedMessages.map(m => {
+                            const sjs = (m.sender.name || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+                            return `
+                            <tr style="border-bottom: 1px solid var(--border);">
+                                <td style="padding: 12px 16px;">
+                                    <strong>${escapeHTML(m.sender.name || '')}</strong> (ID: ${m.sender.id})
+                                    <div style="font-size: 0.72rem; color: var(--text-muted);">${escapeHTML(m.sender.email || '')}</div>
+                                </td>
+                                <td style="padding: 12px 16px;">
+                                    <strong>${escapeHTML(m.receiver.name || '')}</strong>
+                                    <div style="font-size: 0.72rem; color: var(--text-muted);">${escapeHTML(m.receiver.email || '')}</div>
+                                </td>
+                                <td style="padding: 12px 16px; max-width: 240px; word-break: break-word;">
+                                    <span style="background: rgba(239, 68, 68, 0.1); color: #ef4444; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem;">
+                                        ${escapeHTML(m.message)}
+                                    </span>
+                                </td>
+                                <td style="padding: 12px 16px; color: #ef4444; font-weight: 700;">
+                                    🛑 ${escapeHTML(m.flag_reason || '')}
+                                </td>
+                                <td style="padding: 12px 16px;">
+                                    ${m.sender.is_blocked ? '<span class="badge badge-danger">BLOCKED</span>' : '<span class="badge badge-warning">WARNED</span>'}
+                                </td>
+                                <td style="padding: 12px 16px; text-align: right;">
+                                    ${m.sender.is_blocked ? `
+                                        <button class="btn btn-primary btn-sm" style="background: #10b981; border-color: #10b981;" onclick="window.__adminUnblockUser(${m.sender.id}, '${sjs}')">
+                                            Re-instate / Unblock
+                                        </button>
+                                    ` : `
+                                        <span style="color: var(--text-muted); font-size: 0.75rem;">Strike 1 — warn</span>
+                                    `}
+                                    <button class="btn btn-sm btn-danger" style="padding:2px 8px;font-size:0.7rem;margin-left:4px;" onclick="window.__adminDeleteMessage(${m.message_id})" title="Delete this flagged message">🗑️</button>
+                                </td>
+                            </tr>
+                        `;}).join('')}
+                    </tbody>
+                </table>
+            </div>
+        `;
+    }
+
+    loadData();
+    return renderAdminChatsView();
+}
+
+// ==========================================================================
+// INSTANT BITMOJI & CREATOR PORTFOLIO AVATAR STUDIO
+// ==========================================================================
+function generateBitmojiSVG(state = {}, userName = 'Creator', userInitial = 'C') {
+    const role = state.avatarStyle || 'editor';
+    const theme = state.theme || 'violet';
+    const accessory = state.accessory || 'shades';
+    const bgTexture = state.bgTexture || 'gradient';
+    const tagline = (state.tagline || 'VERIFIED PRO CREATOR').toUpperCase();
+
+    const themeGradients = {
+        violet: ['#6366f1', '#a855f7'],
+        emerald: ['#10b981', '#059669'],
+        gold: ['#f59e0b', '#d97706'],
+        cyber: ['#06b6d4', '#3b82f6'],
+        magenta: ['#ec4899', '#8b5cf6']
+    };
+    const [c1, c2] = themeGradients[theme] || themeGradients.violet;
+
+    const roleIcons = {
+        editor: '🎬',
+        tutor: '🗣️',
+        writer: '✍️',
+        producer: '🎧',
+        director: '🚀'
+    };
+    const roleIcon = roleIcons[role] || '🎬';
+
+    const jacketColors = {
+        editor: '#1e1b4b',
+        tutor: '#064e3b',
+        writer: '#1e293b',
+        producer: '#311042',
+        director: '#4c1d95'
+    };
+    const jacketColor = jacketColors[role] || '#1e1b4b';
+
+    let accessorySVG = '';
+    if (accessory === 'shades') {
+        accessorySVG = `
+            <g transform="translate(145, 160)">
+                <path d="M 10 12 Q 35 4 60 12 L 58 28 Q 35 34 12 28 Z" fill="#0f172a" stroke="#cbd5e1" stroke-width="2.5" />
+                <path d="M 60 12 Q 85 4 110 12 L 108 28 Q 85 34 62 28 Z" fill="#0f172a" stroke="#cbd5e1" stroke-width="2.5" />
+                <line x1="58" y1="14" x2="62" y2="14" stroke="#cbd5e1" stroke-width="3" />
+                <path d="M 18 14 L 38 24" stroke="rgba(255,255,255,0.4)" stroke-width="2" stroke-linecap="round" />
+                <path d="M 68 14 L 88 24" stroke="rgba(255,255,255,0.4)" stroke-width="2" stroke-linecap="round" />
+            </g>
+        `;
+    } else if (accessory === 'specs') {
+        accessorySVG = `
+            <g transform="translate(145, 158)">
+                <circle cx="35" cy="20" r="20" fill="rgba(224,242,254,0.3)" stroke="#38bdf8" stroke-width="3" />
+                <circle cx="85" cy="20" r="20" fill="rgba(224,242,254,0.3)" stroke="#38bdf8" stroke-width="3" />
+                <line x1="55" y1="20" x2="65" y2="20" stroke="#38bdf8" stroke-width="3.5" />
+            </g>
+        `;
+    } else if (accessory === 'headset') {
+        accessorySVG = `
+            <g transform="translate(130, 115)">
+                <path d="M 15 60 A 55 55 0 0 1 125 60" fill="none" stroke="#f1f5f9" stroke-width="8" stroke-linecap="round" />
+                <rect x="5" y="45" width="22" height="42" rx="10" fill="${c1}" stroke="#ffffff" stroke-width="2" />
+                <rect x="113" y="45" width="22" height="42" rx="10" fill="${c1}" stroke="#ffffff" stroke-width="2" />
+                <circle cx="16" cy="66" r="5" fill="#38bdf8" />
+                <circle cx="124" cy="66" r="5" fill="#38bdf8" />
+            </g>
+        `;
+    } else if (accessory === 'cap') {
+        accessorySVG = `
+            <g transform="translate(135, 102)">
+                <path d="M 10 45 Q 65 5 120 45 Z" fill="${c1}" stroke="#ffffff" stroke-width="2" />
+                <path d="M 2 45 Q 65 38 138 42" fill="none" stroke="#1e293b" stroke-width="7" stroke-linecap="round" />
+                <circle cx="65" cy="18" r="4" fill="#ffffff" />
+            </g>
+        `;
+    } else if (accessory === 'crown') {
+        accessorySVG = `
+            <g transform="translate(138, 90)">
+                <polygon points="10,40 25,10 45,30 65,5 85,30 105,10 120,40" fill="#f59e0b" stroke="#ffffff" stroke-width="2" />
+                <circle cx="25" cy="10" r="3" fill="#ffffff" />
+                <circle cx="65" cy="5" r="4" fill="#ffffff" />
+                <circle cx="105" cy="10" r="3" fill="#ffffff" />
+            </g>
+        `;
+    } else if (accessory === 'sparkles') {
+        accessorySVG = `
+            <g transform="translate(120, 95)" fill="#f59e0b">
+                <path d="M 20 10 L 23 20 L 33 23 L 23 26 L 20 36 L 17 26 L 7 23 L 17 20 Z" />
+                <path d="M 140 30 L 142 36 L 148 38 L 142 40 L 140 46 L 138 40 L 132 38 L 138 36 Z" fill="#38bdf8" />
+                <path d="M 130 110 L 132 116 L 138 118 L 132 120 L 130 126 L 128 120 L 122 118 L 128 116 Z" fill="#a855f7" />
+            </g>
+        `;
+    }
+
+    let patternSVG = '';
+    if (bgTexture === 'film') {
+        patternSVG = `
+            <g fill="rgba(255,255,255,0.18)">
+                <rect x="12" y="30" width="10" height="14" rx="2" />
+                <rect x="12" y="70" width="10" height="14" rx="2" />
+                <rect x="12" y="110" width="10" height="14" rx="2" />
+                <rect x="12" y="150" width="10" height="14" rx="2" />
+                <rect x="12" y="190" width="10" height="14" rx="2" />
+                <rect x="378" y="30" width="10" height="14" rx="2" />
+                <rect x="378" y="70" width="10" height="14" rx="2" />
+                <rect x="378" y="110" width="10" height="14" rx="2" />
+                <rect x="378" y="150" width="10" height="14" rx="2" />
+                <rect x="378" y="190" width="10" height="14" rx="2" />
+            </g>
+        `;
+    } else if (bgTexture === 'dots') {
+        patternSVG = `
+            <g fill="rgba(255,255,255,0.2)">
+                <circle cx="40" cy="50" r="3" /><circle cx="70" cy="50" r="3" /><circle cx="100" cy="50" r="3" />
+                <circle cx="40" cy="80" r="3" /><circle cx="70" cy="80" r="3" /><circle cx="100" cy="80" r="3" />
+                <circle cx="300" cy="50" r="3" /><circle cx="330" cy="50" r="3" /><circle cx="360" cy="50" r="3" />
+                <circle cx="300" cy="80" r="3" /><circle cx="330" cy="80" r="3" /><circle cx="360" cy="80" r="3" />
+            </g>
+        `;
+    } else if (bgTexture === 'waves') {
+        patternSVG = `
+            <path d="M 0 100 Q 100 60 200 100 T 400 100" stroke="rgba(255,255,255,0.18)" stroke-width="4" fill="none" />
+            <path d="M 0 130 Q 100 90 200 130 T 400 130" stroke="rgba(255,255,255,0.12)" stroke-width="3" fill="none" />
+        `;
+    }
+
+    return `
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="100%" height="100%" style="border-radius: 24px;">
+        <defs>
+            <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="${c1}" />
+                <stop offset="100%" stop-color="${c2}" />
+            </linearGradient>
+            <linearGradient id="jacketGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stop-color="${jacketColor}" />
+                <stop offset="100%" stop-color="#0f172a" />
+            </linearGradient>
+            <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+                <feDropShadow dx="0" dy="8" stdDeviation="6" flood-opacity="0.3" />
+            </filter>
+        </defs>
+
+        <rect width="400" height="400" rx="24" fill="url(#bgGrad)" />
+        ${patternSVG}
+
+        <circle cx="200" cy="180" r="130" fill="rgba(255,255,255,0.12)" />
+
+        <g transform="translate(20, 24)">
+            <rect width="180" height="28" rx="14" fill="rgba(0,0,0,0.35)" stroke="rgba(255,255,255,0.25)" stroke-width="1" />
+            <circle cx="16" cy="14" r="5" fill="#10b981" />
+            <text x="30" y="18" fill="#ffffff" font-family="'Outfit', sans-serif" font-size="11" font-weight="700" letter-spacing="0.5">GROOVE HUB VERIFIED</text>
+        </g>
+
+        <g transform="translate(340, 24)">
+            <circle cx="18" cy="14" r="16" fill="rgba(255,255,255,0.25)" stroke="rgba(255,255,255,0.4)" stroke-width="1.5" />
+            <text x="10" y="20" font-size="16">${roleIcon}</text>
+        </g>
+
+        <g filter="url(#shadow)">
+            <path d="M 100 340 Q 200 250 300 340 L 320 400 L 80 400 Z" fill="url(#jacketGrad)" stroke="#ffffff" stroke-width="1.5" />
+            <polygon points="200,285 175,340 225,340" fill="#ffffff" opacity="0.9" />
+            <polygon points="200,295 188,340 212,340" fill="${c1}" />
+
+            <rect x="182" y="225" width="36" height="50" rx="12" fill="#fbcfe8" />
+
+            <ellipse cx="200" cy="185" rx="55" ry="60" fill="#fde047" stroke="#eab308" stroke-width="2" />
+            <circle cx="143" cy="185" r="10" fill="#fde047" />
+            <circle cx="257" cy="185" r="10" fill="#fde047" />
+
+            <ellipse cx="178" cy="175" rx="6" ry="8" fill="#0f172a" />
+            <ellipse cx="222" cy="175" rx="6" ry="8" fill="#0f172a" />
+            <circle cx="180" cy="173" r="2.5" fill="#ffffff" />
+            <circle cx="224" cy="173" r="2.5" fill="#ffffff" />
+            <path d="M 168 160 Q 178 154 188 160" stroke="#0f172a" stroke-width="3" fill="none" stroke-linecap="round" />
+            <path d="M 212 160 Q 222 154 232 160" stroke="#0f172a" stroke-width="3" fill="none" stroke-linecap="round" />
+
+            <path d="M 182 205 Q 200 222 218 205" stroke="#0f172a" stroke-width="3.5" fill="none" stroke-linecap="round" />
+            <circle cx="162" cy="192" r="7" fill="rgba(244,63,94,0.3)" />
+            <circle cx="238" cy="192" r="7" fill="rgba(244,63,94,0.3)" />
+
+            <path d="M 142 165 C 140 110, 260 110, 258 165 C 240 130, 160 130, 142 165 Z" fill="#1e293b" />
+        </g>
+
+        ${accessorySVG}
+
+        <g transform="translate(30, 335)" filter="url(#shadow)">
+            <rect width="340" height="44" rx="22" fill="rgba(15,23,42,0.8)" stroke="rgba(255,255,255,0.35)" stroke-width="1.5" />
+            <text x="170" y="27" fill="#ffffff" font-family="'Outfit', sans-serif" font-size="12" font-weight="800" text-anchor="middle" letter-spacing="1">
+                ${escapeHTML(tagline)}
+            </text>
+        </g>
+    </svg>
+    `;
+}
+
+window.openBitmojiStudioModal = () => {
+    const existing = document.getElementById('bitmoji-modal-root');
+    if (existing) existing.remove();
+
+    const user = currentUser || {};
+    window.__bitmojiState = {
+        avatarStyle: 'editor',
+        theme: 'violet',
+        accessory: 'shades',
+        bgTexture: 'gradient',
+        tagline: '4K VIDEO & REELS EDITOR'
+    };
+
+    const modalRoot = document.createElement('div');
+    modalRoot.id = 'bitmoji-modal-root';
+    modalRoot.className = 'modal-backdrop';
+    modalRoot.style.cssText = 'position: fixed; inset: 0; background: rgba(0,0,0,0.65); backdrop-filter: blur(6px); display: flex; align-items: center; justify-content: center; z-index: 10000; padding: 16px;';
+
+    const renderModalBody = () => {
+        const svgHTML = generateBitmojiSVG(window.__bitmojiState, user.name || 'Creator', (user.name || 'C').charAt(0));
+        return `
+            <div class="modal-card" style="max-width: 820px; width: 100%; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; border-radius: 20px; background: var(--bg-card); border: 1px solid var(--border); box-shadow: var(--shadow-lg);">
+                <div class="modal-header" style="padding: 16px 22px; background: var(--bg-hover); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 1.4rem;">🎨</span>
+                        <div>
+                            <h3 style="margin: 0; font-size: 1.1rem; font-weight: 800; color: var(--text-primary);">Bitmoji &amp; Avatar Studio</h3>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">Customize your instant creator avatar and portfolio card</div>
+                        </div>
+                    </div>
+                    <button class="modal-close" onclick="document.getElementById('bitmoji-modal-root').remove()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-muted);">&times;</button>
+                </div>
+
+                <div class="modal-body" style="padding: 22px; overflow-y: auto; display: flex; flex-wrap: wrap; gap: 24px; justify-content: center;">
+                    <!-- Left: Live Preview Panel -->
+                    <div style="display: flex; flex-direction: column; align-items: center; gap: 14px; width: 280px; flex-shrink: 0;">
+                        <div id="bitmoji-live-preview-box" style="width: 280px; height: 280px; border-radius: 20px; overflow: hidden; border: 2px solid var(--border); box-shadow: 0 8px 24px rgba(0,0,0,0.15);">
+                            ${svgHTML}
+                        </div>
+                        <div style="font-size: 0.78rem; font-weight: 700; color: var(--accent); display: flex; align-items: center; gap: 6px;">
+                            <span>✨</span> Instant Live Preview
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 10px; width: 100%;">
+                            <button class="btn btn-primary" onclick="window.__saveBitmojiAsAvatar()" style="font-weight: 700; padding: 12px 14px; font-size: 0.85rem; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: none;">
+                                ✨ Set as Profile Avatar
+                            </button>
+                            <button class="btn btn-secondary" onclick="window.__saveBitmojiToPortfolio()" style="font-weight: 700; padding: 12px 14px; font-size: 0.85rem;">
+                                📂 Add to Portfolio Showcase
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Right: Customizer Controls -->
+                    <div style="display: flex; flex-direction: column; gap: 16px; flex: 1; min-width: 280px;">
+                        <!-- Role Vibe -->
+                        <div>
+                            <label style="font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 8px;">1. Creator Style &amp; Role</label>
+                            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                                ${[
+                                    { id: 'editor', label: '🎬 Video Editor', defaultTag: '4K VIDEO & REELS EDITOR' },
+                                    { id: 'tutor', label: '🗣️ English Coach', defaultTag: 'CONVERSATIONAL ENGLISH COACH' },
+                                    { id: 'writer', label: '✍️ Copywriter', defaultTag: 'DIRECT-RESPONSE COPYWRITER' },
+                                    { id: 'producer', label: '🎧 Audio Pro', defaultTag: 'MIXING & SOUND ENGINEER' },
+                                    { id: 'director', label: '🚀 Motion Lead', defaultTag: 'MOTION GRAPHICS & VFX LEAD' }
+                                ].map(r => `
+                                    <button type="button" class="tab-btn ${window.__bitmojiState.avatarStyle === r.id ? 'active' : ''}" onclick="window.__setBitmojiProp('avatarStyle', '${r.id}', '${r.defaultTag}')" style="font-size: 0.78rem; padding: 6px 12px;">
+                                        ${r.label}
+                                    </button>
+                                `).join('')}
+                            </div>
+                        </div>
+
+                        <!-- Theme Colors -->
+                        <div>
+                            <label style="font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 8px;">2. Theme Tint</label>
+                            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                ${[
+                                    { id: 'violet', name: 'Neon Violet', color: '#6366f1' },
+                                    { id: 'emerald', name: 'Emerald Green', color: '#10b981' },
+                                    { id: 'gold', name: 'Sunset Gold', color: '#f59e0b' },
+                                    { id: 'cyber', name: 'Cyber Blue', color: '#06b6d4' },
+                                    { id: 'magenta', name: 'Magenta Pop', color: '#ec4899' }
+                                ].map(t => `
+                                    <button type="button" onclick="window.__setBitmojiProp('theme', '${t.id}')" style="display: flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 8px; border: 1.5px solid ${window.__bitmojiState.theme === t.id ? t.color : 'var(--border)'}; background: var(--bg-card); cursor: pointer; font-size: 0.75rem; font-weight: 600;">
+                                        <span style="width: 14px; height: 14px; border-radius: 50%; background: ${t.color}; display: inline-block;"></span>
+                                        ${t.name}
+                                    </button>
+                                `).join('')}
+                            </div>
+                        </div>
+
+                        <!-- Accessory -->
+                        <div>
+                            <label style="font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 8px;">3. Accessory &amp; Vibe</label>
+                            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                                ${[
+                                    { id: 'shades', label: '🕶️ Cool Shades' },
+                                    { id: 'specs', label: '👓 Creator Specs' },
+                                    { id: 'headset', label: '🎧 DJ Headset' },
+                                    { id: 'cap', label: '🧢 Snapback Cap' },
+                                    { id: 'crown', label: '👑 Pro Crown' },
+                                    { id: 'sparkles', label: '✨ Star Sparkles' }
+                                ].map(a => `
+                                    <button type="button" class="tab-btn ${window.__bitmojiState.accessory === a.id ? 'active' : ''}" onclick="window.__setBitmojiProp('accessory', '${a.id}')" style="font-size: 0.78rem; padding: 6px 12px;">
+                                        ${a.label}
+                                    </button>
+                                `).join('')}
+                            </div>
+                        </div>
+
+                        <!-- Background Pattern -->
+                        <div>
+                            <label style="font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 8px;">4. Background Texture</label>
+                            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                                ${[
+                                    { id: 'gradient', label: '🌌 Studio Glow' },
+                                    { id: 'film', label: '🎞️ Film Strip' },
+                                    { id: 'dots', label: '🟣 Geometric Dots' },
+                                    { id: 'waves', label: '🌊 Motion Waves' }
+                                ].map(b => `
+                                    <button type="button" class="tab-btn ${window.__bitmojiState.bgTexture === b.id ? 'active' : ''}" onclick="window.__setBitmojiProp('bgTexture', '${b.id}')" style="font-size: 0.78rem; padding: 6px 12px;">
+                                        ${b.label}
+                                    </button>
+                                `).join('')}
+                            </div>
+                        </div>
+
+                        <!-- Tagline Input -->
+                        <div>
+                            <label style="font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 6px;">5. Tagline / Skill Badge</label>
+                            <input type="text" id="bitmoji-tagline-input" value="${escapeHTML(window.__bitmojiState.tagline)}" oninput="window.__setBitmojiProp('tagline', this.value)" placeholder="e.g. 4K VIDEO & REELS EDITOR" style="width: 100%; padding: 10px 14px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg-primary); color: var(--text-primary); font-weight: 700; font-size: 0.85rem;" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    };
+
+    modalRoot.innerHTML = renderModalBody();
+    document.body.appendChild(modalRoot);
+
+    window.__setBitmojiProp = (key, val, defaultTag = null) => {
+        window.__bitmojiState[key] = val;
+        if (defaultTag && key === 'avatarStyle') {
+            window.__bitmojiState.tagline = defaultTag;
+        }
+        const modal = document.getElementById('bitmoji-modal-root');
+        if (modal) {
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = renderModalBody();
+            const newCard = tempDiv.querySelector('.modal-card');
+            const currentCard = modal.querySelector('.modal-card');
+            if (newCard && currentCard) {
+                currentCard.replaceWith(newCard);
+            }
+        }
+    };
+
+    window.__saveBitmojiAsAvatar = async () => {
+        try {
+            const svgStr = generateBitmojiSVG(window.__bitmojiState, user.name || 'Creator', (user.name || 'C').charAt(0));
+            const dataUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgStr);
+
+            await apiFetch('/auth/me', {
+                method: 'PATCH',
+                body: JSON.stringify({ profile_image: dataUrl })
+            });
+
+            if (currentUser) {
+                currentUser.profile_image = dataUrl;
+            }
+            showToast('✨ Bitmoji Avatar saved as your profile photo!', 'success');
+            document.getElementById('bitmoji-modal-root')?.remove();
+
+            const avatarWrapper = document.querySelector('.profile-dropdown-wrapper');
+            if (avatarWrapper) {
+                avatarWrapper.innerHTML = `${renderProfileAvatar(34)}${renderProfileMenu()}`;
+            }
+        } catch (err) {
+            showToast(err.message || 'Failed to update avatar photo', 'error');
+        }
+    };
+
+    window.__saveBitmojiToPortfolio = async () => {
+        try {
+            const svgStr = generateBitmojiSVG(window.__bitmojiState, user.name || 'Creator', (user.name || 'C').charAt(0));
+            const dataUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgStr);
+
+            const newItem = await apiFetch('/profile/portfolio', {
+                method: 'POST',
+                body: JSON.stringify({
+                    title: `${user.name || 'Creator'}'s Bitmoji Card`,
+                    description: `${window.__bitmojiState.tagline || 'Verified Creator Card'} • Verified Portfolio Item`,
+                    media_url: dataUrl,
+                    media_type: 'image',
+                    thumbnail_url: dataUrl
+                })
+            });
+
+            if (typeof portfolioItems !== 'undefined') {
+                portfolioItems.unshift(newItem);
+            }
+            showToast('📂 Bitmoji Card added to your public portfolio showcase!', 'success');
+            document.getElementById('bitmoji-modal-root')?.remove();
+            if (typeof router === 'function' && window.location.hash.includes('settings')) {
+                setSettingsTab('portfolio');
+            }
+        } catch (err) {
+            showToast(err.message || 'Failed to add Bitmoji card to portfolio', 'error');
+        }
+    };
+};
+
+// ============== WEBRTC REAL-TIME AUDIO CALLING SYSTEM ==============
+window.GroveAudioCall = {
+    peerConnection: null,
+    localStream: null,
+    remoteStream: null,
+    isMuted: false,
+    targetUserId: null,
+    bookingId: null,
+    callTimer: null,
+    callSeconds: 0,
+    audioCtx: null,
+
+    async startCall(targetUserId, targetName, bookingId = null) {
+        this.targetUserId = targetUserId;
+        this.bookingId = bookingId;
+        showToast(`📞 Dialing HD Audio Call to ${targetName}...`, 'info');
+        this.playRingbackSound();
+        this.renderActiveCallModal(targetName, 'Dialing...');
+
+        try {
+            this.localStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }, video: false });
+            this.initPeerConnection();
+            this.localStream.getTracks().forEach(track => this.peerConnection.addTrack(track, this.localStream));
+
+            const offer = await this.peerConnection.createOffer();
+            await this.peerConnection.setLocalDescription(offer);
+
+            await apiFetch('/chat/call/signal', {
+                method: 'POST',
+                body: JSON.stringify({ target_user_id: targetUserId, signal_type: 'offer', data: offer, booking_id: bookingId })
+            });
+        } catch (err) {
+            console.error('[WEBRTC CALL] Call error:', err);
+            showToast('Unable to access microphone. Please check browser permissions.', 'error');
+            this.endCall();
+        }
+    },
+
+    async handleIncomingOffer(senderId, senderName, offerData, bookingId) {
+        this.targetUserId = senderId;
+        this.bookingId = bookingId;
+        this.playIncomingRingSound();
+
+        const modal = document.createElement('div');
+        modal.id = 'incoming-call-modal';
+        modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(15,23,42,0.85);backdrop-filter:blur(8px);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
+        modal.innerHTML = `
+            <div style="background:var(--bg-card);border:2px solid var(--accent);border-radius:20px;padding:32px 24px;width:100%;max-width:380px;text-align:center;box-shadow:0 20px 40px rgba(0,0,0,0.4);">
+                <div style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#3b82f6,#6366f1);margin:0 auto 16px;display:flex;align-items:center;justify-content:center;font-size:2.2rem;box-shadow:0 0 20px rgba(99,102,241,0.5);">
+                    📞
+                </div>
+                <h3 style="font-size:1.4rem;font-weight:800;color:var(--text-primary);margin-bottom:4px;">Incoming HD Audio Call</h3>
+                <p style="font-size:1rem;color:var(--accent);font-weight:700;margin-bottom:24px;">${escapeHTML(senderName)} is calling...</p>
+                <div style="display:flex;gap:16px;">
+                    <button class="btn btn-danger" style="flex:1;padding:14px;border-radius:12px;font-weight:700;" onclick="GroveAudioCall.declineCall()">
+                        📵 Decline
+                    </button>
+                    <button class="btn btn-success" style="flex:1;padding:14px;border-radius:12px;font-weight:700;" id="accept-call-btn">
+                        📞 Accept
+                    </button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+
+        modal.querySelector('#accept-call-btn').onclick = async () => {
+            this.stopRingtone();
+            modal.remove();
+            this.renderActiveCallModal(senderName, 'Connected');
+            try {
+                this.localStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }, video: false });
+                this.initPeerConnection();
+                this.localStream.getTracks().forEach(track => this.peerConnection.addTrack(track, this.localStream));
+
+                await this.peerConnection.setRemoteDescription(new RTCSessionDescription(offerData));
+                const answer = await this.peerConnection.createAnswer();
+                await this.peerConnection.setLocalDescription(answer);
+
+                await apiFetch('/chat/call/signal', {
+                    method: 'POST',
+                    body: JSON.stringify({ target_user_id: senderId, signal_type: 'answer', data: answer, booking_id: bookingId })
+                });
+
+                this.startTimer();
+            } catch (e) {
+                console.error('[WEBRTC CALL] Accept error:', e);
+                showToast('Mic access error.', 'error');
+                this.endCall();
+            }
+        };
+    },
+
+    initPeerConnection() {
+        this.peerConnection = new RTCPeerConnection({
+            iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+        });
+
+        this.peerConnection.onicecandidate = (e) => {
+            if (e.candidate) {
+                apiFetch('/chat/call/signal', {
+                    method: 'POST',
+                    body: JSON.stringify({ target_user_id: this.targetUserId, signal_type: 'ice_candidate', data: e.candidate, booking_id: this.bookingId })
+                });
+            }
+        };
+
+        this.peerConnection.ontrack = (e) => {
+            this.remoteStream = e.streams[0];
+            let remoteAudio = document.getElementById('remote-audio-elem');
+            if (!remoteAudio) {
+                remoteAudio = document.createElement('audio');
+                remoteAudio.id = 'remote-audio-elem';
+                document.body.appendChild(remoteAudio);
+            }
+            remoteAudio.srcObject = this.remoteStream;
+            remoteAudio.autoplay = true;
+            this.stopRingtone();
+            this.startTimer();
+            const statusElem = document.getElementById('call-status-label');
+            if (statusElem) statusElem.innerText = 'Connected HD Audio 🎙️';
+        };
+    },
+
+    toggleMute() {
+        if (!this.localStream) return;
+        this.isMuted = !this.isMuted;
+        this.localStream.getAudioTracks().forEach(track => track.enabled = !this.isMuted);
+        const muteBtn = document.getElementById('call-mute-btn');
+        if (muteBtn) {
+            muteBtn.innerHTML = this.isMuted ? '🔇 Unmute' : '🎙️ Mute';
+            muteBtn.style.background = this.isMuted ? '#ef4444' : 'var(--bg-card)';
+        }
+    },
+
+    endCall() {
+        this.stopRingtone();
+        if (this.peerConnection) {
+            this.peerConnection.close();
+            this.peerConnection = null;
+        }
+        if (this.localStream) {
+            this.localStream.getTracks().forEach(t => t.stop());
+            this.localStream = null;
+        }
+        if (this.targetUserId) {
+            apiFetch('/chat/call/signal', {
+                method: 'POST',
+                body: JSON.stringify({ target_user_id: this.targetUserId, signal_type: 'call_ended', booking_id: this.bookingId })
+            }).catch(() => {});
+        }
+        clearInterval(this.callTimer);
+        this.callSeconds = 0;
+        const callModal = document.getElementById('active-call-modal');
+        if (callModal) callModal.remove();
+        const incomingModal = document.getElementById('incoming-call-modal');
+        if (incomingModal) incomingModal.remove();
+        showToast('Audio call ended.', 'info');
+    },
+
+    declineCall() {
+        this.endCall();
+    },
+
+    renderActiveCallModal(name, status) {
+        let modal = document.getElementById('active-call-modal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'active-call-modal';
+            modal.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:9999;width:320px;background:var(--bg-card);border:2px solid var(--accent);border-radius:16px;padding:18px;box-shadow:0 12px 30px rgba(0,0,0,0.3);';
+            document.body.appendChild(modal);
+        }
+        modal.innerHTML = `
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+                <div style="width:44px;height:44px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:1.3rem;color:#fff;font-weight:700;">
+                    ${(name || 'U').charAt(0).toUpperCase()}
+                </div>
+                <div style="flex:1;overflow:hidden;">
+                    <div style="font-weight:800;font-size:0.95rem;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHTML(name)}</div>
+                    <div id="call-status-label" style="font-size:0.75rem;color:var(--accent);font-weight:600;">${status}</div>
+                </div>
+                <div id="call-timer-display" style="font-size:0.8rem;font-weight:700;color:var(--text-muted);background:var(--bg-body);padding:4px 8px;border-radius:6px;">00:00</div>
+            </div>
+            <div style="display:flex;gap:8px;">
+                <button id="call-mute-btn" class="btn btn-secondary btn-sm" style="flex:1;font-weight:700;" onclick="GroveAudioCall.toggleMute()">
+                    🎙️ Mute
+                </button>
+                <button class="btn btn-danger btn-sm" style="flex:1;font-weight:700;" onclick="GroveAudioCall.endCall()">
+                    断 End Call
+                </button>
+            </div>
+        `;
+    },
+
+    startTimer() {
+        clearInterval(this.callTimer);
+        this.callSeconds = 0;
+        this.callTimer = setInterval(() => {
+            this.callSeconds++;
+            const mins = String(Math.floor(this.callSeconds / 60)).padStart(2, '0');
+            const secs = String(this.callSeconds % 60).padStart(2, '0');
+            const timerElem = document.getElementById('call-timer-display');
+            if (timerElem) timerElem.innerText = `${mins}:${secs}`;
+        }, 1000);
+    },
+
+    playRingbackSound() {
+        try {
+            this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = this.audioCtx.createOscillator();
+            const gain = this.audioCtx.createGain();
+            osc.frequency.value = 440;
+            gain.gain.value = 0.05;
+            osc.connect(gain);
+            gain.connect(this.audioCtx.destination);
+            osc.start();
+            setTimeout(() => { try { osc.stop(); } catch(e){} }, 1500);
+        } catch(e) {}
+    },
+
+    playIncomingRingSound() {
+        try {
+            this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = this.audioCtx.createOscillator();
+            const gain = this.audioCtx.createGain();
+            osc.frequency.value = 587.33;
+            gain.gain.value = 0.1;
+            osc.connect(gain);
+            gain.connect(this.audioCtx.destination);
+            osc.start();
+            setTimeout(() => { try { osc.stop(); } catch(e){} }, 2000);
+        } catch(e) {}
+    },
+
+    stopRingtone() {
+        if (this.audioCtx) {
+            try { this.audioCtx.close(); } catch(e){}
+            this.audioCtx = null;
+        }
+    }
+};
+window.GroveAudioCall = GroveAudioCall;
+
+
+// ============== DIGITAL PROVIDER IDENTITY CARD ==============
+window.showProviderIdCardModal = function(provider) {
+    const name = provider?.name || 'Verified Creator';
+    const initial = name.charAt(0).toUpperCase();
+    const handle = provider?.username ? `@${provider.username}` : '';
+    const provId = `GH-PROV-${String(provider?.id || 100).padStart(5, '0')}`;
+    const levelBadge = provider?.creator_level || getCreatorLevelBadge(provider?.total_bookings || provider?.profile?.total_bookings, provider?.rating || provider?.profile?.rating);
+    
+    const modal = document.createElement('div');
+    modal.className = 'modal-backdrop';
+    modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(15,23,42,0.85);backdrop-filter:blur(10px);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;';
+    modal.innerHTML = `
+        <div class="modal-card" style="max-width:380px;width:100%;background:linear-gradient(145deg, #1e293b, #0f172a);border:2px solid var(--accent);border-radius:24px;padding:24px;color:#fff;box-shadow:0 25px 50px rgba(0,0,0,0.5);position:relative;overflow:hidden;">
+            <div style="position:absolute;top:-40px;right:-40px;width:140px;height:140px;background:rgba(99,102,241,0.15);border-radius:50%;pointer-events:none;"></div>
+            
+            <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,0.15);padding-bottom:14px;margin-bottom:18px;">
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <img src="/static/icons/grove_hub_logo_dark.png" alt="Grove Hub" style="height:28px;width:auto;" onerror="this.style.display='none';" />
+                    <span style="font-weight:900;font-size:0.9rem;letter-spacing:1px;color:#f8fafc;">GROOVE HUB CREATOR ID</span>
+                </div>
+                <button type="button" onclick="this.closest('.modal-backdrop').remove()" style="background:none;border:none;color:#94a3b8;font-size:1.4rem;cursor:pointer;line-height:1;">&times;</button>
+            </div>
+
+            <div style="text-align:center;margin-bottom:18px;">
+                <div style="width:88px;height:88px;border-radius:50%;margin:0 auto 12px;border:3px solid var(--accent);box-shadow:0 4px 15px rgba(0,0,0,0.3);overflow:hidden;background:#334155;display:flex;align-items:center;justify-content:center;font-size:2.2rem;font-weight:800;color:#fff;">
+                    ${provider?.profile_image ? `<img src="${provider.profile_image}" alt="${name}" style="width:100%;height:100%;object-fit:cover;" />` : initial}
+                </div>
+                <h3 style="font-size:1.3rem;font-weight:800;color:#fff;margin-bottom:2px;display:flex;align-items:center;justify-content:center;gap:6px;">
+                    ${escapeHTML(name)} <span style="color:#38bdf8;font-size:1.1rem;" title="Verified On-Site Creator">✓</span>
+                </h3>
+                <div style="font-size:0.85rem;color:#94a3b8;font-weight:600;margin-bottom:6px;">${escapeHTML(handle)} &bull; ${provId}</div>
+                <div style="display:flex;justify-content:center;">
+                    ${renderCreatorLevelBadgeTag(levelBadge, 'md')}
+                </div>
+            </div>
+
+            <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px;margin-bottom:18px;">
+                <div style="font-size:0.75rem;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Authorized Skills & Roles</div>
+                <div style="display:flex;flex-wrap:wrap;gap:6px;">
+                    <span class="badge" style="background:rgba(59,130,246,0.2);color:#60a5fa;border:1px solid rgba(59,130,246,0.4);font-size:0.75rem;padding:4px 8px;border-radius:6px;font-weight:700;">🎥 Videography & Shooting</span>
+                    <span class="badge" style="background:rgba(168,85,247,0.2);color:#c084fc;border:1px solid rgba(168,85,247,0.4);font-size:0.75rem;padding:4px 8px;border-radius:6px;font-weight:700;">🎬 Video Editing & Reels</span>
+                    <span class="badge" style="background:rgba(245,158,11,0.2);color:#fbbf24;border:1px solid rgba(245,158,11,0.4);font-size:0.75rem;padding:4px 8px;border-radius:6px;font-weight:700;">✍️ Script Writing</span>
+                    <span class="badge" style="background:rgba(236,72,153,0.2);color:#f472b6;border:1px solid rgba(236,72,153,0.4);font-size:0.75rem;padding:4px 8px;border-radius:6px;font-weight:700;">📱 Social Media Management</span>
+                </div>
+            </div>
+
+            <div style="display:flex;align-items:center;gap:12px;background:rgba(0,0,0,0.3);padding:12px;border-radius:14px;border:1px dashed rgba(255,255,255,0.2);">
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=70x70&data=grove_hub_id_${provId}" alt="QR ID" style="width:60px;height:60px;border-radius:8px;background:#fff;padding:4px;" />
+                <div style="flex:1;font-size:0.75rem;color:#cbd5e1;line-height:1.4;">
+                    <strong>Official Escrow Verified ID</strong><br/> Present this digital badge to the venue/shop owner to receive your 6-digit Shoot PIN.
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+};
+
+
+// ============== WATERMARKED DRAFT VIDEO PLAYER & APPROVAL ==============
+window.renderWatermarkedVideoPlayer = function(videoUrl, isApproved = false, bookingId = null) {
+    if (!videoUrl) return '';
+    const watermarkedTag = isApproved ? '' : `
+        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-25deg);pointer-events:none;z-index:10;user-select:none;opacity:0.45;text-align:center;">
+            <div style="font-size:1.6rem;font-weight:900;color:#ffffff;text-shadow:0 0 10px rgba(0,0,0,0.9);letter-spacing:3px;background:rgba(239,68,68,0.85);padding:8px 24px;border-radius:8px;border:2px solid #ffffff;">
+                GROOVE HUB DRAFT
+            </div>
+            <div style="font-size:0.85rem;font-weight:800;color:#ffffff;text-shadow:0 0 8px rgba(0,0,0,0.9);margin-top:4px;">WATERMARKED PROOF OF WORK</div>
+        </div>
+    `;
+
+    return `
+        <div class="video-watermark-container" style="position:relative;width:100%;max-width:500px;margin:12px 0;border-radius:14px;overflow:hidden;background:#000;box-shadow:0 8px 24px rgba(0,0,0,0.3);border:2px solid var(--accent);">
+            <video src="${sanitizeUrl(videoUrl)}" controls style="width:100%;max-height:360px;display:block;object-fit:contain;"></video>
+            ${watermarkedTag}
+            <div style="padding:10px 14px;background:var(--bg-card);border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;font-size:0.8rem;">
+                <span style="font-weight:700;color:${isApproved ? '#10b981' : '#f59e0b'};">
+                    ${isApproved ? '✅ Clean Original Unlocked' : '🎬 Draft Edit (Watermarked Preview)'}
+                </span>
+                ${isApproved ? `
+                    <a href="${sanitizeUrl(videoUrl)}" download target="_blank" class="btn btn-success btn-sm" style="padding:4px 10px;font-weight:700;">
+                        ⬇️ Download Original
+                    </a>
+                ` : (bookingId && currentUser?.user_type === 'BUYER' ? `
+                    <button class="btn btn-success btn-sm" style="font-weight:700;" onclick="approveWatermarkedVideo(${bookingId})">
+                        ✅ Approve & Remove Watermark
+                    </button>
+                ` : '')}
+            </div>
+        </div>
+    `;
+};
+
+window.approveWatermarkedVideo = async function(bookingId) {
+    if (!confirm("Are you satisfied with this video edit? Approving will remove the watermark, unlock the clean high-res video, and release payment to the creator.")) return;
+    try {
+        showLoading();
+        await apiFetch(`/projects/${bookingId}/approve-watermark`, { method: 'POST' });
+        showToast("🎉 Video approved! Watermark removed and payment released.", "success");
+        router(`/bookings?id=${bookingId}`);
+    } catch (e) {
+        showToast(e.message || "Failed to approve video", "error");
+    } finally {
+        hideLoading();
+    }
+};
+
+
+// ============== PRIOR AVAILABILITY REQUEST MODAL ==============
+window.showAvailabilityRequestModal = function(providerId, providerName) {
+    const modal = document.createElement('div');
+    modal.className = 'modal-backdrop';
+    modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(15,23,42,0.8);backdrop-filter:blur(6px);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;';
+    modal.innerHTML = `
+        <div class="modal-card" style="max-width:440px;width:100%;background:var(--bg-card);border:1px solid var(--border);border-radius:20px;padding:24px;box-shadow:var(--shadow-xl);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+                <h3 style="font-size:1.2rem;font-weight:800;color:var(--text-primary);margin:0;">📅 Request Availability</h3>
+                <button type="button" onclick="this.closest('.modal-backdrop').remove()" style="background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--text-muted);">&times;</button>
+            </div>
+            <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:16px;">Check if <strong>${escapeHTML(providerName)}</strong> is free on your target date prior to booking.</p>
+            
+            <form id="avail-req-form" onsubmit="return false;">
+                <div class="form-group" style="margin-bottom:12px;">
+                    <label class="form-label">Shooting Date</label>
+                    <input type="date" id="avail-req-date" class="form-input" required value="${new Date().toISOString().split('T')[0]}" />
+                </div>
+                
+                <div class="form-group" style="margin-bottom:12px;">
+                    <label class="form-label">Number of Events in a Day</label>
+                    <select id="avail-req-events" class="form-input">
+                        <option value="1">1 Event / Shoot</option>
+                        <option value="2">2 Events in a Day (Multi-venue)</option>
+                        <option value="3">3 Events in a Day (Full Day Blitz)</option>
+                    </select>
+                </div>
+
+                <div class="form-group" style="margin-bottom:12px;">
+                    <label class="form-label">Venue / Event Locations Summary</label>
+                    <input type="text" id="avail-req-locations" class="form-input" placeholder="e.g. Phoenix Mall & MG Road Outlet" />
+                </div>
+
+                <div class="form-group" style="margin-bottom:18px;">
+                    <label class="form-label">Custom Proposed Offer Rate (Optional ₹)</label>
+                    <input type="number" id="avail-req-price" class="form-input" placeholder="e.g. 2500 (extra rush charges if occupied)" />
+                </div>
+
+                <div style="display:flex;gap:10px;">
+                    <button type="button" class="btn btn-secondary" style="flex:1;" onclick="this.closest('.modal-backdrop').remove()">Cancel</button>
+                    <button type="submit" class="btn btn-primary" style="flex:1;font-weight:700;">Send Request</button>
+                </div>
+            </form>
+        </div>
+    `;
+    document.body.appendChild(modal);
+
+    modal.querySelector('#avail-req-form').onsubmit = async () => {
+        const date = modal.querySelector('#avail-req-date').value;
+        const events = parseInt(modal.querySelector('#avail-req-events').value || 1);
+        const locations = modal.querySelector('#avail-req-locations').value;
+        const price = parseFloat(modal.querySelector('#avail-req-price').value || 0);
+
+        try {
+            showLoading();
+            await apiFetch('/provider/availability-request', {
+                method: 'POST',
+                body: JSON.stringify({
+                    provider_id: providerId,
+                    requested_date: date,
+                    event_count: events,
+                    locations_summary: locations,
+                    custom_proposed_price: price > 0 ? price : null
+                })
+            });
+            modal.remove();
+            showToast(`📅 Prior availability request sent to ${providerName}!`, 'success');
+        } catch(e) {
+            showToast(e.message || "Failed to send availability request", "error");
+        } finally {
+            hideLoading();
+        }
+    };
+};
+
+// ============== ADMIN BUYER SEARCH TRENDS & MARKET DEMAND ANALYTICS ==============
+window.renderAdminSearchAnalytics = async function() {
+    const modal = document.createElement('div');
+    modal.className = 'modal-backdrop';
+    modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(15,23,42,0.85);backdrop-filter:blur(8px);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;';
+    modal.innerHTML = `
+        <div class="modal-card" style="max-width:820px;width:100%;max-height:90vh;overflow-y:auto;background:var(--bg-card);border:2px solid var(--accent);border-radius:20px;padding:24px;box-shadow:0 20px 50px rgba(0,0,0,0.5);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;border-bottom:1px solid var(--border);padding-bottom:14px;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <span style="font-size:1.6rem;">🔍</span>
+                    <div>
+                        <h2 style="font-size:1.3rem;font-weight:900;color:var(--text-primary);margin:0;">Buyer Search Trends & Market Demand Analytics</h2>
+                        <div style="font-size:0.8rem;color:var(--text-secondary);margin-top:2px;">Real-time intelligence on what clients are searching for on Groove Hub</div>
+                    </div>
+                </div>
+                <button type="button" onclick="this.closest('.modal-backdrop').remove()" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--text-muted);">&times;</button>
+            </div>
+
+            <div id="admin-search-analytics-content" style="min-height:200px;display:flex;align-items:center;justify-content:center;">
+                <div style="color:var(--text-muted);font-weight:600;">Loading buyer search analytics...</div>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+
+    try {
+        const data = await apiFetch('/admin/search-analytics');
+        const content = modal.querySelector('#admin-search-analytics-content');
+
+        content.style.display = 'block';
+        content.innerHTML = `
+            <!-- Overview KPI Cards -->
+            <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:14px;margin-bottom:24px;">
+                <div style="background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.3);padding:16px;border-radius:14px;">
+                    <div style="font-size:0.75rem;font-weight:700;color:var(--accent);text-transform:uppercase;">Total Buyer Searches</div>
+                    <div style="font-size:1.8rem;font-weight:900;color:var(--text-primary);margin-top:4px;">${data.total_searches}</div>
+                </div>
+                <div style="background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);padding:16px;border-radius:14px;">
+                    <div style="font-size:0.75rem;font-weight:700;color:#10b981;text-transform:uppercase;">Top Keywords Tracked</div>
+                    <div style="font-size:1.8rem;font-weight:900;color:var(--text-primary);margin-top:4px;">${data.top_trending_queries.length}</div>
+                </div>
+                <div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);padding:16px;border-radius:14px;">
+                    <div style="font-size:0.75rem;font-weight:700;color:#ef4444;text-transform:uppercase;">Unmet Demand (0 Results)</div>
+                    <div style="font-size:1.8rem;font-weight:900;color:var(--text-primary);margin-top:4px;">${data.zero_results_demands.length}</div>
+                </div>
+            </div>
+
+            <!-- Top Trending Queries & Unmet Demands Grid -->
+            <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(340px, 1fr));gap:18px;margin-bottom:24px;">
+                <!-- Top Searched Keywords -->
+                <div class="card" style="padding:16px;background:var(--bg-hover);">
+                    <h3 style="font-size:1rem;font-weight:800;color:var(--text-primary);margin-bottom:12px;display:flex;align-items:center;gap:6px;">
+                        <span>🔥</span> Top Most Searched Keywords
+                    </h3>
+                    ${data.top_trending_queries.length === 0 ? '<div style="font-size:0.85rem;color:var(--text-muted);padding:12px;">No search data recorded yet.</div>' : `
+                        <div style="display:flex;flex-direction:column;gap:8px;">
+                            ${data.top_trending_queries.map((item, idx) => `
+                                <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--bg-card);border-radius:8px;border:1px solid var(--border);">
+                                    <div style="display:flex;align-items:center;gap:8px;">
+                                        <span style="font-size:0.8rem;font-weight:800;color:var(--accent);width:20px;">#${idx + 1}</span>
+                                        <span style="font-weight:700;font-size:0.9rem;color:var(--text-primary);">${escapeHTML(item.query)}</span>
+                                    </div>
+                                    <span class="badge badge-primary" style="font-weight:800;font-size:0.75rem;">${item.search_count} search${item.search_count > 1 ? 'es' : ''}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `}
+                </div>
+
+                <!-- Unmet Market Demand (0 Results) -->
+                <div class="card" style="padding:16px;background:var(--bg-hover);border-color:rgba(239,68,68,0.3);">
+                    <h3 style="font-size:1rem;font-weight:800;color:#ef4444;margin-bottom:12px;display:flex;align-items:center;gap:6px;">
+                        <span>⚠️</span> Unmet Market Demand (0 Results)
+                    </h3>
+                    <p style="font-size:0.78rem;color:var(--text-muted);margin-bottom:10px;">Things buyers searched for that returned zero active creators or packages:</p>
+                    ${data.zero_results_demands.length === 0 ? '<div style="font-size:0.85rem;color:var(--text-muted);padding:12px;">No zero-result searches. All buyer searches returned results!</div>' : `
+                        <div style="display:flex;flex-direction:column;gap:8px;">
+                            ${data.zero_results_demands.map(item => `
+                                <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--bg-card);border-radius:8px;border:1px solid rgba(239,68,68,0.3);">
+                                    <span style="font-weight:700;font-size:0.88rem;color:var(--text-primary);">${escapeHTML(item.query)}</span>
+                                    <span class="badge badge-danger" style="font-weight:800;font-size:0.75rem;">${item.search_count} missing request${item.search_count > 1 ? 's' : ''}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `}
+                </div>
+            </div>
+
+            <!-- Recent Real-Time Search Log Feed -->
+            <div class="card" style="padding:16px;">
+                <h3 style="font-size:1rem;font-weight:800;color:var(--text-primary);margin-bottom:12px;display:flex;align-items:center;gap:6px;">
+                    <span>⚡</span> Recent Live Buyer Searches Ticker
+                </h3>
+                <div style="max-height:260px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;">
+                    ${data.recent_searches.map(log => `
+                        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--bg-hover);border-radius:6px;font-size:0.82rem;">
+                            <div style="display:flex;align-items:center;gap:10px;">
+                                <span style="font-weight:700;color:var(--text-primary);">"${escapeHTML(log.query)}"</span>
+                                <span style="font-size:0.75rem;color:var(--text-muted);">by ${escapeHTML(log.user_name)}</span>
+                            </div>
+                            <div style="display:flex;align-items:center;gap:10px;">
+                                <span style="font-size:0.75rem;color:${log.results_count > 0 ? '#10b981' : '#ef4444'};font-weight:700;">
+                                    ${log.results_count > 0 ? `${log.results_count} result(s)` : '0 results'}
+                                </span>
+                                <span style="font-size:0.72rem;color:var(--text-muted);">${new Date(log.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    } catch(err) {
+        showToast(err.message || "Failed to load search analytics", "error");
+    }
+};
+
+

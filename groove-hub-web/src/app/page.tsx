@@ -13,7 +13,7 @@ import { Footer } from "@/components/Footer";
 
 export default function Home() {
   return (
-    <main className="relative bg-[#07090E] min-h-screen text-gray-100 overflow-hidden">
+    <main className="relative bg-[#2A0A0E] min-h-screen text-[#FFF4E8] overflow-hidden">
       {/* 1. Sticky Blur Header */}
       <Header />
 
@@ -29,7 +29,7 @@ export default function Home() {
       {/* 5. Our 5-Step Process Timeline */}
       <ProcessTimeline />
 
-      {/* 6. Our Work (Vertical Phone Reels + Raw vs Final Slider) */}
+      {/* 6. Our Work (Real Phone Reels) */}
       <WorkShowcase />
 
       {/* 7. Who We Help (Category Tabs & Reel Concepts) */}
@@ -38,10 +38,10 @@ export default function Home() {
       {/* 8. Free Local Market Check (Form -> WhatsApp & API) */}
       <MarketCheckForm />
 
-      {/* 9. Packages & Retainers (3 Tiers + Custom) */}
+      {/* 9. Packages & Retainers */}
       <Packages />
 
-      {/* 10. The Free Offer (Bold Full-Width Section) */}
+      {/* 10. The Free Offer (Contrast Cream Section) */}
       <FreeOfferBanner />
 
       {/* 11. FAQ Accordion (6 Questions) */}

@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Invoice GH-INV-2026-001 - Groove Hub</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 15mm;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: #f1f5f9;
+      color: #0f172a;
+      line-height: 1.5;
+      padding: 30px 15px;
+    }
+    .toolbar {
+      max-width: 800px;
+      margin: 0 auto 20px auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #ffffff;
+      padding: 12px 20px;
+      border-radius: 10px;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.04);
+    }
+    .btn-print {
+      background: #4f46e5;
+      color: #ffffff;
+      border: none;
+      padding: 8px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-print:hover {
+      background: #4338ca;
+    }
+    .sheet {
+      max-width: 800px;
+      margin: 0 auto;
+      background: #ffffff;
+      padding: 44px;
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 2px solid #f1f5f9;
+      padding-bottom: 24px;
+      margin-bottom: 28px;
+    }
+    .brand-title {
+      font-size: 24px;
+      font-weight: 900;
+      color: #4338ca;
+      letter-spacing: -0.5px;
+    }
+    .brand-subtitle {
+      font-size: 12px;
+      color: #64748b;
+      margin-top: 3px;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+    .brand-meta {
+      font-size: 13px;
+      color: #475569;
+      margin-top: 8px;
+    }
+    .invoice-title-block {
+      text-align: right;
+    }
+    .doc-type {
+      font-size: 28px;
+      font-weight: 900;
+      letter-spacing: 1px;
+      color: #0f172a;
+    }
+    .status-badge {
+      display: inline-block;
+      margin-top: 4px;
+      padding: 3px 10px;
+      background: #fef3c7;
+      color: #92400e;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .meta-list {
+      margin-top: 10px;
+      font-size: 13px;
+      color: #64748b;
+    }
+    .meta-list strong {
+      color: #0f172a;
+    }
+    .addresses {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      background: #f8fafc;
+      padding: 20px;
+      border-radius: 8px;
+      border: 1px solid #f1f5f9;
+      margin-bottom: 28px;
+    }
+    .addr-box h4 {
+      font-size: 11px;
+      text-transform: uppercase;
+      font-weight: 700;
+      color: #94a3b8;
+      margin-bottom: 6px;
+      letter-spacing: 0.5px;
+    }
+    .addr-box p {
+      font-size: 13px;
+      color: #334155;
+    }
+    .items-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 24px;
+    }
+    .items-table th {
+      border-bottom: 2px solid #e2e8f0;
+      padding: 10px 12px;
+      text-align: left;
+      font-size: 11px;
+      text-transform: uppercase;
+      color: #64748b;
+      font-weight: 700;
+    }
+    .items-table td {
+      border-bottom: 1px solid #f1f5f9;
+      padding: 14px 12px;
+      font-size: 13px;
+    }
+    .item-name {
+      font-weight: 600;
+      color: #0f172a;
+    }
+    .item-desc {
+      font-size: 12px;
+      color: #64748b;
+      margin-top: 2px;
+    }
+    .summary-section {
+      display: grid;
+      grid-template-columns: 1.1fr 1fr;
+      gap: 24px;
+      margin-bottom: 30px;
+    }
+    .bank-card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      padding: 18px;
+      border-radius: 8px;
+      font-size: 12px;
+      color: #334155;
+      line-height: 1.6;
+    }
+    .bank-card h4 {
+      font-size: 11px;
+      text-transform: uppercase;
+      font-weight: 700;
+      color: #475569;
+      margin-bottom: 8px;
+    }
+    .bank-card code {
+      font-family: monospace;
+      font-weight: 700;
+      background: #e2e8f0;
+      padding: 2px 5px;
+      border-radius: 4px;
+    }
+    .totals-box {
+      font-size: 13px;
+      color: #475569;
+    }
+    .total-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 5px 0;
+    }
+    .total-row.grand {
+      border-top: 2px solid #e2e8f0;
+      margin-top: 8px;
+      padding-top: 10px;
+      font-size: 18px;
+      font-weight: 800;
+      color: #4338ca;
+    }
+    .footer-block {
+      border-top: 1px solid #e2e8f0;
+      padding-top: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      color: #64748b;
+    }
+    @media print {
+      body { background: white; padding: 0; }
+      .toolbar { display: none; }
+      .sheet {
+        box-shadow: none;
+        border: none;
+        padding: 0;
+        max-width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="toolbar">
+    <div style="font-size: 13px; font-weight: 600; color: #475569;">
+      Document: <strong>Official Tax Invoice (GH-INV-2026-001)</strong>
+    </div>
+    <button class="btn-print" onclick="window.print()">
+      🖨️ Print / Save as PDF
+    </button>
+  </div>
+
+  <div class="sheet">
+    <div class="header">
+      <div>
+        <div class="brand-title">GROOVE HUB</div>
+        <div class="brand-subtitle">Creative Studio & Editor Marketplace</div>
+        <div class="brand-meta">
+          <p>https://syncra-qui2.onrender.com/</p>
+          <p>billing@groovehub.media</p>
+        </div>
+      </div>
+      <div class="invoice-title-block">
+        <div class="doc-type">INVOICE</div>
+        <span class="status-badge">Pending Settlement</span>
+        <div class="meta-list">
+          <p>Invoice #: <strong>GH-INV-2026-001</strong></p>
+          <p>Date: <strong>October 12, 2026</strong></p>
+          <p>Due Date: <strong>October 19, 2026</strong></p>
+        </div>
+      </div>
+    </div>
+
+    <div class="addresses">
+      <div class="addr-box">
+        <h4>From:</h4>
+        <p><strong>Groove Hub Media Co.</strong></p>
+        <p>Chennai, Tamil Nadu, India</p>
+        <p>GSTIN: 33AAAAA0000A1Z5</p>
+        <p>contact: support@syncra-qui2.onrender.com</p>
+      </div>
+      <div class="addr-box">
+        <h4>Billed To (Client):</h4>
+        <p><strong>Acme Studios / Client Entity</strong></p>
+        <p>Attn: Creative Operations Lead</p>
+        <p>Email: client@company.com</p>
+        <p>Mumbai, Maharashtra, India</p>
+      </div>
+    </div>
+
+    <table class="items-table">
+      <thead>
+        <tr>
+          <th>Description & Scope</th>
+          <th style="width: 60px; text-align: center;">Qty</th>
+          <th style="width: 120px; text-align: right;">Rate (INR)</th>
+          <th style="width: 130px; text-align: right;">Amount (INR)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>
+            <div class="item-name">High-Impact Video Post-Production Sprint</div>
+            <div class="item-desc">Full 4K edit, sound design, color grading & YouTube master export</div>
+          </td>
+          <td style="text-align: center;">2</td>
+          <td style="text-align: right;">₹12,000.00</td>
+          <td style="text-align: right; font-weight: 700;">₹24,000.00</td>
+        </tr>
+        <tr>
+          <td>
+            <div class="item-name">Viral Short-Form Content Package</div>
+            <div class="item-desc">5x Reels / TikTok / Shorts with kinetic captions, sound FX & animations</div>
+          </td>
+          <td style="text-align: center;">5</td>
+          <td style="text-align: right;">₹2,500.00</td>
+          <td style="text-align: right; font-weight: 700;">₹12,500.00</td>
+        </tr>
+        <tr>
+          <td>
+            <div class="item-name">High-CTR Custom 3D Thumbnails & Assets</div>
+            <div class="item-desc">A/B Testing variants, rendered in ultra-high resolution</div>
+          </td>
+          <td style="text-align: center;">2</td>
+          <td style="text-align: right;">₹3,000.00</td>
+          <td style="text-align: right; font-weight: 700;">₹6,000.00</td>
+        </tr>
+        <tr>
+          <td>
+            <div class="item-name">Priority Express Turnaround & Revisions</div>
+            <div class="item-desc">48-Hour delivery guarantee with 2 dedicated revision iterations</div>
+          </td>
+          <td style="text-align: center;">1</td>
+          <td style="text-align: right;">₹3,500.00</td>
+          <td style="text-align: right; font-weight: 700;">₹3,500.00</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="summary-section">
+      <div class="bank-card">
+        <h4>Payment & Bank Details</h4>
+        <p>Beneficiary: <strong>Groove Hub Media</strong></p>
+        <p>Bank: <strong>HDFC Bank</strong></p>
+        <p>Account No: <code>50200084920194</code></p>
+        <p>IFSC: <code>HDFC0001234</code></p>
+        <p>UPI ID: <strong>groovehub@upi</strong></p>
+        <p style="margin-top: 8px; font-size: 11px; color: #64748b;">
+          * Please include invoice reference <code>GH-INV-2026-001</code> with transfer.
+        </p>
+      </div>
+
+      <div class="totals-box">
+        <div class="total-row">
+          <span>Subtotal:</span>
+          <span>₹46,000.00</span>
+        </div>
+        <div class="total-row" style="color: #059669;">
+          <span>Promotional Discount:</span>
+          <span>-₹2,000.00</span>
+        </div>
+        <div class="total-row">
+          <span>Taxable Value:</span>
+          <span>₹44,000.00</span>
+        </div>
+        <div class="total-row">
+          <span>GST (18%):</span>
+          <span>₹7,920.00</span>
+        </div>
+        <div class="total-row grand">
+          <span>Total Due:</span>
+          <span>₹51,920.00</span>
+        </div>
+        <p style="text-align: right; font-size: 11px; color: #94a3b8; margin-top: 4px;">
+          (Fifty-One Thousand Nine Hundred and Twenty Rupees Only)
+        </p>
+      </div>
+    </div>
+
+    <div class="footer-block">
+      <div>
+        <p>Thank you for partnering with Groove Hub!</p>
+        <p style="font-size: 11px;">Final unwatermarked deliverables released upon payment confirmation.</p>
+      </div>
+      <div style="text-align: right;">
+        <p><strong>Authorized Signatory</strong></p>
+        <p style="font-size: 11px; color: #94a3b8;">Groove Hub Media Operations</p>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Groove Hub — Dedicated 5-Person Growth Team Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+  <style>
+    :root {
+      --bg-dark: #030712;
+      --card-bg: rgba(15, 23, 42, 0.75);
+      --card-border: rgba(255, 255, 255, 0.1);
+      --cyan: #00f2fe;
+      --cyan-glow: rgba(0, 242, 254, 0.35);
+      --emerald: #10b981;
+      --emerald-glow: rgba(16, 185, 129, 0.35);
+      --purple: #8b5cf6;
+      --wa-green: #25D366;
+      --wa-dark: #128C7E;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg-dark);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      color: var(--text);
+      min-height: 100vh;
+      padding-bottom: 90px;
+    }
+
+    /* Ambient background grid */
+    .bg-grid {
+      position: fixed;
+      inset: 0;
+      background-image: linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 24px 16px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Header & Nav */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 24px;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(12px);
+      border-radius: 20px;
+      border: 1px solid var(--card-border);
+      margin-bottom: 30px;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand img {
+      height: 40px;
+    }
+
+    .brand h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.4rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #ffffff 0%, var(--cyan) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .vip-badge {
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid var(--emerald);
+      color: var(--emerald);
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-wa {
+      background: linear-gradient(135deg, var(--wa-green) 0%, var(--wa-dark) 100%);
+      color: #fff;
+      padding: 10px 20px;
+      border-radius: 999px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 4px 20px rgba(37, 211, 102, 0.35);
+      transition: all 0.25s ease;
+      cursor: pointer;
+      border: none;
+    }
+    .btn-wa:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 25px rgba(37, 211, 102, 0.5);
+    }
+
+    /* Simple User-Friendly Plan Selector */
+    .plan-selector-box {
+      background: linear-gradient(135deg, rgba(0, 242, 254, 0.08), rgba(16, 185, 129, 0.08));
+      border: 1px solid rgba(0, 242, 254, 0.3);
+      border-radius: 24px;
+      padding: 28px;
+      margin-bottom: 32px;
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+    }
+
+    .selector-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.6rem;
+      font-weight: 800;
+      margin-bottom: 6px;
+      text-align: center;
+    }
+
+    .selector-sub {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .plans-flex {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 24px;
+    }
+
+    .plan-option-card {
+      flex: 1;
+      min-width: 260px;
+      max-width: 400px;
+      background: rgba(15, 23, 42, 0.85);
+      border: 2px solid var(--card-border);
+      border-radius: 20px;
+      padding: 20px;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      position: relative;
+    }
+
+    .plan-option-card.selected {
+      border-color: var(--cyan);
+      box-shadow: 0 0 25px var(--cyan-glow);
+      background: rgba(0, 242, 254, 0.06);
+    }
+
+    .plan-tag {
+      font-size: 0.75rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--emerald);
+      margin-bottom: 6px;
+    }
+
+    .plan-name {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.3rem;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 4px;
+    }
+
+    .plan-price {
+      font-size: 1.4rem;
+      font-weight: 900;
+      color: var(--cyan);
+      margin-bottom: 12px;
+    }
+
+    .plan-features-list {
+      list-style: none;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .plan-features-list li {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .plan-features-list i {
+      color: var(--emerald);
+      font-size: 0.8rem;
+    }
+
+    /* Subscription Form Inputs */
+    .form-inline {
+      display: flex;
+      gap: 12px;
+      max-width: 650px;
+      margin: 0 auto;
+      flex-wrap: wrap;
+    }
+
+    .input-field {
+      flex: 1;
+      min-width: 200px;
+      background: rgba(30, 41, 59, 0.8);
+      border: 1px solid var(--card-border);
+      color: #fff;
+      padding: 12px 18px;
+      border-radius: 999px;
+      font-family: inherit;
+      font-size: 0.95rem;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+    .input-field:focus {
+      border-color: var(--cyan);
+      box-shadow: 0 0 15px var(--cyan-glow);
+    }
+
+    /* Portal Banner */
+    .banner {
+      background: radial-gradient(circle at 90% 10%, rgba(0, 242, 254, 0.15) 0%, transparent 50%),
+                  radial-gradient(circle at 10% 90%, rgba(139, 92, 246, 0.15) 0%, transparent 50%),
+                  var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 24px;
+      padding: 32px;
+      margin-bottom: 32px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+    }
+
+    .banner-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 2rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+
+    .banner-subtitle {
+      color: var(--text-muted);
+      font-size: 1rem;
+      margin-bottom: 24px;
+      max-width: 750px;
+    }
+
+    .store-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      padding-top: 20px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .meta-item {
+      display: flex;
+      flex-direction: column;
+    }
+    .meta-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .meta-val {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    /* Team Roster Grid */
+    .section-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.5rem;
+      font-weight: 800;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .team-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 16px;
+      margin-bottom: 36px;
+    }
+
+    .role-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 18px;
+      padding: 20px;
+      transition: all 0.25s ease;
+      position: relative;
+    }
+    .role-card:hover {
+      border-color: var(--cyan);
+      transform: translateY(-3px);
+      box-shadow: 0 10px 30px var(--cyan-glow);
+    }
+
+    .role-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: rgba(0, 242, 254, 0.1);
+      color: var(--cyan);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      margin-bottom: 12px;
+    }
+
+    .role-title {
+      font-size: 1.05rem;
+      font-weight: 800;
+      margin-bottom: 4px;
+      color: #fff;
+    }
+
+    .role-person {
+      font-size: 0.85rem;
+      color: var(--emerald);
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .role-desc {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    /* Content Tabs */
+    .tab-bar {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 24px;
+      border-bottom: 1px solid var(--card-border);
+      padding-bottom: 10px;
+      overflow-x: auto;
+    }
+
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-family: inherit;
+      font-size: 0.95rem;
+      font-weight: 700;
+      padding: 10px 18px;
+      border-radius: 12px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+    }
+    .tab-btn.active {
+      background: rgba(0, 242, 254, 0.15);
+      color: var(--cyan);
+      border: 1px solid rgba(0, 242, 254, 0.3);
+    }
+
+    .tab-pane {
+      display: none;
+    }
+    .tab-pane.active {
+      display: block;
+    }
+
+    /* Analysis Cards */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      gap: 20px;
+    }
+
+    .pane-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 24px;
+    }
+
+    .pane-card h3 {
+      font-size: 1.2rem;
+      font-weight: 700;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .flaw-item, .comp-item {
+      background: rgba(255, 255, 255, 0.03);
+      border-left: 4px solid var(--cyan);
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-bottom: 12px;
+    }
+
+    .flaw-item.high {
+      border-left-color: #ef4444;
+    }
+    .flaw-item.medium {
+      border-left-color: #f59e0b;
+    }
+
+    .flaw-title {
+      font-weight: 700;
+      font-size: 0.95rem;
+      margin-bottom: 4px;
+    }
+
+    .flaw-desc {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    /* Active Footage Bins & Suitable Video Items Styling */
+    .bin-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .bin-item {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      padding: 14px 18px;
+      transition: all 0.25s ease;
+    }
+
+    .bin-item:hover {
+      background: rgba(255, 255, 255, 0.06);
+      border-color: rgba(245, 158, 11, 0.4);
+      transform: translateX(4px);
+    }
+
+    .bin-item-icon {
+      width: 46px;
+      height: 46px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.15rem;
+      flex-shrink: 0;
+    }
+
+    .icon-yellow {
+      background: rgba(245, 158, 11, 0.15);
+      color: #f59e0b;
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+
+    .icon-green {
+      background: rgba(16, 185, 129, 0.15);
+      color: #10b981;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .icon-blue {
+      background: rgba(59, 130, 246, 0.15);
+      color: #3b82f6;
+      border: 1px solid rgba(59, 130, 246, 0.3);
+    }
+
+    .icon-orange {
+      background: rgba(249, 115, 22, 0.15);
+      color: #f97316;
+      border: 1px solid rgba(249, 115, 22, 0.3);
+    }
+
+    .bin-item-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .bin-item-name {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: #ffffff;
+    }
+
+    .bin-item-specs {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+
+    .stat-card {
+      background: rgba(16, 185, 129, 0.08);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+      border-radius: 16px;
+      padding: 20px;
+      text-align: center;
+    }
+    .stat-num {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.9rem;
+      font-weight: 900;
+      color: var(--emerald);
+    }
+    .stat-lbl {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    /* VIP Floating WhatsApp Bar */
+    .wa-float-bar {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(18, 140, 126, 0.95);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(37, 211, 102, 0.5);
+      border-radius: 999px;
+      padding: 12px 28px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      box-shadow: 0 10px 40px rgba(37, 211, 102, 0.4);
+      z-index: 99;
+      width: 90%;
+      max-width: 580px;
+      justify-content: space-between;
+    }
+
+    .wa-float-text {
+      font-size: 0.9rem;
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-grid"></div>
+
+  <div class="container">
+    <!-- Header -->
+    <header>
+      <div class="brand">
+        <img src="/static/grove_hub_logo_transparent.png" alt="Groove Hub Logo" onerror="this.src='/static/grove_hub_logo.png'" />
+        <div>
+          <h1>Groove Hub</h1>
+          <div style="font-size: 0.75rem; color: var(--text-muted);">5-Person Dedicated Growth Team</div>
+        </div>
+      </div>
+      <div class="nav-actions">
+        <div class="vip-badge" id="planBadge"><i class="fas fa-crown"></i> Active Subscriber VIP</div>
+        <a href="#" id="headWaBtn" target="_blank" class="btn-wa">
+          <i class="fab fa-whatsapp"></i> Direct Team WhatsApp
+        </a>
+      </div>
+    </header>
+
+    <!-- Super User-Friendly 2-Plan Selector Box -->
+    <div class="plan-selector-box" id="selectorBox">
+      <div class="selector-title">Select Your Dedicated Growth Plan</div>
+      <div class="selector-sub">Choose a plan for your store. Your 5-person team starts immediately upon connection.</div>
+
+      <div class="plans-flex">
+        <!-- Option 1: Monthly -->
+        <div class="plan-option-card selected" id="optMonthly" onclick="selectPlan('MONTHLY')">
+          <div class="plan-tag">Flexible Growth</div>
+          <div class="plan-name">1-Month Dedicated Plan</div>
+          <div class="plan-price" style="font-size: 1.05rem; color: var(--emerald); font-weight: 800; margin-bottom: 12px;">
+            <i class="fas fa-shield-halved"></i> 5-Person Growth Engine
+          </div>
+          <ul class="plan-features-list">
+            <li><i class="fas fa-check-circle"></i> Full 5-Person Dedicated Team</li>
+            <li><i class="fas fa-check-circle"></i> Store & Competitor Flaw Analysis</li>
+            <li><i class="fas fa-check-circle"></i> 8-12 High-Retention Reels & Ads</li>
+            <li><i class="fas fa-check-circle"></i> Account Handler Views & Leads</li>
+            <li><i class="fas fa-check-circle"></i> Exclusive Web Portal & VIP WhatsApp</li>
+          </ul>
+        </div>
+
+        <!-- Option 2: Half-Yearly -->
+        <div class="plan-option-card" id="optHalfYearly" onclick="selectPlan('HALF_YEARLY')">
+          <div class="plan-tag" style="color: var(--cyan);">Best Value — Full Scale</div>
+          <div class="plan-name">6-Month Accelerator</div>
+          <div class="plan-price" style="font-size: 1.05rem; color: var(--cyan); font-weight: 800; margin-bottom: 12px;">
+            <i class="fas fa-rocket"></i> Full Scale Accelerator
+          </div>
+          <ul class="plan-features-list">
+            <li><i class="fas fa-check-circle"></i> Full 5-Person Team for 6 Months</li>
+            <li><i class="fas fa-check-circle"></i> Bi-Weekly Competitor Audits</li>
+            <li><i class="fas fa-check-circle"></i> 60+ High-Retention Reels & Ads</li>
+            <li><i class="fas fa-check-circle"></i> Dedicated Lead Target Guarantee</li>
+            <li><i class="fas fa-check-circle"></i> Priority WhatsApp with User & Sashi</li>
+          </ul>
+        </div>
+
+      </div>
+
+      <!-- Quick Action Form -->
+      <form onsubmit="handleStartPlan(event)" class="form-inline">
+        <input type="text" id="inputStoreName" class="input-field" placeholder="Enter Your Store / Business Name" required />
+        <button type="submit" class="btn-wa" style="padding: 12px 28px; font-size: 0.95rem;">
+          <i class="fab fa-whatsapp" style="font-size: 1.1rem;"></i> Unlock Portal & Connect WhatsApp
+        </button>
+      </form>
+    </div>
+
+    <!-- Portal Banner -->
+    <div class="banner">
+      <div class="banner-title" id="storeTitle">Loading Store Portal...</div>
+      <div class="banner-subtitle">
+        Welcome to your dedicated 5-person growth portal. Strategy, scripting, 4K shoot editing, account views, and lead management are executed by your dedicated team and managed by User & Sashi via Groove Hub.
+      </div>
+      <div class="store-meta">
+        <div class="meta-item">
+          <span class="meta-label">Plan Type</span>
+          <span class="meta-val" id="metaPlan">1-Month Dedicated Plan</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Category</span>
+          <span class="meta-val" id="metaCategory">Retail & Digital Marketing</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">VIP Web Token</span>
+          <span class="meta-val" id="metaToken">VIP-88A9B2</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Management Oversight</span>
+          <span class="meta-val" style="color: var(--cyan);">User & Sashi (Groove Hub App)</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5-Person Dedicated Team Roster -->
+    <div class="section-title">
+      <i class="fas fa-users-gear" style="color: var(--cyan);"></i> Your 5-Person Dedicated Team
+    </div>
+
+    <div class="team-grid">
+      <!-- Role 1 -->
+      <div class="role-card">
+        <div class="role-icon"><i class="fas fa-brain"></i></div>
+        <div class="role-title">1. Strategic Thinker</div>
+        <div class="role-person" id="role1Name">Strategic Lead</div>
+        <div class="role-desc">Analyzes store flaws, footfall gaps & conducts nearby competitor store comparison.</div>
+      </div>
+      <!-- Role 2 -->
+      <div class="role-card">
+        <div class="role-icon"><i class="fas fa-pen-nib"></i></div>
+        <div class="role-title">2. Script Writer</div>
+        <div class="role-person" id="role2Name">Script Master</div>
+        <div class="role-desc">Crafts viral reel hooks, high-converting ad copy & promotional storyboards.</div>
+      </div>
+      <!-- Role 3 -->
+      <div class="role-card">
+        <div class="role-icon"><i class="fas fa-video"></i></div>
+        <div class="role-title">3. Videographer & Editor</div>
+        <div class="role-person" id="role3Name">Creative Producer</div>
+        <div class="role-desc">Dual role: On-site shoot production, high-retention 4K edits, color grading & VFX.</div>
+      </div>
+      <!-- Role 4 -->
+      <div class="role-card">
+        <div class="role-icon"><i class="fas fa-chart-line"></i></div>
+        <div class="role-title">4. Account Handler</div>
+        <div class="role-person" id="role4Name">Growth Specialist</div>
+        <div class="role-desc">Manages daily posting, views optimization & lead acquisition tracking.</div>
+      </div>
+      <!-- Role 5 -->
+      <div class="role-card" style="border-color: rgba(0, 242, 254, 0.4); background: rgba(0, 242, 254, 0.05);">
+        <div class="role-icon" style="background: rgba(0, 242, 254, 0.2);"><i class="fas fa-shield-halved"></i></div>
+        <div class="role-title">5. App Management</div>
+        <div class="role-person" style="color: var(--cyan);">User & Sashi</div>
+        <div class="role-desc">Direct app oversight, SLA guarantee, quality control & direct escalation hotline.</div>
+      </div>
+    </div>
+
+    <!-- Content Tabs -->
+    <div class="tab-bar">
+      <button class="tab-btn active" onclick="switchTab('tab-strategy', this)"><i class="fas fa-magnifying-glass"></i> Store & Competitor Analysis</button>
+      <button class="tab-btn" onclick="switchTab('tab-scripts', this)"><i class="fas fa-scroll"></i> Script Vault</button>
+      <button class="tab-btn" onclick="switchTab('tab-videos', this)"><i class="fas fa-film"></i> Video Reels & Edits</button>
+      <button class="tab-btn" onclick="switchTab('tab-stats', this)"><i class="fas fa-bullseye"></i> Views & Leads Tracker</button>
+    </div>
+
+    <!-- Tab 1: Strategy -->
+    <div id="tab-strategy" class="tab-pane active">
+      <div class="grid-2">
+        <div class="pane-card">
+          <h3><i class="fas fa-triangle-exclamation" style="color: #ef4444;"></i> Store Flaws Identified (Strategic Thinker)</h3>
+          <div id="flawsList">Loading store flaws...</div>
+        </div>
+
+        <div class="pane-card">
+          <h3><i class="fas fa-store-slash" style="color: var(--cyan);"></i> Nearby Competitor Comparison</h3>
+          <div id="compList">Loading competitor analysis...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab 2: Scripts -->
+    <div id="tab-scripts" class="tab-pane">
+      <div class="pane-card">
+        <h3><i class="fas fa-pen-fancy" style="color: var(--purple);"></i> High-Converting Script Vault</h3>
+        <div id="scriptsList">Loading scripts...</div>
+      </div>
+    </div>
+
+    <!-- Tab 3: Videos -->
+    <div id="tab-videos" class="tab-pane">
+      <!-- Active Footage Bins (Matching exact image aesthetic) -->
+      <div class="pane-card" style="margin-bottom: 24px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px;">
+          <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.15rem; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: #f59e0b; margin: 0;">
+            <i class="fas fa-folder-open" style="color: #f59e0b; margin-right: 8px;"></i> ACTIVE FOOTAGE BINS
+          </h3>
+          <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;"><i class="fas fa-sync fa-spin" style="font-size:0.75rem; margin-right:4px;"></i> Live Sync</span>
+        </div>
+        <div id="footageBinsList" class="bin-grid">
+          Loading active footage bins...
+        </div>
+      </div>
+
+      <div class="pane-card">
+        <h3><i class="fas fa-clapperboard" style="color: var(--cyan);"></i> Suitable Video Deliverables & 4K Edits</h3>
+        <div id="videosList">Loading video deliverables...</div>
+      </div>
+    </div>
+
+
+    <!-- Tab 4: Stats -->
+    <div id="tab-stats" class="tab-pane">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-num" id="statViews">128,400</div>
+          <div class="stat-lbl">Total Video Views</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" id="statLeads">312</div>
+          <div class="stat-lbl">Customer Leads Generated</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" id="statEng">9.2%</div>
+          <div class="stat-lbl">Engagement Rate</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" id="statMult">3.4x</div>
+          <div class="stat-lbl">Growth Multiplier</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VIP Floating WhatsApp Hotline -->
+  <div class="wa-float-bar">
+    <div class="wa-float-text">
+      <i class="fab fa-whatsapp" style="font-size: 1.2rem; margin-right: 6px;"></i> VIP Hotline: Message User, Sashi & Team Directly
+    </div>
+    <a href="#" id="floatWaBtn" target="_blank" class="btn-wa" style="padding: 6px 16px; font-size: 0.85rem;">
+      Message Us <i class="fas fa-arrow-right"></i>
+    </a>
+  </div>
+
+  <script>
+    let currentSelectedPlan = 'MONTHLY';
+
+    function selectPlan(planType) {
+      currentSelectedPlan = planType;
+      document.getElementById('optMonthly').classList.toggle('selected', planType === 'MONTHLY');
+      document.getElementById('optHalfYearly').classList.toggle('selected', planType === 'HALF_YEARLY');
+    }
+
+    async function handleStartPlan(event) {
+      event.preventDefault();
+      const storeName = document.getElementById('inputStoreName').value.trim();
+      if (!storeName) return;
+
+      try {
+        const res = await fetch('/api/agency-team/subscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            store_name: storeName,
+            plan_type: currentSelectedPlan
+          })
+        });
+
+        const data = await res.json();
+        if (data.vip_link_token) {
+          // Open WhatsApp directly
+          if (data.whatsapp_url) {
+            window.open(data.whatsapp_url, '_blank');
+          }
+          // Redirect to their dedicated portal link
+          window.location.href = data.web_portal_url;
+        }
+      } catch (err) {
+        console.error("Subscription error:", err);
+      }
+    }
+
+    function switchTab(tabId, btn) {
+      document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+      document.getElementById(tabId).classList.add('active');
+      btn.classList.add('active');
+    }
+
+    async function loadPortalData() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const token = urlParams.get('token') || 'VIP-PREVIEW';
+
+      try {
+        const res = await fetch(`/api/agency-team/dashboard/${token}`);
+        const data = await res.json();
+
+        // Title & Meta
+        document.getElementById('storeTitle').textContent = data.store_name || "Your Dedicated Growth Team";
+        document.getElementById('metaPlan').textContent = (data.plan_type === 'HALF_YEARLY' ? '6-Month Accelerator' : '1-Month Dedicated Plan');
+        document.getElementById('metaCategory').textContent = data.niche_category || 'Retail Store';
+        document.getElementById('metaToken').textContent = data.vip_link_token || token;
+
+        // WhatsApp links
+        const waUrl = data.whatsapp_url || `https://wa.me/919876543210?text=Hi%20Groove%20Team!%20I'm%20checking%20my%20dashboard%20token%20${token}`;
+        document.getElementById('headWaBtn').href = waUrl;
+        document.getElementById('floatWaBtn').href = waUrl;
+
+        // Team Roster
+        if (data.team_roster) {
+          document.getElementById('role1Name').textContent = data.team_roster.strategic_thinker || "Strategic Lead";
+          document.getElementById('role2Name').textContent = data.team_roster.script_writer || "Script Master";
+          document.getElementById('role3Name').textContent = data.team_roster.videographer_editor || "Creative Producer";
+          document.getElementById('role4Name').textContent = data.team_roster.account_handler || "Growth Specialist";
+        }
+
+        // Store Flaws
+        const flawsContainer = document.getElementById('flawsList');
+        if (data.store_flaws && data.store_flaws.length > 0) {
+          flawsContainer.innerHTML = data.store_flaws.map(f => `
+            <div class="flaw-item ${ (f.severity || '').toLowerCase() }">
+              <div class="flaw-title">${f.flaw}</div>
+              <div class="flaw-desc">Severity: <strong>${f.severity || 'HIGH'}</strong> • Identified by Strategic Thinker</div>
+            </div>
+          `).join('');
+        } else {
+          flawsContainer.innerHTML = `<div style="color:var(--text-muted);">Initial store flaw audit in progress by Strategic Thinker...</div>`;
+        }
+
+        // Competitor Comparison
+        const compContainer = document.getElementById('compList');
+        if (data.competitor_comparison && data.competitor_comparison.length > 0) {
+          compContainer.innerHTML = data.competitor_comparison.map(c => `
+            <div class="comp-item">
+              <div class="flaw-title">${c.competitor}</div>
+              <div class="flaw-desc" style="margin-bottom: 4px;">Strength: ${c.their_strength}</div>
+              <div class="flaw-desc" style="color: var(--cyan); font-weight: 600;">Our Counter-Strategy: ${c.our_counter_strategy}</div>
+            </div>
+          `).join('');
+        } else {
+          compContainer.innerHTML = `<div style="color:var(--text-muted);">Competitor store analysis in progress...</div>`;
+        }
+
+        // Scripts
+        const scriptContainer = document.getElementById('scriptsList');
+        if (data.script_vault && data.script_vault.length > 0) {
+          scriptContainer.innerHTML = data.script_vault.map(s => `
+            <div class="flaw-item" style="border-left-color: var(--purple);">
+              <div class="flaw-title">${s.title}</div>
+              <div class="flaw-desc">Status: <strong style="color: var(--emerald);">${s.status}</strong></div>
+            </div>
+          `).join('');
+        } else {
+          scriptContainer.innerHTML = `<div style="color:var(--text-muted);">Script Writer is formulating initial storyboards...</div>`;
+        }
+
+        // Active Footage Bins (Matching exact image aesthetic)
+        const binsContainer = document.getElementById('footageBinsList');
+        const binsData = data.active_footage_bins || [
+          { name: "Hook_Retention_A1.mp4", specs: "1080×1920 • 94% Retention", icon_type: "yellow", icon_fa: "fa-bolt" },
+          { name: "4K_Food_Macro_Broll.mov", specs: "3840×2160 • 60 FPS HDR", icon_type: "green", icon_fa: "fa-camera" },
+          { name: "Whoosh_Bass_Impact.wav", specs: "Stereo • Subconscious Hit", icon_type: "blue", icon_fa: "fa-wave-square" },
+          { name: "Hormozi_Word_Pop.json", specs: "Auto-Synced • Gold Pop", icon_type: "orange", icon_fa: "fa-flag" }
+        ];
+
+        binsContainer.innerHTML = binsData.map(b => `
+          <div class="bin-item">
+            <div class="bin-item-icon icon-${b.icon_type || 'yellow'}">
+              <i class="fas ${b.icon_fa || 'fa-film'}"></i>
+            </div>
+            <div class="bin-item-info">
+              <div class="bin-item-name">${b.name}</div>
+              <div class="bin-item-specs">${b.specs}</div>
+            </div>
+          </div>
+        `).join('');
+
+        // Videos
+        const videoContainer = document.getElementById('videosList');
+        if (data.video_deliverables && data.video_deliverables.length > 0) {
+          videoContainer.innerHTML = data.video_deliverables.map(v => `
+            <div class="flaw-item" style="border-left-color: var(--cyan); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+              <div>
+                <div class="flaw-title" style="font-family:'Outfit',sans-serif; font-size:1.05rem;">
+                  <i class="fas fa-file-video" style="color:var(--cyan); margin-right:6px;"></i> ${v.title}
+                </div>
+                <div class="flaw-desc">${v.specs || '4K High-Retention Edit'} • Status: <strong style="color:var(--emerald);">${v.status}</strong></div>
+              </div>
+              <a href="${v.deliverable_url || '#'}" target="_blank" class="btn-wa" style="padding:6px 14px; font-size:0.8rem; background:rgba(0,242,254,0.15); border:1px solid rgba(0,242,254,0.3); color:var(--cyan); box-shadow:none;">
+                <i class="fas fa-play"></i> Preview Video
+              </a>
+            </div>
+          `).join('');
+        } else {
+          videoContainer.innerHTML = `<div style="color:var(--text-muted);">Videographer/Editor shoot & editing in progress...</div>`;
+        }
+
+
+        // Account Stats
+        if (data.account_stats) {
+          document.getElementById('statViews').textContent = (data.account_stats.total_views || 0).toLocaleString();
+          document.getElementById('statLeads').textContent = (data.account_stats.leads_generated || 0).toLocaleString();
+          document.getElementById('statEng').textContent = data.account_stats.engagement_rate || '8.8%';
+          document.getElementById('statMult').textContent = data.account_stats.growth_multiplier || '3.4x';
+        }
+
+      } catch (err) {
+        console.error("Error loading portal data:", err);
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', loadPortalData);
+  </script>
+</body>
+</html>

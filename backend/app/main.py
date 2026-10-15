@@ -9,15 +9,24 @@ if sys.platform == 'win32':
     except Exception:
         pass
 
-from fastapi import FastAPI, Depends, HTTPException, status, Request, UploadFile, File
+from fastapi import FastAPI, Depends, HTTPException, status, Request, UploadFile, File, Form, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 import re
 import os
 import uuid
 import random
+import hmac
+import hashlib
 from datetime import datetime, timedelta
+import pathlib
+
+from .config import (
+    ENV, IS_DEV, WHATSAPP_NUMBER, WHATSAPP_DISPLAY, EMAIL, INSTAGRAM_HANDLE, INSTAGRAM_URL,
+    PRIMARY_OFFER, LOCATION_DISPLAY, TEAM_OF_FOUR, PRICING_PLANS, SECRET_KEY,
+    TEAM_PORTAL_PASSWORD, SESSION_COOKIE_NAME, get_whatsapp_url
+)
 
 # --- Chat video upload directory ---
 CHAT_UPLOAD_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static', 'chat_uploads')
@@ -391,10 +400,26 @@ ensure_admin_exists()
 
 
 # Main app - serves static files
-app = FastAPI(title="Groove Hub", version="1.0.0")
+docs_url = "/docs" if IS_DEV else None
+redoc_url = "/redoc" if IS_DEV else None
+openapi_url = "/openapi.json" if IS_DEV else None
+
+app = FastAPI(
+    title="Groove Hub",
+    version="1.0.0",
+    docs_url=docs_url,
+    redoc_url=redoc_url,
+    openapi_url=openapi_url
+)
 
 # API app
-api_app = FastAPI(title="Groove Hub API", version="1.0.0")
+api_app = FastAPI(
+    title="Groove Hub API",
+    version="1.0.0",
+    docs_url=docs_url,
+    redoc_url=redoc_url,
+    openapi_url=openapi_url
+)
 
 _cors_origins = [
     origin.strip()
@@ -423,13 +448,13 @@ async def add_security_headers(request: Request, call_next):
     response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
     response.headers["Content-Security-Policy"] = (
         "default-src 'self'; "
-        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com https://checkout.razorpay.com https://www.gstatic.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; "
-        "style-src 'self' 'unsafe-inline' https://accounts.google.com https://fonts.googleapis.com https://www.gstatic.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; "
+        "script-src 'self' 'unsafe-inline' https://accounts.google.com https://fonts.googleapis.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; "
+        "style-src 'self' 'unsafe-inline' https://accounts.google.com https://fonts.googleapis.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; "
         "img-src 'self' data: blob: https:; "
         "media-src 'self' data: blob: https:; "
         "font-src 'self' data: https://fonts.gstatic.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; "
         "connect-src 'self' https: wss:; "
-        "frame-src 'self' https://accounts.google.com https://api.razorpay.com https://checkout.razorpay.com https://www.youtube.com https://www.youtube-nocookie.com; "
+        "frame-src 'self' https://accounts.google.com; "
         "object-src 'none';"
     )
     return response
@@ -441,15 +466,18 @@ api_app.include_router(educators.router)
 app.mount("/api", api_app)
 
 # Serve static files + SPA fallback through a single catch-all route
-# (StaticFiles mount at "/" blocks the SPA fallback, so we handle it manually)
-import pathlib
-
 STATIC_DIR = pathlib.Path(os.path.join(os.path.dirname(__file__), "static"))
 
+CACHE_HTML_HEADERS = {
+    "Cache-Control": "public, max-age=300, stale-while-revalidate=600"
+}
+
+CACHE_STATIC_HEADERS = {
+    "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800"
+}
+
 NO_CACHE_HEADERS = {
-    "Cache-Control": "no-cache, no-store, must-revalidate",
-    "Pragma": "no-cache",
-    "Expires": "0"
+    "Cache-Control": "no-cache, no-store, must-revalidate"
 }
 
 def get_static_file(path: str):
@@ -457,15 +485,32 @@ def get_static_file(path: str):
     clean_path = path
     if clean_path.startswith("static/"):
         clean_path = clean_path[7:]
+
+    # Resolve logo aliases / typo fixes
+    if clean_path in ["grove_hub_logo_transparent.png", "groove_hub_logo_transparent.png"]:
+        clean_path = "groove_hub_logo_transparent.png"
+    elif clean_path in ["grove_hub_logo.png", "groove_hub_logo.png"]:
+        clean_path = "groove_hub_logo.png"
+
     file_path = (STATIC_DIR / clean_path).resolve()
     if STATIC_DIR.resolve() not in file_path.parents and file_path != STATIC_DIR.resolve():
         return None
     if file_path.is_file():
-        # Prevent browser and SW caching for scripts, styles, and HTML
-        if file_path.suffix in [".html", ".js", ".css"]:
-            return FileResponse(file_path, headers=NO_CACHE_HEADERS)
+        if file_path.suffix in [".html"]:
+            return FileResponse(file_path, headers=CACHE_HTML_HEADERS)
+        if file_path.suffix in [".js", ".css", ".png", ".jpg", ".jpeg", ".webp", ".svg", ".json", ".ico", ".woff2", ".woff", ".ttf", ".txt"]:
+            media_types = {
+                ".woff2": "font/woff2",
+                ".woff": "font/woff",
+                ".ttf": "font/ttf",
+                ".txt": "text/plain",
+                ".css": "text/css",
+                ".js": "application/javascript"
+            }
+            mtype = media_types.get(file_path.suffix.lower())
+            return FileResponse(file_path, media_type=mtype, headers=CACHE_STATIC_HEADERS)
         
-        # Proper MIME type mapping for 4K video, audio, and media streaming
+        # Media types
         media_mimes = {
             ".mp4": "video/mp4",
             ".webm": "video/webm",
@@ -485,81 +530,83 @@ def get_static_file(path: str):
             ".svg": "image/svg+xml"
         }
         media_type = media_mimes.get(file_path.suffix.lower())
-        return FileResponse(file_path, media_type=media_type)
+        return FileResponse(file_path, media_type=media_type, headers=CACHE_STATIC_HEADERS)
     return None
+
+next_static_dir = STATIC_DIR / "_next"
+if next_static_dir.is_dir():
+    app.mount("/_next", StaticFiles(directory=str(next_static_dir)), name="next_static")
 
 @app.get("/")
 async def root():
-    return FileResponse(STATIC_DIR / "index.html", headers=NO_CACHE_HEADERS)
+    return FileResponse(STATIC_DIR / "index.html", headers=CACHE_HTML_HEADERS)
 
-@app.get("/login")
-async def login_page():
-    return FileResponse(STATIC_DIR / "index.html", headers=NO_CACHE_HEADERS)
+@app.get("/work")
+async def work_page():
+    return FileResponse(STATIC_DIR / "work.html", headers=CACHE_HTML_HEADERS)
 
-@app.get("/register")
-async def register_page():
-    return FileResponse(STATIC_DIR / "index.html", headers=NO_CACHE_HEADERS)
-
-@app.get("/forgot-password")
-async def forgot_password_page():
-    return FileResponse(STATIC_DIR / "index.html", headers=NO_CACHE_HEADERS)
-
-@app.get("/reset-password")
-async def reset_password_page():
-    return FileResponse(STATIC_DIR / "index.html", headers=NO_CACHE_HEADERS)
-
-@app.get("/verify-email")
-async def verify_email_page():
-    return FileResponse(STATIC_DIR / "index.html", headers=NO_CACHE_HEADERS)
-
-@app.get("/logout")
-async def logout_page():
-    return FileResponse(STATIC_DIR / "index.html", headers=NO_CACHE_HEADERS)
-
+# 301 Permanent Redirects for legacy routes
 @app.get("/portfolio")
 @app.get("/showcase")
-@app.get("/work")
-async def portfolio_page():
-    return FileResponse(STATIC_DIR / "portfolio.html", headers=NO_CACHE_HEADERS)
+async def redirect_portfolio_to_work():
+    return RedirectResponse(url="/work", status_code=status.HTTP_301_MOVED_PERMANENTLY)
 
+@app.get("/marketplace")
+@app.get("/app")
+@app.get("/login")
+@app.get("/register")
+@app.get("/forgot-password")
+@app.get("/reset-password")
+@app.get("/verify-email")
+@app.get("/logout")
+@app.get("/checkout")
+@app.get("/pay")
 @app.get("/outreach")
-async def outreach_page():
-    return FileResponse(STATIC_DIR / "whatsapp_outreach.html", headers=NO_CACHE_HEADERS)
-
 @app.get("/posters")
-async def posters_page():
-    return FileResponse(STATIC_DIR / "grove_posters_suite.html", headers=NO_CACHE_HEADERS)
+async def redirect_marketplace_to_root():
+    return RedirectResponse(url="/", status_code=status.HTTP_301_MOVED_PERMANENTLY)
 
 @app.get("/agency-team/portal")
-@app.get("/team-portal")
-async def agency_team_portal_page():
-    return FileResponse(STATIC_DIR / "agency_team_portal.html", headers=NO_CACHE_HEADERS)
+async def redirect_agency_team_portal():
+    return RedirectResponse(url="/team-portal", status_code=status.HTTP_301_MOVED_PERMANENTLY)
 
+@app.get("/team-portal")
+async def team_portal_page():
+    return FileResponse(STATIC_DIR / "team_portal.html", headers=CACHE_HTML_HEADERS)
+
+@app.get("/robots.txt")
+async def robots_endpoint():
+    robots_path = STATIC_DIR / "robots.txt"
+    if robots_path.is_file():
+        return FileResponse(robots_path, media_type="text/plain", headers=CACHE_STATIC_HEADERS)
+    return Response(content="User-agent: *\nAllow: /\nAllow: /work\nAllow: /static/\nDisallow: /team-portal\nDisallow: /api/\nSitemap: https://syncra-qui2.onrender.com/sitemap.xml\n", media_type="text/plain")
+
+@app.get("/sitemap.xml")
+async def sitemap_endpoint():
+    sitemap_path = STATIC_DIR / "sitemap.xml"
+    if sitemap_path.is_file():
+        return FileResponse(sitemap_path, media_type="application/xml", headers=CACHE_STATIC_HEADERS)
+    return Response(content="<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n<url><loc>https://syncra-qui2.onrender.com/</loc></url>\n<url><loc>https://syncra-qui2.onrender.com/work</loc></url>\n</urlset>", media_type="application/xml")
 
 @app.get("/health")
-def root_health_check(db = Depends(get_db)):
-    try:
-        db.execute(text("SELECT 1"))
-        db_status = "connected"
-    except Exception as e:
-        db_status = f"error: {str(e)}"
-    return {
-        "status": "healthy" if db_status == "connected" else "degraded",
-        "database": db_status,
-        "timestamp": datetime.utcnow().isoformat(),
-        "service": "EditorMarketplace API"
-    }
+@api_app.get("/health")
+def root_health_check():
+    return {"status": "ok"}
 
 @app.get("/{full_path:path}")
 async def spa_fallback(full_path: str):
     # Skip empty path (root) — handled by dedicated route
     if full_path == "":
-        return FileResponse(STATIC_DIR / "index.html", headers=NO_CACHE_HEADERS)
+        return FileResponse(STATIC_DIR / "index.html", headers=CACHE_HTML_HEADERS)
 
     # API routes are handled by the mounted api_app
     if full_path.startswith("api/"):
         raise HTTPException(status_code=404, detail="Not found")
-    
+
+    # Disable /docs, /redoc, and /openapi.json in production (only enabled in development)
+    if full_path in ["docs", "redoc", "openapi.json"] and not IS_DEV:
+        raise HTTPException(status_code=404, detail="Not found")
+
     # Try to serve as a static file (CSS, JS, images, etc.)
     static_resp = get_static_file(full_path)
     if static_resp:
@@ -568,7 +615,7 @@ async def spa_fallback(full_path: str):
     # Otherwise serve index.html (SPA routing)
     index_html = STATIC_DIR / "index.html"
     if index_html.is_file():
-        return FileResponse(index_html, headers=NO_CACHE_HEADERS)
+        return FileResponse(index_html, headers=CACHE_HTML_HEADERS)
     
     raise HTTPException(status_code=404, detail="Not found")
 
@@ -4886,84 +4933,155 @@ def update_bank_details(
     return {"message": "Bank details updated successfully"}
 
 # -----------------------------------------------------------------------------
-# 5-PERSON DEDICATED GROWTH TEAM & AGENCY SUBMISSIONS API
-# Roles: 1. Strategic Thinker, 2. Script Writer, 3. Videographer & Editor, 
-#        4. Account Handler, 5. App Management (User & Sashi)
+# DEDICATED TEAM OF FOUR & STUDIO OPERATIONS API
+# Roles: 1. Video Shooter, 2. Video Editor, 3. Scriptwriter, 4. Strategic Thinker
 # -----------------------------------------------------------------------------
+
+# --- Team Portal Authentication Helpers ---
+def create_portal_session_token() -> str:
+    ts = str(int(datetime.utcnow().timestamp()))
+    sig = hmac.new(SECRET_KEY.encode(), ts.encode(), hashlib.sha256).hexdigest()
+    return f"{ts}:{sig}"
+
+def verify_portal_session(request: Request) -> bool:
+    cookie = request.cookies.get(SESSION_COOKIE_NAME)
+    if not cookie or ":" not in cookie:
+        return False
+    parts = cookie.split(":", 1)
+    if len(parts) != 2:
+        return False
+    ts_str, sig = parts
+    try:
+        ts = int(ts_str)
+        # Session valid for 7 days
+        if datetime.utcnow().timestamp() - ts > 86400 * 7:
+            return False
+        expected_sig = hmac.new(SECRET_KEY.encode(), ts_str.encode(), hashlib.sha256).hexdigest()
+        return hmac.compare_digest(sig, expected_sig)
+    except Exception:
+        return False
+
+class PortalLoginBody(BaseModel):
+    password: str
+
+@api_app.post("/team-portal/login")
+def team_portal_login(login_data: PortalLoginBody, request: Request, response: Response):
+    check_rate_limit(f"portal_login_{_client_ip(request)}", limit=10, window_seconds=60)
+    if hmac.compare_digest(login_data.password.strip(), TEAM_PORTAL_PASSWORD.strip()):
+        token = create_portal_session_token()
+        is_https = (request.url.scheme == "https") or (request.headers.get("x-forwarded-proto", "").lower() == "https")
+        response.set_cookie(
+            key=SESSION_COOKIE_NAME,
+            value=token,
+            max_age=86400 * 7,
+            httponly=True,
+            samesite="lax",
+            secure=(ENV == "production" and is_https)
+        )
+        return {"success": True, "message": "Authenticated"}
+    raise HTTPException(status_code=401, detail="Invalid staff password")
+
+@api_app.get("/team-portal/status")
+def team_portal_status(request: Request):
+    return {"authenticated": verify_portal_session(request)}
+
+@api_app.post("/team-portal/logout")
+def team_portal_logout(response: Response):
+    response.delete_cookie(key=SESSION_COOKIE_NAME, httponly=True, samesite="lax")
+    return {"success": True, "message": "Logged out"}
+
+@api_app.get("/team-portal/data")
+def team_portal_data(request: Request, db = Depends(get_db)):
+    if not verify_portal_session(request):
+        raise HTTPException(status_code=401, detail="Authentication required")
+    
+    subs = db.query(AgencyTeamSubscription).order_by(AgencyTeamSubscription.id.desc()).all()
+    results = []
+    for s in subs:
+        audit = db.query(StoreAuditReport).filter(StoreAuditReport.subscription_id == s.id).first()
+        results.append({
+            "id": s.id,
+            "store_name": s.store_name,
+            "store_location": s.store_location,
+            "niche_category": s.niche_category,
+            "plan_type": s.plan_type,
+            "status": s.status,
+            "price_paid": s.price_paid,
+            "start_date": s.start_date.isoformat() if s.start_date else None,
+            "store_flaws": audit.store_flaws if (audit and audit.store_flaws) else [],
+            "competitor_comparison": audit.competitor_comparison if (audit and audit.competitor_comparison) else [],
+            "script_vault": audit.script_vault if (audit and audit.script_vault) else [],
+            "video_deliverables": audit.video_deliverables if (audit and audit.video_deliverables) else [],
+            "account_stats": audit.account_stats if (audit and audit.account_stats) else {"total_views": 0, "leads_generated": 0}
+        })
+    return {
+        "subscriptions": results,
+        "team_roster": TEAM_OF_FOUR
+    }
 
 @api_app.get("/agency-team/plans")
 def get_agency_growth_team_plans():
     return {
-        "agency_name": "Groove Hub 5-Person Dedicated Growth Team",
-        "tagline": "Your Complete Store Growth Engine: Strategy, Scripting, Shoots, Edits & Account Lead Management",
-        "app_management": "Managed & Overseen directly by User & Sashi via Groove Hub App",
+        "agency_name": "Groove Hub Dedicated Team of Four",
+        "tagline": "Your Complete Store Reels Engine: Strategy, Scripting, Shoots & Edits in Chennai",
+        "app_management": "Managed directly by Groove Hub Studio Chennai",
         "team_roster": [
             {
                 "role_id": 1,
                 "role_name": "Strategic Thinker",
-                "focus": "Store Audit, Flaw Identification & Local Competitor Comparison",
-                "deliverables": "Deep store flaw analysis, local competitor positioning, monthly growth strategy roadmap"
+                "focus": "Store Audit & Competitor Gaps",
+                "deliverables": "Deep store flaw analysis and local Chennai competitor positioning roadmap"
             },
             {
                 "role_id": 2,
-                "role_name": "Script Writer",
-                "focus": "High-Converting Scriptwriting & Storyboards",
-                "deliverables": "Viral reel scripts, ad copy, offer angles, high-retention hooks"
+                "role_name": "Scriptwriter",
+                "focus": "High-Converting Hooks & Storyboards",
+                "deliverables": "Reel hooks, conversation scripts, offers, and shot lists"
             },
             {
                 "role_id": 3,
-                "role_name": "Videographer & Video Editor (Dual Role)",
-                "focus": "On-Site Shoot Production & High-Retention 4K Editing",
-                "deliverables": "Raw footage shoot, 4K reel editing, color grading, sound design & motion graphics"
+                "role_name": "Video Shooter",
+                "focus": "On-Location Shoot Production in Chennai",
+                "deliverables": "Cinema cameras, wireless audio, and portable mobile lighting on-site"
             },
             {
                 "role_id": 4,
-                "role_name": "Account Handler",
-                "focus": "Social Media Account Management, Views & Lead Optimization",
-                "deliverables": "Daily post scheduling, engagement management, views growth & lead acquisition tracking"
-            },
-            {
-                "role_id": 5,
-                "role_name": "App Operations & Management",
-                "focus": "User & Sashi Direct Oversight via Groove Hub App",
-                "deliverables": "SLA guarantee, direct quality control, escalation support & team coordination"
+                "role_name": "Video Editor",
+                "focus": "Mobile-First Video Editing & Sound Design",
+                "deliverables": "Tight cuts, kinetic subtitles, phone-screen color grade, and sound FX"
             }
         ],
         "plans": [
             {
-                "id": "monthly",
-                "name": "Monthly Dedicated Team Plan",
+                "id": "starter",
+                "name": "Starter Consistency",
                 "billing": "Monthly",
                 "price": 24999.0,
                 "currency": "INR",
-                "usd_price": 299.0,
                 "features": [
-                    "Full 5-Person Dedicated Growth Team",
-                    "Complete Store & Competitor Flaw Analysis Report",
-                    "8-12 High-Retention Reels & Ad Videos per month",
-                    "Full Account Management (Views & Leads tracking)",
-                    "Exclusive VIP Web Portal Access Link",
-                    "Direct WhatsApp Team Contact Hotline (+919876543210)"
+                    "Dedicated Team of Four (Shooter, Editor, Writer, Strategist)",
+                    "8 Custom-Shot Reels per month",
+                    "1 On-Location Shoot Session in Chennai",
+                    "Full Scripting & Mobile-Tuned Editing",
+                    "Direct WhatsApp Collaboration (+91 93445 46733)"
                 ]
             },
             {
-                "id": "half_yearly",
-                "name": "Half-Yearly Growth Accelerator Plan",
-                "billing": "6 Months (Save 15%)",
-                "price": 129999.0,
+                "id": "growth",
+                "name": "Growth Momentum",
+                "billing": "Monthly",
+                "price": 44999.0,
                 "currency": "INR",
-                "usd_price": 1499.0,
                 "features": [
-                    "Full 5-Person Dedicated Growth Team for 6 Months",
-                    "Bi-Weekly Competitor & Store Strategy Audits",
-                    "60+ High-Retention Reels & Performance Ads",
-                    "Dedicated Account Handler (Guaranteed Lead Targets)",
-                    "Exclusive VIP Web Portal Link for entire team tracking",
-                    "Priority Direct WhatsApp Hotline with User & Sashi"
+                    "Dedicated Team of Four (Shooter, Editor, Writer, Strategist)",
+                    "16 Custom-Shot Reels per month",
+                    "2 On-Location Shoot Sessions in Chennai",
+                    "Neighborhood Competitor Gap Analysis",
+                    "Bi-Weekly Review & Priority Turnaround"
                 ]
             }
         ],
-        "whatsapp_hotline": "+919876543210"
+        "whatsapp_hotline": WHATSAPP_NUMBER
     }
 
 @api_app.post("/agency-team/subscribe")
@@ -4974,8 +5092,6 @@ def subscribe_agency_team(
 ):
     import uuid
     token = f"VIP-{uuid.uuid4().hex[:8].upper()}"
-    
-    # If user is logged in, attach user_id. Otherwise attach first user or admin
     user_id = current_user.id if current_user else 1
     
     is_half_yearly = subscription_data.plan_type.upper() in ["HALF_YEARLY", "HALF-YEARLY", "HALF YEARLY", "6_MONTHS"]
@@ -4986,12 +5102,12 @@ def subscribe_agency_team(
     sub = AgencyTeamSubscription(
         user_id=user_id,
         store_name=subscription_data.store_name,
-        store_location=subscription_data.store_location or "Main Commercial Market",
-        niche_category=subscription_data.niche_category or "Retail & Local Store",
+        store_location=subscription_data.store_location or "Chennai Commercial Hub",
+        niche_category=subscription_data.niche_category or "Local Retail & Services",
         plan_type=plan_type_clean,
         status="ACTIVE",
         price_paid=price,
-        whatsapp_number=subscription_data.whatsapp_number or "+919876543210",
+        whatsapp_number=WHATSAPP_NUMBER,
         vip_link_token=token,
         start_date=datetime.utcnow(),
         end_date=datetime.utcnow() + timedelta(days=end_days)
@@ -5000,51 +5116,33 @@ def subscribe_agency_team(
     db.commit()
     db.refresh(sub)
     
-    # Create initial Store Audit Report with sample strategic insights
     audit = StoreAuditReport(
         subscription_id=sub.id,
         store_flaws=[
-            {"id": 1, "flaw": "Missing dynamic motion display on storefront to attract foot traffic", "severity": "HIGH"},
-            {"id": 2, "flaw": "Social handle lacks daily reel storyboards and customer testimonials", "severity": "HIGH"},
-            {"id": 3, "flaw": "Competitor price transparency mismatch in local area", "severity": "MEDIUM"}
+            {"id": 1, "flaw": "Storefront lack of motion display to attract walk-in shoppers", "severity": "HIGH"},
+            {"id": 2, "flaw": "Local customers unaware of new seasonal arrivals", "severity": "MEDIUM"}
         ],
         competitor_comparison=[
-            {"competitor": "Competitor Store Alpha", "their_strength": "Heavy local Instagram ad budget", "our_counter_strategy": "Launch 4K high-retention store walkthrough reels"},
-            {"competitor": "Nearby Store Beta", "their_strength": "WhatsApp direct customer support", "our_counter_strategy": "VIP WhatsApp Hotline integration with lead capture"}
+            {"competitor": "Nearby Competitor", "their_strength": "Active local presence", "our_counter_strategy": "High-clarity on-location reels showcasing authentic craftsmanship"}
         ],
-        strategic_roadmap="1. Strategic Thinker store flaw audit completed\n2. Script Writer developing 8 viral reel storyboards\n3. Videographer/Editor shoot scheduled\n4. Account Handler optimizing daily posting & lead tracking",
-        script_vault=[
-            {"title": "Hook Script: 3 Secrets Nearby Competitors Hide", "file_name": "Hook_Script_A1.txt", "status": "APPROVED_FOR_SHOOT", "script_type": "Viral Reel Hook"},
-            {"title": "Behind the Scenes: Store Quality & Craftsmanship", "file_name": "BTS_StoryBoard_B2.txt", "status": "IN_PRODUCTION", "script_type": "Store Storyboard"},
-            {"title": "Local Shopper Offer & VIP Discount Call", "file_name": "Offer_Ad_Copy_C1.txt", "status": "SCRIPTING_COMPLETE", "script_type": "High-Converting Ad"}
-        ],
-        video_deliverables=[
-            {"title": "Hook_Retention_A1.mp4", "specs": "1080×1920 • 94% Retention", "status": "APPROVED_DELIVERED", "deliverable_url": "/static/images/portfolio/sample_reel.mp4"},
-            {"title": "4K_Storefront_Macro_Broll.mov", "specs": "3840×2160 • 60 FPS HDR", "status": "RAW_FOOTAGE_SYNCED", "deliverable_url": "/static/images/portfolio/sample_broll.mp4"},
-            {"title": "Competitor_Comparison_Ad_v2.mp4", "specs": "1080×1920 • High Conversion Ad", "status": "READY_FOR_PUBLISHING", "deliverable_url": "/static/images/portfolio/sample_ad.mp4"},
-            {"title": "Store_Walkthrough_Master_4K.mp4", "specs": "3840×2160 • 60 FPS Master", "status": "COMPLETED", "deliverable_url": "/static/images/portfolio/sample_walkthrough.mp4"}
-        ],
-        account_stats={
-            "total_views": 52400,
-            "leads_generated": 168,
-            "engagement_rate": "8.8%",
-            "active_plan": sub.plan_type
-        }
+        strategic_roadmap="1. Store audit completed\n2. Scriptwriter drafting visual hooks\n3. Video shooter scheduling session in Chennai\n4. Video editor preparing mobile delivery",
+        script_vault=[],
+        video_deliverables=[],
+        account_stats={"total_views": 0, "leads_generated": 0}
     )
     db.add(audit)
     db.commit()
     
-    import urllib.parse
-    whatsapp_msg = f"Hi Groove Team! I just subscribed to the {sub.plan_type} 5-Person Growth Team plan for '{sub.store_name}' (VIP Token: {sub.vip_link_token}). Let's start!"
-    wa_url = f"https://wa.me/919876543210?text={urllib.parse.quote(whatsapp_msg)}"
+    whatsapp_msg = f"Hi Groove Hub! I registered '{sub.store_name}' for an on-location reels shoot in Chennai."
+    wa_url = get_whatsapp_url(whatsapp_msg)
     
     return {
-        "message": f"Successfully subscribed to 5-Person Dedicated Growth Team ({sub.plan_type} Plan)!",
+        "message": f"Successfully registered for Groove Hub ({sub.plan_type} Plan)!",
         "subscription_id": sub.id,
         "vip_link_token": sub.vip_link_token,
-        "web_portal_url": f"/team-portal?token={sub.vip_link_token}",
+        "web_portal_url": f"/team-portal",
         "whatsapp_url": wa_url,
-        "whatsapp_number": sub.whatsapp_number,
+        "whatsapp_number": WHATSAPP_NUMBER,
         "store_name": sub.store_name,
         "plan_type": sub.plan_type
     }
@@ -5053,66 +5151,38 @@ def subscribe_agency_team(
 def get_agency_team_dashboard(token: str, db = Depends(get_db)):
     sub = db.query(AgencyTeamSubscription).filter(AgencyTeamSubscription.vip_link_token == token).first()
     if not sub:
-        import urllib.parse
-        wa_text = urllib.parse.quote("Hi Groove Team! I want to inquire about the 5-Person Dedicated Growth Team plan for my store.")
+        wa_text = "Hi Groove Hub! I'd like to ask about an on-location reel shoot for my store in Chennai."
         return {
             "is_preview": True,
-            "store_name": "Sample Retail Store (VIP Preview)",
-            "store_location": "Central Shopping Hub",
-            "niche_category": "Retail & Digital Marketing",
+            "store_name": "Local Business Showcase",
+            "store_location": "Chennai",
+            "niche_category": "Local Store",
             "plan_type": "MONTHLY",
             "status": "ACTIVE",
             "price_paid": 24999.0,
-            "whatsapp_number": "+919876543210",
-            "whatsapp_url": f"https://wa.me/919876543210?text={wa_text}",
+            "whatsapp_number": WHATSAPP_NUMBER,
+            "whatsapp_url": get_whatsapp_url(wa_text),
             "vip_link_token": token,
             "team_roster": {
-                "strategic_thinker": "Strategic Lead - Alex (Store & Competitor Analyst)",
-                "script_writer": "Script Master - Sarah (Ad & Reel Scripts)",
-                "videographer_editor": "Creative Producer - Marcus (Shoot & High-Retention Edit)",
-                "account_handler": "Growth Specialist - David (Views & Leads Handler)",
-                "app_management": "Managed by User & Sashi via Groove Hub App"
+                "strategic_thinker": "The Strategic Thinker",
+                "script_writer": "The Scriptwriter",
+                "videographer_editor": "The Video Shooter & Video Editor",
+                "app_management": "Groove Hub Core Team"
             },
-            "active_footage_bins": [
-                {"name": "Hook_Retention_A1.mp4", "specs": "1080×1920 • 94% Retention", "icon_type": "yellow", "icon_fa": "fa-bolt"},
-                {"name": "4K_Food_Macro_Broll.mov", "specs": "3840×2160 • 60 FPS HDR", "icon_type": "green", "icon_fa": "fa-camera"},
-                {"name": "Whoosh_Bass_Impact.wav", "specs": "Stereo • Subconscious Hit", "icon_type": "blue", "icon_fa": "fa-wave-square"},
-                {"name": "Hormozi_Word_Pop.json", "specs": "Auto-Synced • Gold Pop", "icon_type": "orange", "icon_fa": "fa-flag"}
-            ],
-            "store_flaws": [
-                {"id": 1, "flaw": "Storefront lack of motion video screen & high-converting banners", "severity": "HIGH"},
-                {"id": 2, "flaw": "Local shoppers unaware of weekly exclusive discounts", "severity": "HIGH"},
-                {"id": 3, "flaw": "Weak social media conversion funnel vs nearby stores", "severity": "MEDIUM"}
-            ],
-            "competitor_comparison": [
-                {"competitor": "Nearby Store Alpha", "their_strength": "Heavy local Instagram ad presence", "our_counter_strategy": "High-retention 4K reels targeting 5km radius"},
-                {"competitor": "Competitor Beta", "their_strength": "Direct WhatsApp promotion blast", "our_counter_strategy": "VIP WhatsApp Hotline with instant lead capture"}
-            ],
-            "strategic_roadmap": "Store audit completed. 8 Reel scripts drafted by Script Writer. Shoots scheduled.",
-            "script_vault": [
-                {"title": "Hook Script: 3 Secrets Nearby Competitors Hide", "file_name": "Hook_Script_A1.txt", "status": "APPROVED_FOR_SHOOT"},
-                {"title": "Behind the Scenes: Product Quality Reel", "file_name": "BTS_StoryBoard_B2.txt", "status": "APPROVED"}
-            ],
-            "video_deliverables": [
-                {"title": "Hook_Retention_A1.mp4", "specs": "1080×1920 • 94% Retention", "status": "APPROVED_DELIVERED"},
-                {"title": "4K_Food_Macro_Broll.mov", "specs": "3840×2160 • 60 FPS HDR", "status": "RAW_FOOTAGE_SYNCED"},
-                {"title": "Competitor_Comparison_Ad_v2.mp4", "specs": "1080×1920 • High Conversion Ad", "status": "READY_FOR_PUBLISHING"},
-                {"title": "Store_Walkthrough_Master_4K.mp4", "specs": "3840×2160 • 60 FPS Master", "status": "DELIVERED"}
-            ],
+            "store_flaws": [],
+            "competitor_comparison": [],
+            "strategic_roadmap": "Initial store audit in progress by the Strategic Thinker.",
+            "script_vault": [],
+            "video_deliverables": [],
             "account_stats": {
-                "total_views": 128400,
-                "leads_generated": 312,
-                "engagement_rate": "9.2%",
-                "growth_multiplier": "3.4x"
+                "total_views": 0,
+                "leads_generated": 0
             }
         }
-
     
     audit = db.query(StoreAuditReport).filter(StoreAuditReport.subscription_id == sub.id).first()
-    
-    import urllib.parse
-    wa_msg = f"Hi Groove Team! I'm checking my dedicated web dashboard for {sub.store_name} (VIP: {sub.vip_link_token})."
-    wa_url = f"https://wa.me/919876543210?text={urllib.parse.quote(wa_msg)}"
+    wa_msg = f"Hi Groove Hub! Checking in regarding the shoot for {sub.store_name}."
+    wa_url = get_whatsapp_url(wa_msg)
     
     return {
         "is_preview": False,
@@ -5123,24 +5193,23 @@ def get_agency_team_dashboard(token: str, db = Depends(get_db)):
         "plan_type": sub.plan_type,
         "status": sub.status,
         "price_paid": sub.price_paid,
-        "whatsapp_number": sub.whatsapp_number,
+        "whatsapp_number": WHATSAPP_NUMBER,
         "whatsapp_url": wa_url,
         "vip_link_token": sub.vip_link_token,
         "start_date": sub.start_date.isoformat() if sub.start_date else None,
         "end_date": sub.end_date.isoformat() if sub.end_date else None,
         "team_roster": {
-            "strategic_thinker": sub.strategic_thinker_name,
-            "script_writer": sub.script_writer_name,
-            "videographer_editor": sub.videographer_editor_name,
-            "account_handler": sub.account_handler_name,
-            "app_management": sub.app_management_team
+            "strategic_thinker": sub.strategic_thinker_name or "The Strategic Thinker",
+            "script_writer": sub.script_writer_name or "The Scriptwriter",
+            "videographer_editor": sub.videographer_editor_name or "The Video Shooter & Video Editor",
+            "app_management": sub.app_management_team or "Groove Hub Core Team"
         },
-        "store_flaws": audit.store_flaws if audit and audit.store_flaws else [],
-        "competitor_comparison": audit.competitor_comparison if audit and audit.competitor_comparison else [],
-        "strategic_roadmap": audit.strategic_roadmap if audit and audit.strategic_roadmap else "Strategy session in progress.",
-        "script_vault": audit.script_vault if audit and audit.script_vault else [],
-        "video_deliverables": audit.video_deliverables if audit and audit.video_deliverables else [],
-        "account_stats": audit.account_stats if audit and audit.account_stats else {"total_views": 0, "leads_generated": 0}
+        "store_flaws": audit.store_flaws if (audit and audit.store_flaws) else [],
+        "competitor_comparison": audit.competitor_comparison if (audit and audit.competitor_comparison) else [],
+        "strategic_roadmap": audit.strategic_roadmap if (audit and audit.strategic_roadmap) else "Strategy session in progress.",
+        "script_vault": audit.script_vault if (audit and audit.script_vault) else [],
+        "video_deliverables": audit.video_deliverables if (audit and audit.video_deliverables) else [],
+        "account_stats": audit.account_stats if (audit and audit.account_stats) else {"total_views": 0, "leads_generated": 0}
     }
 
 

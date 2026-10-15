@@ -1,8 +1,8 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { MessageCircle, ArrowRight } from "lucide-react";
-import { siteConfig, getWhatsAppUrl } from "../../site.config";
+import { MessageCircle, ArrowRight, CheckCircle2 } from "lucide-react";
+import { getWhatsAppUrl } from "../../site.config";
 
 export function FreeOfferBanner() {
   const freeOfferUrl = getWhatsAppUrl(
@@ -10,51 +10,66 @@ export function FreeOfferBanner() {
   );
 
   return (
-    <section className="py-20 px-4 sm:px-6 relative overflow-hidden">
+    <section className="py-24 px-4 sm:px-6 relative overflow-hidden bg-[#2A0A0E]">
       <div className="max-w-5xl mx-auto">
         <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
+          initial={{ opacity: 0, scale: 0.96 }}
           whileInView={{ opacity: 1, scale: 1 }}
-          viewport={{ once: true, margin: "-50px" }}
+          viewport={{ once: true, margin: "-40px" }}
           transition={{ duration: 0.6 }}
-          className="relative rounded-3xl p-8 sm:p-12 lg:p-16 bg-gradient-to-br from-[#121826] via-[#161D2D] to-[#0A0D14] border border-[#FF553E]/30 shadow-2xl text-center overflow-hidden"
+          className="relative rounded-3xl p-8 sm:p-14 lg:p-16 bg-[#FFF4E8] text-[#2A0A0E] shadow-2xl text-center overflow-hidden border border-[#F4B183]/40"
         >
-          {/* Subtle Ambient Radial Flare */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[300px] bg-[#FF553E]/15 rounded-full blur-[90px] pointer-events-none -z-0" />
+          {/* Subtle warm decorative glow */}
+          <div className="absolute top-0 right-0 w-80 h-80 bg-[#F4B183]/20 rounded-full blur-3xl pointer-events-none" />
 
-          <div className="relative z-10 max-w-2xl mx-auto flex flex-col items-center">
+          <div className="relative z-10 max-w-3xl mx-auto flex flex-col items-center">
             
-            {/* Tag */}
-            <div className="inline-flex items-center gap-2 rounded-full bg-[#FF553E]/15 border border-[#FF553E]/30 px-3.5 py-1 text-xs font-bold text-[#FF553E] uppercase tracking-wider mb-6">
-              Zero Cost • Zero Risk
+            {/* Pill Tag */}
+            <div className="inline-flex items-center gap-2 rounded-full bg-[#2A0A0E]/10 border border-[#2A0A0E]/20 px-4 py-1 text-xs font-bold text-[#2A0A0E] uppercase tracking-wider mb-6">
+              Zero Cost • Zero Contract
             </div>
 
-            {/* Headline */}
-            <h2 className="font-display font-black text-3xl sm:text-4xl md:text-5xl text-white leading-tight tracking-tight mb-5">
-              Don’t take our word for it. <br className="hidden sm:inline" />
-              <span className="text-gradient-coral">Get a free shoot and reel.</span>
+            {/* Large Uppercase Serif Headline for High Contrast */}
+            <h2 className="font-serif font-black text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-[#2A0A0E] leading-[1.12] tracking-tight mb-5 uppercase">
+              See our work before <br className="hidden sm:inline" />
+              <span className="italic font-normal text-[#9B2335] lowercase">you pay a single rupee.</span>
             </h2>
 
-            {/* Subhead */}
-            <p className="text-base sm:text-lg text-gray-300 font-normal leading-relaxed mb-8 max-w-xl">
-              We will visit your shop in Chennai, plan a targeted concept, shoot for 45 minutes, and hand you a finished 4K vertical reel. 
-              If you don’t love it, you owe us nothing.
+            {/* Subheading: Plain English, No Hype */}
+            <p className="text-base sm:text-lg text-[#5A2C31] font-normal leading-relaxed mb-8 max-w-xl">
+              Text us and we&apos;ll do a free shoot and a free reel. We visit your shop or studio in Chennai, shoot for 45 minutes, edit the reel with our full team of four, and hand you the finished video. If you don&apos;t love it, you owe us nothing.
             </p>
+
+            {/* 3 Reassurance bullets */}
+            <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-8 mb-9 text-xs sm:text-sm font-semibold text-[#5A2C31]">
+              <span className="flex items-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4 text-[#25D366]" />
+                <span>On-location in Chennai</span>
+              </span>
+              <span className="flex items-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4 text-[#25D366]" />
+                <span>Script &amp; hook included</span>
+              </span>
+              <span className="flex items-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4 text-[#25D366]" />
+                <span>Zero obligation</span>
+              </span>
+            </div>
 
             {/* Main Action Button */}
             <a
               href={freeOfferUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-3 rounded-2xl bg-[#FF553E] hover:bg-[#FF6E5A] px-8 sm:px-10 py-4 sm:py-5 text-base sm:text-lg font-bold text-white shadow-2xl shadow-[#FF553E]/40 hover:shadow-[#FF553E]/60 transition-all duration-200 active:scale-95 group"
+              className="inline-flex items-center justify-center gap-3 rounded-full bg-[#2A0A0E] hover:bg-[#3B0D12] px-8 sm:px-10 py-4 sm:py-5 text-base sm:text-lg font-bold text-[#FFF4E8] shadow-xl hover:shadow-2xl transition-all duration-200 active:scale-95 group font-sans cursor-pointer"
             >
-              <MessageCircle className="w-5 h-5 fill-white stroke-none" />
-              <span>Claim your free shoot & reel on WhatsApp</span>
-              <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
+              <MessageCircle className="w-5 h-5 fill-[#25D366] stroke-none" />
+              <span>Claim your free shoot &amp; reel on WhatsApp</span>
+              <ArrowRight className="w-5 h-5 text-[#F4B183] transition-transform group-hover:translate-x-1" />
             </a>
 
-            <div className="mt-4 text-xs text-gray-400 font-medium">
-              We respond promptly on WhatsApp • Available for local Chennai businesses
+            <div className="mt-4 text-xs text-[#7C434A] font-medium">
+              Direct message to +91 93445 46733 • Plain conversation, no sales pressure
             </div>
 
           </div>

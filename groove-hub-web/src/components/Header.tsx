@@ -28,7 +28,7 @@ export function Header() {
   ];
 
   const freeOfferUrl = getWhatsAppUrl(
-    "Hi Groove Hub! I'd like to get my free shoot and reel for my business in Chennai."
+    "Hi Groove Hub! I'd like to get my free shoot and free reel for my business in Chennai."
   );
 
   return (
@@ -36,20 +36,20 @@ export function Header() {
       <div
         className={`max-w-6xl mx-auto flex items-center justify-between rounded-full transition-all duration-300 px-5 sm:px-6 py-2.5 sm:py-3 ${
           isScrolled
-            ? "bg-[#0D121D]/85 backdrop-blur-xl border border-white/10 shadow-2xl shadow-black/50"
-            : "bg-[#0D121D]/50 backdrop-blur-md border border-white/5"
+            ? "bg-[#2A0A0E]/90 backdrop-blur-xl border border-[#F4B183]/20 shadow-2xl shadow-black/70"
+            : "bg-[#2A0A0E]/50 backdrop-blur-md border border-[#F4B183]/10"
         }`}
       >
         {/* Brand Logo */}
         <Link href="/" className="flex items-center gap-2.5 group">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#FF553E] to-[#EA580C] flex items-center justify-center text-white font-black text-sm tracking-wider shadow-lg shadow-[#FF553E]/20 group-hover:scale-105 transition-transform">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#F4B183] to-[#E88B58] flex items-center justify-center text-[#2A0A0E] font-black text-sm tracking-wider shadow-lg shadow-[#F4B183]/20 group-hover:scale-105 transition-transform font-serif italic">
             G
           </div>
           <div className="flex flex-col">
-            <span className="font-display font-extrabold tracking-tight text-base sm:text-lg text-white leading-none">
+            <span className="font-serif font-bold tracking-tight text-base sm:text-lg text-[#FFF4E8] leading-none">
               GROOVE HUB
             </span>
-            <span className="text-[10px] uppercase font-bold tracking-widest text-[#FF553E] leading-tight">
+            <span className="text-[10px] uppercase font-bold tracking-widest text-[#F4B183] leading-tight">
               CHENNAI
             </span>
           </div>
@@ -61,7 +61,7 @@ export function Header() {
             <a
               key={link.name}
               href={link.href}
-              className="text-xs lg:text-sm font-medium text-gray-300 hover:text-white transition-colors duration-200"
+              className="text-xs lg:text-sm font-medium text-[#D9C5B2] hover:text-[#FFF4E8] transition-colors duration-200"
             >
               {link.name}
             </a>
@@ -74,10 +74,10 @@ export function Header() {
             href={freeOfferUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="group relative inline-flex items-center gap-1.5 rounded-full bg-[#FF553E] px-4 sm:px-5 py-2 text-xs sm:text-sm font-bold text-white shadow-lg shadow-[#FF553E]/25 hover:bg-[#FF6E5A] hover:shadow-[#FF553E]/40 transition-all active:scale-95"
+            className="group relative inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-[#F4B183] to-[#F6C28B] px-4 sm:px-5 py-2 text-xs sm:text-sm font-bold text-[#2A0A0E] shadow-lg shadow-[#F4B183]/20 hover:from-[#F6C28B] hover:to-[#FFF4E8] hover:shadow-[#F4B183]/35 transition-all active:scale-95"
           >
-            <span>Get a free reel</span>
-            <ArrowUpRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+            <span>Get your free reel</span>
+            <ArrowUpRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 text-[#2A0A0E]" />
           </a>
         </div>
 
@@ -85,7 +85,7 @@ export function Header() {
         <button
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
-          className="md:hidden flex items-center justify-center p-2 rounded-lg text-gray-300 hover:text-white hover:bg-white/5 transition-colors"
+          className="md:hidden flex items-center justify-center p-2 rounded-lg text-[#D9C5B2] hover:text-[#FFF4E8] hover:bg-white/5 transition-colors"
         >
           {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
         </button>
@@ -100,29 +100,31 @@ export function Header() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2 }}
-            className="md:hidden mt-2 mx-auto max-w-sm rounded-2xl bg-[#0D121D]/95 backdrop-blur-2xl border border-white/10 p-5 shadow-2xl flex flex-col gap-3"
+            className="md:hidden max-w-md mx-auto mt-2 rounded-2xl bg-[#2A0A0E]/95 backdrop-blur-2xl border border-[#F4B183]/20 p-5 shadow-2xl text-[#FFF4E8]"
           >
-            {navLinks.map((link) => (
-              <a
-                key={link.name}
-                href={link.href}
-                onClick={() => setMobileMenuOpen(false)}
-                className="py-2 px-3 rounded-lg text-sm font-semibold text-gray-200 hover:bg-white/5 hover:text-[#FF553E] transition-colors"
-              >
-                {link.name}
-              </a>
-            ))}
-            <div className="pt-3 border-t border-white/10">
-              <a
-                href={freeOfferUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center justify-center gap-2 w-full rounded-xl bg-[#FF553E] py-3 text-sm font-bold text-white shadow-lg shadow-[#FF553E]/30"
-              >
-                <span>Get a free reel on WhatsApp</span>
-                <ArrowUpRight className="w-4 h-4" />
-              </a>
+            <div className="flex flex-col gap-3">
+              {navLinks.map((link) => (
+                <a
+                  key={link.name}
+                  href={link.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="px-3 py-2 text-sm font-medium text-[#D9C5B2] hover:text-[#FFF4E8] hover:bg-white/5 rounded-lg transition-colors"
+                >
+                  {link.name}
+                </a>
+              ))}
+              <div className="pt-3 border-t border-[#F4B183]/15">
+                <a
+                  href={freeOfferUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#F4B183] to-[#F6C28B] px-4 py-3 text-sm font-bold text-[#2A0A0E] shadow-md"
+                >
+                  <span>Text us for a free reel</span>
+                  <ArrowUpRight className="w-4 h-4" />
+                </a>
+              </div>
             </div>
           </motion.nav>
         )}

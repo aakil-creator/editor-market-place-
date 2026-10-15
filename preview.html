@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document Print Preview - Groove Hub</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    @media print {
+      .no-print { display: none !important; }
+      body { background: white !important; padding: 0 !important; color: black !important; }
+      .sheet-page {
+        box-shadow: none !important;
+        border: none !important;
+        max-width: 100% !important;
+        width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+      }
+    }
+  </style>
+</head>
+<body class="bg-slate-100 min-h-screen text-slate-800 p-4 md:p-8 font-sans antialiased">
+
+  <!-- Floating / Top Action Toolbar -->
+  <div class="no-print max-w-4xl mx-auto mb-6 bg-white rounded-xl shadow-sm border border-slate-200 p-4 flex flex-wrap items-center justify-between gap-4">
+    <div class="flex items-center space-x-2">
+      <button id="tab-invoice" onclick="switchDoc('invoice')" class="px-4 py-2 rounded-lg font-semibold text-sm transition-all bg-indigo-600 text-white shadow-sm">
+        🧾 Official Invoice
+      </button>
+      <button id="tab-agreement" onclick="switchDoc('agreement')" class="px-4 py-2 rounded-lg font-semibold text-sm transition-all bg-slate-100 text-slate-700 hover:bg-slate-200">
+        📄 Terms & Agreement
+      </button>
+    </div>
+
+    <div class="flex items-center space-x-3">
+      <span class="text-xs text-slate-500 font-medium">Standard A4 / Letter format</span>
+      <button onclick="window.print()" class="inline-flex items-center space-x-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-sm px-4 py-2 rounded-lg shadow transition-colors">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+        </svg>
+        <span>Print / Save as PDF</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- DOCUMENT 1: INVOICE SHEET -->
+  <div id="view-invoice" class="sheet-page max-w-4xl mx-auto bg-white rounded-2xl shadow-lg border border-slate-200 p-8 md:p-12 transition-all">
+    
+    <!-- Top Header -->
+    <div class="flex flex-col md:flex-row md:items-start justify-between border-b-2 border-slate-100 pb-8 mb-8 gap-6">
+      <div>
+        <div class="flex items-center space-x-2">
+          <div class="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-black text-lg">G</div>
+          <span class="text-2xl font-black tracking-tight text-indigo-700">GROOVE HUB</span>
+        </div>
+        <p class="text-xs font-semibold uppercase tracking-wider text-slate-400 mt-2">Premium Creative Studio & Creator Marketplace</p>
+        <p class="text-xs text-slate-500 mt-1">https://syncra-qui2.onrender.com/</p>
+        <p class="text-xs text-slate-500">billing@groovehub.media</p>
+      </div>
+
+      <div class="md:text-right">
+        <h1 class="text-3xl font-black text-slate-900 tracking-wider">TAX INVOICE</h1>
+        <div class="inline-block px-3 py-1 mt-2 text-xs font-bold rounded-full bg-amber-100 text-amber-800 uppercase tracking-wide">
+          Pending Settlement
+        </div>
+        <div class="mt-3 text-xs space-y-1 text-slate-500">
+          <p>Invoice #: <strong class="text-slate-800 font-bold">GH-INV-2026-001</strong></p>
+          <p>Issue Date: <strong class="text-slate-800">October 12, 2026</strong></p>
+          <p>Due Date: <strong class="text-slate-800">October 19, 2026</strong></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Client & Agency Metadata -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8 bg-slate-50/70 p-6 rounded-xl border border-slate-100">
+      <div>
+        <h3 class="text-xs uppercase tracking-wider font-bold text-slate-400 mb-2">Service Provider:</h3>
+        <p class="font-bold text-slate-800 text-sm">Groove Hub Media Co.</p>
+        <p class="text-xs text-slate-600 mt-0.5">Chennai, Tamil Nadu, India</p>
+        <p class="text-xs text-slate-600">GSTIN: <span class="font-mono font-medium">33AAAAA0000A1Z5</span></p>
+        <p class="text-xs text-slate-600">Contact: support@syncra-qui2.onrender.com</p>
+      </div>
+      <div>
+        <h3 class="text-xs uppercase tracking-wider font-bold text-slate-400 mb-2">Billed To (Client):</h3>
+        <p class="font-bold text-slate-800 text-sm">Acme Studios / Creator Brand</p>
+        <p class="text-xs text-slate-600 mt-0.5">Attn: Creative Operations Lead</p>
+        <p class="text-xs text-slate-600">Email: client@company.com</p>
+        <p class="text-xs text-slate-600">Mumbai, Maharashtra, India</p>
+      </div>
+    </div>
+
+    <!-- Line Items Table -->
+    <div class="overflow-x-auto mb-8">
+      <table class="w-full text-left border-collapse">
+        <thead>
+          <tr class="border-b-2 border-slate-200 text-xs uppercase font-bold text-slate-500">
+            <th class="py-3 px-2">Deliverable / Description</th>
+            <th class="py-3 px-2 text-center w-16">Qty</th>
+            <th class="py-3 px-2 text-right w-28">Rate (INR)</th>
+            <th class="py-3 px-2 text-right w-32">Total (INR)</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100 text-sm">
+          <tr>
+            <td class="py-4 px-2">
+              <div class="font-bold text-slate-800">High-Impact Video Post-Production Sprint</div>
+              <div class="text-xs text-slate-500 mt-0.5">Full 4K edit, dynamic sound design, color grading & YouTube master export</div>
+            </td>
+            <td class="py-4 px-2 text-center text-slate-700 font-medium">2</td>
+            <td class="py-4 px-2 text-right font-medium text-slate-700">₹12,000.00</td>
+            <td class="py-4 px-2 text-right font-bold text-slate-900">₹24,000.00</td>
+          </tr>
+          <tr>
+            <td class="py-4 px-2">
+              <div class="font-bold text-slate-800">Viral Short-Form Content Package</div>
+              <div class="text-xs text-slate-500 mt-0.5">5x Reels / TikTok / Shorts with kinetic typography & sound hooks</div>
+            </td>
+            <td class="py-4 px-2 text-center text-slate-700 font-medium">5</td>
+            <td class="py-4 px-2 text-right font-medium text-slate-700">₹2,500.00</td>
+            <td class="py-4 px-2 text-right font-bold text-slate-900">₹12,500.00</td>
+          </tr>
+          <tr>
+            <td class="py-4 px-2">
+              <div class="font-bold text-slate-800">High-CTR Custom 3D Thumbnails & Motion Badges</div>
+              <div class="text-xs text-slate-500 mt-0.5">A/B Testing variants, rendered high-resolution assets</div>
+            </td>
+            <td class="py-4 px-2 text-center text-slate-700 font-medium">2</td>
+            <td class="py-4 px-2 text-right font-medium text-slate-700">₹3,000.00</td>
+            <td class="py-4 px-2 text-right font-bold text-slate-900">₹6,000.00</td>
+          </tr>
+          <tr>
+            <td class="py-4 px-2">
+              <div class="font-bold text-slate-800">Priority Express Turnaround & Revisions</div>
+              <div class="text-xs text-slate-500 mt-0.5">48-Hour delivery guarantee with 2 dedicated revision rounds</div>
+            </td>
+            <td class="py-4 px-2 text-center text-slate-700 font-medium">1</td>
+            <td class="py-4 px-2 text-right font-medium text-slate-700">₹3,500.00</td>
+            <td class="py-4 px-2 text-right font-bold text-slate-900">₹3,500.00</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Calculations & Bank Details -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start mb-10">
+      <div class="bg-slate-50 p-5 rounded-xl border border-slate-200 text-xs leading-relaxed">
+        <h4 class="font-bold uppercase tracking-wider text-slate-700 mb-2">Settlement Details:</h4>
+        <p><span class="text-slate-500">Beneficiary:</span> <strong class="text-slate-800">Groove Hub Media Co.</strong></p>
+        <p><span class="text-slate-500">Bank:</span> <strong class="text-slate-800">HDFC Bank Ltd.</strong></p>
+        <p><span class="text-slate-500">Account No:</span> <strong class="text-slate-800 font-mono">50200084920194</strong></p>
+        <p><span class="text-slate-500">IFSC Code:</span> <strong class="text-slate-800 font-mono">HDFC0001234</strong></p>
+        <p><span class="text-slate-500">UPI VPA:</span> <strong class="text-indigo-600 font-mono">groovehub@upi</strong></p>
+        <p class="text-slate-400 mt-3 italic">* Quote invoice number GH-INV-2026-001 in transfer reference.</p>
+      </div>
+
+      <div class="space-y-3 bg-white p-2">
+        <div class="flex justify-between text-xs text-slate-600">
+          <span>Subtotal:</span>
+          <span class="font-semibold text-slate-800">₹46,000.00</span>
+        </div>
+        <div class="flex justify-between text-xs text-emerald-600">
+          <span>Promotional Loyalty Discount:</span>
+          <span class="font-semibold">-₹2,000.00</span>
+        </div>
+        <div class="flex justify-between text-xs text-slate-600">
+          <span>Taxable Net Amount:</span>
+          <span class="font-semibold text-slate-800">₹44,000.00</span>
+        </div>
+        <div class="flex justify-between text-xs text-slate-600">
+          <span>GST (18% Domestic):</span>
+          <span class="font-semibold text-slate-800">₹7,920.00</span>
+        </div>
+        <div class="border-t-2 border-slate-200 pt-3 flex justify-between items-baseline">
+          <span class="text-sm font-bold text-slate-900">Total Payable:</span>
+          <span class="text-2xl font-black text-indigo-700">₹51,920.00</span>
+        </div>
+        <p class="text-right text-[11px] text-slate-400 italic">Fifty-One Thousand Nine Hundred and Twenty INR</p>
+      </div>
+    </div>
+
+    <!-- Signoff Footer -->
+    <div class="border-t border-slate-200 pt-6 flex flex-col md:flex-row justify-between items-center text-xs text-slate-500 gap-4">
+      <div>
+        <p class="font-medium text-slate-700">Thank you for your business!</p>
+        <p>Unwatermarked 4K masters are released upon confirmation of payment.</p>
+      </div>
+      <div class="text-right">
+        <p class="font-semibold text-slate-800">Authorized Signature</p>
+        <p class="text-slate-400 font-mono text-[11px]">Groove Hub Finance Desk</p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- DOCUMENT 2: TERMS AND AGREEMENT SHEET -->
+  <div id="view-agreement" class="sheet-page max-w-4xl mx-auto bg-white rounded-2xl shadow-lg border border-slate-200 p-8 md:p-12 transition-all hidden">
+    
+    <div class="border-b-2 border-slate-100 pb-6 mb-8 flex justify-between items-start">
+      <div>
+        <div class="flex items-center space-x-2">
+          <div class="w-7 h-7 rounded bg-indigo-600 flex items-center justify-center text-white font-bold text-sm">G</div>
+          <span class="text-xl font-black text-indigo-700">GROOVE HUB</span>
+        </div>
+        <h1 class="text-2xl font-black text-slate-900 mt-3">CLIENT SERVICE AGREEMENT & TERMS</h1>
+        <p class="text-xs text-slate-500">Standard Production & Marketplace Service Contract</p>
+      </div>
+      <div class="text-right text-xs text-slate-500">
+        <p>Reference: <strong class="text-slate-800">GH-AGR-2026</strong></p>
+        <p>Effective: <strong class="text-slate-800">October 12, 2026</strong></p>
+      </div>
+    </div>
+
+    <div class="space-y-6 text-xs text-slate-700 leading-relaxed">
+      <section>
+        <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wide border-b border-slate-100 pb-1 mb-2">1. Parties & Purpose</h2>
+        <p>This Master Service Agreement ("Agreement") is entered into between <strong>Groove Hub Media Co.</strong> ("Provider / Agency") and the ordering entity ("Client"). By authorizing project initiation or settling invoices, Client assents to these terms.</p>
+      </section>
+
+      <section>
+        <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wide border-b border-slate-100 pb-1 mb-2">2. Scope & Production Milestones</h2>
+        <p>Provider will execute editing, motion design, audio mastering, and creative production as stipulated in the associated Statement of Work (SOW) or invoice. Work begins upon deposit confirmation.</p>
+      </section>
+
+      <section>
+        <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wide border-b border-slate-100 pb-1 mb-2">3. Payment & Escrow Structure</h2>
+        <p>Standard engagements require a <strong>50% upfront deposit</strong> to reserve post-production pipeline capacity, with the remaining 50% payable upon approval of watermarked review exports. Delinquent balances past 7 days incur a 1.5% monthly service fee.</p>
+      </section>
+
+      <section>
+        <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wide border-b border-slate-100 pb-1 mb-2">4. Revision Rounds & Acceptance</h2>
+        <p>Each milestone includes up to <strong>two (2) rounds of consolidated constructive revisions</strong>. Additional creative scope alterations outside initial brief specifications are billed at standard studio hourly rates. Deliverables not responded to within seven (7) business days are deemed formally accepted.</p>
+      </section>
+
+      <section>
+        <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wide border-b border-slate-100 pb-1 mb-2">5. Intellectual Property & Commercial License</h2>
+        <p>Upon receipt of 100% full payment, Groove Hub grants the Client perpetual, exclusive, worldwide commercial usage rights to final rendered exports. Client guarantees all raw footage and licensed assets provided are legitimately owned. Groove Hub reserves customary portfolio showcase rights unless precluded by a mutual NDA.</p>
+      </section>
+
+      <section>
+        <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wide border-b border-slate-100 pb-1 mb-2">6. Limitation of Liability</h2>
+        <p>Under no circumstances shall Provider's total liability exceed the aggregate fees collected for the specific project deliverable. Provider is not liable for indirect or consequential damages.</p>
+      </section>
+
+      <!-- Signature Blocks -->
+      <div class="pt-8 mt-8 border-t border-slate-200">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-6">Execution & Acceptance Signatures</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+          <div class="space-y-4">
+            <p class="font-bold text-slate-800">For Groove Hub Media:</p>
+            <div class="h-14 border-b border-slate-400 flex items-end pb-1 font-serif italic text-base text-indigo-900">
+              Aaqil (Founder & Exec Producer)
+            </div>
+            <p class="text-[11px] text-slate-500">Date: October 12, 2026</p>
+          </div>
+
+          <div class="space-y-4">
+            <p class="font-bold text-slate-800">For Client / Organization:</p>
+            <div class="h-14 border-b border-dashed border-slate-400 flex items-end pb-1 text-slate-400 italic">
+              Authorized Client Signature
+            </div>
+            <p class="text-[11px] text-slate-500">Date: ________________________</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    function switchDoc(type) {
+      const invView = document.getElementById('view-invoice');
+      const agrView = document.getElementById('view-agreement');
+      const invTab = document.getElementById('tab-invoice');
+      const agrTab = document.getElementById('tab-agreement');
+
+      if (type === 'invoice') {
+        invView.classList.remove('hidden');
+        agrView.classList.add('hidden');
+        invTab.className = "px-4 py-2 rounded-lg font-semibold text-sm transition-all bg-indigo-600 text-white shadow-sm";
+        agrTab.className = "px-4 py-2 rounded-lg font-semibold text-sm transition-all bg-slate-100 text-slate-700 hover:bg-slate-200";
+      } else {
+        agrView.classList.remove('hidden');
+        invView.classList.add('hidden');
+        agrTab.className = "px-4 py-2 rounded-lg font-semibold text-sm transition-all bg-indigo-600 text-white shadow-sm";
+        invTab.className = "px-4 py-2 rounded-lg font-semibold text-sm transition-all bg-slate-100 text-slate-700 hover:bg-slate-200";
+      }
+    }
+  </script>
+
+</body>
+</html>

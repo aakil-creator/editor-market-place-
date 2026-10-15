@@ -8,8 +8,20 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: 3.12.0
+      - key: ENV
+        value: production
       - key: SECRET_KEY
         generateValue: true
+      - key: GROOVE_WHATSAPP
+        value: "919344546733"
+      - key: GROOVE_WHATSAPP_DISPLAY
+        value: "+91 93445 46733"
+      - key: GROOVE_EMAIL
+        value: ""
+      - key: GROOVE_INSTAGRAM
+        value: ""
+      - key: TEAM_PORTAL_PASSWORD
+        value: "groovehub2026"
       - key: GOOGLE_CLIENT_ID
         value: 934016522168-68h4l11qrs3g628191ala3bgugt1cs7l.apps.googleusercontent.com
 

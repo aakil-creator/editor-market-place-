@@ -1,0 +1,5158 @@
+# Main FastAPI application
+import sys
+import os
+import asyncio
+
+if sys.platform == 'win32':
+    try:
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+    except Exception:
+        pass
+
+from fastapi import FastAPI, Depends, HTTPException, status, Request, UploadFile, File
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse, JSONResponse
+import re
+import os
+import uuid
+import random
+from datetime import datetime, timedelta
+
+# --- Chat video upload directory ---
+CHAT_UPLOAD_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static', 'chat_uploads')
+os.makedirs(CHAT_UPLOAD_DIR, exist_ok=True)
+from pydantic import BaseModel, Field, field_validator
+from typing import List, Optional
+from datetime import datetime
+
+from sqlalchemy import func, text, or_, and_
+from .database import get_db, engine, Base, SessionLocal
+from .models import (
+    User, Profile, Package, Booking, Payment, Release, Review, Dispute, Niche,
+    UserType, BookingStatus, PaymentStatus, PackageType, Message, PortfolioItem, PlatformSettings,
+    PasswordResetToken, EmailVerificationToken, OtpVerification, Notification,
+    ProviderSchedule, AvailabilityRequest, SearchLog, AgencyTeamSubscription, StoreAuditReport
+)
+from .schemas import (
+    UserCreate, UserUpdate, UserLogin, Token, UserResponse, ProfileCreate, ProfileUpdate,
+    ProfileResponse, PackageCreate, PackageUpdate, PackageResponse,
+    BookingCreate, BookingStatusUpdate, BookingDeliveryUpdate, BookingResponse,
+    AgencyTeamSubscriptionCreate, AgencyTeamSubscriptionResponse, StoreAuditReportResponse,
+
+    PaymentCreate, PaymentResponse, PaymentRelease,
+    CreatePaymentOrderRequest, PaymentOrderResponse, VerifyPaymentRequest, NotificationResponse,
+    ReviewCreate, ReviewResponse,
+    DisputeCreate, DisputeResponse, DisputeResolve,
+    AdminStats, NicheCreate, NicheUpdate, NicheResponse,
+    MessageCreate, MessageResponse, DirectMessageCreate, ConversationSummary, PortfolioItemCreate, PortfolioItemResponse,
+    BankDetailsUpdate, PlatformSettingsUpdate, PlatformSettingsResponse,
+    SocialLoginRequest, RoleSwitchRequest, OtpRequest, OtpResponse, OtpVerifyRequest,
+    ForgotPasswordRequest, ForgotPasswordResponse, ResetPasswordWithTokenRequest, VerifyEmailRequest,
+    VettingSubmitRequest, UpdateTierRequest, ShootPinVerify, DraftSubmit, WatermarkApprove,
+    ProviderScheduleCreate, ProviderScheduleResponse, AvailabilityRequestCreate, AvailabilityRequestRespond, AvailabilityRequestResponse,
+    SearchLogCreate, SearchTrendItem, SearchLogItem, SearchAnalyticsResponse,
+    get_current_user, get_current_user_optional
+)
+from .security import hash_password, verify_password, create_access_token, hash_token
+
+# Import routers
+from .routers import educators
+
+# Primary Admin Accounts
+ADMIN_EMAILS = {"rahura2026@gmail.com"}
+
+def get_user_type_str(val) -> str:
+    if val is None:
+        return "BUYER"
+    if hasattr(val, 'value'):
+        return str(val.value)
+    return str(val)
+
+# Create tables
+Base.metadata.create_all(bind=engine)
+
+def ensure_schema():
+    with engine.connect() as conn:
+        try:
+            cursor_users = conn.execute(text("PRAGMA table_info(users)"))
+            cols_users = [row[1] for row in cursor_users.fetchall()]
+            if "username" not in cols_users:
+                conn.execute(text("ALTER TABLE users ADD COLUMN username VARCHAR"))
+                conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_users_username ON users(username)"))
+
+            # --- Add profile_image column (added to User model; migrate existing DBs) ---
+            if "profile_image" not in cols_users:
+                conn.execute(text("ALTER TABLE users ADD COLUMN profile_image VARCHAR"))
+
+            # --- ToS consent columns (existing accounts grandfathered: not re-asked) ---
+            if "tos_accepted" not in cols_users:
+                conn.execute(text("ALTER TABLE users ADD COLUMN tos_accepted BOOLEAN DEFAULT 0"))
+            if "tos_accepted_at" not in cols_users:
+                conn.execute(text("ALTER TABLE users ADD COLUMN tos_accepted_at DATETIME"))
+
+            # Backfill any null usernames
+            users_cursor = conn.execute(text("SELECT id, name, email FROM users WHERE username IS NULL OR username = ''"))
+            for u_id, u_name, u_email in users_cursor.fetchall():
+                base = re.sub(r'[^a-zA-Z0-9_]', '', (u_name or '').lower())
+                if not base:
+                    base = (u_email or 'user').split('@')[0]
+                    base = re.sub(r'[^a-zA-Z0-9_]', '', base)
+                if not base:
+                    base = f"creator_{u_id}"
+                conn.execute(text("UPDATE users SET username = :un WHERE id = :uid"), {"un": f"{base}_{u_id}", "uid": u_id})
+
+            cursor = conn.execute(text("PRAGMA table_info(profiles)"))
+            columns = [row[1] for row in cursor.fetchall()]
+            if "bank_account_holder" not in columns:
+                conn.execute(text("ALTER TABLE profiles ADD COLUMN bank_account_holder TEXT"))
+            if "bank_name" not in columns:
+                conn.execute(text("ALTER TABLE profiles ADD COLUMN bank_name TEXT"))
+            if "bank_account_number" not in columns:
+                conn.execute(text("ALTER TABLE profiles ADD COLUMN bank_account_number TEXT"))
+            if "bank_ifsc_code" not in columns:
+                conn.execute(text("ALTER TABLE profiles ADD COLUMN bank_ifsc_code TEXT"))
+            if "upi_id" not in columns:
+                conn.execute(text("ALTER TABLE profiles ADD COLUMN upi_id TEXT"))
+            if "experience_tier" not in columns:
+                conn.execute(text("ALTER TABLE profiles ADD COLUMN experience_tier TEXT DEFAULT 'beginner'"))
+            if "vetting_status" not in columns:
+                conn.execute(text("ALTER TABLE profiles ADD COLUMN vetting_status TEXT DEFAULT 'pending'"))
+            if "test_tasks_data" not in columns:
+                conn.execute(text("ALTER TABLE profiles ADD COLUMN test_tasks_data JSON DEFAULT '{}'"))
+            if "profession_selected" not in columns:
+                conn.execute(text("ALTER TABLE profiles ADD COLUMN profession_selected BOOLEAN DEFAULT 0"))
+                # Existing providers already have a chosen niche; do not interrupt them.
+                conn.execute(text("UPDATE profiles SET profession_selected = 1 WHERE profession_selected = 0 AND (niche IS NOT NULL AND niche != '')"))
+
+            # --- Package tier + free-sample rules ---
+            cursor_pkg = conn.execute(text("PRAGMA table_info(packages)"))
+            cols_pkg = [row[1] for row in cursor_pkg.fetchall()]
+            if "package_level" not in cols_pkg:
+                conn.execute(text("ALTER TABLE packages ADD COLUMN package_level VARCHAR DEFAULT 'beginner'"))
+            if "free_sample_limit" not in cols_pkg:
+                conn.execute(text("ALTER TABLE packages ADD COLUMN free_sample_limit INTEGER DEFAULT 3"))
+            # Normalize legacy/null values without changing existing package prices.
+            conn.execute(text("""
+                UPDATE packages
+                SET package_level = CASE
+                    WHEN lower(coalesce(package_level, '')) IN ('beginner','intermediate','pro') THEN lower(package_level)
+                    ELSE 'beginner'
+                END
+                WHERE package_level IS NULL OR package_level = '' OR lower(package_level) NOT IN ('beginner','intermediate','pro')
+            """))
+            conn.execute(text("""
+                UPDATE packages
+                SET free_sample_limit = CASE lower(coalesce(package_level, 'beginner'))
+                    WHEN 'beginner' THEN 3
+                    WHEN 'intermediate' THEN 2
+                    WHEN 'pro' THEN 1
+                    ELSE 3
+                END
+                WHERE free_sample_limit IS NULL OR free_sample_limit < 0 OR free_sample_limit > 3
+            """))
+            
+            # --- Booking client handoff / free-sample workflow & shoot verification columns ---
+            cursor_bookings = conn.execute(text("PRAGMA table_info(bookings)"))
+            cols_bookings = [row[1] for row in cursor_bookings.fetchall()]
+            if "client_notes" not in cols_bookings:
+                conn.execute(text("ALTER TABLE bookings ADD COLUMN client_notes TEXT"))
+            if "source_file_url" not in cols_bookings:
+                conn.execute(text("ALTER TABLE bookings ADD COLUMN source_file_url TEXT"))
+            if "is_free_sample" not in cols_bookings:
+                conn.execute(text("ALTER TABLE bookings ADD COLUMN is_free_sample BOOLEAN DEFAULT 0"))
+            if "sample_number" not in cols_bookings:
+                conn.execute(text("ALTER TABLE bookings ADD COLUMN sample_number INTEGER"))
+            if "shoot_pin" not in cols_bookings:
+                conn.execute(text("ALTER TABLE bookings ADD COLUMN shoot_pin VARCHAR(6)"))
+            if "shoot_status" not in cols_bookings:
+                conn.execute(text("ALTER TABLE bookings ADD COLUMN shoot_status VARCHAR DEFAULT 'SCHEDULED'"))
+            if "shoot_verified_at" not in cols_bookings:
+                conn.execute(text("ALTER TABLE bookings ADD COLUMN shoot_verified_at DATETIME"))
+            if "event_count" not in cols_bookings:
+                conn.execute(text("ALTER TABLE bookings ADD COLUMN event_count INTEGER DEFAULT 1"))
+            if "event_details" not in cols_bookings:
+                conn.execute(text("ALTER TABLE bookings ADD COLUMN event_details JSON DEFAULT '[]'"))
+            if "watermarked_draft_url" not in cols_bookings:
+                conn.execute(text("ALTER TABLE bookings ADD COLUMN watermarked_draft_url VARCHAR"))
+            if "clean_final_url" not in cols_bookings:
+                conn.execute(text("ALTER TABLE bookings ADD COLUMN clean_final_url VARCHAR"))
+            if "is_watermark_removed" not in cols_bookings:
+                conn.execute(text("ALTER TABLE bookings ADD COLUMN is_watermark_removed BOOLEAN DEFAULT 0"))
+            if "per_reel_payout_rate" not in cols_bookings:
+                conn.execute(text("ALTER TABLE bookings ADD COLUMN per_reel_payout_rate FLOAT DEFAULT 0.0"))
+
+
+            # --- Message model columns (for admin delete/mask) ---
+            cursor_msg = conn.execute(text("PRAGMA table_info(messages)"))
+            cols_msg = [row[1] for row in cursor_msg.fetchall()]
+            if "is_deleted" not in cols_msg:
+                conn.execute(text("ALTER TABLE messages ADD COLUMN is_deleted BOOLEAN DEFAULT 0"))
+            if "is_masked" not in cols_msg:
+                conn.execute(text("ALTER TABLE messages ADD COLUMN is_masked BOOLEAN DEFAULT 0"))
+            if "masked_by_admin_id" not in cols_msg:
+                conn.execute(text("ALTER TABLE messages ADD COLUMN masked_by_admin_id INTEGER"))
+            if "deleted_by_admin_id" not in cols_msg:
+                conn.execute(text("ALTER TABLE messages ADD COLUMN deleted_by_admin_id INTEGER"))
+            if "deleted_at" not in cols_msg:
+                conn.execute(text("ALTER TABLE messages ADD COLUMN deleted_at DATETIME"))
+            
+            # Check platform_settings columns
+            cursor_ps = conn.execute(text("PRAGMA table_info(platform_settings)"))
+            cols_ps = [row[1] for row in cursor_ps.fetchall()]
+            if "razorpay_key_id" not in cols_ps:
+                conn.execute(text("ALTER TABLE platform_settings ADD COLUMN razorpay_key_id TEXT DEFAULT ''"))
+            if "razorpay_key_secret" not in cols_ps:
+                conn.execute(text("ALTER TABLE platform_settings ADD COLUMN razorpay_key_secret TEXT DEFAULT ''"))
+            if "google_client_id" not in cols_ps:
+                conn.execute(text("ALTER TABLE platform_settings ADD COLUMN google_client_id TEXT DEFAULT ''"))
+            if "launch_promo_active" not in cols_ps:
+                conn.execute(text("ALTER TABLE platform_settings ADD COLUMN launch_promo_active BOOLEAN DEFAULT 1"))
+            if "launch_promo_title" not in cols_ps:
+                conn.execute(text("ALTER TABLE platform_settings ADD COLUMN launch_promo_title TEXT DEFAULT '🎉 Play Store Launch Special: 0% Commission for 1 Month!'"))
+            if "launch_promo_subtitle" not in cols_ps:
+                conn.execute(text("ALTER TABLE platform_settings ADD COLUMN launch_promo_subtitle TEXT DEFAULT 'Keep 100% of your earnings. Zero platform fees on all bookings for 30 days.'"))
+            
+            # Ensure row 1 exists in platform_settings
+            cursor_row = conn.execute(text("SELECT id, google_client_id FROM platform_settings WHERE id = 1"))
+            row = cursor_row.fetchone()
+            default_google_id = os.environ.get("GOOGLE_CLIENT_ID", "934016522168-68h4l11qrs3g628191ala3bgugt1cs7l.apps.googleusercontent.com")
+            if not row:
+                conn.execute(text(f"INSERT INTO platform_settings (id, google_client_id, razorpay_key_id, razorpay_key_secret, launch_promo_active) VALUES (1, '{default_google_id}', '', '', 1)"))
+            else:
+                conn.execute(text(f"UPDATE platform_settings SET google_client_id = '{default_google_id}', launch_promo_active = 1 WHERE id = 1"))
+
+            # Ensure password_reset_tokens table exists
+            conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS password_reset_tokens (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL REFERENCES users(id),
+                    token_hash VARCHAR NOT NULL,
+                    expires_at DATETIME NOT NULL,
+                    used BOOLEAN DEFAULT 0,
+                    created_at DATETIME
+                )
+            """))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS ix_password_reset_tokens_token_hash ON password_reset_tokens(token_hash)"))
+
+            # Ensure email_verification_tokens table exists
+            conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS email_verification_tokens (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL REFERENCES users(id),
+                    token_hash VARCHAR NOT NULL,
+                    expires_at DATETIME NOT NULL,
+                    used BOOLEAN DEFAULT 0,
+                    created_at DATETIME
+                )
+            """))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS ix_email_verification_tokens_token_hash ON email_verification_tokens(token_hash)"))
+
+            # Ensure otp_verifications table exists
+            conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS otp_verifications (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    phone VARCHAR NOT NULL,
+                    otp_code VARCHAR NOT NULL,
+                    expires_at DATETIME NOT NULL,
+                    used BOOLEAN DEFAULT 0,
+                    created_at DATETIME
+                )
+            """))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS ix_otp_verifications_phone ON otp_verifications(phone)"))
+
+            # Ensure primary admin rahura2026@gmail.com has ADMIN role
+            conn.execute(text("UPDATE users SET user_type = 'ADMIN', is_verified = 1, is_active = 1 WHERE lower(email) = 'rahura2026@gmail.com'"))
+
+            # Check users table columns for moderation
+            cursor_users = conn.execute(text("PRAGMA table_info(users)"))
+            cols_users = [row[1] for row in cursor_users.fetchall()]
+            if "is_blocked" not in cols_users:
+                conn.execute(text("ALTER TABLE users ADD COLUMN is_blocked BOOLEAN DEFAULT 0"))
+            if "block_reason" not in cols_users:
+                conn.execute(text("ALTER TABLE users ADD COLUMN block_reason TEXT"))
+
+            # Check messages table columns and constraints
+            cursor_msgs = conn.execute(text("PRAGMA table_info(messages)"))
+            msgs_info = {row[1]: row for row in cursor_msgs.fetchall()}
+            booking_col = msgs_info.get("booking_id")
+            # If booking_id has NOT NULL constraint (index 3 is notnull)
+            if booking_col and booking_col[3] == 1:
+                conn.execute(text("""
+                    CREATE TABLE messages_new (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        booking_id INTEGER REFERENCES bookings(id),
+                        sender_id INTEGER NOT NULL REFERENCES users(id),
+                        receiver_id INTEGER NOT NULL REFERENCES users(id),
+                        message TEXT NOT NULL,
+                        file_url VARCHAR,
+                        is_read BOOLEAN DEFAULT 0,
+                        is_flagged BOOLEAN DEFAULT 0,
+                        flag_reason VARCHAR,
+                        created_at DATETIME
+                    )
+                """))
+                conn.execute(text("""
+                    INSERT INTO messages_new (id, booking_id, sender_id, receiver_id, message, file_url, is_read, created_at)
+                    SELECT id, booking_id, sender_id, receiver_id, message, file_url, is_read, created_at FROM messages
+                """))
+                conn.execute(text("DROP TABLE messages"))
+                conn.execute(text("ALTER TABLE messages_new RENAME TO messages"))
+                conn.execute(text("CREATE INDEX IF NOT EXISTS ix_messages_booking_id ON messages(booking_id)"))
+                conn.execute(text("CREATE INDEX IF NOT EXISTS ix_messages_sender_id ON messages(sender_id)"))
+                conn.execute(text("CREATE INDEX IF NOT EXISTS ix_messages_receiver_id ON messages(receiver_id)"))
+            else:
+                if "is_flagged" not in msgs_info:
+                    conn.execute(text("ALTER TABLE messages ADD COLUMN is_flagged BOOLEAN DEFAULT 0"))
+                if "flag_reason" not in msgs_info:
+                    conn.execute(text("ALTER TABLE messages ADD COLUMN flag_reason TEXT"))
+
+            # Ensure default core niches exist
+            existing_niches = [r[0] for r in conn.execute(text("SELECT name FROM niches")).fetchall()]
+            default_niches = [
+                ("editors_animators", "Editors & Animators"),
+                ("tutors", "English Coaches & Tutors"),
+                ("photographers", "Photographers & Videographers")
+            ]
+            for n_name, n_disp in default_niches:
+                if n_name not in existing_niches:
+                    conn.execute(text(f"INSERT INTO niches (name, display_name, is_active, supply_cap) VALUES ('{n_name}', '{n_disp}', 1, 100)"))
+
+            # Ensure notifications table exists
+            conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS notifications (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL REFERENCES users(id),
+                    title VARCHAR NOT NULL,
+                    message TEXT NOT NULL,
+                    type VARCHAR DEFAULT 'info',
+                    link VARCHAR,
+                    is_read BOOLEAN DEFAULT 0,
+                    created_at DATETIME
+                )
+            """))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS ix_notifications_user_id ON notifications(user_id)"))
+
+            conn.commit()
+        except Exception as e:
+            print(f"ensure_schema warning: {e}")
+
+ensure_schema()
+
+# Helper to trigger system notifications
+def create_user_notification(db, user_id: int, title: str, message: str, type: str = "info", link: str = None):
+    try:
+        notif = Notification(
+            user_id=user_id,
+            title=title,
+            message=message,
+            type=type,
+            link=link,
+            is_read=False
+        )
+        db.add(notif)
+        db.commit()
+        db.refresh(notif)
+        return notif
+    except Exception as e:
+        db.rollback()
+        print(f"[NOTIFICATION ERROR] Failed to create notification: {e}")
+        return None
+
+# --- Admin Initializer ---
+def ensure_admin_exists():
+    db = SessionLocal()
+    try:
+        # Ensure official owner/admin account exists
+        admin_email = "rahura2026@gmail.com"
+        admin = db.query(User).filter(User.email == admin_email).first()
+        if not admin:
+            admin_user = User(
+                email=admin_email,
+                name="RAHURA Admin",
+                username="rahura_admin",
+                phone="+919999999999",
+                password_hash=hash_password("AdminSecure2026!"),
+                user_type=UserType.ADMIN,
+                is_verified=True,
+                is_active=True,
+                tos_accepted=True,
+                tos_accepted_at=datetime.utcnow()
+            )
+            db.add(admin_user)
+            db.commit()
+    except Exception as e:
+        print(f"ensure_admin_exists info: {e}")
+        db.rollback()
+    finally:
+        db.close()
+
+ensure_admin_exists()
+
+
+# Main app - serves static files
+app = FastAPI(title="Groove Hub", version="1.0.0")
+
+# API app
+api_app = FastAPI(title="Groove Hub API", version="1.0.0")
+
+_cors_origins = [
+    origin.strip()
+    for origin in os.getenv(
+        "CORS_ORIGINS",
+        "https://syncra-qui2.onrender.com,https://localhost,capacitor://localhost,http://localhost:8000,http://127.0.0.1:8000"
+    ).split(",")
+    if origin.strip()
+]
+
+api_app.add_middleware(
+    CORSMiddleware,
+    allow_origins=_cors_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next):
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "SAMEORIGIN"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'self'; "
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com https://checkout.razorpay.com https://www.gstatic.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; "
+        "style-src 'self' 'unsafe-inline' https://accounts.google.com https://fonts.googleapis.com https://www.gstatic.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; "
+        "img-src 'self' data: blob: https:; "
+        "media-src 'self' data: blob: https:; "
+        "font-src 'self' data: https://fonts.gstatic.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; "
+        "connect-src 'self' https: wss:; "
+        "frame-src 'self' https://accounts.google.com https://api.razorpay.com https://checkout.razorpay.com https://www.youtube.com https://www.youtube-nocookie.com; "
+        "object-src 'none';"
+    )
+    return response
+
+# Register routers on the API app (before mount)
+api_app.include_router(educators.router)
+
+# Mount API under /api FIRST, then static files
+app.mount("/api", api_app)
+
+# Serve static files + SPA fallback through a single catch-all route
+# (StaticFiles mount at "/" blocks the SPA fallback, so we handle it manually)
+import pathlib
+
+STATIC_DIR = pathlib.Path(os.path.join(os.path.dirname(__file__), "static"))
+
+NO_CACHE_HEADERS = {
+    "Cache-Control": "no-cache, no-store, must-revalidate",
+    "Pragma": "no-cache",
+    "Expires": "0"
+}
+
+def get_static_file(path: str):
+    """Serve a static file if it exists, otherwise return None."""
+    clean_path = path
+    if clean_path.startswith("static/"):
+        clean_path = clean_path[7:]
+    file_path = (STATIC_DIR / clean_path).resolve()
+    if STATIC_DIR.resolve() not in file_path.parents and file_path != STATIC_DIR.resolve():
+        return None
+    if file_path.is_file():
+        # Prevent browser and SW caching for scripts, styles, and HTML
+        if file_path.suffix in [".html", ".js", ".css"]:
+            return FileResponse(file_path, headers=NO_CACHE_HEADERS)
+        
+        # Proper MIME type mapping for 4K video, audio, and media streaming
+        media_mimes = {
+            ".mp4": "video/mp4",
+            ".webm": "video/webm",
+            ".mov": "video/quicktime",
+            ".mkv": "video/x-matroska",
+            ".m4v": "video/mp4",
+            ".avi": "video/x-msvideo",
+            ".3gp": "video/3gpp",
+            ".mp3": "audio/mpeg",
+            ".wav": "audio/wav",
+            ".m4a": "audio/mp4",
+            ".webp": "image/webp",
+            ".png": "image/png",
+            ".jpg": "image/jpeg",
+            ".jpeg": "image/jpeg",
+            ".gif": "image/gif",
+            ".svg": "image/svg+xml"
+        }
+        media_type = media_mimes.get(file_path.suffix.lower())
+        return FileResponse(file_path, media_type=media_type)
+    return None
+
+@app.get("/")
+async def root():
+    return FileResponse(STATIC_DIR / "index.html", headers=NO_CACHE_HEADERS)
+
+@app.get("/marketplace")
+@app.get("/app")
+async def marketplace_page():
+    return FileResponse(STATIC_DIR / "marketplace.html", headers=NO_CACHE_HEADERS)
+
+@app.get("/login")
+async def login_page():
+    return FileResponse(STATIC_DIR / "marketplace.html", headers=NO_CACHE_HEADERS)
+
+@app.get("/register")
+async def register_page():
+    return FileResponse(STATIC_DIR / "marketplace.html", headers=NO_CACHE_HEADERS)
+
+@app.get("/forgot-password")
+async def forgot_password_page():
+    return FileResponse(STATIC_DIR / "marketplace.html", headers=NO_CACHE_HEADERS)
+
+@app.get("/reset-password")
+async def reset_password_page():
+    return FileResponse(STATIC_DIR / "marketplace.html", headers=NO_CACHE_HEADERS)
+
+@app.get("/verify-email")
+async def verify_email_page():
+    return FileResponse(STATIC_DIR / "marketplace.html", headers=NO_CACHE_HEADERS)
+
+@app.get("/logout")
+async def logout_page():
+    return FileResponse(STATIC_DIR / "marketplace.html", headers=NO_CACHE_HEADERS)
+
+@app.get("/portfolio")
+@app.get("/showcase")
+@app.get("/work")
+async def portfolio_page():
+    return FileResponse(STATIC_DIR / "portfolio.html", headers=NO_CACHE_HEADERS)
+
+@app.get("/outreach")
+async def outreach_page():
+    return FileResponse(STATIC_DIR / "whatsapp_outreach.html", headers=NO_CACHE_HEADERS)
+
+@app.get("/posters")
+async def posters_page():
+    return FileResponse(STATIC_DIR / "grove_posters_suite.html", headers=NO_CACHE_HEADERS)
+
+@app.get("/agency-team/portal")
+@app.get("/team-portal")
+async def agency_team_portal_page():
+    return FileResponse(STATIC_DIR / "agency_team_portal.html", headers=NO_CACHE_HEADERS)
+
+@app.get("/checkout")
+@app.get("/pay")
+async def checkout_page():
+    return FileResponse(STATIC_DIR / "checkout.html", headers=NO_CACHE_HEADERS)
+
+
+@app.get("/health")
+def root_health_check(db = Depends(get_db)):
+    try:
+        db.execute(text("SELECT 1"))
+        db_status = "connected"
+    except Exception as e:
+        db_status = f"error: {str(e)}"
+    return {
+        "status": "healthy" if db_status == "connected" else "degraded",
+        "database": db_status,
+        "timestamp": datetime.utcnow().isoformat(),
+        "service": "EditorMarketplace API"
+    }
+
+@app.get("/{full_path:path}")
+async def spa_fallback(full_path: str):
+    # Skip empty path (root) — handled by dedicated route
+    if full_path == "":
+        return FileResponse(STATIC_DIR / "index.html", headers=NO_CACHE_HEADERS)
+
+    # API routes are handled by the mounted api_app
+    if full_path.startswith("api/"):
+        raise HTTPException(status_code=404, detail="Not found")
+    
+    # Try to serve as a static file (CSS, JS, images, etc.)
+    static_resp = get_static_file(full_path)
+    if static_resp:
+        return static_resp
+    
+    # Otherwise serve index.html (SPA routing)
+    index_html = STATIC_DIR / "index.html"
+    if index_html.is_file():
+        return FileResponse(index_html, headers=NO_CACHE_HEADERS)
+    
+    raise HTTPException(status_code=404, detail="Not found")
+
+# ============== RATE LIMITING (brute-force protection) ==============
+
+_RATE_BUCKETS = {}
+
+def _client_ip(request) -> str:
+    try:
+        xf = request.headers.get("x-forwarded-for") if request else None
+        if xf:
+            return xf.split(",")[0].strip()
+        if request is not None and getattr(request, "client", None):
+            return request.client.host or "unknown"
+    except Exception:
+        pass
+    return "unknown"
+
+def check_rate_limit(key: str, limit: int, window_seconds: int):
+    """Sliding-window rate limiter (in-memory). Raises 429 when exceeded."""
+    import time
+    now = time.time()
+    hits = [h for h in _RATE_BUCKETS.get(key, []) if now - h < window_seconds]
+    if len(hits) >= limit:
+        raise HTTPException(
+            status_code=429,
+            detail="Too many attempts. Please wait a few minutes and try again."
+        )
+    hits.append(now)
+    _RATE_BUCKETS[key] = hits
+
+
+def _issue_email_verification(db, user, hours: int = 24) -> str:
+    """Invalidate old tokens and issue a fresh email-verification token (raw)."""
+    import secrets
+    from datetime import datetime, timedelta
+    db.query(EmailVerificationToken).filter(
+        EmailVerificationToken.user_id == user.id,
+        EmailVerificationToken.used == False
+    ).update({"used": True}, synchronize_session=False)
+    raw = secrets.token_urlsafe(32)
+    db.add(EmailVerificationToken(
+        user_id=user.id,
+        token_hash=hash_token(raw),
+        expires_at=datetime.utcnow() + timedelta(hours=hours)
+    ))
+    db.commit()
+    return raw
+
+
+# ============== AUTH ROUTES ==============
+
+@api_app.post("/auth/register")
+def register(user_data: UserCreate, db = Depends(get_db)):
+    import re
+
+    # --- Terms of Service consent (required, like Fiverr's join checkbox) ---
+    if not user_data.tos_accepted:
+        raise HTTPException(status_code=400, detail="You must accept the Terms of Service and Privacy Policy to create an account.")
+
+    # --- Validate username ---
+    raw_username = (user_data.username or "").strip().lower()
+    if not raw_username:
+        raise HTTPException(status_code=400, detail="Username is required")
+    if not re.match(r'^[a-zA-Z0-9_]{3,30}$', raw_username):
+        raise HTTPException(status_code=400, detail="Username must be 3–30 characters using only letters, numbers, and underscores")
+    # --- Username must not match the name ---
+    if raw_username == user_data.name.strip().lower().replace(' ', '_'):
+        raise HTTPException(status_code=400, detail="Username cannot be the same as your name. Choose something different.")
+
+    # --- Check username uniqueness (usernames must be globally unique, names can match) ---
+    username_taken = db.query(User).filter(User.username == raw_username).first()
+    if username_taken:
+        raise HTTPException(status_code=400, detail=f"Username '@{raw_username}' is already taken. Please choose another.")
+
+    # --- Check phone/email uniqueness ---
+    auth_conds = []
+    if user_data.phone and user_data.phone.strip():
+        auth_conds.append(User.phone == user_data.phone.strip())
+    if user_data.email and user_data.email.strip():
+        auth_conds.append(User.email == user_data.email.strip())
+    if auth_conds:
+        from sqlalchemy import or_
+        existing = db.query(User).filter(or_(*auth_conds)).first()
+        if existing:
+            raise HTTPException(status_code=400, detail="Phone or email already registered")
+
+    hashed_pw = hash_password(user_data.password)
+    # Convert Pydantic enum to SQLAlchemy enum (promote designated admin emails)
+    user_type_enum = UserType.ADMIN if (user_data.email and user_data.email.strip().lower() in ADMIN_EMAILS) else UserType[get_user_type_str(user_data.user_type)]
+    user = User(
+        name=user_data.name,
+        username=raw_username,
+        phone=user_data.phone,
+        email=user_data.email,
+        password_hash=hashed_pw,
+        user_type=user_type_enum,
+        # Email+password signups must verify their email before login.
+        # (Google/OTP signups are pre-verified by their provider.)
+        is_verified=False,
+        tos_accepted=True,
+        tos_accepted_at=datetime.utcnow()
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+
+    # Create profile for all users
+    profile = Profile(user_id=user.id)
+    db.add(profile)
+
+    db.commit()
+
+    # Issue the email-verification token (demo: returned so the UI can show it;
+    # in production this is emailed instead). No login JWT until verified.
+    verification_token = _issue_email_verification(db, user)
+    return {
+        "must_verify": True,
+        "email": user.email,
+        "verification_token": verification_token,
+        "message": "Account created. Please verify your email to sign in."
+    }
+
+class PasswordResetRequest(BaseModel):
+    email_or_phone: str
+    new_password: str
+
+@api_app.post("/auth/login", response_model=Token)
+def login(credentials: UserLogin, request: Request, db = Depends(get_db)):
+    import re
+    from sqlalchemy import or_
+
+    raw_input = credentials.phone.strip()
+    check_rate_limit(f"login:{_client_ip(request)}:{raw_input.lower()}", limit=10, window_seconds=300)
+
+    digits = re.sub(r'\D', '', raw_input)
+    if digits.startswith('91') and len(digits) == 12:
+        digits = digits[2:]
+
+    user = db.query(User).filter(
+        or_(
+            User.phone == raw_input,
+            User.phone == digits,
+            User.email == raw_input.lower()
+        )
+    ).first()
+
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid phone/email or password.")
+
+    # Verify password or auto-set for social accounts
+    if not verify_password(credentials.password, user.password_hash):
+        raise HTTPException(
+            status_code=401,
+            detail="Incorrect password."
+        )
+
+    if not user.is_active:
+        raise HTTPException(status_code=403, detail="Account inactive")
+
+    if getattr(user, 'is_blocked', False):
+        reason = getattr(user, 'block_reason', None) or "Your account has been suspended."
+        raise HTTPException(status_code=403, detail=f"Account Suspended: {reason}")
+
+    if not user.is_verified:
+        raise HTTPException(
+            status_code=403,
+            detail="EMAIL_NOT_VERIFIED: Please verify your email before signing in. Use the verification code from registration or request a new one."
+        )
+
+    # Auto-promote designated admin email
+    if user.email and user.email.strip().lower() in ADMIN_EMAILS and user.user_type != UserType.ADMIN:
+        user.user_type = UserType.ADMIN
+
+    user.last_login_at = datetime.utcnow()
+    user.is_active = True
+    db.commit()
+
+    if not db.query(Profile).filter(Profile.user_id == user.id).first():
+        profile = Profile(user_id=user.id)
+        db.add(profile)
+        db.commit()
+
+    access_token = create_access_token(data={"sub": str(user.id), "type": get_user_type_str(user.user_type)})
+    return {"access_token": access_token, "token_type": "bearer"}
+
+@api_app.post("/auth/reset-password")
+def reset_password_legacy():
+    """Deprecated insecure reset endpoint. Password resets require a verified token."""
+    raise HTTPException(
+        status_code=410,
+        detail="This password reset endpoint is deprecated. Request a reset link and use the verification token."
+    )
+
+@api_app.get("/public/config")
+def get_public_config(db = Depends(get_db)):
+    settings = db.query(PlatformSettings).first()
+    default_id = "934016522168-68h4l11qrs3g628191ala3bgugt1cs7l.apps.googleusercontent.com"
+    google_client_id = os.environ.get("GOOGLE_CLIENT_ID") or (settings.google_client_id if settings and settings.google_client_id else "") or default_id
+    razorpay_key_id = (settings.razorpay_key_id if settings and settings.razorpay_key_id else "") or os.environ.get("RAZORPAY_KEY_ID", "")
+    
+    launch_promo_active = True
+    if settings and hasattr(settings, 'launch_promo_active') and settings.launch_promo_active is not None:
+        launch_promo_active = bool(settings.launch_promo_active)
+
+    return {
+        "google_client_id": google_client_id,
+        "razorpay_key_id": razorpay_key_id,
+        "launch_promo_active": launch_promo_active,
+        "launch_promo_title": "🎉 Play Store Launch Special: 0% Platform Commission for 1 Month!",
+        "launch_promo_subtitle": "Keep 100% of your earnings. Zero platform fees on all bookings for 30 days.",
+        "commission_rate": 0.0 if launch_promo_active else (settings.commission_rate if settings else 0.20),
+        "commission_percent": 0 if launch_promo_active else int(round((settings.commission_rate if settings else 0.20) * 100))
+    }
+
+
+@api_app.post("/auth/social-login", response_model=Token)
+@api_app.post("/auth/google", response_model=Token)
+@api_app.post("/auth/apple", response_model=Token)
+def social_login(req: SocialLoginRequest, request: Request, db = Depends(get_db)):
+    import random
+    import urllib.request
+    import json
+    import traceback
+
+    check_rate_limit(f"social:{_client_ip(request)}", limit=20, window_seconds=300)
+
+    # SECURITY: never trust client-supplied email/name alone. A Google ID token
+    # is mandatory and must verify against Google (fail closed). Apple has no
+    # server-side verifier configured, so it is rejected until one is added.
+    if (req.provider or "").strip().lower() != "google":
+        raise HTTPException(
+            status_code=400,
+            detail="Apple sign-in is not available yet. Please use Google or email/phone login."
+        )
+    if not req.token:
+        raise HTTPException(
+            status_code=401,
+            detail="Google sign-in requires a valid ID token. Please try again or use email/phone login."
+        )
+
+    verified_email = ""
+    verified_name = (req.name or "").strip()
+    token_audience = ""
+
+    # Verify the Google ID token against Google's public tokeninfo endpoint
+    # and extract profile picture from the JWT payload
+    google_picture = None
+    try:
+        req_url = f"https://oauth2.googleapis.com/tokeninfo?id_token={req.token}"
+        with urllib.request.urlopen(req_url, timeout=4) as resp:
+            if resp.status == 200:
+                token_info = json.loads(resp.read().decode())
+                if "email" in token_info:
+                    verified_email = token_info["email"].strip().lower()
+                if "name" in token_info and not verified_name:
+                    verified_name = token_info["name"].strip()
+                token_audience = (token_info.get("aud") or "").strip()
+                # tokeninfo endpoint doesn't return picture — decode JWT directly
+    except Exception as e:
+        print(f"Google tokeninfo verification note: {e}")
+
+        # Decode JWT payload to get picture URL
+        try:
+            import base64
+            # JWT format: header.payload.signature  — decode the payload (2nd segment)
+            jwt_parts = req.token.split(".")
+            if len(jwt_parts) == 3:
+                payload_b64 = jwt_parts[1]
+                # Add padding if needed
+                payload_b64 += "=" * (4 - len(payload_b64) % 4) if len(payload_b64) % 4 else ""
+                payload_json = base64.urlsafe_b64decode(payload_b64).decode("utf-8")
+                payload = json.loads(payload_json)
+                if "picture" in payload and payload["picture"]:
+                    google_picture = payload["picture"]
+                    print(f"Google profile picture: {google_picture}")
+        except Exception as e:
+            print(f"Google JWT picture extraction note: {e}")
+
+    if not verified_email or "@" not in verified_email:
+        raise HTTPException(
+            status_code=401,
+            detail="Google token verification failed. Please try again or use email/phone login."
+        )
+
+    # The token must have been issued for THIS app (audience = our client ID),
+    # otherwise a token from another app could be replayed here.
+    try:
+        settings = db.query(PlatformSettings).first()
+        expected_aud = (
+            os.environ.get("GOOGLE_CLIENT_ID")
+            or (settings.google_client_id if settings and settings.google_client_id else "")
+        ).strip()
+        if (
+            token_audience
+            and expected_aud
+            and ".apps.googleusercontent.com" in expected_aud
+            and token_audience != expected_aud
+        ):
+            raise HTTPException(
+                status_code=401,
+                detail="Google token was not issued for this app. Please try again."
+            )
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Google audience check note: {e}")
+
+    try:
+        user = db.query(User).filter(User.email == verified_email).first()
+        if not user:
+            user_type_enum = UserType.ADMIN if verified_email in ADMIN_EMAILS else (UserType[get_user_type_str(req.user_type)] if req.user_type else UserType.BUYER)
+            display_name = verified_name if verified_name else verified_email.split("@")[0].capitalize()
+            unique_suffix = random.randint(10000000, 99999999)
+            temp_phone = f"+9199{unique_suffix}"
+            uname = f"user_{verified_email.split('@')[0]}_{random.randint(1000, 9999)}"
+
+            user = User(
+                name=display_name,
+                username=uname,
+                phone=temp_phone,
+                email=verified_email,
+                password_hash=hash_password(f"social_{req.provider}_{unique_suffix}"),
+                user_type=user_type_enum,
+                is_verified=True,
+                is_active=True,
+                profile_image=google_picture,
+                last_login_at=datetime.utcnow()
+            )
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+
+            profile = Profile(user_id=user.id)
+            db.add(profile)
+            db.commit()
+        elif not user.is_active:
+            raise HTTPException(status_code=401, detail="Account inactive")
+        elif verified_email in ADMIN_EMAILS and user.user_type != UserType.ADMIN:
+            user.user_type = UserType.ADMIN
+            db.commit()
+
+        user.last_login_at = datetime.utcnow()
+        if google_picture and user.profile_image != google_picture:
+            user.profile_image = google_picture
+        db.commit()
+
+        if not db.query(Profile).filter(Profile.user_id == user.id).first():
+            profile = Profile(user_id=user.id)
+            db.add(profile)
+            db.commit()
+
+        access_token = create_access_token(data={"sub": str(user.id), "type": get_user_type_str(user.user_type)})
+        return {"access_token": access_token, "token_type": "bearer"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"social_login error: {e}")
+        import traceback as _t
+        print(_t.format_exc())
+        if "UNIQUE constraint" in str(e) or "unique constraint" in str(e).lower() or "duplicate" in str(e).lower():
+            raise HTTPException(status_code=400, detail="Account with this email already exists. Please use a different email or log in.")
+        raise HTTPException(status_code=500, detail=f"Social login failed: {str(e)[:200]}")
+
+
+# ============== OTP PHONE LOGIN ==============
+
+@api_app.post("/auth/otp-request", response_model=OtpResponse)
+def request_otp(req: OtpRequest, request: Request, db = Depends(get_db)):
+    """Generate and store a 6-digit OTP for the given phone number."""
+    import random
+    raw_phone = req.phone.strip()
+    digits = re.sub(r'\D', '', raw_phone)
+    if not digits or len(digits) < 10:
+        raise HTTPException(status_code=400, detail="Valid 10-digit phone number required")
+    clean_phone = digits[-10:]
+
+    check_rate_limit(f"otp-req:{clean_phone}", limit=30, window_seconds=300)
+
+    user = db.query(User).filter(
+        or_(
+            User.phone == clean_phone,
+            User.phone == raw_phone,
+            User.phone.like(f"%{clean_phone}")
+        )
+    ).first()
+
+    if not user:
+        user_type_enum = UserType.BUYER
+        user = User(
+            name=f"User {clean_phone[-4:]}",
+            phone=clean_phone,
+            email=f"{clean_phone}@phonelogin.groovehub.local",
+            password_hash=hash_password(f"otp_{clean_phone}_{random.randint(10000, 99999)}"),
+            user_type=user_type_enum,
+            is_verified=True,
+            is_active=True
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+
+        profile = Profile(user_id=user.id)
+        db.add(profile)
+        db.commit()
+
+    db.query(OtpVerification).filter(
+        and_(
+            or_(
+                OtpVerification.phone == clean_phone,
+                OtpVerification.phone == raw_phone,
+                OtpVerification.phone.like(f"%{clean_phone}")
+            ),
+            OtpVerification.used == False
+        )
+    ).update({"used": True}, synchronize_session=False)
+
+    otp_code = str(random.randint(100000, 999999))
+    expires_at = datetime.utcnow() + timedelta(minutes=15)
+
+    otp_record = OtpVerification(
+        phone=clean_phone,
+        otp_code=otp_code,
+        expires_at=expires_at,
+        used=False
+    )
+    db.add(otp_record)
+    db.commit()
+
+    return {
+        "access_token": f"otp_pending_{user.id}_{otp_code}",
+        "token_type": "bearer",
+        "otp": otp_code,
+        "phone": raw_phone,
+        "message": f"OTP sent to {raw_phone}"
+    }
+
+
+@api_app.post("/auth/otp-verify", response_model=Token)
+def verify_otp(req: OtpVerifyRequest, request: Request, db = Depends(get_db)):
+    """Verify OTP and return access token."""
+    raw_phone = req.phone.strip()
+    digits = re.sub(r'\D', '', raw_phone)
+    if not digits or len(digits) < 10:
+        raise HTTPException(status_code=400, detail="Valid 10-digit phone number required")
+    clean_phone = digits[-10:]
+
+    otp_record = db.query(OtpVerification).filter(
+        and_(
+            or_(
+                OtpVerification.phone == clean_phone,
+                OtpVerification.phone == raw_phone,
+                OtpVerification.phone.like(f"%{clean_phone}")
+            ),
+            OtpVerification.used == False,
+            OtpVerification.expires_at > datetime.utcnow()
+        )
+    ).order_by(OtpVerification.created_at.desc()).first()
+
+    if not otp_record:
+        raise HTTPException(status_code=400, detail="OTP expired or not found. Please click 'Send OTP Code' to request a new code.")
+
+    if otp_record.otp_code != req.otp.strip():
+        raise HTTPException(status_code=401, detail="Incorrect 6-digit OTP code. Please check the code and try again.")
+
+    otp_record.used = True
+    db.commit()
+
+    user = db.query(User).filter(
+        or_(
+            User.phone == clean_phone,
+            User.phone == raw_phone,
+            User.phone.like(f"%{clean_phone}")
+        )
+    ).first()
+
+    if not user:
+        user_type_enum = UserType.BUYER
+        uname = f"user_{clean_phone[-4:]}_{random.randint(1000, 9999)}"
+        user = User(
+            name=f"User {clean_phone[-4:]}",
+            username=uname,
+            phone=clean_phone,
+            email=f"{clean_phone}@phonelogin.groovehub.local",
+            password_hash=hash_password(f"otp_{clean_phone}_{random.randint(10000, 99999)}"),
+            user_type=user_type_enum,
+            is_verified=True,
+            is_active=True,
+            last_login_at=datetime.utcnow()
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+
+        profile = Profile(user_id=user.id)
+        db.add(profile)
+        db.commit()
+    else:
+        user.last_login_at = datetime.utcnow()
+        user.is_verified = True
+        user.is_active = True
+        if not user.username:
+            user.username = f"user_{clean_phone[-4:]}_{random.randint(1000, 9999)}"
+        db.commit()
+
+        if not db.query(Profile).filter(Profile.user_id == user.id).first():
+            profile = Profile(user_id=user.id)
+            db.add(profile)
+            db.commit()
+
+    access_token = create_access_token(data={"sub": str(user.id), "type": get_user_type_str(user.user_type)})
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "otp": req.otp,
+        "phone": raw_phone,
+        "message": "Login successful"
+    }
+
+
+@api_app.get("/auth/me", response_model=UserResponse)
+def get_me(current_user = Depends(get_current_user), db = Depends(get_db)):
+    if not db.query(Profile).filter(Profile.user_id == current_user.id).first():
+        profile = Profile(user_id=current_user.id)
+        db.add(profile)
+        db.commit()
+    current_user.last_login_at = datetime.utcnow()
+    db.commit()
+    return current_user
+
+@api_app.patch("/auth/me", response_model=UserResponse)
+def update_me(
+    user_data: UserUpdate,
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    import re
+    if user_data.name is not None and user_data.name.strip():
+        current_user.name = user_data.name.strip()
+    if user_data.username is not None and user_data.username.strip():
+        clean_un = re.sub(r'[^a-zA-Z0-9_]', '', user_data.username.strip().lower())
+        if len(clean_un) < 3 or len(clean_un) > 30:
+            raise HTTPException(status_code=400, detail="Username must be between 3 and 30 characters (letters, numbers, underscore)")
+        existing_un = db.query(User).filter(User.username == clean_un, User.id != current_user.id).first()
+        if existing_un:
+            raise HTTPException(status_code=400, detail="Username is already taken by another creator")
+        current_user.username = clean_un
+    if user_data.email is not None and user_data.email.strip():
+        new_email = user_data.email.strip().lower()
+        existing = db.query(User).filter(User.email == new_email, User.id != current_user.id).first()
+        if existing:
+            raise HTTPException(status_code=400, detail="Email already in use")
+        if new_email != (current_user.email or "").lower():
+            # New address must be re-verified before next sign-in
+            current_user.email = new_email
+            current_user.is_verified = False
+            _issue_email_verification(db, current_user)
+    if user_data.phone is not None and user_data.phone.strip():
+        clean_phone = re.sub(r'\D', '', user_data.phone.strip())
+        if clean_phone.startswith('91') and len(clean_phone) == 12:
+            clean_phone = clean_phone[2:]
+        existing = db.query(User).filter(User.phone == clean_phone, User.id != current_user.id).first()
+        if existing:
+            raise HTTPException(status_code=400, detail="Phone already in use")
+        current_user.phone = clean_phone
+    if user_data.new_password:
+        if not user_data.current_password or not verify_password(user_data.current_password, current_user.password_hash):
+            raise HTTPException(status_code=400, detail="Current password incorrect")
+        current_user.password_hash = hash_password(user_data.new_password)
+    if user_data.profile_image is not None:
+        current_user.profile_image = user_data.profile_image.strip() if user_data.profile_image and user_data.profile_image.strip() else None
+
+    db.commit()
+    db.refresh(current_user)
+    return current_user
+
+@api_app.post("/user/switch-role")
+def switch_user_role(
+    req: RoleSwitchRequest,
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    """Switch the active account mode without requiring a provider/profile row.
+
+    Role switching is intentionally a small, atomic operation. A missing/invalid
+    Profile must never make Buyer Mode fail, and a database error must never be
+    reported to the client as a successful switch.
+    """
+    target_role = (req.role or "").strip().upper()
+    if target_role not in {"BUYER", "PROVIDER"}:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid role. Choose BUYER or PROVIDER."
+        )
+
+    try:
+        current_user.user_type = UserType[target_role]
+        db.commit()
+        db.refresh(current_user)
+    except Exception as e:
+        db.rollback()
+        print(f"[SWITCH_ROLE ERROR] user={getattr(current_user, 'id', None)} target={target_role}: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Unable to switch mode right now. Please try again."
+        )
+
+    user_role_str = get_user_type_str(current_user.user_type)
+    if user_role_str == "PROVIDER":
+        profile = db.query(Profile).filter(Profile.user_id == current_user.id).first()
+        if not profile:
+            profile = Profile(user_id=current_user.id, niche="editors_animators", profession_selected=True)
+            db.add(profile)
+            try:
+                db.commit()
+            except Exception as pe:
+                db.rollback()
+                print(f"[SWITCH_ROLE PROFILE WARNING]: {pe}")
+    new_token = create_access_token(
+        data={"sub": str(current_user.id), "type": user_role_str}
+    )
+
+    return {
+        "success": True,
+        "role": user_role_str,
+        "token": new_token,
+        "user": {
+            "id": current_user.id,
+            "name": current_user.name,
+            "username": getattr(current_user, 'username', None) or f"user_{current_user.id}",
+            "email": current_user.email,
+            "user_type": user_role_str,
+            "phone": current_user.phone,
+            "is_verified": bool(current_user.is_verified),
+            "is_active": bool(current_user.is_active),
+            "profile_image": getattr(current_user, 'profile_image', None),
+            "last_login_at": current_user.last_login_at.isoformat() if current_user.last_login_at else None,
+            "created_at": current_user.created_at.isoformat() if current_user.created_at else None
+        }
+    }
+
+@api_app.post("/auth/verify-phone", response_model=UserResponse)
+def verify_phone(current_user = Depends(get_current_user), db = Depends(get_db)):
+    user = db.query(User).filter(User.id == current_user.id).first()
+    user.is_verified = True
+    db.commit()
+    db.refresh(user)
+    return user
+
+# ============== AUTH ADDITIONAL ENDPOINTS ==============
+
+@api_app.post("/auth/logout")
+def logout(current_user = Depends(get_current_user)):
+    """Logout - clears server-side session tracker (JWT is stateless, client must discard token)"""
+    return {"message": "Logged out successfully"}
+
+@api_app.post("/auth/forgot-password", response_model=ForgotPasswordResponse)
+def forgot_password(req: ForgotPasswordRequest, request: Request, db = Depends(get_db)):
+    """Generate a password reset token. In production, send email. Here we return the token for demo."""
+    import re
+    check_rate_limit(f"forgot:{_client_ip(request)}:{req.email_or_phone.strip().lower()}", limit=5, window_seconds=600)
+    from sqlalchemy import or_
+    from datetime import datetime, timedelta
+    import secrets
+
+    raw_input = req.email_or_phone.strip()
+    digits = re.sub(r'\D', '', raw_input)
+    if digits.startswith('91') and len(digits) == 12:
+        digits = digits[2:]
+
+    user = db.query(User).filter(
+        or_(
+            User.phone == raw_input,
+            User.phone == digits,
+            User.email == raw_input.lower()
+        )
+    ).first()
+
+    # Always return same message (don't reveal if account exists)
+    if not user:
+        return {"message": "If an account with these details exists, a reset link has been sent."}
+
+    # Invalidate any existing unused tokens
+    db.query(PasswordResetToken).filter(
+        PasswordResetToken.user_id == user.id,
+        PasswordResetToken.used == False
+    ).update({"used": True}, synchronize_session=False)
+
+    # Generate new token
+    raw_token = secrets.token_urlsafe(32)
+    token_hash = hash_token(raw_token)
+    expires_at = datetime.utcnow() + timedelta(hours=1)
+
+    reset_token = PasswordResetToken(
+        user_id=user.id,
+        token_hash=token_hash,
+        expires_at=expires_at
+    )
+    db.add(reset_token)
+    db.commit()
+
+    # Send reset link via secure delivery provider (in production)
+    return {"message": "If an account with these details exists, a reset link has been sent."}
+
+@api_app.post("/auth/reset-password/verify", response_model=ForgotPasswordResponse)
+def verify_reset_token(req: ResetPasswordWithTokenRequest, db = Depends(get_db)):
+    """Verify a password reset token is valid"""
+    from datetime import datetime
+
+    token_hash = hash_token(req.token.strip())
+
+    reset_token = db.query(PasswordResetToken).filter(
+        PasswordResetToken.token_hash == token_hash,
+        PasswordResetToken.used == False,
+        PasswordResetToken.expires_at > datetime.utcnow()
+    ).first()
+
+    if not reset_token:
+        raise HTTPException(status_code=400, detail="Invalid or expired reset token")
+
+    return {"message": "Token is valid"}
+
+@api_app.post("/auth/reset-password/confirm", response_model=Token)
+def confirm_reset_password(req: ResetPasswordWithTokenRequest, db = Depends(get_db)):
+    """Confirm password reset with valid token"""
+    from datetime import datetime
+
+    if len(req.new_password) < 6:
+        raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
+
+    token_hash = hash_token(req.token.strip())
+
+    reset_token = db.query(PasswordResetToken).filter(
+        PasswordResetToken.token_hash == token_hash,
+        PasswordResetToken.used == False,
+        PasswordResetToken.expires_at > datetime.utcnow()
+    ).first()
+
+    if not reset_token:
+        raise HTTPException(status_code=400, detail="Invalid or expired reset token")
+
+    # Update password
+    user = reset_token.user
+    user.password_hash = hash_password(req.new_password)
+    reset_token.used = True
+    db.commit()
+
+    # Generate new access token
+    access_token = create_access_token(data={"sub": str(user.id), "type": get_user_type_str(user.user_type)})
+    return {"access_token": access_token, "token_type": "bearer"}
+
+@api_app.post("/auth/verify-email", response_model=Token)
+def verify_email(req: VerifyEmailRequest, db = Depends(get_db)):
+    """Verify email with verification token. Returns a login token on success."""
+    from datetime import datetime
+
+    token_hash = hash_token(req.token.strip())
+
+    email_token = db.query(EmailVerificationToken).filter(
+        EmailVerificationToken.token_hash == token_hash,
+        EmailVerificationToken.used == False,
+        EmailVerificationToken.expires_at > datetime.utcnow()
+    ).first()
+
+    if not email_token:
+        raise HTTPException(status_code=400, detail="Invalid or expired verification token")
+
+    # Mark user as verified
+    user = email_token.user
+    user.is_verified = True
+    email_token.used = True
+    db.commit()
+
+    access_token = create_access_token(data={"sub": str(user.id), "type": get_user_type_str(user.user_type)})
+    return {"access_token": access_token, "token_type": "bearer"}
+
+
+@api_app.post("/auth/resend-verification", response_model=ForgotPasswordResponse)
+def resend_verification(req: ForgotPasswordRequest, request: Request, db = Depends(get_db)):
+    """Issue a fresh email-verification token. Demo: returned in response (production: emailed)."""
+    import re
+    from sqlalchemy import or_
+
+    raw_input = req.email_or_phone.strip()
+    check_rate_limit(f"verify-resend:{_client_ip(request)}:{raw_input.lower()}", limit=5, window_seconds=600)
+
+    digits = re.sub(r'\D', '', raw_input)
+    if digits.startswith('91') and len(digits) == 12:
+        digits = digits[2:]
+
+    user = db.query(User).filter(
+        or_(
+            User.phone == raw_input,
+            User.phone == digits,
+            User.email == raw_input.lower()
+        )
+    ).first()
+
+    # Don't reveal whether the account exists
+    if not user:
+        return {"message": "If an account with these details exists, a new verification code has been sent."}
+
+    if user.is_verified:
+        return {"message": "This account is already verified. You can sign in."}
+
+    raw_token = _issue_email_verification(db, user)
+    return {"message": f"New verification code generated. Use this code to verify: {raw_token}", "reset_token": raw_token}
+
+# ============== PROFILE ROUTES ==============
+
+@api_app.get("/profile", response_model=ProfileResponse)
+def get_profile(current_user = Depends(get_current_user), db = Depends(get_db)):
+    profile = db.query(Profile).filter(Profile.user_id == current_user.id).first()
+    if not profile:
+        profile = Profile(user_id=current_user.id)
+        db.add(profile)
+        db.commit()
+        db.refresh(profile)
+    return profile
+
+@api_app.post("/profile", response_model=ProfileResponse)
+def create_profile(profile_data: ProfileCreate, current_user = Depends(get_current_user), db = Depends(get_db)):
+    profile = db.query(Profile).filter(Profile.user_id == current_user.id).first()
+    if profile:
+        # Update existing profile
+        update_data = profile_data.model_dump()
+        for key, value in update_data.items():
+            setattr(profile, key, value)
+    else:
+        # Create new profile
+        profile = Profile(
+            user_id=current_user.id,
+            service_area=profile_data.service_area,
+            skills=profile_data.skills,
+            availability=profile_data.availability,
+            response_time=profile_data.response_time
+        )
+        db.add(profile)
+    db.commit()
+    db.refresh(profile)
+    return profile
+
+@api_app.put("/profile", response_model=ProfileResponse)
+@api_app.patch("/profile", response_model=ProfileResponse)
+def update_profile(profile_data: ProfileUpdate, current_user = Depends(get_current_user), db = Depends(get_db)):
+    profile = db.query(Profile).filter(Profile.user_id == current_user.id).first()
+    if not profile:
+        raise HTTPException(status_code=404, detail="Profile not found")
+
+    update_data = profile_data.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(profile, key, value)
+
+    db.commit()
+    db.refresh(profile)
+    return profile
+
+# --- Buyer Bio Update (dedicated endpoint for bio + looking_for) ---
+@api_app.put("/profile/bio", response_model=ProfileResponse)
+def update_profile_bio(bio_data: dict, current_user = Depends(get_current_user), db = Depends(get_db)):
+    profile = db.query(Profile).filter(Profile.user_id == current_user.id).first()
+    if not profile:
+        raise HTTPException(status_code=404, detail="Profile not found")
+    if "bio" in bio_data:
+        profile.bio = bio_data["bio"] or ""
+    if "looking_for" in bio_data:
+        profile.looking_for = bio_data["looking_for"] or ""
+    db.commit()
+    db.refresh(profile)
+    return profile
+
+# ============== PACKAGE TIER RULES ==============
+PACKAGE_TIER_RULES = {
+    "beginner": {"free_samples": 3, "label": "Beginner"},
+    "intermediate": {"free_samples": 2, "label": "Intermediate"},
+    "pro": {"free_samples": 1, "label": "Pro"},
+}
+
+
+def normalize_package_level(level: Optional[str]) -> str:
+    value = (level or "beginner").strip().lower()
+    if value not in PACKAGE_TIER_RULES:
+        raise HTTPException(status_code=400, detail="Package level must be beginner, intermediate, or pro")
+    return value
+
+
+# ============== PACKAGE ROUTES ==============\
+
+@api_app.get("/packages", response_model=List[PackageResponse])
+def get_packages(
+    niche: Optional[str] = None,
+    provider_id: Optional[int] = None,
+    status: Optional[str] = None,
+    current_user: Optional[User] = Depends(get_current_user_optional),
+    db = Depends(get_db)
+):
+    query = db.query(Package)
+    if niche:
+        query = query.filter(Package.niche == niche)
+    if provider_id:
+        query = query.filter(Package.provider_id == provider_id)
+    if status:
+        query = query.filter(Package.status == status)
+    else:
+        query = query.filter(or_(Package.status == 'approved', Package.status == None))
+    return query.all()
+
+
+@api_app.get("/packages/{package_id}", response_model=PackageResponse)
+def get_package(package_id: int, current_user = Depends(get_current_user), db = Depends(get_db)):
+    package = db.query(Package).filter(Package.id == package_id).first()
+    if not package:
+        raise HTTPException(status_code=404, detail="Package not found")
+    if current_user.user_type == UserType.PROVIDER and package.provider_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not your package")
+    return package
+
+@api_app.post("/packages", response_model=PackageResponse)
+def create_package(package_data: PackageCreate, current_user = Depends(get_current_user), db = Depends(get_db)):
+    if current_user.user_type != UserType.PROVIDER and current_user.user_type != UserType.ADMIN:
+        current_user.user_type = UserType.PROVIDER
+
+    current_user.is_verified = True
+    current_user.is_active = True
+    db.commit()
+
+    profile = db.query(Profile).filter(Profile.user_id == current_user.id).first()
+    if not profile:
+        profile = Profile(
+            user_id=current_user.id,
+            bio="Creator on Groove Hub",
+            niche=package_data.niche or "editors_animators",
+            rating=5.0,
+            total_bookings=0,
+            monthly_earnings=0.0,
+            profession_selected=False,
+        )
+        db.add(profile)
+        db.commit()
+        db.refresh(profile)
+
+    if not profile.profession_selected:
+        raise HTTPException(status_code=400, detail="Choose your profession first from your provider home screen.")
+
+    pkg_niche = profile.niche or package_data.niche or "editors_animators"
+    pkg_level = normalize_package_level(package_data.package_level)
+    pkg_free_samples = PACKAGE_TIER_RULES[pkg_level]["free_samples"]
+    pkg_type_val = package_data.package_type
+    if hasattr(pkg_type_val, 'value'):
+        pkg_type_val = pkg_type_val.value
+
+    package = Package(
+        provider_id=current_user.id,
+        niche=pkg_niche,
+        package_type=str(pkg_type_val or "per_deliverable"),
+        title=package_data.title,
+        price=package_data.price,
+        scope=package_data.scope or "",
+        turnaround=package_data.turnaround or "24-48 hours",
+        revision_limit=package_data.revision_limit if package_data.revision_limit is not None else 1,
+        sample_reference=package_data.sample_reference,
+        package_level=pkg_level,
+        free_sample_limit=pkg_free_samples,
+        status="approved"
+    )
+    db.add(package)
+    db.commit()
+    db.refresh(package)
+    return package
+
+@api_app.patch("/packages/{package_id}", response_model=PackageResponse)
+def update_package(package_id: int, package_data: PackageUpdate, current_user = Depends(get_current_user), db = Depends(get_db)):
+    package = db.query(Package).filter(Package.id == package_id).first()
+    if not package:
+        raise HTTPException(status_code=404, detail="Package not found")
+    if current_user.user_type != UserType.ADMIN and (current_user.user_type != UserType.PROVIDER or package.provider_id != current_user.id):
+        raise HTTPException(status_code=403, detail="Only the package owner or an admin can update it")
+
+    update_data = package_data.model_dump(exclude_unset=True)
+    if "package_level" in update_data:
+        level = normalize_package_level(update_data["package_level"])
+        update_data["package_level"] = level
+        update_data["free_sample_limit"] = PACKAGE_TIER_RULES[level]["free_samples"]
+    # Providers cannot override the platform's 3/2/1 free-sample policy.
+    if "package_level" not in update_data:
+        update_data.pop("free_sample_limit", None)
+    for key, value in update_data.items():
+        setattr(package, key, value)
+
+    db.commit()
+    db.refresh(package)
+    return package
+
+class PackageStatusUpdate(BaseModel):
+    status: str
+    admin_notes: Optional[str] = None
+
+@api_app.patch("/packages/{package_id}/status", response_model=PackageResponse)
+def update_package_status(
+    package_id: int,
+    status_update: PackageStatusUpdate,
+    current_user = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    if current_user.user_type != UserType.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin only")
+
+    package = db.query(Package).filter(Package.id == package_id).first()
+    if not package:
+        raise HTTPException(status_code=404, detail="Package not found")
+
+    package.status = status_update.status
+    if status_update.admin_notes:
+        package.admin_notes = status_update.admin_notes
+    db.commit()
+    db.refresh(package)
+    return package
+
+@api_app.delete("/packages/{package_id}")
+def delete_package(package_id: int, current_user = Depends(get_current_user), db = Depends(get_db)):
+    package = db.query(Package).filter(Package.id == package_id).first()
+    if not package:
+        raise HTTPException(status_code=404, detail="Package not found")
+
+    if current_user.user_type == UserType.ADMIN:
+        pass  # Admin can delete any package
+    elif current_user.user_type == UserType.PROVIDER:
+        if package.provider_id != current_user.id:
+            raise HTTPException(status_code=403, detail="Not your package")
+    else:
+        raise HTTPException(status_code=403, detail="Only providers or admins can delete packages")
+
+    db.delete(package)
+    db.commit()
+    return {"message": "Package deleted"}
+
+# ============== BOOKING ROUTES ==============
+
+@api_app.get("/bookings", response_model=List[BookingResponse])
+def get_bookings(
+    status: Optional[str] = None,
+    niche: Optional[str] = None,
+    limit: Optional[int] = None,
+    current_user = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    query = db.query(Booking)
+
+    if current_user.user_type == UserType.BUYER:
+        query = query.filter(Booking.buyer_id == current_user.id)
+    elif current_user.user_type == UserType.PROVIDER:
+        query = query.filter(Booking.provider_id == current_user.id)
+
+    if status:
+        query = query.filter(Booking.status == status)
+    if niche:
+        query = query.filter(Booking.niche == niche)
+
+    query = query.order_by(Booking.created_at.desc())
+    if limit:
+        query = query.limit(limit)
+
+    return query.all()
+
+@api_app.get("/bookings/{booking_id}", response_model=BookingResponse)
+def get_booking(booking_id: int, current_user = Depends(get_current_user), db = Depends(get_db)):
+    booking = db.query(Booking).filter(Booking.id == booking_id).first()
+    if not booking:
+        raise HTTPException(status_code=404, detail="Booking not found")
+
+    if current_user.user_type == UserType.BUYER and booking.buyer_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not your booking")
+    if current_user.user_type == UserType.PROVIDER and booking.provider_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not your booking")
+
+    return booking
+
+@api_app.post("/bookings", response_model=BookingResponse)
+def create_booking(booking_data: BookingCreate, current_user = Depends(get_current_user), db = Depends(get_db)):
+    try:
+        package = db.query(Package).filter(
+            Package.id == booking_data.package_id
+        ).first()
+        if not package:
+            raise HTTPException(status_code=400, detail="Package not found")
+
+        provider_id = package.provider_id
+        if provider_id == current_user.id:
+            raise HTTPException(status_code=400, detail="You cannot hire yourself or purchase your own package.")
+
+        provider = db.query(User).filter(
+            User.id == provider_id,
+            User.is_active == True
+        ).first()
+        if not provider:
+            raise HTTPException(status_code=400, detail="Provider not found")
+
+        import random
+        shoot_pin = f"{random.randint(100000, 999999)}"
+
+        booking = Booking(
+            buyer_id=current_user.id,
+            provider_id=provider_id,
+            package_id=booking_data.package_id,
+            niche=booking_data.niche,
+            total_amount=booking_data.total_amount,
+            status="confirmed",
+            client_notes=booking_data.client_notes,
+            source_file_url=booking_data.source_file_url,
+            is_free_sample=False,
+            shoot_pin=shoot_pin,
+            shoot_status="SCHEDULED",
+            event_count=booking_data.event_count or 1,
+            event_details=booking_data.event_details or [],
+            per_reel_payout_rate=round(booking_data.total_amount / max(1, booking_data.event_count or 1), 2)
+        )
+        db.add(booking)
+        db.commit()
+        db.refresh(booking)
+
+        # Use platform commission rate (0% during 1-Month Play Store Launch Promo)
+        settings = db.query(PlatformSettings).first()
+        is_promo = getattr(settings, 'launch_promo_active', True) if settings else True
+        comm_rate = 0.0 if is_promo else (settings.commission_rate if (settings and settings.commission_rate is not None) else 0.20)
+        platform_comm = round(booking_data.total_amount * comm_rate, 2)
+        prov_payout = round(booking_data.total_amount * (1.0 - comm_rate), 2)
+
+        existing_pay = db.query(Payment).filter(Payment.booking_id == booking.id).first()
+        if existing_pay:
+            existing_pay.amount = booking_data.total_amount
+            existing_pay.status = "held"
+            existing_pay.platform_commission = platform_comm
+            existing_pay.provider_payout = prov_payout
+            existing_pay.held_at = datetime.utcnow()
+        else:
+            payment = Payment(
+                booking_id=booking.id,
+                amount=booking_data.total_amount,
+                status="held",
+                platform_commission=platform_comm,
+                provider_payout=prov_payout,
+                held_at=datetime.utcnow()
+            )
+            db.add(payment)
+        db.commit()
+
+        # Increment total_bookings only once (use confirmed provider_id from package)
+        provider_profile = db.query(Profile).filter(Profile.user_id == provider_id).first()
+        if provider_profile:
+            provider_profile.total_bookings = (provider_profile.total_bookings or 0) + 1
+
+        db.commit()
+        db.refresh(booking)
+        return booking
+    except Exception as err:
+        import traceback
+        print("CREATE BOOKING EXCEPTION TRACEBACK:\n", traceback.format_exc(), flush=True)
+        raise err
+
+
+
+class FreeSampleCreate(BaseModel):
+    package_id: int
+    client_notes: Optional[str] = Field(None, max_length=5000)
+    source_file_url: Optional[str] = None
+
+    @field_validator("source_file_url")
+    @classmethod
+    def check_source_file_url(cls, v):
+        return validate_safe_url(v)
+
+@api_app.post("/bookings/free-sample", response_model=BookingResponse)
+def create_free_sample(
+    request: FreeSampleCreate,
+    current_user = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    """Create a zero-cost creator task governed by the platform's 3/2/1 sample rule."""
+    package = db.query(Package).filter(Package.id == request.package_id, Package.status == "approved").first()
+    if not package:
+        raise HTTPException(status_code=404, detail="Approved package not found")
+    if package.provider_id == current_user.id:
+        raise HTTPException(status_code=400, detail="You cannot request a sample from your own package")
+
+    level = normalize_package_level(package.package_level)
+    limit = PACKAGE_TIER_RULES[level]["free_samples"]
+    # The 3/2/1 allowance belongs to the provider's tier, not to each
+    # individual package, so a provider cannot multiply free samples by
+    # creating several packages at the same level.
+    used = db.query(Booking).filter(
+        Booking.provider_id == package.provider_id,
+        Booking.is_free_sample == True,
+        Booking.package.has(Package.package_level == level)
+    ).count()
+    if used >= limit:
+        raise HTTPException(status_code=400, detail=f"This {level.title()} package has already completed its {limit} free sample task(s).")
+
+    # A buyer cannot consume the same provider/package sample slot repeatedly.
+    existing = db.query(Booking).filter(
+        Booking.buyer_id == current_user.id,
+        Booking.package_id == package.id,
+        Booking.is_free_sample == True
+    ).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="You already requested a free sample for this package.")
+
+    booking = Booking(
+        buyer_id=current_user.id,
+        provider_id=package.provider_id,
+        package_id=package.id,
+        niche=package.niche or "editors_animators",
+        total_amount=0.0,
+        status="in_progress",
+        client_notes=request.client_notes,
+        source_file_url=request.source_file_url,
+        is_free_sample=True,
+        sample_number=used + 1
+    )
+    db.add(booking)
+    db.commit()
+    db.refresh(booking)
+
+    create_user_notification(
+        db,
+        user_id=package.provider_id,
+        title="🎁 New Free Sample Task",
+        message=f"A client sent free sample #{booking.sample_number}/{limit} for your {level.title()} package (order #{booking.id}).",
+        type="order",
+        link=f"/bookings?id={booking.id}"
+    )
+    return booking
+
+@api_app.patch("/bookings/{booking_id}/status", response_model=BookingResponse)
+def update_booking_status(
+    booking_id: int,
+    status_update: BookingStatusUpdate,
+    current_user = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    booking = db.query(Booking).filter(Booking.id == booking_id).first()
+    if not booking:
+        raise HTTPException(status_code=404, detail="Booking not found")
+
+    if current_user.user_type == UserType.BUYER and booking.buyer_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not your booking")
+    if current_user.user_type == UserType.PROVIDER and booking.provider_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not your booking")
+
+    old_status = booking.status
+    new_status = status_update.status
+    if hasattr(new_status, "value"):
+        new_status = new_status.value
+
+    # Admins can force any transition
+    if current_user.user_type == UserType.ADMIN:
+        valid = True
+    else:
+        # Validate state transitions for buyers and providers
+        valid = False
+        if old_status in ["pending_payment", "pending", "confirmed"] and new_status in ["in_progress", "cancelled"]:
+            valid = True
+        elif old_status == "in_progress" and new_status in ["delivered", "disputed"]:
+            valid = True
+        elif old_status == "delivered" and new_status in ["pending_approval", "approved", "disputed"]:
+            valid = True
+        elif old_status == "pending_approval" and new_status in ["approved", "disputed", "refunded"]:
+            valid = True
+        elif old_status == "approved" and new_status in ["completed"]:
+            valid = True
+
+    if not valid:
+        raise HTTPException(status_code=400, detail=f"Cannot transition from {old_status} to {new_status}")
+
+    booking.status = new_status
+    if new_status == "cancelled":
+        payment = db.query(Payment).filter(Payment.booking_id == booking.id).first()
+        if payment and payment.status == "pending":
+            payment.status = "cancelled"
+    db.commit()
+    db.refresh(booking)
+    return booking
+
+@api_app.patch("/bookings/{booking_id}/delivery", response_model=BookingResponse)
+@api_app.post("/bookings/{booking_id}/delivery", response_model=BookingResponse)
+def update_booking_delivery(
+    booking_id: int,
+    delivery_data: BookingDeliveryUpdate,
+    current_user = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    booking = db.query(Booking).filter(Booking.id == booking_id).first()
+    if not booking:
+        raise HTTPException(status_code=404, detail="Booking not found")
+
+    if current_user.user_type != UserType.PROVIDER or booking.provider_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Only the assigned provider can submit delivery")
+
+    if booking.status not in ["in_progress", "delivered"]:
+        raise HTTPException(status_code=400, detail="Booking not in progress")
+
+    if delivery_data.delivery_file_url:
+        booking.delivery_file_url = delivery_data.delivery_file_url
+    if delivery_data.delivery_file_link:
+        booking.delivery_file_link = delivery_data.delivery_file_link
+
+    booking.status = "delivered"
+    db.commit()
+    db.refresh(booking)
+
+    create_user_notification(
+        db,
+        user_id=booking.buyer_id,
+        title="🚚 Order Delivered!",
+        message=f"Provider submitted final delivery files for order #{booking.id}",
+        type="order",
+        link=f"/bookings?id={booking.id}"
+    )
+    return booking
+
+@api_app.get("/bookings/{booking_id}/checkin-qr")
+def get_booking_checkin_qr(
+    booking_id: int,
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    booking = db.query(Booking).filter(Booking.id == booking_id).first()
+    if not booking:
+        raise HTTPException(status_code=404, detail="Booking not found")
+
+    if current_user.id not in [booking.buyer_id, booking.provider_id] and current_user.user_type != UserType.ADMIN:
+        raise HTTPException(status_code=403, detail="Not authorized for this booking")
+
+    if not booking.checkin_token:
+        booking.checkin_token = uuid.uuid4().hex[:12]
+        db.commit()
+        db.refresh(booking)
+
+    checkin_payload = f"groove_hub_checkin:{booking.id}:{booking.checkin_token}"
+    qr_image_url = f"https://api.qrserver.com/v1/create-qr-code/?size=260x260&margin=8&data={checkin_payload}"
+
+    return {
+        "booking_id": booking.id,
+        "checkin_token": booking.checkin_token,
+        "qr_image_url": qr_image_url,
+        "is_verified": bool(booking.onsite_checkin_at),
+        "checkin_at": booking.onsite_checkin_at.isoformat() if booking.onsite_checkin_at else None,
+        "provider_name": booking.provider_name,
+        "buyer_name": booking.buyer_name
+    }
+
+@api_app.post("/bookings/{booking_id}/verify-checkin")
+def verify_booking_checkin(
+    booking_id: int,
+    payload: Optional[dict] = None,
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    booking = db.query(Booking).filter(Booking.id == booking_id).first()
+    if not booking:
+        raise HTTPException(status_code=404, detail="Booking not found")
+
+    if current_user.id not in [booking.buyer_id, booking.provider_id] and current_user.user_type != UserType.ADMIN:
+        token_sent = payload.get("token") if payload else None
+        if not token_sent or token_sent != booking.checkin_token:
+            raise HTTPException(status_code=403, detail="Not authorized to verify check-in")
+
+    if not booking.onsite_checkin_at:
+        booking.onsite_checkin_at = datetime.utcnow()
+        if booking.status in ["pending", "confirmed"]:
+            booking.status = "in_progress"
+        db.commit()
+        db.refresh(booking)
+
+        msg = Message(
+            booking_id=booking.id,
+            sender_id=current_user.id,
+            receiver_id=booking.provider_id if current_user.id == booking.buyer_id else booking.buyer_id,
+            message=f"📱 ON-SITE ARRIVAL VERIFIED: {booking.provider_name} checked in at shop via QR scan at {booking.onsite_checkin_at.strftime('%I:%M %p')}. Escrow service active!",
+            created_at=datetime.utcnow()
+        )
+        db.add(msg)
+        db.commit()
+
+        create_user_notification(
+            db,
+            user_id=booking.provider_id if current_user.id == booking.buyer_id else booking.buyer_id,
+            title="📱 Verified On-Site Arrival",
+            message=f"Shop owner verified creator arrival for order #{booking.id} via QR scan!",
+            type="order",
+            link=f"/bookings?id={booking.id}"
+        )
+
+    return {
+        "success": True,
+        "booking_id": booking.id,
+        "is_verified": True,
+        "checkin_at": booking.onsite_checkin_at.isoformat(),
+        "status": booking.status
+    }
+
+@api_app.post("/bookings/{booking_id}/approve", response_model=BookingResponse)
+def approve_booking(booking_id: int, current_user = Depends(get_current_user), db = Depends(get_db)):
+    booking = db.query(Booking).filter(Booking.id == booking_id).first()
+    if not booking:
+        raise HTTPException(status_code=404, detail="Booking not found")
+
+    if current_user.user_type != UserType.BUYER or booking.buyer_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Only the buyer can approve this booking")
+
+    if booking.status not in ["delivered", "pending_approval"]:
+        raise HTTPException(status_code=400, detail="Booking must be delivered or pending approval to approve")
+
+    booking.status = "approved"
+    db.commit()
+
+    payment = db.query(Payment).filter(Payment.booking_id == booking_id).first()
+    if payment and payment.status == "held":
+        payment.status = "released"
+        payment.released_at = datetime.utcnow()
+
+        # Check that a Release record doesn't already exist (prevents double-credit)
+        existing_release = db.query(Release).filter(Release.payment_id == payment.id).first()
+        if not existing_release:
+            release = Release(
+                payment_id=payment.id,
+                provider_payout=payment.provider_payout,
+                platform_commission=payment.platform_commission
+            )
+            db.add(release)
+
+            provider_profile = db.query(Profile).filter(Profile.user_id == booking.provider_id).first()
+            if provider_profile:
+                provider_profile.monthly_earnings = (provider_profile.monthly_earnings or 0.0) + (payment.provider_payout or 0.0)
+
+    db.commit()
+    db.refresh(booking)
+
+    create_user_notification(
+        db,
+        user_id=booking.provider_id,
+        title="🎉 Delivery Approved & Payout Released!",
+        message=f"Client approved order #{booking.id}. Funds released to your wallet.",
+        type="payment",
+        link="/payments"
+    )
+    return booking
+
+@api_app.post("/bookings/{booking_id}/dispute", response_model=BookingResponse)
+def dispute_booking(booking_id: int, dispute_data: DisputeCreate, current_user = Depends(get_current_user), db = Depends(get_db)):
+    booking = db.query(Booking).filter(Booking.id == booking_id).first()
+    if not booking:
+        raise HTTPException(status_code=404, detail="Booking not found")
+
+    if current_user.user_type == UserType.BUYER and booking.buyer_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not your booking")
+    if current_user.user_type == UserType.PROVIDER and booking.provider_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not your booking")
+    if current_user.user_type not in [UserType.BUYER, UserType.PROVIDER, UserType.ADMIN]:
+        raise HTTPException(status_code=403, detail="Not authorized to dispute this booking")
+
+    if booking.status not in ["in_progress", "delivered", "pending_approval", "approved"]:
+        raise HTTPException(status_code=400, detail="Cannot dispute this booking status")
+
+    booking.status = "disputed"
+    db.commit()
+
+    dispute = Dispute(
+        booking_id=booking_id,
+        description=dispute_data.description,
+        status="open"
+    )
+    db.add(dispute)
+    db.commit()
+    db.refresh(booking)
+
+    other_user_id = booking.provider_id if current_user.id == booking.buyer_id else booking.buyer_id
+    create_user_notification(
+        db,
+        user_id=other_user_id,
+        title="⚠️ Dispute Opened",
+        message=f"Dispute opened for order #{booking.id}: {dispute_data.description[:80]}",
+        type="dispute",
+        link=f"/bookings?id={booking.id}"
+    )
+    return booking
+
+@api_app.post("/bookings/{booking_id}/complete", response_model=BookingResponse)
+def complete_booking(booking_id: int, current_user = Depends(get_current_user), db = Depends(get_db)):
+    booking = db.query(Booking).filter(Booking.id == booking_id).first()
+    if not booking:
+        raise HTTPException(status_code=404, detail="Booking not found")
+
+    if current_user.user_type == UserType.BUYER and booking.buyer_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not your booking")
+    if current_user.user_type == UserType.PROVIDER and booking.provider_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not your booking")
+    if current_user.user_type not in [UserType.BUYER, UserType.PROVIDER, UserType.ADMIN]:
+        raise HTTPException(status_code=403, detail="Not authorized to complete this booking")
+
+    if booking.status != "approved":
+        raise HTTPException(status_code=400, detail="Booking must be approved first")
+
+    booking.status = "completed"
+    db.commit()
+    db.refresh(booking)
+    return booking
+
+# ============== SHOOT VERIFICATION, DRAFT WATERMARK & LIVE OPERATIONS ==============
+
+@api_app.post("/shoot/verify-pin")
+def verify_shoot_pin(
+    req: ShootPinVerify,
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    """Provider enters 6-digit Shoot PIN provided by the venue/shop owner to trigger Live Shoot status."""
+    booking = db.query(Booking).filter(Booking.id == req.booking_id).first()
+    if not booking:
+        raise HTTPException(status_code=404, detail="Booking not found")
+
+    if current_user.user_type != UserType.PROVIDER or booking.provider_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Only the assigned provider can enter the Shoot Verification PIN")
+
+    if booking.shoot_pin != req.shoot_pin.strip():
+        raise HTTPException(status_code=400, detail="Invalid 6-digit Shoot PIN. Please verify with the shop/event owner.")
+
+    booking.shoot_status = "LIVE_SHOOT"
+    booking.shoot_verified_at = datetime.utcnow()
+    booking.status = "in_progress"
+    booking.onsite_checkin_at = datetime.utcnow()
+
+    # Automatically log in provider schedule
+    today_str = datetime.utcnow().strftime("%Y-%m-%d")
+    schedule_entry = ProviderSchedule(
+        provider_id=booking.provider_id,
+        date=today_str,
+        start_time=datetime.utcnow().strftime("%H:%M"),
+        end_time=(datetime.utcnow() + timedelta(hours=4)).strftime("%H:%M"),
+        title=f"Live On-Site Shoot - Order #{booking.id}",
+        location=f"Venue Shoot ({booking.event_count} Event(s))",
+        event_count=booking.event_count,
+        is_occupied=True,
+        booking_id=booking.id
+    )
+    db.add(schedule_entry)
+
+    # Chat announcement message
+    msg = Message(
+        booking_id=booking.id,
+        sender_id=current_user.id,
+        receiver_id=booking.buyer_id,
+        message=f"🎥 SHOOT LIVE IN PROGRESS: Provider verified the 6-digit Shoot PIN on-site at {booking.shoot_verified_at.strftime('%I:%M %p')}. Shoot session is active!",
+        created_at=datetime.utcnow()
+    )
+    db.add(msg)
+    db.commit()
+
+    create_user_notification(
+        db,
+        user_id=booking.buyer_id,
+        title="🎥 Shoot Live in Progress",
+        message=f"Provider verified the PIN for order #{booking.id}. Shoot session is now live!",
+        type="order",
+        link=f"/bookings?id={booking.id}"
+    )
+
+    return {
+        "success": True,
+        "message": "Shoot PIN verified successfully! Live Shoot is now in progress.",
+        "shoot_status": booking.shoot_status,
+        "verified_at": booking.shoot_verified_at.isoformat()
+    }
+
+
+@api_app.get("/admin/live-projects")
+def get_admin_live_projects(
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    """Admin dashboard endpoint to monitor real-time active shoots, editing progress, and escrow funds."""
+    if current_user.user_type != UserType.ADMIN and current_user.email not in ADMIN_EMAILS:
+        raise HTTPException(status_code=403, detail="Admin authorization required")
+
+    active_bookings = db.query(Booking).filter(
+        or_(
+            Booking.shoot_status.in_(["LIVE_SHOOT", "EDITING", "DRAFT_SUBMITTED"]),
+            Booking.status.in_(["in_progress", "delivered", "pending_approval"])
+        )
+    ).order_by(Booking.updated_at.desc()).all()
+
+    result = []
+    for b in active_bookings:
+        payment = db.query(Payment).filter(Payment.booking_id == b.id).first()
+        result.append({
+            "id": b.id,
+            "buyer_id": b.buyer_id,
+            "buyer_name": b.buyer_name,
+            "provider_id": b.provider_id,
+            "provider_name": b.provider_name,
+            "total_amount": b.total_amount,
+            "shoot_status": b.shoot_status,
+            "shoot_pin": b.shoot_pin,
+            "shoot_verified_at": b.shoot_verified_at.isoformat() if b.shoot_verified_at else None,
+            "event_count": b.event_count,
+            "watermarked_draft_url": b.watermarked_draft_url,
+            "is_watermark_removed": b.is_watermark_removed,
+            "payment_status": payment.status if payment else "pending",
+            "provider_payout": payment.provider_payout if payment else 0.0,
+            "updated_at": b.updated_at.isoformat() if b.updated_at else None
+        })
+
+    return {
+        "total_active": len(result),
+        "projects": result
+    }
+
+
+@api_app.post("/projects/{booking_id}/submit-draft", response_model=BookingResponse)
+def submit_watermarked_draft(
+    booking_id: int,
+    draft_data: DraftSubmit,
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    """Provider uploads edited draft video with Grove Hub watermark overlay for client review."""
+    booking = db.query(Booking).filter(Booking.id == booking_id).first()
+    if not booking:
+        raise HTTPException(status_code=404, detail="Booking not found")
+
+    if current_user.user_type != UserType.PROVIDER or booking.provider_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Only the assigned provider can submit draft video")
+
+    booking.watermarked_draft_url = draft_data.draft_url
+    booking.shoot_status = "DRAFT_SUBMITTED"
+    booking.status = "pending_approval"
+    booking.delivery_file_url = draft_data.draft_url
+    db.commit()
+
+    msg = Message(
+        booking_id=booking.id,
+        sender_id=current_user.id,
+        receiver_id=booking.buyer_id,
+        message=f"🎬 DRAFT VIDEO SUBMITTED (WATERMARKED): Provider submitted edited video for review. Please inspect the preview and click 'Approve & Unlock Original' to download the clean unwatermarked video.",
+        file_url=draft_data.draft_url,
+        created_at=datetime.utcnow()
+    )
+    db.add(msg)
+    db.commit()
+    db.refresh(booking)
+
+    create_user_notification(
+        db,
+        user_id=booking.buyer_id,
+        title="🎬 Watermarked Draft Video Ready",
+        message=f"Provider uploaded edited draft for order #{booking.id}. Review and approve to unlock clean video.",
+        type="order",
+        link=f"/bookings?id={booking.id}"
+    )
+
+    return booking
+
+
+@api_app.post("/projects/{booking_id}/approve-watermark", response_model=BookingResponse)
+def approve_watermarked_draft(
+    booking_id: int,
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    """Client approves watermarked draft. Removes watermark, unlocks clean video, and releases earnings to provider."""
+    booking = db.query(Booking).filter(Booking.id == booking_id).first()
+    if not booking:
+        raise HTTPException(status_code=404, detail="Booking not found")
+
+    if current_user.user_type != UserType.BUYER or booking.buyer_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Only the buyer can approve the draft video")
+
+    booking.is_watermark_removed = True
+    booking.clean_final_url = booking.watermarked_draft_url or booking.delivery_file_url
+    booking.shoot_status = "APPROVED_COMPLETED"
+    booking.status = "approved"
+    db.commit()
+
+    payment = db.query(Payment).filter(Payment.booking_id == booking.id).first()
+    if payment and payment.status == "held":
+        payment.status = "released"
+        payment.released_at = datetime.utcnow()
+        existing_release = db.query(Release).filter(Release.payment_id == payment.id).first()
+        if not existing_release:
+            release = Release(
+                payment_id=payment.id,
+                provider_payout=payment.provider_payout,
+                platform_commission=payment.platform_commission,
+                released_at=datetime.utcnow()
+            )
+            db.add(release)
+
+    # Automatically increment provider earnings
+    provider_profile = db.query(Profile).filter(Profile.user_id == booking.provider_id).first()
+    if provider_profile and payment:
+        provider_profile.monthly_earnings = (provider_profile.monthly_earnings or 0.0) + payment.provider_payout
+
+    db.commit()
+    db.refresh(booking)
+
+    create_user_notification(
+        db,
+        user_id=booking.provider_id,
+        title="🎉 Video Approved & Payment Released!",
+        message=f"Client approved order #{booking.id}! Watermark removed, clean video delivered, and ₹{payment.provider_payout if payment else 0} released to your account.",
+        type="payment",
+        link=f"/bookings?id={booking.id}"
+    )
+
+    return booking
+
+
+# ============== PROVIDER CALENDAR & AVAILABILITY REQUESTS ==============
+
+@api_app.get("/provider/{provider_id}/calendar", response_model=List[ProviderScheduleResponse])
+def get_provider_calendar(
+    provider_id: int,
+    db = Depends(get_db)
+):
+    """Fetch provider's occupied dates, booked shoots, and editing schedule."""
+    schedules = db.query(ProviderSchedule).filter(
+        ProviderSchedule.provider_id == provider_id
+    ).order_by(ProviderSchedule.date.asc()).all()
+    return schedules
+
+
+@api_app.post("/provider/schedule", response_model=ProviderScheduleResponse)
+def add_provider_schedule(
+    req: ProviderScheduleCreate,
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    """Provider manually adds a busy slot or personal event block to their calendar."""
+    if current_user.user_type != UserType.PROVIDER:
+        raise HTTPException(status_code=403, detail="Only providers can add schedule blocks")
+
+    entry = ProviderSchedule(
+        provider_id=current_user.id,
+        date=req.date.strip(),
+        start_time=req.start_time or "09:00",
+        end_time=req.end_time or "18:00",
+        title=req.title.strip(),
+        location=req.location,
+        event_count=req.event_count or 1,
+        is_occupied=True
+    )
+    db.add(entry)
+    db.commit()
+    db.refresh(entry)
+    return entry
+
+
+@api_app.post("/provider/availability-request", response_model=AvailabilityRequestResponse)
+def create_availability_request(
+    req: AvailabilityRequestCreate,
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    """Client sends a prior availability request to a provider for single/multi-event shoots with optional custom rush rate."""
+    provider = db.query(User).filter(User.id == req.provider_id, User.is_active == True).first()
+    if not provider:
+        raise HTTPException(status_code=404, detail="Provider not found")
+
+    avail_req = AvailabilityRequest(
+        buyer_id=current_user.id,
+        provider_id=req.provider_id,
+        requested_date=req.requested_date.strip(),
+        event_count=req.event_count or 1,
+        locations_summary=req.locations_summary,
+        custom_proposed_price=req.custom_proposed_price,
+        status="PENDING"
+    )
+    db.add(avail_req)
+    db.commit()
+    db.refresh(avail_req)
+
+    create_user_notification(
+        db,
+        user_id=req.provider_id,
+        title="📅 New Availability Request",
+        message=f"{current_user.name} asked if you are free on {req.requested_date} for {req.event_count} event(s).",
+        type="order",
+        link=f"/profile?id={req.provider_id}"
+    )
+
+    return avail_req
+
+
+@api_app.get("/provider/availability-requests", response_model=List[AvailabilityRequestResponse])
+def list_availability_requests(
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    """List pending/accepted availability inquiries for provider or buyer."""
+    if current_user.user_type == UserType.PROVIDER:
+        return db.query(AvailabilityRequest).filter(AvailabilityRequest.provider_id == current_user.id).order_by(AvailabilityRequest.created_at.desc()).all()
+    else:
+        return db.query(AvailabilityRequest).filter(AvailabilityRequest.buyer_id == current_user.id).order_by(AvailabilityRequest.created_at.desc()).all()
+
+
+@api_app.post("/availability-requests/{request_id}/respond", response_model=AvailabilityRequestResponse)
+def respond_availability_request(
+    request_id: int,
+    req: AvailabilityRequestRespond,
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    """Provider accepts or declines buyer's prior availability request."""
+    avail_req = db.query(AvailabilityRequest).filter(AvailabilityRequest.id == request_id).first()
+    if not avail_req:
+        raise HTTPException(status_code=404, detail="Availability request not found")
+
+    if current_user.id != avail_req.provider_id:
+        raise HTTPException(status_code=403, detail="Only the requested provider can respond")
+
+    status_upper = req.status.upper().strip()
+    if status_upper not in ["ACCEPTED", "DECLINED"]:
+        raise HTTPException(status_code=400, detail="Status must be ACCEPTED or DECLINED")
+
+    avail_req.status = status_upper
+    avail_req.provider_notes = req.provider_notes
+    if req.custom_price_accepted is not None:
+        avail_req.custom_proposed_price = req.custom_price_accepted
+
+    db.commit()
+    db.refresh(avail_req)
+
+    status_str = "ACCEPTED 🎉" if status_upper == "ACCEPTED" else "DECLINED ❌"
+    create_user_notification(
+        db,
+        user_id=avail_req.buyer_id,
+        title=f"📅 Availability Request {status_str}",
+        message=f"Provider {current_user.name} has {status_upper.lower()} your inquiry for {avail_req.requested_date}.",
+        type="order",
+        link=f"/chat?with={current_user.id}"
+    )
+
+    return avail_req
+
+
+# ============== WEBRTC REAL-TIME AUDIO CALLING SIGNALLING ==============
+
+@api_app.post("/chat/call/signal")
+def handle_webrtc_call_signal(
+    payload: dict,
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    """Relay WebRTC audio call signals (offer, answer, ice-candidate, end) between buyer and provider."""
+    target_user_id = payload.get("target_user_id")
+    signal_type = payload.get("signal_type") # 'offer', 'answer', 'ice_candidate', 'call_ended'
+    sdp_or_candidate = payload.get("data")
+    booking_id = payload.get("booking_id")
+
+    if not target_user_id:
+        raise HTTPException(status_code=400, detail="target_user_id is required")
+
+    target_user = db.query(User).filter(User.id == target_user_id, User.is_active == True).first()
+    if not target_user:
+        raise HTTPException(status_code=404, detail="Target user not found")
+
+    signal_text = f"[CALL_SIGNAL:{signal_type}]"
+    msg = Message(
+        booking_id=booking_id,
+        sender_id=current_user.id,
+        receiver_id=target_user_id,
+        message=signal_text,
+        file_url=None,
+        created_at=datetime.utcnow()
+    )
+    db.add(msg)
+    db.commit()
+
+    return {
+        "success": True,
+        "sender_id": current_user.id,
+        "target_user_id": target_user_id,
+        "signal_type": signal_type,
+        "data": sdp_or_candidate
+    }
+
+# ============== SEARCH ANALYTICS & BUYER DEMAND LOGGING ==============
+
+def log_buyer_search(
+    db,
+    query_str: str,
+    user_id: Optional[int] = None,
+    niche_filter: Optional[str] = None,
+    results_count: int = 0,
+    ip_address: Optional[str] = None
+):
+    clean = query_str.strip().lower()
+    if not clean:
+        return
+    search_log = SearchLog(
+        user_id=user_id,
+        query=query_str.strip(),
+        clean_query=clean,
+        niche_filter=niche_filter,
+        results_count=results_count,
+        ip_address=ip_address,
+        created_at=datetime.utcnow()
+    )
+    db.add(search_log)
+    db.commit()
+
+@api_app.post("/search/log")
+def log_search_query(
+    req: SearchLogCreate,
+    request: Request,
+    current_user: Optional[User] = Depends(get_current_user_optional),
+    db = Depends(get_db)
+):
+    """Log a search query typed by a buyer or guest user to track market demand."""
+    log_buyer_search(
+        db=db,
+        query_str=req.query,
+        user_id=current_user.id if current_user else None,
+        niche_filter=req.niche_filter,
+        results_count=req.results_count or 0,
+        ip_address=_client_ip(request)
+    )
+    return {"success": True}
+
+@api_app.get("/search/trending-terms", response_model=List[SearchTrendItem])
+def get_trending_search_terms(db = Depends(get_db)):
+    """Public/Provider endpoint displaying top 10 search terms buyers are actively searching for."""
+    results = db.query(
+        SearchLog.clean_query.label("query"),
+        func.count(SearchLog.id).label("search_count"),
+        func.max(SearchLog.created_at).label("last_searched_at")
+    ).group_by(SearchLog.clean_query).order_by(func.count(SearchLog.id).desc()).limit(10).all()
+
+    return [
+        SearchTrendItem(
+            query=r.query,
+            search_count=r.search_count,
+            last_searched_at=r.last_searched_at
+        ) for r in results
+    ]
+
+@api_app.get("/admin/search-analytics", response_model=SearchAnalyticsResponse)
+def get_admin_search_analytics(
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    """Admin endpoint displaying complete analytics on what buyers are searching for on Groove Hub."""
+    if current_user.user_type != UserType.ADMIN and current_user.email not in ADMIN_EMAILS:
+        raise HTTPException(status_code=403, detail="Admin authorization required")
+
+    total_searches = db.query(SearchLog).count()
+
+    # Top trending queries
+    top_results = db.query(
+        SearchLog.clean_query.label("query"),
+        func.count(SearchLog.id).label("search_count"),
+        func.max(SearchLog.created_at).label("last_searched_at")
+    ).group_by(SearchLog.clean_query).order_by(func.count(SearchLog.id).desc()).limit(20).all()
+
+    top_trending = [
+        SearchTrendItem(
+            query=r.query,
+            search_count=r.search_count,
+            last_searched_at=r.last_searched_at
+        ) for r in top_results
+    ]
+
+    # Unmet market demand: queries that returned 0 results
+    zero_results = db.query(
+        SearchLog.clean_query.label("query"),
+        func.count(SearchLog.id).label("search_count"),
+        func.max(SearchLog.created_at).label("last_searched_at")
+    ).filter(SearchLog.results_count == 0).group_by(SearchLog.clean_query).order_by(func.count(SearchLog.id).desc()).limit(15).all()
+
+    zero_demands = [
+        SearchTrendItem(
+            query=r.query,
+            search_count=r.search_count,
+            last_searched_at=r.last_searched_at
+        ) for r in zero_results
+    ]
+
+    # Recent searches feed
+    recent_logs = db.query(SearchLog).order_by(SearchLog.created_at.desc()).limit(50).all()
+
+    recent_items = []
+    for log in recent_logs:
+        user_name = log.user.name if log.user else "Guest Visitor"
+        recent_items.append(
+            SearchLogItem(
+                id=log.id,
+                query=log.query,
+                niche_filter=log.niche_filter,
+                results_count=log.results_count,
+                created_at=log.created_at,
+                user_name=user_name
+            )
+        )
+
+    return SearchAnalyticsResponse(
+        total_searches=total_searches,
+        top_trending_queries=top_trending,
+        recent_searches=recent_items,
+        zero_results_demands=zero_demands
+    )
+
+
+# ============== PAYMENT ROUTES ==============
+
+@api_app.post("/payments/create-order", response_model=PaymentOrderResponse)
+def create_payment_order(
+    req: CreatePaymentOrderRequest,
+    current_user = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    package = db.query(Package).filter(Package.id == req.package_id).first()
+    if not package:
+        raise HTTPException(status_code=404, detail="Package not found")
+
+    if package.provider_id == current_user.id:
+        raise HTTPException(status_code=400, detail="You cannot hire yourself or purchase your own package.")
+
+    provider = db.query(User).filter(User.id == package.provider_id).first()
+    if not provider:
+        raise HTTPException(status_code=404, detail="Provider not found")
+
+    # Create booking in pending_payment status
+    booking = Booking(
+        buyer_id=current_user.id,
+        provider_id=provider.id,
+        package_id=package.id,
+        niche=req.niche or package.niche or "editors_animators",
+        total_amount=package.price,
+        status="pending_payment",
+        client_notes=req.notes,
+        source_file_url=req.source_file_url,
+        is_free_sample=False
+    )
+    db.add(booking)
+    db.commit()
+    db.refresh(booking)
+
+    settings = db.query(PlatformSettings).first()
+    is_promo = getattr(settings, 'launch_promo_active', True) if settings else True
+    comm_rate = 0.0 if is_promo else (settings.commission_rate if (settings and settings.commission_rate is not None) else 0.20)
+    platform_comm = round(package.price * comm_rate, 2)
+    prov_payout = round(package.price * (1.0 - comm_rate), 2)
+
+    payment = db.query(Payment).filter(Payment.booking_id == booking.id).first()
+    if not payment:
+        payment = Payment(
+            booking_id=booking.id,
+            amount=package.price,
+            status="pending",
+            platform_commission=platform_comm,
+            provider_payout=prov_payout,
+            held_at=datetime.utcnow()
+        )
+        db.add(payment)
+    else:
+        payment.amount = package.price
+        payment.platform_commission = platform_comm
+        payment.provider_payout = prov_payout
+        payment.status = "pending"
+        payment.held_at = datetime.utcnow()
+    db.commit()
+
+    razorpay_key_id = (settings.razorpay_key_id if settings else "") or os.environ.get("RAZORPAY_KEY_ID", "")
+    razorpay_key_secret = (settings.razorpay_key_secret if settings else "") or os.environ.get("RAZORPAY_KEY_SECRET", "")
+
+    order_id = f"order_{booking.id}_{int(datetime.utcnow().timestamp())}"
+    amount_paise = int(round(package.price * 100))
+
+    if razorpay_key_id and razorpay_key_secret:
+        try:
+            import urllib.request
+            import base64
+            import json
+
+            auth_str = f"{razorpay_key_id}:{razorpay_key_secret}"
+            b64_auth = base64.b64encode(auth_str.encode()).decode()
+            rzp_data = json.dumps({
+                "amount": amount_paise,
+                "currency": "INR",
+                "receipt": f"booking_{booking.id}",
+                "notes": {"package_id": str(package.id), "booking_id": str(booking.id)}
+            }).encode('utf-8')
+
+            rzp_req = urllib.request.Request(
+                "https://api.razorpay.com/v1/orders",
+                data=rzp_data,
+                headers={
+                    "Authorization": f"Basic {b64_auth}",
+                    "Content-Type": "application/json"
+                }
+            )
+            with urllib.request.urlopen(rzp_req, timeout=5) as resp:
+                rzp_res = json.loads(resp.read().decode())
+                if "id" in rzp_res:
+                    order_id = rzp_res["id"]
+        except Exception as e:
+            print(f"Razorpay API order creation note: {e}")
+
+    payment.gateway_response = {
+        "razorpay_order_id": order_id,
+        "package_id": package.id,
+        "booking_id": booking.id,
+    }
+    db.commit()
+
+    return {
+        "booking_id": booking.id,
+        "order_id": order_id,
+        "amount": package.price,
+        "amount_paise": amount_paise,
+        "currency": "INR",
+        "razorpay_key_id": razorpay_key_id or "",
+        "package_title": package.title or "Service Package",
+        "buyer_name": current_user.name or "Client",
+        "buyer_email": current_user.email or "",
+        "buyer_phone": current_user.phone or ""
+    }
+
+@api_app.post("/payments/verify")
+def verify_payment(
+    req: VerifyPaymentRequest,
+    current_user = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    booking = db.query(Booking).filter(Booking.id == req.booking_id).first()
+    if not booking:
+        raise HTTPException(status_code=404, detail="Booking not found")
+
+    if booking.buyer_id != current_user.id and current_user.user_type != UserType.ADMIN:
+        raise HTTPException(status_code=403, detail="Not your booking")
+
+    settings = db.query(PlatformSettings).first()
+    razorpay_key_secret = (settings.razorpay_key_secret if settings else "") or os.environ.get("RAZORPAY_KEY_SECRET", "")
+
+    # Payment confirmation must always be backed by a real Razorpay signature.
+    # Never accept client-provided placeholders such as ``upi_verified``.
+    if not razorpay_key_secret:
+        raise HTTPException(status_code=503, detail="Online payment verification is not configured.")
+    if not req.razorpay_signature or req.razorpay_signature == "upi_verified":
+        raise HTTPException(status_code=400, detail="Missing payment signature")
+
+    import hmac
+    import hashlib
+    msg = f"{req.razorpay_order_id}|{req.razorpay_payment_id}"
+    expected_sig = hmac.new(
+        razorpay_key_secret.encode(),
+        msg.encode(),
+        hashlib.sha256
+    ).hexdigest()
+    if not hmac.compare_digest(expected_sig, req.razorpay_signature):
+        raise HTTPException(status_code=400, detail="Invalid payment signature")
+
+    payment = db.query(Payment).filter(Payment.booking_id == booking.id).first()
+    if payment and payment.gateway_response:
+        expected_order_id = payment.gateway_response.get("razorpay_order_id") if isinstance(payment.gateway_response, dict) else None
+        if expected_order_id and expected_order_id != req.razorpay_order_id:
+            raise HTTPException(status_code=400, detail="Payment order does not match this booking")
+    if not payment:
+        is_promo = getattr(settings, 'launch_promo_active', True) if settings else True
+        comm_rate = 0.0 if is_promo else (settings.commission_rate if (settings and settings.commission_rate is not None) else 0.20)
+        platform_comm = round(booking.total_amount * comm_rate, 2)
+        prov_payout = round(booking.total_amount * (1.0 - comm_rate), 2)
+        payment = Payment(
+            booking_id=booking.id,
+            amount=booking.total_amount,
+            status="held",
+            gateway_txn_id=req.razorpay_payment_id,
+            platform_commission=platform_comm,
+            provider_payout=prov_payout,
+            held_at=datetime.utcnow()
+        )
+        db.add(payment)
+    else:
+        payment.status = "held"
+        payment.gateway_txn_id = req.razorpay_payment_id
+        payment.held_at = datetime.utcnow()
+
+    booking.status = "in_progress"
+
+    # Increment provider total_bookings safely without double-count
+    provider_profile = db.query(Profile).filter(Profile.user_id == booking.provider_id).first()
+    if provider_profile:
+        provider_profile.total_bookings = (provider_profile.total_bookings or 0) + 1
+
+    db.commit()
+    db.refresh(booking)
+    db.refresh(payment)
+
+    create_user_notification(
+        db,
+        user_id=booking.provider_id,
+        title="📦 New Order Secured!",
+        message=f"Client {current_user.name} paid ₹{booking.total_amount:,.2f} in Escrow for order #{booking.id}",
+        type="order",
+        link=f"/bookings?id={booking.id}"
+    )
+
+    return {
+        "status": "success",
+        "booking_id": booking.id,
+        "payment_id": payment.id,
+        "escrow_status": "held",
+        "platform_commission": payment.platform_commission,
+        "provider_payout": payment.provider_payout,
+        "message": "Payment secured and held in escrow. Provider can begin work!"
+    }
+
+@api_app.post("/payments/webhook")
+async def razorpay_webhook(
+    request: Request,
+    db = Depends(get_db)
+):
+    body_bytes = await request.body()
+    signature = request.headers.get("X-Razorpay-Signature", "")
+
+    settings = db.query(PlatformSettings).first()
+    webhook_secret = os.environ.get("RAZORPAY_WEBHOOK_SECRET", "") or (settings.razorpay_key_secret if settings else "") or os.environ.get("RAZORPAY_KEY_SECRET", "")
+
+    if not signature:
+        raise HTTPException(status_code=400, detail="Missing webhook signature")
+
+    if not webhook_secret:
+        raise HTTPException(status_code=503, detail="Payment webhook verification is not configured.")
+
+    import hmac
+    import hashlib
+    expected_sig = hmac.new(
+        webhook_secret.encode(),
+        body_bytes,
+        hashlib.sha256
+    ).hexdigest()
+    if not hmac.compare_digest(expected_sig, signature):
+        raise HTTPException(status_code=400, detail="Invalid webhook signature")
+
+    import json
+    try:
+        event = json.loads(body_bytes.decode('utf-8'))
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid JSON payload")
+
+    event_type = event.get("event")
+    payload = event.get("payload", {})
+
+    if event_type in ["payment.captured", "order.paid"]:
+        payment_entity = payload.get("payment", {}).get("entity", {})
+        order_entity = payload.get("order", {}).get("entity", {})
+
+        notes = payment_entity.get("notes", {}) or order_entity.get("notes", {})
+        booking_id = notes.get("booking_id")
+
+        payment_record = None
+        if booking_id:
+            payment_record = db.query(Payment).filter(Payment.booking_id == int(booking_id)).first()
+
+        order_id = payment_entity.get("order_id") or order_entity.get("id")
+        if not payment_record and order_id:
+            receipt = order_entity.get("receipt", "")
+            if receipt.startswith("booking_"):
+                try:
+                    b_id = int(receipt.replace("booking_", ""))
+                    payment_record = db.query(Payment).filter(Payment.booking_id == b_id).first()
+                except Exception:
+                    pass
+
+        if payment_record and payment_record.status == "pending":
+            payment_record.status = "held"
+            payment_record.held_at = datetime.utcnow()
+            payment_record.gateway_txn_id = payment_entity.get("id", payment_record.gateway_txn_id)
+            booking = payment_record.booking
+            if booking and booking.status in ["pending_payment", "pending", "confirmed"]:
+                booking.status = "in_progress"
+            db.commit()
+
+    elif event_type == "payment.failed":
+        payment_entity = payload.get("payment", {}).get("entity", {})
+        notes = payment_entity.get("notes", {})
+        booking_id = notes.get("booking_id")
+        if booking_id:
+            payment_record = db.query(Payment).filter(Payment.booking_id == int(booking_id)).first()
+            if payment_record and payment_record.status == "pending":
+                payment_record.status = "failed"
+                db.commit()
+
+    elif event_type == "refund.processed":
+        refund_entity = payload.get("refund", {}).get("entity", {})
+        payment_id = refund_entity.get("payment_id")
+        if payment_id:
+            payment_record = db.query(Payment).filter(Payment.gateway_txn_id == payment_id).first()
+            if payment_record:
+                payment_record.status = "refunded"
+                payment_record.refunded_at = datetime.utcnow()
+                booking = payment_record.booking
+                if booking:
+                    booking.status = "refunded"
+                db.commit()
+
+    return {"status": "ok", "event": event_type}
+
+@api_app.get("/payments", response_model=List[PaymentResponse])
+def get_payments(current_user = Depends(get_current_user), db = Depends(get_db)):
+    query = db.query(Payment).join(Booking)
+    if current_user.user_type == UserType.BUYER:
+        query = query.filter(Booking.buyer_id == current_user.id)
+    elif current_user.user_type == UserType.PROVIDER:
+        query = query.filter(Booking.provider_id == current_user.id)
+
+    payments = query.order_by(Payment.created_at.desc()).all()
+    is_admin = current_user.user_type == UserType.ADMIN
+    is_provider = current_user.user_type == UserType.PROVIDER
+    results = []
+    for p in payments:
+        booking = p.booking
+        pkg = booking.package if booking else None
+        buyer = booking.buyer if booking else None
+        provider = booking.provider if booking else None
+
+        results.append(PaymentResponse(
+            id=p.id,
+            booking_id=p.booking_id,
+            amount=p.amount,
+            status=p.status,
+            gateway_txn_id=p.gateway_txn_id,
+            platform_commission=p.platform_commission,
+            provider_payout=p.provider_payout,
+            held_at=p.held_at,
+            released_at=p.released_at,
+            refunded_at=p.refunded_at,
+            created_at=p.created_at,
+            package_title=pkg.title if pkg else (f"Booking #{booking.id}" if booking else "Service Package"),
+            buyer_name=buyer.name if buyer else "Client",
+            # Only admin or the buyer themselves can see buyer contact info
+            buyer_email=buyer.email if (buyer and (is_admin or not is_provider)) else "",
+            buyer_phone=buyer.phone if (buyer and (is_admin or not is_provider)) else "",
+            provider_name=provider.name if provider else "Provider",
+            booking_status=booking.status if booking else "confirmed"
+        ))
+    return results
+
+@api_app.get("/payments/{payment_id}", response_model=PaymentResponse)
+def get_payment(payment_id: int, current_user = Depends(get_current_user), db = Depends(get_db)):
+    payment = db.query(Payment).filter(Payment.id == payment_id).first()
+    if not payment:
+        raise HTTPException(status_code=404, detail="Payment not found")
+
+    booking = db.query(Booking).filter(Booking.id == payment.booking_id).first()
+    if not booking:
+        raise HTTPException(status_code=404, detail="Booking not found")
+
+    if current_user.user_type == UserType.BUYER and booking.buyer_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not your payment")
+    if current_user.user_type == UserType.PROVIDER and booking.provider_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not your payment")
+
+    return payment
+
+@api_app.post("/payments/{payment_id}/release", response_model=PaymentResponse)
+def release_payment(payment_id: int, current_user = Depends(get_current_user), db = Depends(get_db)):
+    if current_user.user_type != UserType.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin only")
+
+    payment = db.query(Payment).filter(Payment.id == payment_id).first()
+    if not payment:
+        raise HTTPException(status_code=404, detail="Payment not found")
+
+    if payment.status != "held":
+        raise HTTPException(status_code=400, detail="Payment not in held status")
+
+    payment.status = "released"
+    payment.released_at = datetime.utcnow()
+
+    # Prevent double Release records
+    existing_release = db.query(Release).filter(Release.payment_id == payment.id).first()
+    if not existing_release:
+        release = Release(
+            payment_id=payment.id,
+            provider_payout=payment.provider_payout,
+            platform_commission=payment.platform_commission
+        )
+        db.add(release)
+
+        booking = db.query(Booking).filter(Booking.id == payment.booking_id).first()
+        if booking:
+            provider_profile = db.query(Profile).filter(Profile.user_id == booking.provider_id).first()
+            if provider_profile:
+                provider_profile.monthly_earnings = (provider_profile.monthly_earnings or 0.0) + (payment.provider_payout or 0.0)
+
+    db.commit()
+    db.refresh(payment)
+    return payment
+
+# ============== REVIEW ROUTES ==============
+
+@api_app.get("/reviews", response_model=List[ReviewResponse])
+def get_reviews(booking_id: Optional[int] = None, current_user = Depends(get_current_user), db = Depends(get_db)):
+    query = db.query(Review)
+    if booking_id:
+        query = query.filter(Review.booking_id == booking_id)
+    if current_user.user_type == UserType.PROVIDER:
+        query = query.filter(Review.provider_id == current_user.id)
+    return query.all()
+
+@api_app.post("/reviews", response_model=ReviewResponse)
+def create_review(review_data: ReviewCreate, current_user = Depends(get_current_user), db = Depends(get_db)):
+    if current_user.user_type != UserType.BUYER:
+        raise HTTPException(status_code=403, detail="Only buyers can leave reviews")
+
+    booking = db.query(Booking).filter(Booking.id == review_data.booking_id).first()
+    if not booking:
+        raise HTTPException(status_code=404, detail="Booking not found")
+
+    if booking.buyer_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not your booking")
+
+    if booking.status not in ["approved", "completed"]:
+        raise HTTPException(status_code=400, detail="Booking must be completed to review")
+
+    existing = db.query(Review).filter(Review.booking_id == review_data.booking_id).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="Booking already reviewed")
+
+    review = Review(
+        booking_id=review_data.booking_id,
+        buyer_id=current_user.id,
+        provider_id=booking.provider_id,
+        rating=review_data.rating,
+        comment=review_data.comment
+    )
+    db.add(review)
+    db.commit()
+    db.refresh(review)
+
+    provider_profile = db.query(Profile).filter(Profile.user_id == booking.provider_id).first()
+    if provider_profile:
+        reviews = db.query(Review).filter(Review.provider_id == booking.provider_id).all()
+        if reviews:
+            provider_profile.rating = round(sum(r.rating for r in reviews) / len(reviews), 2)
+
+    db.commit()
+    db.refresh(review)
+    return review
+
+# ============== DISPUTE ROUTES ==============
+
+@api_app.get("/disputes", response_model=List[DisputeResponse])
+def get_disputes(booking_id: Optional[int] = None, current_user = Depends(get_current_user), db = Depends(get_db)):
+    query = db.query(Dispute)
+    if booking_id:
+        query = query.filter(Dispute.booking_id == booking_id)
+    if current_user.user_type in [UserType.BUYER, UserType.PROVIDER]:
+        query = query.join(Booking)
+        if current_user.user_type == UserType.BUYER:
+            query = query.filter(Booking.buyer_id == current_user.id)
+        else:
+            query = query.filter(Booking.provider_id == current_user.id)
+    return query.all()
+
+@api_app.post("/disputes/{dispute_id}/resolve", response_model=DisputeResponse)
+@api_app.patch("/disputes/{dispute_id}/resolve", response_model=DisputeResponse)
+def resolve_dispute(dispute_id: int, resolve_data: DisputeResolve, current_user = Depends(get_current_user), db = Depends(get_db)):
+    if current_user.user_type != UserType.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin only")
+
+    dispute = db.query(Dispute).filter(Dispute.id == dispute_id).first()
+    if not dispute:
+        raise HTTPException(status_code=404, detail="Dispute not found")
+
+    dispute.status = resolve_data.status
+    dispute.resolution = resolve_data.resolution
+    dispute.admin_notes = resolve_data.admin_notes
+    db.commit()
+    db.refresh(dispute)
+
+    booking = db.query(Booking).filter(Booking.id == dispute.booking_id).first()
+    if booking:
+        if resolve_data.status == "resolved" and "refund" in resolve_data.resolution.lower():
+            booking.status = "refunded"
+            payment = db.query(Payment).filter(Payment.booking_id == booking.id).first()
+            if payment and payment.status in ["held", "released"]:
+                payment.status = "refunded"
+                payment.refunded_at = datetime.utcnow()
+        elif resolve_data.status == "resolved":
+            booking.status = "completed"
+
+        db.commit()
+
+    db.refresh(dispute)
+    return dispute
+
+# ============== ADMIN ROUTES ==============
+
+@api_app.get("/admin/stats", response_model=AdminStats)
+def get_admin_stats(current_user = Depends(get_current_user), db = Depends(get_db)):
+    if current_user.user_type != UserType.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin only")
+
+    total_users = db.query(User).count()
+    total_providers = db.query(User).filter(User.user_type == UserType.PROVIDER).count()
+    total_bookings = db.query(Booking).count()
+    total_revenue = db.query(Payment).filter(Payment.status == "released").with_entities(
+        func.sum(Payment.platform_commission)
+    ).scalar() or 0
+    active_niches = db.query(Niche).filter(Niche.is_active == True).count()
+
+    return AdminStats(
+        total_users=total_users,
+        total_providers=total_providers,
+        total_bookings=total_bookings,
+        total_revenue=float(total_revenue or 0),
+        total_commissions=float(total_revenue or 0),
+        active_niches=active_niches
+    )
+
+@api_app.get("/niches", response_model=List[NicheResponse])
+def get_public_niches(db = Depends(get_db)):
+    return db.query(Niche).filter(Niche.is_active == True).all()
+
+# Creator Level Badge helper
+def get_creator_level_badge_data(total_bookings: int = 0, rating: float = 5.0) -> dict:
+    tb = total_bookings or 0
+    r = rating if rating is not None else 5.0
+    if tb >= 50 and r >= 4.7:
+        return {
+            "level": 4,
+            "key": "diamond_elite",
+            "title": "💎 Diamond Elite",
+            "badge_label": "💎 Level 4: Diamond Elite",
+            "icon": "💎",
+            "color": "#9333ea"
+        }
+    elif tb >= 25 and r >= 4.5:
+        return {
+            "level": 3,
+            "key": "gold_master",
+            "title": "🥇 Gold Master",
+            "badge_label": "🥇 Level 3: Gold Master",
+            "icon": "🥇",
+            "color": "#eab308"
+        }
+    elif tb >= 10 and r >= 4.0:
+        return {
+            "level": 2,
+            "key": "silver_creator",
+            "title": "🥈 Silver Creator",
+            "badge_label": "🥈 Level 2: Silver Creator",
+            "icon": "🥈",
+            "color": "#9ca3af"
+        }
+    else:
+        return {
+            "level": 1,
+            "key": "rising_creator",
+            "title": "🥉 Rising Creator",
+            "badge_label": "🥉 Level 1: Rising Creator",
+            "icon": "🥉",
+            "color": "#cd7f32"
+        }
+
+# Public provider listing for the marketplace
+@api_app.get("/providers", response_model=List[dict])
+@api_app.get("/educators/summary", response_model=List[dict])
+def get_providers(
+    niche: Optional[str] = None,
+    search: Optional[str] = None,
+    sort_by: Optional[str] = "rating",
+    db = Depends(get_db)
+):
+    query = db.query(User).filter(
+        User.user_type == UserType.PROVIDER,
+        User.is_active == True,
+        User.is_verified == True
+    )
+    if niche:
+        query = query.join(Profile).filter(Profile.niche == niche)
+    if search:
+        search_term = f"%{search.lstrip('@')}%"
+        query = query.filter(
+            or_(
+                User.name.ilike(search_term),
+                User.username.ilike(search_term)
+            )
+        )
+    providers = query.all()
+    result = []
+    for u in providers:
+        profile = db.query(Profile).filter(Profile.user_id == u.id).first()
+        portfolio = db.query(PortfolioItem).filter(PortfolioItem.provider_id == u.id).all()
+        u_type_str = get_user_type_str(u.user_type)
+        tb = profile.total_bookings if profile else 0
+        r = profile.rating if profile else 5.0
+        lvl_badge = get_creator_level_badge_data(tb, r)
+        result.append({
+            "id": u.id,
+            "name": u.name,
+            "username": u.username or f"creator_{u.id}",
+            "user_type": u_type_str,
+            "creator_level": lvl_badge,
+            "profile": {
+                "niche": profile.niche if profile else None,
+                "service_area": profile.service_area if profile else None,
+                "skills": profile.skills if profile else [],
+                "availability": profile.availability if profile else None,
+                "rating": profile.rating if profile else 0,
+                "total_bookings": profile.total_bookings if profile else 0,
+                "creator_level": lvl_badge
+            } if profile else None,
+            "portfolio_items": [
+                {
+                    "id": pi.id,
+                    "title": pi.title,
+                    "description": pi.description,
+                    "media_url": pi.media_url,
+                    "media_type": pi.media_type,
+                    "thumbnail_url": pi.thumbnail_url
+                } for pi in portfolio
+            ]
+        })
+    return result
+
+@api_app.get("/marketplace/best-editors")
+def get_best_editors(limit: int = 5, db = Depends(get_db)):
+    providers = db.query(User).filter(
+        User.user_type == UserType.PROVIDER,
+        User.is_active == True,
+        User.is_verified == True
+    ).all()
+    results = []
+    for u in providers:
+        profile = db.query(Profile).filter(Profile.user_id == u.id).first()
+        tb = profile.total_bookings if profile and profile.total_bookings else 0
+        r = profile.rating if profile and profile.rating else 0.0
+        badge = get_creator_level_badge_data(tb, r)
+        results.append({
+            "id": u.id,
+            "name": u.name,
+            "username": u.username or f"creator_{u.id}",
+            "profile_image": getattr(u, 'profile_image', None),
+            "niche": profile.niche if profile else "editors_animators",
+            "rating": r,
+            "total_bookings": tb,
+            "creator_level": badge
+        })
+    results.sort(key=lambda x: (x["creator_level"]["level"], x["rating"], x["total_bookings"]), reverse=True)
+    return results[:limit]
+
+@api_app.get("/providers/by-username/{username}")
+def get_provider_by_username(username: str, db = Depends(get_db)):
+    clean_un = username.lstrip('@').lower()
+    user = db.query(User).filter(
+        User.username == clean_un,
+        User.user_type == UserType.PROVIDER,
+        User.is_active == True,
+        User.is_verified == True
+    ).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Provider not found")
+    profile = db.query(Profile).filter(Profile.user_id == user.id).first()
+    portfolio = db.query(PortfolioItem).filter(PortfolioItem.provider_id == user.id).all()
+    packages = db.query(Package).filter(Package.provider_id == user.id, Package.status == "approved").all()
+    tb = profile.total_bookings if profile else 0
+    r = profile.rating if profile else 5.0
+    lvl_badge = get_creator_level_badge_data(tb, r)
+    return {
+        "id": user.id,
+        "name": user.name,
+        "username": user.username,
+        "creator_level": lvl_badge,
+        "profile": {
+            "niche": profile.niche if profile else "editors_animators",
+            "bio": profile.bio if profile else "",
+            "skills": profile.skills if profile else [],
+            "rating": profile.rating if profile else 0.0,
+            "total_bookings": profile.total_bookings if profile else 0,
+            "service_area": profile.service_area if profile else "online",
+            "availability": profile.availability if profile else "flexible",
+            "creator_level": lvl_badge
+        } if profile else None,
+        "portfolio_items": [
+            {
+                "id": pi.id,
+                "title": pi.title,
+                "description": pi.description,
+                "media_url": pi.media_url,
+                "media_type": pi.media_type,
+                "thumbnail_url": pi.thumbnail_url,
+                "created_at": pi.created_at.isoformat() if pi.created_at else None
+            } for pi in portfolio
+        ],
+        "packages": [
+            {
+                "id": pkg.id,
+                "title": pkg.title,
+                "price": pkg.price,
+                "turnaround": pkg.turnaround,
+                "scope": pkg.scope,
+                "package_type": pkg.package_type
+            } for pkg in packages
+        ]
+    }
+
+@api_app.get("/profile/{provider_id}")
+def get_public_provider_profile_by_id(provider_id: int, db = Depends(get_db)):
+    user = db.query(User).filter(User.id == provider_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Provider not found")
+    profile = db.query(Profile).filter(Profile.user_id == provider_id).first()
+    rev_count = db.query(Review).filter(Review.provider_id == provider_id).count()
+    u_type_str = get_user_type_str(user.user_type) if hasattr(user.user_type, 'value') else str(user.user_type)
+    tb = profile.total_bookings if profile else 0
+    r = profile.rating if profile else 5.0
+    lvl_badge = get_creator_level_badge_data(tb, r)
+    return {
+        "id": user.id,
+        "name": user.name,
+        "username": user.username or f"user_{user.id}",
+        "user_type": u_type_str,
+        "creator_level": lvl_badge,
+        "profile": {
+            "niche": profile.niche if profile else "editors_animators",
+            "bio": profile.bio if profile else "",
+            "skills": profile.skills if profile else [],
+            "rating": profile.rating if profile else 5.0,
+            "total_bookings": profile.total_bookings if profile else 0,
+            "review_count": rev_count,
+            "service_area": profile.service_area if profile else "online",
+            "availability": profile.availability if profile else "flexible",
+            "response_time": profile.response_time if profile else "within 2 hours",
+            "creator_level": lvl_badge
+        } if profile else None
+    }
+
+@api_app.get("/profile/{provider_id}/reviews", response_model=List[ReviewResponse])
+def get_provider_public_reviews_by_id(provider_id: int, db = Depends(get_db)):
+    return db.query(Review).filter(Review.provider_id == provider_id).order_by(Review.created_at.desc()).all()
+
+@api_app.get("/admin/niches", response_model=List[NicheResponse])
+def get_admin_niches(current_user = Depends(get_current_user), db = Depends(get_db)):
+    if current_user.user_type != UserType.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin only")
+    return db.query(Niche).all()
+
+@api_app.post("/admin/niches", response_model=NicheResponse)
+def create_niche(niche_data: NicheCreate, current_user = Depends(get_current_user), db = Depends(get_db)):
+    if current_user.user_type != UserType.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin only")
+
+    niche = Niche(
+        name=niche_data.name,
+        display_name=niche_data.display_name,
+        is_active=niche_data.is_active,
+        supply_cap=niche_data.supply_cap
+    )
+    db.add(niche)
+    db.commit()
+    db.refresh(niche)
+    return niche
+
+@api_app.patch("/admin/niches/{niche_id}", response_model=NicheResponse)
+def update_niche(niche_id: int, niche_data: NicheUpdate, current_user = Depends(get_current_user), db = Depends(get_db)):
+    if current_user.user_type != UserType.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin only")
+
+    niche = db.query(Niche).filter(Niche.id == niche_id).first()
+    if not niche:
+        raise HTTPException(status_code=404, detail="Niche not found")
+
+    update_data = niche_data.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(niche, key, value)
+
+    db.commit()
+    db.refresh(niche)
+    return niche
+
+@api_app.post("/admin/init")
+def init_admin(db = Depends(get_db)):
+    """Ensure admin user and default niches exist"""
+    admin = db.query(User).filter(User.user_type == UserType.ADMIN).first()
+    if admin:
+        return {"message": "Admin user active", "admin_email": admin.email}
+
+    user = db.query(User).filter(func.lower(User.email) == "rahura2026@gmail.com").first()
+    if user:
+        user.user_type = UserType.ADMIN
+        user.is_verified = True
+        user.is_active = True
+        db.commit()
+        return {"message": "Admin initialized", "admin_email": user.email}
+
+# ============== PROVIDER VETTING & EXPERIENCE TIERS ==============
+
+TIER_TEST_TASKS = {
+    "beginner": {
+        "tier_name": "Beginner Creator",
+        "tasks_required": 3,
+        "description": "3 free video editing & brand ad test tasks to qualify for client job assignments.",
+        "tasks": [
+            {
+                "id": "beg_task_1",
+                "title": "🏢 Task 1: Local Gym/Cafe 30s Brand Promo Reel",
+                "brief": "Edit a 30s fast-paced vertical brand ad from raw smartphone clips. Hook in first 3s, sync to upbeat royalty-free music, insert lower-third business name, and create a high-converting CTA outro.",
+                "deliverables": "1080x1920 (9:16 vertical MP4), dynamic text hooks, sound design & SFX.",
+                "sample_footage_url": "https://groovehub.com/samples/raw_local_ad_footage.zip"
+            },
+            {
+                "id": "beg_task_2",
+                "title": "🛍️ Task 2: E-Commerce 45s UGC Product Video Ad",
+                "brief": "Edit a high-converting product demo ad. Highlight the customer's pain point, show product unboxing/usage with punch-in zooms, and animate a 20% OFF coupon badge.",
+                "deliverables": "1080x1920 (9:16 vertical MP4), price tag callout, sound pops, and subtitle hooks.",
+                "sample_footage_url": "https://groovehub.com/samples/raw_ecommerce_clips.zip"
+            },
+            {
+                "id": "beg_task_3",
+                "title": "📝 Task 3: Dynamic Animated Subtitles Reel (30s)",
+                "brief": "Add Alex Hormozi style animated captions to raw talking-head footage with word-by-word highlight colors, emojis, and sound pops.",
+                "deliverables": "1080x1920 MP4 with 100% accurate subtitle timing, high-contrast captions, and visual emoji pops.",
+                "sample_footage_url": "https://groovehub.com/samples/raw_creator_talking_head.zip"
+            }
+        ]
+    },
+    "intermediate": {
+        "tier_name": "Intermediate Creator",
+        "tasks_required": 2,
+        "description": "2 free video editing & brand ad test tasks to unlock Verified Pro status.",
+        "tasks": [
+            {
+                "id": "inter_task_1",
+                "title": "⚡ Task 1: High-Retention Brand Commercial (45s)",
+                "brief": "Multi-angle brand promo with seamless speed ramps, motion graphics callouts, and multi-layered SFX audio design (risers, impacts, whooshes).",
+                "deliverables": "Cinema-level sound mastering, 9:16 export, scroll-stopping hook.",
+                "sample_footage_url": "https://groovehub.com/samples/raw_commercial_footage.zip"
+            },
+            {
+                "id": "inter_task_2",
+                "title": "🎨 Task 2: Cinematic Multi-Angle Product Promo (60s)",
+                "brief": "Color-correct and grade log/flat footage into a punchy commercial look with branded lower thirds and dynamic split-screen transitions.",
+                "deliverables": "Professional color grading LUTs, audio normalization, 4K master export.",
+                "sample_footage_url": "https://groovehub.com/samples/raw_brand_promo_log.zip"
+            }
+        ]
+    },
+    "pro": {
+        "tier_name": "Pro Master Creator",
+        "tasks_required": 1,
+        "description": "1 free benchmark brand ad test task for instant Top-Rated Pro status.",
+        "tasks": [
+            {
+                "id": "pro_task_1",
+                "title": "👑 Task 1: Benchmark High-Ticket Brand Commercial Master",
+                "brief": "Master-grade commercial ad featuring 3 scroll-stopping hook variants, high-end motion graphics, bespoke audio engineering, and multi-platform ratio deliverables (9:16 vertical & 16:9 widescreen).",
+                "deliverables": "Direct-response retention mastery, broadcast audio engineering, top-tier motion graphics.",
+                "sample_footage_url": "https://groovehub.com/samples/raw_pro_commercial_master.zip"
+            }
+        ]
+    }
+}
+
+@api_app.get("/provider/vetting-status")
+def get_provider_vetting_status(current_user = Depends(get_current_user), db = Depends(get_db)):
+    if current_user.user_type != UserType.PROVIDER and current_user.user_type != UserType.ADMIN:
+        raise HTTPException(status_code=403, detail="Provider only")
+    
+    profile = current_user.profile
+    tier = (profile.experience_tier if profile and profile.experience_tier else "beginner").lower()
+    if tier not in TIER_TEST_TASKS:
+        tier = "beginner"
+        
+    tier_info = TIER_TEST_TASKS[tier]
+    submissions = (profile.test_tasks_data or {}) if profile else {}
+    
+    tasks_with_status = []
+    completed_count = 0
+    for t in tier_info["tasks"]:
+        sub = submissions.get(t["id"])
+        is_submitted = bool(sub and sub.get("url"))
+        status_val = sub.get("status", "pending") if is_submitted else "pending"
+        if status_val == "approved":
+            completed_count += 1
+        tasks_with_status.append({
+            **t,
+            "submitted": is_submitted,
+            "submission_url": sub.get("url") if sub else None,
+            "submission_status": status_val,
+            "submitted_at": sub.get("submitted_at") if sub else None,
+            "admin_feedback": sub.get("admin_feedback") if sub else None
+        })
+        
+    return {
+        "tier": tier,
+        "tier_name": tier_info["tier_name"],
+        "tasks_required": tier_info["tasks_required"],
+        "tasks_completed": completed_count,
+        "is_verified": current_user.is_verified,
+        "vetting_status": profile.vetting_status if profile else "pending",
+        "description": tier_info["description"],
+        "tasks": tasks_with_status
+    }
+
+@api_app.post("/provider/update-tier")
+def update_provider_tier(payload: UpdateTierRequest, current_user = Depends(get_current_user), db = Depends(get_db)):
+    if current_user.user_type != UserType.PROVIDER and current_user.user_type != UserType.ADMIN:
+        raise HTTPException(status_code=403, detail="Provider only")
+    
+    tier = payload.tier.lower().strip()
+    if tier not in TIER_TEST_TASKS:
+        raise HTTPException(status_code=400, detail="Invalid tier. Choose 'beginner', 'intermediate', or 'pro'")
+    
+    profile = current_user.profile
+    if not profile:
+        profile = Profile(user_id=current_user.id)
+        db.add(profile)
+        
+    profile.experience_tier = tier
+    db.commit()
+    return {"message": f"Tier updated to {tier}", "tier": tier, "tasks_required": TIER_TEST_TASKS[tier]["tasks_required"]}
+
+@api_app.post("/provider/vetting-submit")
+def submit_provider_test_task(payload: VettingSubmitRequest, current_user = Depends(get_current_user), db = Depends(get_db)):
+    if current_user.user_type != UserType.PROVIDER and current_user.user_type != UserType.ADMIN:
+        raise HTTPException(status_code=403, detail="Provider only")
+    
+    profile = current_user.profile
+    if not profile:
+        profile = Profile(user_id=current_user.id)
+        db.add(profile)
+        
+    submissions = dict(profile.test_tasks_data or {})
+    submissions[payload.task_id] = {
+        "url": payload.submission_url,
+        "notes": payload.notes,
+        "status": "in_review",
+        "submitted_at": datetime.utcnow().isoformat()
+    }
+    profile.test_tasks_data = submissions
+    profile.vetting_status = "in_review"
+    db.commit()
+    
+    return {
+        "message": "Test task submitted successfully for admin review!",
+        "task_id": payload.task_id,
+        "status": "in_review"
+    }
+
+@api_app.post("/admin/providers/{provider_id}/approve")
+def approve_provider(provider_id: int, current_user = Depends(get_current_user), db = Depends(get_db)):
+    if current_user.user_type != UserType.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin only")
+
+    user = db.query(User).filter(User.id == provider_id).first()
+    if not user or user.user_type != UserType.PROVIDER:
+        raise HTTPException(status_code=404, detail="Provider not found")
+
+    user.is_verified = True
+    db.commit()
+    return {"message": "Provider approved", "provider_id": provider_id}
+
+@api_app.get("/admin/providers/pending", response_model=List[UserResponse])
+def get_pending_providers(current_user = Depends(get_current_user), db = Depends(get_db)):
+    if current_user.user_type != UserType.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin only")
+
+    providers = db.query(User).filter(
+        User.user_type == UserType.PROVIDER,
+        User.is_verified == False,
+        User.is_active == True
+    ).all()
+    return providers
+
+@api_app.get("/admin/bookings/pending-approval", response_model=List[BookingResponse])
+def get_pending_approval_bookings(current_user = Depends(get_current_user), db = Depends(get_db)):
+    if current_user.user_type != UserType.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin only")
+
+    bookings = db.query(Booking).filter(
+        Booking.status == "pending_approval"
+    ).all()
+    return bookings
+
+@api_app.post("/admin/bookings/{booking_id}/force-approve")
+def force_approve_booking(booking_id: int, current_user = Depends(get_current_user), db = Depends(get_db)):
+    if current_user.user_type != UserType.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin only")
+
+    booking = db.query(Booking).filter(Booking.id == booking_id).first()
+    if not booking:
+        raise HTTPException(status_code=404, detail="Booking not found")
+
+    booking.status = "approved"
+    db.commit()
+
+    payment = db.query(Payment).filter(Payment.booking_id == booking_id).first()
+    if payment and payment.status == "held":
+        payment.status = "released"
+        payment.released_at = datetime.utcnow()
+        release = Release(
+            payment_id=payment.id,
+            provider_payout=payment.provider_payout,
+            platform_commission=payment.platform_commission
+        )
+        db.add(release)
+
+        provider_profile = db.query(Profile).filter(Profile.user_id == booking.provider_id).first()
+        if provider_profile:
+            provider_profile.monthly_earnings = (provider_profile.monthly_earnings or 0.0) + (payment.provider_payout or 0.0)
+
+        db.commit()
+
+    db.refresh(booking)
+    return booking
+
+@api_app.get("/admin/bookings", response_model=List[BookingResponse])
+def get_admin_all_bookings(
+    status: Optional[str] = None,
+    current_user = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    if current_user.user_type != UserType.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin only")
+    query = db.query(Booking)
+    if status:
+        query = query.filter(Booking.status == status)
+    return query.order_by(Booking.created_at.desc()).all()
+
+@api_app.get("/admin/providers", response_model=List[dict])
+def get_admin_all_providers(current_user = Depends(get_current_user), db = Depends(get_db)):
+    if current_user.user_type != UserType.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin only")
+    providers = db.query(User).filter(User.user_type == UserType.PROVIDER).all()
+    return [
+        {
+            "id": u.id,
+            "name": u.name,
+            "phone": u.phone,
+            "email": u.email,
+            "is_verified": u.is_verified,
+            "is_active": u.is_active,
+            "is_blocked": bool(getattr(u, 'is_blocked', False)),
+            "block_reason": getattr(u, 'block_reason', None),
+            "created_at": u.created_at.isoformat() if u.created_at else None,
+            "niche": u.profile.niche if u.profile else None,
+            "service_area": u.profile.service_area if u.profile else None,
+            "rating": u.profile.rating if u.profile else 0.0,
+            "total_bookings": u.profile.total_bookings if u.profile else 0,
+            "packages_count": len(u.packages)
+        }
+        for u in providers
+    ]
+
+@api_app.post("/admin/providers/{provider_id}/toggle-active")
+def toggle_provider_active(provider_id: int, current_user = Depends(get_current_user), db = Depends(get_db)):
+    if current_user.user_type != UserType.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin only")
+    user = db.query(User).filter(User.id == provider_id, User.user_type == UserType.PROVIDER).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Provider not found")
+    user.is_active = not user.is_active
+    db.commit()
+    return {"message": "Provider status updated", "is_active": user.is_active}
+
+
+# ============== HEALTH CHECK ==============
+
+@api_app.get("/health")
+def health_check(db = Depends(get_db)):
+    try:
+        db.execute(text("SELECT 1"))
+        db_status = "connected"
+    except Exception as e:
+        db_status = f"error: {str(e)}"
+    return {
+        "status": "healthy" if db_status == "connected" else "degraded",
+        "database": db_status,
+        "timestamp": datetime.utcnow().isoformat(),
+        "service": "EditorMarketplace API"
+    }
+
+
+# ============== MESSAGING & MODERATION ROUTES ==============
+
+NUMBER_WORDS = {
+    'zero': '0', 'one': '1', 'two': '2', 'three': '3', 'four': '4',
+    'five': '5', 'six': '6', 'seven': '7', 'eight': '8', 'nine': '9'
+}
+
+def detect_contact_sharing(text_content: str):
+    """
+    Scans text for anti-disintermediation violations:
+    1. Phone numbers (standard 10-digit, spaced, spelled-out, +91/0 prefixed)
+    2. Off-platform chat handles (WhatsApp, Telegram, Instagram)
+    3. Off-platform payment handles (UPI, GPay, PhonePe, Paytm bypass)
+    4. Email addresses
+    Returns: (is_flagged: bool, reason: Optional[str])
+    """
+    if not text_content:
+        return False, None
+    lower = text_content.lower()
+
+    # 1. Email pattern
+    email_pattern = r'.[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+.[a-zA-Z]{2,}.'
+    if re.search(email_pattern, text_content):
+        return True, "Sharing personal email address"
+
+    # 2. UPI / Direct payment pattern
+    upi_pattern = r'[a-zA-Z0-9.._]{2,}@(okhdfcbank|okaxis|oksbi|okicici|paytm|ybl|axl|ibl|barodampay|upi)'
+    if re.search(upi_pattern, lower):
+        return True, "Sharing direct UPI handle"
+
+    # 3. Off-platform chat & social handles
+    chat_patterns = [
+        (r'wa\.me/[a-zA-Z0-9_+]+', "WhatsApp link"),
+        (r't\.me/[a-zA-Z0-9_]+', "Telegram link"),
+        (r'\b(whatsapp|whats\s*app|watsapp|watsap|wa\.me)\b', "WhatsApp mention"),
+        (r'\b(telegram|tele\s*gram|t\.me)\b', "Telegram mention"),
+        (r'\b(instagram\.com|instagr\.am)\b', "Instagram link"),
+        (r'\b(gpay|phonepe|paytm)\b.*(?:number|no|transfer|send|direct|id|acc)', "Off-platform payment")
+    ]
+    for pattern, label in chat_patterns:
+        if re.search(pattern, lower):
+            return True, f"Sharing {label}"
+
+    # 4. Spelled-out numbers normalization
+    normalized = lower
+    for word, digit in NUMBER_WORDS.items():
+        normalized = re.sub(r'\b' + word + r'\b', digit, normalized)
+
+    # 5. Phone number detection
+    # Match patterns like: +91 9876543210, 98765-43210, 9 8 7 6 5 4 3 2 1 0, 9876543210
+    clusters = re.findall(r'(?:(?:\+?91|0)[\s\-]?)?[6-9]\d(?:[\s\-]?\d){8}', normalized)
+    if clusters:
+        return True, f"Sharing personal phone number ({clusters[0].strip()})"
+
+    # Clean non-digits and test contiguous digit streams
+    digits_only = re.sub(r'[^\d]', '', normalized)
+    if re.search(r'(?:91|0)?([6-9]\d{9})', digits_only):
+        return True, "Sharing personal phone number"
+
+    # 6. Bypass phrases combined with numbers
+    # Only flag if there are actual phone digits (not already masked)
+    if re.search(r'(call me|call on|ring me|my number|my ph|my contact|contact me on|reach me at|dial|ping me)', lower):
+        # Check if there's an actual phone pattern present (not just the phrase)
+        has_phone = bool(re.search(r'(?:(?:\+?91|0)[\s\-]?)?[6-9]\d(?:[\s\-]?\d){7,10}', text_content))
+
+    return False, None
+
+
+def mask_sensitive_content(text_content: str) -> str:
+    """
+    Sanitize chat text by masking phones and social handles before storage.
+    Returns masked string. Used both for flagging AND for stored content.
+    """
+    if not text_content:
+        return text_content
+    import re as _re
+
+    def _mask_phone(m):
+        digits = _re.sub(r'\D', '', m.group(0))
+        if len(digits) >= 10:
+            return '📠 [contact hidden - ' + str(len(digits)) + ' digits]'
+        return m.group(0)
+
+    # Mask continuous digit streams (phone numbers): 7+ digit groups ending in a digit
+    out = _re.sub(r'(?<!\w)(\+?\d[\s\-/.]?){7,}\d(?!\w)', _mask_phone, text_content)
+    # Mask @usernames
+    out = _re.sub(r'(@[a-zA-Z0-9_]{2,30})(?!\w)', lambda m: '[🔗 ' + m.group(1)[:2] + '…' + m.group(1)[-2:] + ']', out)
+    # Mask instagram.com / facebook.com URLs (with or without http)
+    out = _re.sub(r'https?://(?:www\.)?(instagram\.com|facebook\.com)/@?[a-zA-Z0-9_.+-]+', '[🔗 social link hidden]', out)
+    out = _re.sub(r'(?<!\w)(instagram\.com|facebook\.com)/@?[a-zA-Z0-9_.+-]+', '[🔗 social link hidden]', out)
+    return out
+
+
+def count_prior_flags(db, user_id: int) -> int:
+    """Count prior flagged (blocked) messages sent by a user — strike system."""
+    try:
+        return db.query(Message).filter(
+            Message.sender_id == user_id,
+            Message.is_flagged == True
+        ).count()
+    except Exception:
+        return 0
+
+
+def handle_moderation_violation(db, sender: User, receiver_id: int, booking_id, clean_content: str, file_url, reason: str):
+    """
+    Strike-based moderation:
+    - Strike 1: warn — save flagged message (not delivered), return 400 with warning.
+    - Strike 2+: suspend account — save flagged message, block user, return 403.
+    Returns (saved_msg, status_code, detail).
+    """
+    prior = count_prior_flags(db, sender.id)
+    flagged_msg = Message(
+        booking_id=booking_id,
+        sender_id=sender.id,
+        receiver_id=receiver_id,
+        message=clean_content,
+        file_url=file_url,
+        is_read=False,
+        is_flagged=True,
+        flag_reason=reason,
+        created_at=datetime.utcnow()
+    )
+    db.add(flagged_msg)
+    db.commit()
+    db.refresh(flagged_msg)
+
+    if prior >= 1:
+        # Second offence — suspend (keep is_active True so user can still
+        # read own bookings/payments and appeal; get_current_user blocks sends via is_blocked)
+        sender.is_blocked = True
+        sender.block_reason = f"Account suspended: Sharing direct contact details ({reason}) violates Groove Hub platform safety rules. (Strike {prior + 1})"
+        db.commit()
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Security Alert: Your message was blocked and your account has been suspended for attempting to share off-platform contact details ({reason}). To protect buyers and sellers under escrow, all communications and payments must stay on Groove Hub."
+        )
+
+    # First offence — warn, do not suspend
+    raise HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail=f"Warning (Strike 1): Your message was blocked — {reason}. Keep all contact details and payments on Groove Hub. A repeat violation will suspend your account."
+    )
+
+
+# ============== UNIVERSAL MEDIA & 4K VIDEO UPLOAD ==============
+
+ALLOWED_MEDIA_TYPES = {
+    'video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/x-matroska',
+    'video/webm', 'video/mpeg', 'video/ogg', 'video/3gpp',
+    'image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml',
+    'audio/mpeg', 'audio/wav', 'audio/mp4', 'audio/ogg', 'audio/aac',
+    'application/zip', 'application/x-zip-compressed', 'application/x-rar-compressed', 'application/x-7z-compressed', 'application/octet-stream'
+}
+ALLOWED_MEDIA_EXTENSIONS = {
+    '.mp4', '.mov', '.avi', '.mkv', '.webm', '.mpeg', '.mpg', '.3gp',
+    '.jpg', '.jpeg', '.png', '.webp', '.gif', '.svg',
+    '.mp3', '.wav', '.m4a', '.aac', '.ogg',
+    '.zip', '.rar', '.7z', '.pdf'
+}
+
+@api_app.post("/messages/upload")
+@api_app.post("/upload")
+@app.post("/upload")
+@app.post("/api/upload")
+async def upload_media_file(
+    file: Optional[UploadFile] = File(None),
+    video: Optional[UploadFile] = File(None),
+    media: Optional[UploadFile] = File(None),
+    current_user: Optional[User] = Depends(get_current_user_optional),
+):
+    """Upload a 4K video, image, audio, or deliverable archive up to 1GB."""
+    target_file = file or video or media
+    if not target_file:
+        raise HTTPException(status_code=400, detail="No file provided")
+
+    ext = os.path.splitext(target_file.filename or '')[1].lower()
+    if not ext:
+        ext = '.mp4'
+
+    content_type = target_file.content_type
+    if not content_type or content_type == 'application/octet-stream':
+        mime_map = {
+            '.mp4': 'video/mp4', '.mov': 'video/quicktime', '.avi': 'video/x-msvideo',
+            '.mkv': 'video/x-matroska', '.webm': 'video/webm', '.mpeg': 'video/mpeg',
+            '.mpg': 'video/mpeg', '.3gp': 'video/3gpp',
+            '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png',
+            '.webp': 'image/webp', '.gif': 'image/gif',
+            '.mp3': 'audio/mpeg', '.wav': 'audio/wav', '.m4a': 'audio/mp4',
+            '.zip': 'application/zip', '.pdf': 'application/pdf'
+        }
+        content_type = mime_map.get(ext, 'application/octet-stream')
+
+    if ext not in ALLOWED_MEDIA_EXTENSIONS and content_type not in ALLOWED_MEDIA_TYPES and not (content_type and (content_type.startswith('video/') or content_type.startswith('image/') or content_type.startswith('audio/'))):
+        raise HTTPException(status_code=400, detail=f"File extension '{ext}' is not allowed. Supported formats: 4K video (mp4, mov, avi, mkv, webm), images (jpg, png, webp), audio (mp3, wav), and archives (zip).")
+
+    MAX_FILE_SIZE = 1024 * 1024 * 1024  # 1 GB allowance for 4K video & project deliverables
+    if target_file.size and target_file.size > MAX_FILE_SIZE:
+        raise HTTPException(status_code=400, detail="File too large (max 1GB allowance)")
+
+    safe_name = f"{uuid.uuid4().hex}{ext}"
+    file_path = os.path.join(CHAT_UPLOAD_DIR, safe_name)
+
+    # Save file in 4MB chunks for efficient memory streaming of large 4K files
+    total_size = 0
+    with open(file_path, 'wb') as f:
+        while chunk := await target_file.read(4 * 1024 * 1024):
+            total_size += len(chunk)
+            if total_size > MAX_FILE_SIZE:
+                f.close()
+                if os.path.exists(file_path):
+                    try:
+                        os.remove(file_path)
+                    except Exception:
+                        pass
+                raise HTTPException(status_code=400, detail="File too large (max 1GB allowance)")
+            f.write(chunk)
+
+    url = f"/static/chat_uploads/{safe_name}"
+    return {
+        "url": url,
+        "filename": safe_name,
+        "original_name": target_file.filename,
+        "content_type": content_type,
+        "size": total_size
+    }
+
+
+@api_app.post("/bookings/{booking_id}/messages", response_model=MessageResponse)
+def send_booking_message(
+    booking_id: int,
+    msg_data: MessageCreate,
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    booking = db.query(Booking).filter(Booking.id == booking_id).first()
+    if not booking:
+        raise HTTPException(status_code=404, detail="Booking not found")
+
+    if current_user.user_type not in [UserType.ADMIN] and current_user.id not in [booking.buyer_id, booking.provider_id]:
+        raise HTTPException(status_code=403, detail="Not authorized to message on this booking")
+
+    if not msg_data.message or not msg_data.message.strip():
+        raise HTTPException(status_code=400, detail="Message content cannot be empty")
+
+    clean_content = msg_data.message.strip()
+
+    if current_user.id == booking.buyer_id:
+        receiver_id = booking.provider_id
+    elif current_user.id == booking.provider_id:
+        receiver_id = booking.buyer_id
+    else:
+        receiver_id = booking.provider_id
+
+    # Anti-disintermediation check (strike-based: warn first, suspend on repeat)
+    flagged, reason = detect_contact_sharing(clean_content)
+    if flagged:
+        handle_moderation_violation(
+            db, current_user, receiver_id, booking_id,
+            clean_content,
+            msg_data.file_url.strip() if msg_data.file_url else None,
+            reason
+        )
+
+    msg = Message(
+        booking_id=booking_id,
+        sender_id=current_user.id,
+        receiver_id=receiver_id,
+        message=clean_content,
+        file_url=msg_data.file_url.strip() if msg_data.file_url else None,
+        is_read=False,
+        is_flagged=False,
+        flag_reason=None,
+        created_at=datetime.utcnow()
+    )
+    db.add(msg)
+    db.commit()
+    db.refresh(msg)
+
+    create_user_notification(
+        db,
+        user_id=receiver_id,
+        title=f"💬 New Message from {current_user.name}",
+        message=clean_content[:120],
+        type="message",
+        link=f"/messages?booking={booking_id}"
+    )
+
+    return MessageResponse(
+        id=msg.id,
+        booking_id=msg.booking_id,
+        sender_id=msg.sender_id,
+        receiver_id=msg.receiver_id,
+        sender_name=current_user.name,
+        message=msg.message,
+        file_url=msg.file_url,
+        is_read=msg.is_read,
+        is_flagged=False,
+        flag_reason=None,
+        created_at=msg.created_at
+    )
+
+
+@api_app.get("/bookings/{booking_id}/messages", response_model=List[MessageResponse])
+def get_booking_messages(
+    booking_id: int,
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    booking = db.query(Booking).filter(Booking.id == booking_id).first()
+    if not booking:
+        raise HTTPException(status_code=404, detail="Booking not found")
+
+    if current_user.user_type not in [UserType.ADMIN] and current_user.id not in [booking.buyer_id, booking.provider_id]:
+        raise HTTPException(status_code=403, detail="Not authorized to view messages on this booking")
+
+    messages = db.query(Message).filter(Message.booking_id == booking_id).order_by(Message.created_at.asc()).all()
+
+    # Mark incoming unread messages as read
+    unread_ids = [m.id for m in messages if m.receiver_id == current_user.id and not m.is_read]
+    if unread_ids:
+        db.query(Message).filter(Message.id.in_(unread_ids)).update({Message.is_read: True}, synchronize_session=False)
+        db.commit()
+
+    user_ids = list(set([m.sender_id for m in messages] + [m.receiver_id for m in messages]))
+    users_map = {u.id: u.name for u in db.query(User).filter(User.id.in_(user_ids)).all()} if user_ids else {}
+
+    result = []
+    for m in messages:
+        # Hide flagged messages from recipient, but show to sender or admin
+        if m.is_flagged and m.sender_id != current_user.id and current_user.user_type != UserType.ADMIN:
+            continue
+        result.append(MessageResponse(
+            id=m.id,
+            booking_id=m.booking_id,
+            sender_id=m.sender_id,
+            receiver_id=m.receiver_id,
+            sender_name=users_map.get(m.sender_id, "User"),
+            receiver_name=users_map.get(m.receiver_id, "User"),
+            message=m.message,
+            file_url=m.file_url,
+            is_read=True if m.id in unread_ids else m.is_read,
+            is_flagged=m.is_flagged,
+            flag_reason=m.flag_reason,
+            created_at=m.created_at
+        ))
+    return result
+
+
+@api_app.get("/conversations", response_model=List[ConversationSummary])
+def get_user_conversations(
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    """
+    Returns all active conversations (pre-booking and booking) for the current user.
+    """
+    user_id = current_user.id
+    messages = db.query(Message).filter(
+        or_(Message.sender_id == user_id, Message.receiver_id == user_id)
+    ).order_by(Message.created_at.desc()).all()
+
+    # Group by (other_user, booking_id) so the same buyer+provider pair
+    # across different orders keeps separate booking context (Telegram topics).
+    # Direct (pre-booking) chats use booking_id=None.
+    conversations_map = {}
+    for msg in messages:
+        # Hide flagged messages if sender was someone else
+        if msg.is_flagged and msg.sender_id != user_id and current_user.user_type != UserType.ADMIN:
+            continue
+
+        other_id = msg.receiver_id if msg.sender_id == user_id else msg.sender_id
+        key = (other_id, msg.booking_id)
+        if key not in conversations_map:
+            conversations_map[key] = {
+                "other_id": other_id,
+                "latest_msg": msg,
+                "unread_count": 0,
+                "booking_id": msg.booking_id
+            }
+        if msg.receiver_id == user_id and not msg.is_read:
+            conversations_map[key]["unread_count"] += 1
+
+    other_ids = list(set(k[0] for k in conversations_map.keys()))
+    other_users = db.query(User).filter(User.id.in_(other_ids)).all() if other_ids else []
+    user_obj_map = {u.id: u for u in other_users}
+
+    booking_ids = [c["booking_id"] for c in conversations_map.values() if c["booking_id"]]
+    packages_map = {}
+    if booking_ids:
+        b_list = db.query(Booking).filter(Booking.id.in_(booking_ids)).all()
+        for b in b_list:
+            if b.package:
+                packages_map[b.id] = b.package.title
+
+    result = []
+    sorted_convos = sorted(conversations_map.items(), key=lambda x: x[1]["latest_msg"].created_at, reverse=True)
+    for _key, data in sorted_convos:
+        u = user_obj_map.get(data["other_id"])
+        if not u:
+            continue
+        last_m = data["latest_msg"]
+        result.append(ConversationSummary(
+            other_user_id=u.id,
+            other_user_name=u.name,
+            other_user_type=get_user_type_str(u.user_type),
+            last_message=last_m.message,
+            last_message_at=last_m.created_at,
+            unread_count=data["unread_count"],
+            booking_id=data["booking_id"],
+            is_blocked=bool(getattr(u, 'is_blocked', False)),
+            package_title=packages_map.get(data["booking_id"])
+        ))
+    return result
+
+
+@api_app.get("/messages/user/{other_user_id}", response_model=List[MessageResponse])
+def get_direct_messages_with_user(
+    other_user_id: int,
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    """
+    Returns full message history between current_user and other_user (both pre-booking direct chats & booking chats).
+    """
+    other_user = db.query(User).filter(User.id == other_user_id).first()
+    if not other_user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    messages = db.query(Message).filter(
+        or_(
+            and_(Message.sender_id == current_user.id, Message.receiver_id == other_user_id),
+            and_(Message.sender_id == other_user_id, Message.receiver_id == current_user.id)
+        )
+    ).order_by(Message.created_at.asc()).all()
+
+    # Mark incoming unread messages as read
+    unread_ids = [m.id for m in messages if m.receiver_id == current_user.id and not m.is_read]
+    if unread_ids:
+        db.query(Message).filter(Message.id.in_(unread_ids)).update({Message.is_read: True}, synchronize_session=False)
+        db.commit()
+
+    users_map = {
+        current_user.id: current_user.name,
+        other_user.id: other_user.name
+    }
+
+    result = []
+    for m in messages:
+        # Recipient never sees flagged bypass attempts; sender or admin can see it with violation tag
+        if m.is_flagged and m.sender_id != current_user.id and current_user.user_type != UserType.ADMIN:
+            continue
+        result.append(MessageResponse(
+            id=m.id,
+            booking_id=m.booking_id,
+            sender_id=m.sender_id,
+            receiver_id=m.receiver_id,
+            sender_name=users_map.get(m.sender_id, "User"),
+            receiver_name=users_map.get(m.receiver_id, "User"),
+            message=m.message,
+            file_url=m.file_url,
+            is_read=True if m.id in unread_ids else m.is_read,
+            is_flagged=m.is_flagged,
+            flag_reason=m.flag_reason,
+            created_at=m.created_at
+        ))
+    return result
+
+
+@api_app.post("/messages/user/{other_user_id}", response_model=MessageResponse)
+def send_direct_message_to_user(
+    other_user_id: int,
+    msg_data: DirectMessageCreate,
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    """
+    Send pre-booking direct message to a provider or buyer.
+    Automatically checks for phone number or contact sharing violations and blocks offenders.
+    """
+    if current_user.id == other_user_id:
+        raise HTTPException(status_code=400, detail="Cannot message yourself")
+
+    other_user = db.query(User).filter(User.id == other_user_id).first()
+    if not other_user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if not msg_data.message or not msg_data.message.strip():
+        raise HTTPException(status_code=400, detail="Message content cannot be empty")
+
+    clean_content = msg_data.message.strip()
+    
+    # --- Mask sensitive content before storing ---
+    clean_content = mask_sensitive_content(clean_content)
+
+    # Anti-disintermediation check (strike-based: warn first, suspend on repeat)
+    flagged, reason = detect_contact_sharing(clean_content)
+    if flagged:
+        handle_moderation_violation(
+            db, current_user, other_user_id, msg_data.booking_id,
+            clean_content,
+            msg_data.file_url.strip() if msg_data.file_url else None,
+            reason
+        )
+
+    # Clean message - deliver normally
+    msg = Message(
+        booking_id=msg_data.booking_id,
+        sender_id=current_user.id,
+        receiver_id=other_user_id,
+        message=clean_content,
+        file_url=msg_data.file_url.strip() if msg_data.file_url else None,
+        is_read=False,
+        is_flagged=False,
+        flag_reason=None,
+        created_at=datetime.utcnow()
+    )
+    db.add(msg)
+    db.commit()
+    db.refresh(msg)
+
+    create_user_notification(
+        db,
+        user_id=other_user_id,
+        title=f"💬 New Message from {current_user.name}",
+        message=clean_content[:120],
+        type="message",
+        link=f"/messages?user={current_user.id}"
+    )
+
+    return MessageResponse(
+        id=msg.id,
+        booking_id=msg.booking_id,
+        sender_id=msg.sender_id,
+        receiver_id=msg.receiver_id,
+        sender_name=current_user.name,
+        receiver_name=other_user.name,
+        message=msg.message,
+        file_url=msg.file_url,
+        is_read=msg.is_read,
+        is_flagged=False,
+        flag_reason=None,
+        created_at=msg.created_at
+    )
+
+
+@api_app.get("/messages/unread-count")
+def get_unread_messages_count(
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    count = db.query(Message).filter(
+        Message.receiver_id == current_user.id,
+        Message.is_read == False,
+        Message.is_flagged == False
+    ).count()
+    return {"unread_count": count}
+
+
+# --- Notification API Endpoints ---
+@api_app.get("/notifications", response_model=List[NotificationResponse])
+def get_user_notifications(
+    limit: int = 30,
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    notifications = db.query(Notification).filter(
+        Notification.user_id == current_user.id
+    ).order_by(Notification.created_at.desc()).limit(limit).all()
+    return notifications
+
+@api_app.get("/notifications/unread-count")
+@api_app.get("/unread-count")
+def get_unread_notifications_count(
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    notif_count = db.query(Notification).filter(
+        Notification.user_id == current_user.id,
+        Notification.is_read == False
+    ).count()
+    msg_count = db.query(Message).filter(
+        Message.receiver_id == current_user.id,
+        Message.is_read == False,
+        Message.is_flagged == False
+    ).count()
+    return {"unread_count": notif_count + msg_count, "notifications": notif_count, "messages": msg_count}
+
+@api_app.post("/notifications/{notification_id}/read")
+def mark_notification_read(
+    notification_id: int,
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    notif = db.query(Notification).filter(
+        Notification.id == notification_id,
+        Notification.user_id == current_user.id
+    ).first()
+    if notif:
+        notif.is_read = True
+        db.commit()
+    return {"status": "ok"}
+
+@api_app.post("/notifications/read-all")
+def mark_all_notifications_read(
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    db.query(Notification).filter(
+        Notification.user_id == current_user.id,
+        Notification.is_read == False
+    ).update({Notification.is_read: True}, synchronize_session=False)
+    db.commit()
+    return {"status": "ok"}
+
+@api_app.delete("/notifications/clear-all")
+def clear_all_notifications(
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    db.query(Notification).filter(
+        Notification.user_id == current_user.id
+    ).delete(synchronize_session=False)
+    db.commit()
+    return {"status": "ok"}
+
+
+@api_app.get("/messages/inbox", response_model=List[MessageResponse])
+@api_app.get("/messages", response_model=List[MessageResponse])
+def get_user_inbox_messages(
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    """Retrieve all received messages in the current user's inbox."""
+    messages = db.query(Message).filter(
+        Message.receiver_id == current_user.id,
+        Message.is_deleted == False
+    ).order_by(Message.created_at.desc()).all()
+
+    sender_ids = list(set([m.sender_id for m in messages]))
+    senders = db.query(User).filter(User.id.in_(sender_ids)).all() if sender_ids else []
+    s_map = {s.id: s.name for s in senders}
+
+    result = []
+    for m in messages:
+        if m.is_flagged and m.sender_id != current_user.id and current_user.user_type != UserType.ADMIN:
+            continue
+        result.append(MessageResponse(
+            id=m.id,
+            booking_id=m.booking_id,
+            sender_id=m.sender_id,
+            receiver_id=m.receiver_id,
+            sender_name=s_map.get(m.sender_id, "User"),
+            receiver_name=current_user.name,
+            message=m.message,
+            file_url=m.file_url,
+            is_read=m.is_read,
+            is_flagged=m.is_flagged,
+            flag_reason=m.flag_reason,
+            created_at=m.created_at
+        ))
+    return result
+
+
+class UserFlagMessageRequest(BaseModel):
+    reason: Optional[str] = "Reported by user"
+
+@api_app.post("/messages/{message_id}/flag")
+def user_flag_message(
+    message_id: int,
+    req: UserFlagMessageRequest = UserFlagMessageRequest(),
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    """User endpoint to report/flag an inappropriate message in a chat."""
+    msg = db.query(Message).filter(Message.id == message_id).first()
+    if not msg:
+        raise HTTPException(status_code=404, detail="Message not found")
+    if current_user.id not in [msg.sender_id, msg.receiver_id] and current_user.user_type != UserType.ADMIN:
+        raise HTTPException(status_code=403, detail="Not authorized to flag this message")
+    msg.is_flagged = True
+    msg.flag_reason = req.reason or "Reported by user"
+    db.commit()
+    return {"message": "Message reported successfully", "is_flagged": True, "message_id": message_id}
+
+
+# ============== ADMIN MODERATION & CHAT ROUTES ==============
+
+@api_app.get("/admin/chats")
+def get_admin_all_chats(
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    """
+    Admin endpoint to view all conversations across Groove Hub,
+    including flagged messages and blocked user statuses.
+    """
+    if current_user.user_type != UserType.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin only")
+
+    messages = db.query(Message).filter(Message.is_deleted == False).order_by(Message.created_at.desc()).all()
+
+    convos = {}
+    for m in messages:
+        pair_key = (min(m.sender_id, m.receiver_id), max(m.sender_id, m.receiver_id))
+        if pair_key not in convos:
+            convos[pair_key] = {
+                "user1_id": pair_key[0],
+                "user2_id": pair_key[1],
+                "latest_message": m.message,
+                "latest_message_at": m.created_at,
+                "total_messages": 0,
+                "flagged_count": 0,
+                "booking_id": m.booking_id
+            }
+        convos[pair_key]["total_messages"] += 1
+        if m.is_flagged:
+            convos[pair_key]["flagged_count"] += 1
+
+    all_user_ids = set()
+    for pair in convos.keys():
+        all_user_ids.add(pair[0])
+        all_user_ids.add(pair[1])
+
+    users = db.query(User).filter(User.id.in_(all_user_ids)).all() if all_user_ids else []
+    u_map = {u.id: u for u in users}
+
+    result = []
+    for pair_key, info in sorted(convos.items(), key=lambda x: x[1]["latest_message_at"], reverse=True):
+        u1 = u_map.get(info["user1_id"])
+        u2 = u_map.get(info["user2_id"])
+        if not u1 or not u2:
+            continue
+        result.append({
+            "pair_key": f"{u1.id}_{u2.id}",
+            "user1": {
+                "id": u1.id,
+                "name": u1.name,
+                "email": u1.email,
+                "phone": u1.phone,
+                "user_type": get_user_type_str(u1.user_type),
+                "is_blocked": u1.is_blocked,
+                "block_reason": u1.block_reason
+            },
+            "user2": {
+                "id": u2.id,
+                "name": u2.name,
+                "email": u2.email,
+                "phone": u2.phone,
+                "user_type": get_user_type_str(u2.user_type),
+                "is_blocked": u2.is_blocked,
+                "block_reason": u2.block_reason
+            },
+            "total_messages": info["total_messages"],
+            "flagged_count": info["flagged_count"],
+            "latest_message": info["latest_message"],
+            "latest_message_at": info["latest_message_at"].isoformat() if info["latest_message_at"] else None,
+            "has_violation": info["flagged_count"] > 0
+        })
+
+    return result
+
+
+@api_app.get("/admin/chats/user/{user1_id}/with/{user2_id}")
+def get_admin_chat_transcript(
+    user1_id: int,
+    user2_id: int,
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    """
+    Admin endpoint to view the full unredacted transcript between any two users.
+    """
+    if current_user.user_type != UserType.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin only")
+
+    u1 = db.query(User).filter(User.id == user1_id).first()
+    u2 = db.query(User).filter(User.id == user2_id).first()
+    if not u1 or not u2:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    messages = db.query(Message).filter(
+        and_(
+            or_(
+                and_(Message.sender_id == user1_id, Message.receiver_id == user2_id),
+                and_(Message.sender_id == user2_id, Message.receiver_id == user1_id)
+            ),
+            Message.is_deleted == False
+        )
+    ).order_by(Message.created_at.asc()).all()
+
+    u_map = {u1.id: u1.name, u2.id: u2.name}
+
+    return {
+        "user1": {"id": u1.id, "name": u1.name, "email": u1.email, "is_blocked": u1.is_blocked, "block_reason": u1.block_reason},
+        "user2": {"id": u2.id, "name": u2.name, "email": u2.email, "is_blocked": u2.is_blocked, "block_reason": u2.block_reason},
+        "messages": [
+            {
+                "id": m.id,
+                "booking_id": m.booking_id,
+                "sender_id": m.sender_id,
+                "sender_name": u_map.get(m.sender_id, "User"),
+                "receiver_id": m.receiver_id,
+                "receiver_name": u_map.get(m.receiver_id, "User"),
+                "message": m.message,
+                "file_url": m.file_url,
+                "is_read": m.is_read,
+                "is_flagged": m.is_flagged,
+                "flag_reason": m.flag_reason,
+                "created_at": m.created_at.isoformat() if m.created_at else None
+            }
+            for m in messages
+        ]
+    }
+
+
+@api_app.get("/admin/flagged-messages")
+def get_admin_flagged_messages(
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    """
+    Admin endpoint to view all detected contact exchange violations.
+    """
+    if current_user.user_type != UserType.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin only")
+
+    flagged_msgs = db.query(Message).filter(
+        and_(Message.is_flagged == True, Message.is_deleted == False)
+    ).order_by(Message.created_at.desc()).all()
+
+    user_ids = list(set([m.sender_id for m in flagged_msgs] + [m.receiver_id for m in flagged_msgs]))
+    users = db.query(User).filter(User.id.in_(user_ids)).all() if user_ids else []
+    u_map = {u.id: u for u in users}
+
+    result = []
+    for m in flagged_msgs:
+        sender = u_map.get(m.sender_id)
+        receiver = u_map.get(m.receiver_id)
+        result.append({
+            "message_id": m.id,
+            "sender": {
+                "id": sender.id if sender else m.sender_id,
+                "name": sender.name if sender else "Unknown",
+                "email": sender.email if sender else "",
+                "phone": sender.phone if sender else "",
+                "is_blocked": sender.is_blocked if sender else False,
+                "block_reason": sender.block_reason if sender else None
+            },
+            "receiver": {
+                "id": receiver.id if receiver else m.receiver_id,
+                "name": receiver.name if receiver else "Unknown",
+                "email": receiver.email if receiver else ""
+            },
+            "message": m.message,
+            "flag_reason": m.flag_reason,
+            "created_at": m.created_at.isoformat() if m.created_at else None
+        })
+    return result
+
+
+@api_app.post("/admin/users/{user_id}/unblock")
+def admin_unblock_user(
+    user_id: int,
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    """
+    Admin action to unblock/reinstate a user account.
+    """
+    if current_user.user_type != UserType.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin only")
+
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    user.is_blocked = False
+    user.is_active = True
+    user.block_reason = None
+    db.commit()
+
+    return {"message": f"User {user.name} (ID: {user.id}) has been unblocked successfully.", "is_blocked": False, "is_active": True}
+
+
+class AdminBlockUserRequest(BaseModel):
+    reason: Optional[str] = None
+
+@api_app.post("/admin/users/{user_id}/block")
+def admin_block_user(
+    user_id: int,
+    req: AdminBlockUserRequest = AdminBlockUserRequest(),
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    """
+    Admin action to manually suspend a user.
+    """
+    if current_user.user_type != UserType.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin only")
+
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if user.user_type == UserType.ADMIN:
+        raise HTTPException(status_code=400, detail="Cannot block another admin account")
+
+    user.is_blocked = True
+    user.is_active = False
+    user.block_reason = req.reason or "Manually suspended by Administrator."
+    db.commit()
+
+    return {"message": f"User {user.name} (ID: {user.id}) has been blocked.", "is_blocked": True, "is_active": False}
+
+
+# ============== ADMIN MESSAGE MANAGEMENT ==============
+
+@api_app.post("/admin/messages/{message_id}/mask")
+def admin_mask_message(
+    message_id: int,
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    """Admin: toggle mask/unmask a message (shows [message hidden by admin] to users)."""
+    if current_user.user_type != UserType.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin only")
+    msg = db.query(Message).filter(Message.id == message_id).first()
+    if not msg:
+        raise HTTPException(status_code=404, detail="Message not found")
+    msg.is_masked = not msg.is_masked
+    msg.masked_by_admin_id = current_user.id
+    db.commit()
+    return {"message": "Message masked" if msg.is_masked else "Message unmasked", "is_masked": msg.is_masked}
+
+
+@api_app.delete("/admin/messages/{message_id}")
+@api_app.post("/admin/messages/{message_id}/delete")
+@api_app.post("/admin/messages/{message_id}")
+def admin_delete_message(
+    message_id: int,
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    """Admin: soft-delete a message (removed from users, kept for admin audit). Supports both DELETE and POST."""
+    if current_user.user_type != UserType.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin only")
+    msg = db.query(Message).filter(Message.id == message_id).first()
+    if not msg:
+        raise HTTPException(status_code=404, detail="Message not found")
+    msg.is_deleted = True
+    msg.deleted_by_admin_id = current_user.id
+    msg.deleted_at = datetime.utcnow()
+    db.commit()
+    return {"message": "Message deleted", "id": message_id}
+
+@api_app.post("/admin/messages/{message_id}/flag")
+def admin_flag_message(
+    message_id: int,
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    """Admin: flag a message for review."""
+    if current_user.user_type != UserType.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin only")
+    msg = db.query(Message).filter(Message.id == message_id).first()
+    if not msg:
+        raise HTTPException(status_code=404, detail="Message not found")
+    msg.is_flagged = True
+    msg.flag_reason = "Flagged by admin"
+    msg.flagged_by_admin_id = current_user.id
+    db.commit()
+    return {"message": "Message flagged", "is_flagged": True}
+
+@api_app.delete("/admin/chats/user/{user1_id}/with/{user2_id}")
+def admin_delete_conversation(
+    user1_id: int,
+    user2_id: int,
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    """Admin: soft-delete all messages in a conversation between two users."""
+    if current_user.user_type != UserType.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin only")
+    count = db.query(Message).filter(
+        or_(
+            and_(Message.sender_id == user1_id, Message.receiver_id == user2_id),
+            and_(Message.sender_id == user2_id, Message.receiver_id == user1_id)
+        )
+    ).update({
+        Message.is_deleted: True,
+        Message.deleted_by_admin_id: current_user.id,
+        Message.deleted_at: datetime.utcnow()
+    })
+    db.commit()
+    return {"message": f"Conversation deleted ({count} messages)", "deleted_count": count}
+
+
+@api_app.get("/admin/users")
+def get_admin_users_list(
+    role: Optional[str] = None,
+    search: Optional[str] = None,
+    limit: int = 100,
+    offset: int = 0,
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    """Admin endpoint to view, search, and filter all registered users on the platform."""
+    if current_user.user_type != UserType.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin only")
+
+    query = db.query(User)
+    if role:
+        try:
+            target_role = UserType[role.upper()]
+            query = query.filter(User.user_type == target_role)
+        except Exception:
+            pass
+    if search:
+        s = f"%{search.strip()}%"
+        query = query.filter(or_(User.name.ilike(s), User.email.ilike(s), User.phone.ilike(s)))
+
+    total = query.count()
+    users = query.order_by(User.created_at.desc()).offset(offset).limit(limit).all()
+
+    return {
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+        "users": [
+            {
+                "id": u.id,
+                "name": u.name,
+                "username": u.username,
+                "email": u.email,
+                "phone": u.phone,
+                "user_type": get_user_type_str(u.user_type),
+                "is_verified": u.is_verified,
+                "is_active": u.is_active,
+                "is_blocked": getattr(u, 'is_blocked', False),
+                "block_reason": getattr(u, 'block_reason', None),
+                "created_at": u.created_at.isoformat() if u.created_at else None
+            }
+            for u in users
+        ]
+    }
+
+
+@api_app.get("/admin/stats", response_model=AdminStats)
+def get_admin_stats(
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    """Admin endpoint to get high-level platform statistics and metrics."""
+    if current_user.user_type != UserType.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin only")
+
+    total_users = db.query(User).count()
+    total_providers = db.query(User).filter(User.user_type == UserType.PROVIDER).count()
+    total_bookings = db.query(Booking).count()
+
+    completed_payments = db.query(Payment).filter(
+        Payment.status.in_(["held", "released", "HELD", "RELEASED", PaymentStatus.HELD.value, PaymentStatus.RELEASED.value])
+    ).all()
+    total_revenue = sum([p.amount for p in completed_payments]) if completed_payments else 0.0
+    total_commissions = sum([p.platform_commission for p in completed_payments]) if completed_payments else 0.0
+    active_niches = db.query(Niche).filter(Niche.is_active == True).count()
+
+    return AdminStats(
+        total_users=total_users,
+        total_providers=total_providers,
+        total_bookings=total_bookings,
+        total_revenue=float(total_revenue),
+        total_commissions=float(total_commissions),
+        active_niches=active_niches
+    )
+
+
+@api_app.get("/admin/dashboard")
+def get_admin_dashboard_api(
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    """Admin dashboard JSON API endpoint for administration clients."""
+    if current_user.user_type != UserType.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin only")
+
+    stats = get_admin_stats(current_user=current_user, db=db)
+    recent_bookings = db.query(Booking).order_by(Booking.created_at.desc()).limit(10).all()
+    recent_users = db.query(User).order_by(User.created_at.desc()).limit(10).all()
+
+    return {
+        "stats": stats,
+        "recent_bookings_count": len(recent_bookings),
+        "recent_users_count": len(recent_users)
+    }
+
+
+# ============== PORTFOLIO ROUTES ==============
+
+@api_app.post("/profile/portfolio", response_model=PortfolioItemResponse)
+def add_portfolio_item(
+    item_data: PortfolioItemCreate,
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    if current_user.user_type != UserType.PROVIDER:
+        current_user.user_type = UserType.PROVIDER
+        db.commit()
+
+    item = PortfolioItem(
+        provider_id=current_user.id,
+        title=item_data.title.strip(),
+        description=item_data.description.strip() if item_data.description else None,
+        media_url=item_data.media_url.strip(),
+        media_type=item_data.media_type or "video",
+        thumbnail_url=item_data.thumbnail_url.strip() if item_data.thumbnail_url else None,
+        created_at=datetime.utcnow()
+    )
+    db.add(item)
+    db.commit()
+    db.refresh(item)
+    return item
+
+
+@api_app.get("/profile/{provider_id}/portfolio", response_model=List[PortfolioItemResponse])
+def get_provider_portfolio(
+    provider_id: int,
+    db = Depends(get_db)
+):
+    return db.query(PortfolioItem).filter(PortfolioItem.provider_id == provider_id).order_by(PortfolioItem.created_at.desc()).all()
+
+
+@api_app.delete("/profile/portfolio/{item_id}")
+def delete_portfolio_item(
+    item_id: int,
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    item = db.query(PortfolioItem).filter(PortfolioItem.id == item_id).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="Portfolio item not found")
+
+    if current_user.user_type != UserType.ADMIN and item.provider_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to delete this portfolio item")
+
+    db.delete(item)
+    db.commit()
+    return {"message": "Portfolio item deleted"}
+
+
+# ============== BANK & PLATFORM SETTINGS ROUTES ==============
+
+@api_app.get("/admin/platform-settings", response_model=PlatformSettingsResponse)
+def get_platform_settings(current_user: User = Depends(get_current_user), db = Depends(get_db)):
+    if current_user.user_type != UserType.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin only")
+    settings = db.query(PlatformSettings).first()
+    if not settings:
+        settings = PlatformSettings(
+            commission_rate=0.20,
+            owner_bank_name="HDFC Bank",
+            owner_account_holder="Marketplace Owner",
+            owner_account_number="50100492819281",
+            owner_ifsc_code="HDFC0001234",
+            owner_upi_id="owner@okhdfcbank"
+        )
+        db.add(settings)
+        db.commit()
+        db.refresh(settings)
+    return settings
+
+@api_app.put("/admin/platform-settings", response_model=PlatformSettingsResponse)
+def update_platform_settings(
+    settings_data: PlatformSettingsUpdate,
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    if current_user.user_type != UserType.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin only")
+    settings = db.query(PlatformSettings).first()
+    if not settings:
+        settings = PlatformSettings()
+        db.add(settings)
+
+    update_data = settings_data.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(settings, key, value)
+
+    db.commit()
+    db.refresh(settings)
+    return settings
+
+@api_app.get("/profile/bank-details")
+def get_bank_details(current_user: User = Depends(get_current_user), db = Depends(get_db)):
+    profile = db.query(Profile).filter(Profile.user_id == current_user.id).first()
+    if not profile:
+        return {
+            "bank_account_holder": "",
+            "bank_name": "",
+            "bank_account_number": "",
+            "bank_ifsc_code": "",
+            "upi_id": ""
+        }
+    return {
+        "bank_account_holder": profile.bank_account_holder or "",
+        "bank_name": profile.bank_name or "",
+        "bank_account_number": profile.bank_account_number or "",
+        "bank_ifsc_code": profile.bank_ifsc_code or "",
+        "upi_id": profile.upi_id or ""
+    }
+
+@api_app.put("/profile/bank-details")
+def update_bank_details(
+    bank_data: BankDetailsUpdate,
+    current_user: User = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    profile = db.query(Profile).filter(Profile.user_id == current_user.id).first()
+    if not profile:
+        profile = Profile(user_id=current_user.id)
+        db.add(profile)
+
+    update_data = bank_data.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(profile, key, value)
+
+    db.commit()
+    db.refresh(profile)
+    return {"message": "Bank details updated successfully"}
+
+# -----------------------------------------------------------------------------
+# 5-PERSON DEDICATED GROWTH TEAM & AGENCY SUBMISSIONS API
+# Roles: 1. Strategic Thinker, 2. Script Writer, 3. Videographer & Editor, 
+#        4. Account Handler, 5. App Management (User & Sashi)
+# -----------------------------------------------------------------------------
+
+@api_app.get("/agency-team/plans")
+def get_agency_growth_team_plans():
+    return {
+        "agency_name": "Groove Hub 5-Person Dedicated Growth Team",
+        "tagline": "Your Complete Store Growth Engine: Strategy, Scripting, Shoots, Edits & Account Lead Management",
+        "app_management": "Managed & Overseen directly by User & Sashi via Groove Hub App",
+        "team_roster": [
+            {
+                "role_id": 1,
+                "role_name": "Strategic Thinker",
+                "focus": "Store Audit, Flaw Identification & Local Competitor Comparison",
+                "deliverables": "Deep store flaw analysis, local competitor positioning, monthly growth strategy roadmap"
+            },
+            {
+                "role_id": 2,
+                "role_name": "Script Writer",
+                "focus": "High-Converting Scriptwriting & Storyboards",
+                "deliverables": "Viral reel scripts, ad copy, offer angles, high-retention hooks"
+            },
+            {
+                "role_id": 3,
+                "role_name": "Videographer & Video Editor (Dual Role)",
+                "focus": "On-Site Shoot Production & High-Retention 4K Editing",
+                "deliverables": "Raw footage shoot, 4K reel editing, color grading, sound design & motion graphics"
+            },
+            {
+                "role_id": 4,
+                "role_name": "Account Handler",
+                "focus": "Social Media Account Management, Views & Lead Optimization",
+                "deliverables": "Daily post scheduling, engagement management, views growth & lead acquisition tracking"
+            },
+            {
+                "role_id": 5,
+                "role_name": "App Operations & Management",
+                "focus": "User & Sashi Direct Oversight via Groove Hub App",
+                "deliverables": "SLA guarantee, direct quality control, escalation support & team coordination"
+            }
+        ],
+        "plans": [
+            {
+                "id": "monthly",
+                "name": "Monthly Dedicated Team Plan",
+                "billing": "Monthly",
+                "price": 24999.0,
+                "currency": "INR",
+                "usd_price": 299.0,
+                "features": [
+                    "Full 5-Person Dedicated Growth Team",
+                    "Complete Store & Competitor Flaw Analysis Report",
+                    "8-12 High-Retention Reels & Ad Videos per month",
+                    "Full Account Management (Views & Leads tracking)",
+                    "Exclusive VIP Web Portal Access Link",
+                    "Direct WhatsApp Team Contact Hotline (+919876543210)"
+                ]
+            },
+            {
+                "id": "half_yearly",
+                "name": "Half-Yearly Growth Accelerator Plan",
+                "billing": "6 Months (Save 15%)",
+                "price": 129999.0,
+                "currency": "INR",
+                "usd_price": 1499.0,
+                "features": [
+                    "Full 5-Person Dedicated Growth Team for 6 Months",
+                    "Bi-Weekly Competitor & Store Strategy Audits",
+                    "60+ High-Retention Reels & Performance Ads",
+                    "Dedicated Account Handler (Guaranteed Lead Targets)",
+                    "Exclusive VIP Web Portal Link for entire team tracking",
+                    "Priority Direct WhatsApp Hotline with User & Sashi"
+                ]
+            }
+        ],
+        "whatsapp_hotline": "+919876543210"
+    }
+
+@api_app.post("/agency-team/subscribe")
+def subscribe_agency_team(
+    subscription_data: AgencyTeamSubscriptionCreate,
+    current_user: Optional[User] = Depends(get_current_user_optional),
+    db = Depends(get_db)
+):
+    import uuid
+    token = f"VIP-{uuid.uuid4().hex[:8].upper()}"
+    
+    # If user is logged in, attach user_id. Otherwise attach first user or admin
+    user_id = current_user.id if current_user else 1
+    
+    is_half_yearly = subscription_data.plan_type.upper() in ["HALF_YEARLY", "HALF-YEARLY", "HALF YEARLY", "6_MONTHS"]
+    plan_type_clean = "HALF_YEARLY" if is_half_yearly else "MONTHLY"
+    price = 129999.0 if is_half_yearly else 24999.0
+    end_days = 180 if is_half_yearly else 30
+    
+    sub = AgencyTeamSubscription(
+        user_id=user_id,
+        store_name=subscription_data.store_name,
+        store_location=subscription_data.store_location or "Main Commercial Market",
+        niche_category=subscription_data.niche_category or "Retail & Local Store",
+        plan_type=plan_type_clean,
+        status="ACTIVE",
+        price_paid=price,
+        whatsapp_number=subscription_data.whatsapp_number or "+919876543210",
+        vip_link_token=token,
+        start_date=datetime.utcnow(),
+        end_date=datetime.utcnow() + timedelta(days=end_days)
+    )
+    db.add(sub)
+    db.commit()
+    db.refresh(sub)
+    
+    # Create initial Store Audit Report with sample strategic insights
+    audit = StoreAuditReport(
+        subscription_id=sub.id,
+        store_flaws=[
+            {"id": 1, "flaw": "Missing dynamic motion display on storefront to attract foot traffic", "severity": "HIGH"},
+            {"id": 2, "flaw": "Social handle lacks daily reel storyboards and customer testimonials", "severity": "HIGH"},
+            {"id": 3, "flaw": "Competitor price transparency mismatch in local area", "severity": "MEDIUM"}
+        ],
+        competitor_comparison=[
+            {"competitor": "Competitor Store Alpha", "their_strength": "Heavy local Instagram ad budget", "our_counter_strategy": "Launch 4K high-retention store walkthrough reels"},
+            {"competitor": "Nearby Store Beta", "their_strength": "WhatsApp direct customer support", "our_counter_strategy": "VIP WhatsApp Hotline integration with lead capture"}
+        ],
+        strategic_roadmap="1. Strategic Thinker store flaw audit completed\n2. Script Writer developing 8 viral reel storyboards\n3. Videographer/Editor shoot scheduled\n4. Account Handler optimizing daily posting & lead tracking",
+        script_vault=[
+            {"title": "Hook Script: 3 Secrets Nearby Competitors Hide", "file_name": "Hook_Script_A1.txt", "status": "APPROVED_FOR_SHOOT", "script_type": "Viral Reel Hook"},
+            {"title": "Behind the Scenes: Store Quality & Craftsmanship", "file_name": "BTS_StoryBoard_B2.txt", "status": "IN_PRODUCTION", "script_type": "Store Storyboard"},
+            {"title": "Local Shopper Offer & VIP Discount Call", "file_name": "Offer_Ad_Copy_C1.txt", "status": "SCRIPTING_COMPLETE", "script_type": "High-Converting Ad"}
+        ],
+        video_deliverables=[
+            {"title": "Hook_Retention_A1.mp4", "specs": "1080×1920 • 94% Retention", "status": "APPROVED_DELIVERED", "deliverable_url": "/static/images/portfolio/sample_reel.mp4"},
+            {"title": "4K_Storefront_Macro_Broll.mov", "specs": "3840×2160 • 60 FPS HDR", "status": "RAW_FOOTAGE_SYNCED", "deliverable_url": "/static/images/portfolio/sample_broll.mp4"},
+            {"title": "Competitor_Comparison_Ad_v2.mp4", "specs": "1080×1920 • High Conversion Ad", "status": "READY_FOR_PUBLISHING", "deliverable_url": "/static/images/portfolio/sample_ad.mp4"},
+            {"title": "Store_Walkthrough_Master_4K.mp4", "specs": "3840×2160 • 60 FPS Master", "status": "COMPLETED", "deliverable_url": "/static/images/portfolio/sample_walkthrough.mp4"}
+        ],
+        account_stats={
+            "total_views": 52400,
+            "leads_generated": 168,
+            "engagement_rate": "8.8%",
+            "active_plan": sub.plan_type
+        }
+    )
+    db.add(audit)
+    db.commit()
+    
+    import urllib.parse
+    whatsapp_msg = f"Hi Groove Team! I just subscribed to the {sub.plan_type} 5-Person Growth Team plan for '{sub.store_name}' (VIP Token: {sub.vip_link_token}). Let's start!"
+    wa_url = f"https://wa.me/919876543210?text={urllib.parse.quote(whatsapp_msg)}"
+    
+    return {
+        "message": f"Successfully subscribed to 5-Person Dedicated Growth Team ({sub.plan_type} Plan)!",
+        "subscription_id": sub.id,
+        "vip_link_token": sub.vip_link_token,
+        "web_portal_url": f"/team-portal?token={sub.vip_link_token}",
+        "whatsapp_url": wa_url,
+        "whatsapp_number": sub.whatsapp_number,
+        "store_name": sub.store_name,
+        "plan_type": sub.plan_type
+    }
+
+@api_app.get("/agency-team/dashboard/{token}")
+def get_agency_team_dashboard(token: str, db = Depends(get_db)):
+    sub = db.query(AgencyTeamSubscription).filter(AgencyTeamSubscription.vip_link_token == token).first()
+    if not sub:
+        import urllib.parse
+        wa_text = urllib.parse.quote("Hi Groove Team! I want to inquire about the 5-Person Dedicated Growth Team plan for my store.")
+        return {
+            "is_preview": True,
+            "store_name": "Sample Retail Store (VIP Preview)",
+            "store_location": "Central Shopping Hub",
+            "niche_category": "Retail & Digital Marketing",
+            "plan_type": "MONTHLY",
+            "status": "ACTIVE",
+            "price_paid": 24999.0,
+            "whatsapp_number": "+919876543210",
+            "whatsapp_url": f"https://wa.me/919876543210?text={wa_text}",
+            "vip_link_token": token,
+            "team_roster": {
+                "strategic_thinker": "Strategic Lead - Alex (Store & Competitor Analyst)",
+                "script_writer": "Script Master - Sarah (Ad & Reel Scripts)",
+                "videographer_editor": "Creative Producer - Marcus (Shoot & High-Retention Edit)",
+                "account_handler": "Growth Specialist - David (Views & Leads Handler)",
+                "app_management": "Managed by User & Sashi via Groove Hub App"
+            },
+            "active_footage_bins": [
+                {"name": "Hook_Retention_A1.mp4", "specs": "1080×1920 • 94% Retention", "icon_type": "yellow", "icon_fa": "fa-bolt"},
+                {"name": "4K_Food_Macro_Broll.mov", "specs": "3840×2160 • 60 FPS HDR", "icon_type": "green", "icon_fa": "fa-camera"},
+                {"name": "Whoosh_Bass_Impact.wav", "specs": "Stereo • Subconscious Hit", "icon_type": "blue", "icon_fa": "fa-wave-square"},
+                {"name": "Hormozi_Word_Pop.json", "specs": "Auto-Synced • Gold Pop", "icon_type": "orange", "icon_fa": "fa-flag"}
+            ],
+            "store_flaws": [
+                {"id": 1, "flaw": "Storefront lack of motion video screen & high-converting banners", "severity": "HIGH"},
+                {"id": 2, "flaw": "Local shoppers unaware of weekly exclusive discounts", "severity": "HIGH"},
+                {"id": 3, "flaw": "Weak social media conversion funnel vs nearby stores", "severity": "MEDIUM"}
+            ],
+            "competitor_comparison": [
+                {"competitor": "Nearby Store Alpha", "their_strength": "Heavy local Instagram ad presence", "our_counter_strategy": "High-retention 4K reels targeting 5km radius"},
+                {"competitor": "Competitor Beta", "their_strength": "Direct WhatsApp promotion blast", "our_counter_strategy": "VIP WhatsApp Hotline with instant lead capture"}
+            ],
+            "strategic_roadmap": "Store audit completed. 8 Reel scripts drafted by Script Writer. Shoots scheduled.",
+            "script_vault": [
+                {"title": "Hook Script: 3 Secrets Nearby Competitors Hide", "file_name": "Hook_Script_A1.txt", "status": "APPROVED_FOR_SHOOT"},
+                {"title": "Behind the Scenes: Product Quality Reel", "file_name": "BTS_StoryBoard_B2.txt", "status": "APPROVED"}
+            ],
+            "video_deliverables": [
+                {"title": "Hook_Retention_A1.mp4", "specs": "1080×1920 • 94% Retention", "status": "APPROVED_DELIVERED"},
+                {"title": "4K_Food_Macro_Broll.mov", "specs": "3840×2160 • 60 FPS HDR", "status": "RAW_FOOTAGE_SYNCED"},
+                {"title": "Competitor_Comparison_Ad_v2.mp4", "specs": "1080×1920 • High Conversion Ad", "status": "READY_FOR_PUBLISHING"},
+                {"title": "Store_Walkthrough_Master_4K.mp4", "specs": "3840×2160 • 60 FPS Master", "status": "DELIVERED"}
+            ],
+            "account_stats": {
+                "total_views": 128400,
+                "leads_generated": 312,
+                "engagement_rate": "9.2%",
+                "growth_multiplier": "3.4x"
+            }
+        }
+
+    
+    audit = db.query(StoreAuditReport).filter(StoreAuditReport.subscription_id == sub.id).first()
+    
+    import urllib.parse
+    wa_msg = f"Hi Groove Team! I'm checking my dedicated web dashboard for {sub.store_name} (VIP: {sub.vip_link_token})."
+    wa_url = f"https://wa.me/919876543210?text={urllib.parse.quote(wa_msg)}"
+    
+    return {
+        "is_preview": False,
+        "subscription_id": sub.id,
+        "store_name": sub.store_name,
+        "store_location": sub.store_location,
+        "niche_category": sub.niche_category,
+        "plan_type": sub.plan_type,
+        "status": sub.status,
+        "price_paid": sub.price_paid,
+        "whatsapp_number": sub.whatsapp_number,
+        "whatsapp_url": wa_url,
+        "vip_link_token": sub.vip_link_token,
+        "start_date": sub.start_date.isoformat() if sub.start_date else None,
+        "end_date": sub.end_date.isoformat() if sub.end_date else None,
+        "team_roster": {
+            "strategic_thinker": sub.strategic_thinker_name,
+            "script_writer": sub.script_writer_name,
+            "videographer_editor": sub.videographer_editor_name,
+            "account_handler": sub.account_handler_name,
+            "app_management": sub.app_management_team
+        },
+        "store_flaws": audit.store_flaws if audit and audit.store_flaws else [],
+        "competitor_comparison": audit.competitor_comparison if audit and audit.competitor_comparison else [],
+        "strategic_roadmap": audit.strategic_roadmap if audit and audit.strategic_roadmap else "Strategy session in progress.",
+        "script_vault": audit.script_vault if audit and audit.script_vault else [],
+        "video_deliverables": audit.video_deliverables if audit and audit.video_deliverables else [],
+        "account_stats": audit.account_stats if audit and audit.account_stats else {"total_views": 0, "leads_generated": 0}
+    }
+
+
+
+

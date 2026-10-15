@@ -1,15 +1,16 @@
 import type { Metadata, Viewport } from "next";
-import { Space_Grotesk, Plus_Jakarta_Sans } from "next/font/google";
+import { Playfair_Display, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { siteConfig } from "../../site.config";
 import { SmoothScroll } from "@/components/SmoothScroll";
 import { FloatingWhatsApp } from "@/components/FloatingWhatsApp";
 import { CustomCursor } from "@/components/CustomCursor";
 
-const spaceGrotesk = Space_Grotesk({
+const playfairDisplay = Playfair_Display({
   subsets: ["latin"],
-  variable: "--font-display",
+  variable: "--font-serif",
   display: "swap",
+  style: ["normal", "italic"],
 });
 
 const plusJakartaSans = Plus_Jakarta_Sans({
@@ -19,15 +20,15 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 });
 
 export const viewport: Viewport = {
-  themeColor: "#07090E",
+  themeColor: "#2A0A0E",
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
 };
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://groovehub.in"),
-  title: `${siteConfig.brandName} — Instagram Reels & Growth Studio in Chennai`,
+  metadataBase: new URL("https://editor-market-place.onrender.com"),
+  title: `${siteConfig.brandName} — Instagram Reels Studio in Chennai`,
   description: siteConfig.shortDescription,
   keywords: [
     "Instagram Reels Chennai",
@@ -43,24 +44,24 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_IN",
-    url: "https://groovehub.in",
+    url: "https://editor-market-place.onrender.com",
     siteName: siteConfig.brandName,
-    title: `${siteConfig.brandName} — We make reels that fill your gym, studio and store`,
+    title: `${siteConfig.brandName} — Instagram Reels Studio in Chennai`,
     description: siteConfig.shortDescription,
     images: [
       {
-        url: "/posters/featured-poster.jpg",
-        width: 1200,
-        height: 630,
-        alt: `${siteConfig.brandName} — Instagram Growth Studio Chennai`,
+        url: "/og.jpg",
+        width: 1080,
+        height: 1920,
+        alt: `${siteConfig.brandName} — Instagram Reels Studio Chennai`,
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: `${siteConfig.brandName} — Instagram Reels & Growth Studio in Chennai`,
+    title: `${siteConfig.brandName} — Instagram Reels Studio in Chennai`,
     description: siteConfig.shortDescription,
-    images: ["/posters/featured-poster.jpg"],
+    images: ["/og.jpg"],
   },
   robots: {
     index: true,
@@ -79,8 +80,8 @@ export default function RootLayout({
     name: siteConfig.brandName,
     description: siteConfig.shortDescription,
     telephone: siteConfig.whatsappNumber,
-    email: siteConfig.email,
-    url: "https://groovehub.in",
+    ...(siteConfig.email ? { email: siteConfig.email } : {}),
+    url: "https://editor-market-place.onrender.com",
     address: {
       "@type": "PostalAddress",
       addressLocality: siteConfig.city,
@@ -91,18 +92,17 @@ export default function RootLayout({
       "@type": "AdministrativeArea",
       name: `${area}, Chennai`,
     })),
-    priceRange: "[PRICE_RANGE]",
   };
 
   return (
-    <html lang="en" className={`${spaceGrotesk.variable} ${plusJakartaSans.variable}`}>
+    <html lang="en" className={`${playfairDisplay.variable} ${plusJakartaSans.variable}`}>
       <head>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       </head>
-      <body className="font-sans antialiased bg-[#07090E] text-gray-100 min-h-screen selection:bg-[#FF553E] selection:text-white">
+      <body className="font-sans antialiased bg-[#2A0A0E] text-[#FFF4E8] min-h-screen selection:bg-[#F4B183] selection:text-[#2A0A0E]">
         <SmoothScroll>
           <CustomCursor />
           {children}

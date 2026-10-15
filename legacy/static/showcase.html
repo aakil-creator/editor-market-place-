@@ -1,0 +1,1121 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Groove Hub — Video Editing & Viral Content Studio | Reels, Shorts & Retention Editing</title>
+  <meta name="description" content="We turn raw footage into high-retention viral video cuts. Alex Hormozi style kinetic typography, cinema sound design, and 3-second hook architecture for creators and brands." />
+  
+  <!-- Open Graph / Meta -->
+  <meta property="og:title" content="Groove Hub — Elite Video Editing & Viral Content Studio" />
+  <meta property="og:description" content="Watch our featured video work, retention-tested editing architecture, and transparent packages. 24-48h turnaround with 100% escrow protection." />
+  <meta property="og:image" content="/static/images/portfolio/client_work_poster.jpg" />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Groove Hub — Video Editing & Viral Content Studio" />
+  <meta name="twitter:description" content="High-retention Reels, TikToks, and YouTube Shorts editing with cinema sound design & kinetic captions." />
+  <meta name="twitter:image" content="/static/images/portfolio/client_work_poster.jpg" />
+
+  <link rel="icon" type="image/png" href="/static/icons/favicon.png">
+
+  <!-- Google Fonts: Plus Jakarta Sans, Outfit & Instrument Serif -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      /* Warm Editorial Champagne & Deep Charcoal Palette */
+      --bg-warm: #FAF7F2;
+      --bg-cream: #F4EFE6;
+      --bg-sand: #EDE5D8;
+      --bg-card: rgba(255, 255, 255, 0.94);
+      --bg-card-elevated: #FFFFFF;
+      --border-warm: rgba(180, 160, 140, 0.35);
+      --border-accent: rgba(217, 119, 6, 0.45);
+      --text-main: #1C1917;
+      --text-body: #44403C;
+      --text-muted: #78716C;
+      --text-dim: #A8A29E;
+      
+      /* Vibrant Jewel & Gold Tone Accents */
+      --amber-gold: #D97706;
+      --amber-light: #FEF3C7;
+      --amber-glow: rgba(217, 119, 6, 0.22);
+      --terracotta: #EA580C;
+      --emerald-ivy: #059669;
+      --emerald-light: #D1FAE5;
+      --sapphire: #2563EB;
+      --sapphire-light: #DBEAFE;
+      --whatsapp-green: #25D366;
+      --whatsapp-dark: #1EBE5D;
+      
+      /* Fonts */
+      --font-display: 'Outfit', sans-serif;
+      --font-serif: 'Instrument Serif', serif;
+      --font-body: 'Plus Jakarta Sans', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      background-color: var(--bg-warm);
+      font-family: var(--font-body);
+      color: var(--text-body);
+      overflow-x: hidden;
+      line-height: 1.6;
+    }
+
+    /* Ambient Warm Lighting Vignette */
+    .ambient-texture {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      background: radial-gradient(circle at 50% 12%, rgba(254, 243, 199, 0.5) 0%, transparent 55%),
+                  radial-gradient(circle at 90% 65%, rgba(255, 237, 213, 0.4) 0%, transparent 45%),
+                  radial-gradient(circle at 10% 85%, rgba(209, 250, 229, 0.35) 0%, transparent 45%);
+    }
+
+    .bg-grid-warm {
+      position: fixed;
+      inset: 0;
+      background-image: linear-gradient(rgba(180, 160, 140, 0.12) 1px, transparent 1px),
+                        linear-gradient(90deg, rgba(180, 160, 140, 0.12) 1px, transparent 1px);
+      background-size: 52px 52px;
+      pointer-events: none;
+      z-index: 0;
+      mask-image: radial-gradient(ellipse at center, black 40%, transparent 85%);
+    }
+
+    /* Main Container */
+    .container {
+      position: relative;
+      z-index: 10;
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* Typography Utilities */
+    .font-serif { font-family: var(--font-serif); }
+    .font-display { font-family: var(--font-display); }
+    .font-mono { font-family: var(--font-mono); }
+    
+    .serif-italic {
+      font-family: var(--font-serif);
+      font-style: italic;
+      font-weight: 400;
+    }
+
+    .gradient-text-warm {
+      background: linear-gradient(135deg, #B45309 0%, #D97706 50%, #EA580C 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      display: inline-block;
+    }
+
+    /* Top Sticky Navigation Bar */
+    .nav-bar {
+      position: sticky;
+      top: 16px;
+      z-index: 100;
+      margin-top: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 24px;
+      background: rgba(250, 247, 242, 0.88);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--border-warm);
+      border-radius: 9999px;
+      box-shadow: 0 10px 30px rgba(68, 64, 60, 0.08);
+      transition: all 0.3s ease;
+    }
+
+    .brand-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: var(--text-main);
+    }
+
+    .brand-logo-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #1C1917, #352F2B);
+      color: #FAF7F2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 1.1rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .brand-title {
+      font-family: var(--font-display);
+      font-size: 1.15rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+    }
+
+    .brand-subtitle {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--amber-gold);
+      font-weight: 700;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 28px;
+      list-style: none;
+    }
+
+    .nav-links a {
+      text-decoration: none;
+      color: var(--text-body);
+      font-size: 0.88rem;
+      font-weight: 600;
+      transition: color 0.2s;
+    }
+
+    .nav-links a:hover {
+      color: var(--amber-gold);
+    }
+
+    .nav-cta-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      border-radius: 9999px;
+      background: var(--whatsapp-green);
+      color: #FFFFFF;
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-decoration: none;
+      box-shadow: 0 4px 15px rgba(37, 211, 102, 0.35);
+      transition: all 0.2s ease;
+    }
+
+    .nav-cta-btn:hover {
+      background: var(--whatsapp-dark);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(37, 211, 102, 0.45);
+    }
+
+    /* Hero Section */
+    .hero-section {
+      padding: 64px 0 40px;
+      text-align: center;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 16px;
+      border-radius: 9999px;
+      background: var(--amber-light);
+      border: 1px solid rgba(217, 119, 6, 0.3);
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #92400E;
+      margin-bottom: 24px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .hero-heading {
+      font-family: var(--font-display);
+      font-size: clamp(2.5rem, 6vw, 4.2rem);
+      font-weight: 900;
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+      color: var(--text-main);
+      max-width: 950px;
+      margin: 0 auto 20px;
+    }
+
+    .hero-subheading {
+      font-size: clamp(1.05rem, 2vw, 1.25rem);
+      color: var(--text-body);
+      max-width: 780px;
+      margin: 0 auto 36px;
+      font-weight: 400;
+      line-height: 1.65;
+    }
+
+    .hero-cta-group {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 40px;
+    }
+
+    .btn-hero-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 16px 32px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #D97706, #EA580C);
+      color: #FFFFFF;
+      font-size: 1rem;
+      font-weight: 700;
+      text-decoration: none;
+      box-shadow: 0 10px 25px rgba(217, 119, 6, 0.35);
+      transition: all 0.25s ease;
+    }
+
+    .btn-hero-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 14px 32px rgba(217, 119, 6, 0.45);
+    }
+
+    .btn-hero-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 16px 28px;
+      border-radius: 14px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-warm);
+      color: var(--text-main);
+      font-size: 1rem;
+      font-weight: 700;
+      text-decoration: none;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+      transition: all 0.2s ease;
+    }
+
+    .btn-hero-secondary:hover {
+      background: #FFFFFF;
+      border-color: var(--amber-gold);
+      transform: translateY(-2px);
+    }
+
+    /* Trust Stats Strip */
+    .trust-strip {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      max-width: 980px;
+      margin: 0 auto 48px;
+      padding: 20px 24px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-warm);
+      border-radius: 20px;
+      box-shadow: 0 8px 30px rgba(68, 64, 60, 0.05);
+    }
+
+    .trust-item {
+      text-align: center;
+      padding: 8px 12px;
+    }
+
+    .trust-number {
+      font-family: var(--font-display);
+      font-size: 1.85rem;
+      font-weight: 900;
+      color: var(--text-main);
+      line-height: 1.1;
+      margin-bottom: 4px;
+    }
+
+    .trust-label {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* Section Headers */
+    .section-wrap {
+      padding: 48px 0;
+    }
+
+    .section-header {
+      text-align: center;
+      max-width: 760px;
+      margin: 0 auto 36px;
+    }
+
+    .section-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 14px;
+      border-radius: 9999px;
+      background: rgba(217, 119, 6, 0.12);
+      color: #B45309;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+
+    .section-title {
+      font-family: var(--font-display);
+      font-size: clamp(2rem, 4vw, 2.85rem);
+      font-weight: 800;
+      color: var(--text-main);
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+      margin-bottom: 14px;
+    }
+
+    .section-desc {
+      font-size: 1.05rem;
+      color: var(--text-body);
+      line-height: 1.6;
+    }
+
+    /* Featured Client Video Showcase (User Work) */
+    .featured-video-container {
+      max-width: 960px;
+      margin: 0 auto;
+      background: var(--bg-card);
+      border: 1px solid var(--border-warm);
+      border-radius: 28px;
+      padding: 36px;
+      box-shadow: 0 20px 50px rgba(68, 64, 60, 0.08);
+      display: grid;
+      grid-template-columns: 370px 1fr;
+      gap: 36px;
+      align-items: center;
+    }
+
+    .featured-video-frame {
+      position: relative;
+      width: 100%;
+      height: 580px;
+      border-radius: 22px;
+      overflow: hidden;
+      background: #000000;
+      box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+      border: 2px solid rgba(217, 119, 6, 0.4);
+    }
+
+    .featured-video-element {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .featured-video-badge {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      padding: 6px 14px;
+      border-radius: 9999px;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(8px);
+      color: #FFFFFF;
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      z-index: 5;
+    }
+
+    .live-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #10B981;
+      box-shadow: 0 0 8px #10B981;
+      display: inline-block;
+    }
+
+    .featured-video-details {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .featured-video-tag {
+      font-size: 0.8rem;
+      font-weight: 800;
+      color: var(--amber-gold);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .featured-video-title {
+      font-family: var(--font-display);
+      font-size: clamp(1.6rem, 2.5vw, 2.2rem);
+      font-weight: 900;
+      color: var(--text-main);
+      line-height: 1.2;
+    }
+
+    .featured-video-desc {
+      font-size: 0.95rem;
+      color: var(--text-body);
+      line-height: 1.6;
+    }
+
+    .featured-stats-strip {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      padding: 16px 0;
+      border-top: 1px solid rgba(180, 160, 140, 0.3);
+      border-bottom: 1px solid rgba(180, 160, 140, 0.3);
+    }
+
+    .f-stat-item strong {
+      display: block;
+      font-family: var(--font-display);
+      font-size: 1.2rem;
+      font-weight: 900;
+      color: var(--amber-gold);
+    }
+
+    .f-stat-item span {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+
+    .featured-video-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 8px;
+    }
+
+    .btn-featured-whatsapp {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 16px 24px;
+      border-radius: 14px;
+      background: var(--whatsapp-green);
+      color: #FFFFFF;
+      font-size: 0.95rem;
+      font-weight: 800;
+      text-decoration: none;
+      box-shadow: 0 8px 25px rgba(37, 211, 102, 0.4);
+      transition: all 0.2s;
+    }
+
+    .btn-featured-whatsapp:hover {
+      background: var(--whatsapp-dark);
+      transform: translateY(-2px);
+      box-shadow: 0 12px 30px rgba(37, 211, 102, 0.5);
+    }
+
+    .btn-featured-packages {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 14px 20px;
+      border-radius: 14px;
+      background: var(--bg-cream);
+      border: 1px solid var(--border-warm);
+      color: var(--text-main);
+      font-size: 0.9rem;
+      font-weight: 700;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+
+    .btn-featured-packages:hover {
+      background: #FFFFFF;
+      border-color: var(--text-main);
+    }
+
+    /* 6 Pillars Video Editing Toolkit */
+    .toolkit-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 24px;
+      max-width: 1140px;
+      margin: 0 auto;
+    }
+
+    .toolkit-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-warm);
+      border-radius: 20px;
+      padding: 28px;
+      box-shadow: 0 8px 25px rgba(68, 64, 60, 0.05);
+      transition: all 0.25s ease;
+    }
+
+    .toolkit-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--amber-gold);
+      box-shadow: 0 14px 35px rgba(217, 119, 6, 0.12);
+    }
+
+    .toolkit-icon-box {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      background: var(--amber-light);
+      color: var(--amber-gold);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 18px;
+      font-size: 1.4rem;
+    }
+
+    .toolkit-title {
+      font-family: var(--font-display);
+      font-size: 1.2rem;
+      font-weight: 800;
+      color: var(--text-main);
+      margin-bottom: 8px;
+    }
+
+    .toolkit-desc {
+      font-size: 0.88rem;
+      color: var(--text-body);
+      line-height: 1.6;
+    }
+
+    /* Packages / Pricing Section */
+    .packages-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 28px;
+      max-width: 1100px;
+      margin: 0 auto 40px;
+    }
+
+    .package-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-warm);
+      border-radius: 24px;
+      padding: 36px 30px;
+      box-shadow: 0 12px 35px rgba(68, 64, 60, 0.06);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      transition: all 0.3s;
+    }
+
+    .package-card.highlighted {
+      background: #FFFFFF;
+      border: 2px solid var(--amber-gold);
+      box-shadow: 0 16px 45px rgba(217, 119, 6, 0.2);
+      transform: scale(1.02);
+    }
+
+    .popular-tag {
+      position: absolute;
+      top: -14px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(135deg, #D97706, #EA580C);
+      color: #FFFFFF;
+      padding: 4px 16px;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .package-tier {
+      font-size: 0.85rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--amber-gold);
+      margin-bottom: 6px;
+    }
+
+    .package-title {
+      font-family: var(--font-display);
+      font-size: 1.65rem;
+      font-weight: 900;
+      color: var(--text-main);
+      margin-bottom: 12px;
+    }
+
+    .package-desc {
+      font-size: 0.88rem;
+      color: var(--text-body);
+      margin-bottom: 24px;
+      line-height: 1.5;
+    }
+
+    .package-features-list {
+      list-style: none;
+      margin-bottom: 32px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .package-features-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 0.88rem;
+      color: var(--text-body);
+      line-height: 1.4;
+    }
+
+    .chk-icon {
+      color: var(--emerald-ivy);
+      font-weight: 900;
+      font-size: 1rem;
+      line-height: 1;
+    }
+
+    .package-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 14px 20px;
+      border-radius: 12px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+
+    .package-btn-primary {
+      background: linear-gradient(135deg, #D97706, #EA580C);
+      color: #FFFFFF;
+      box-shadow: 0 6px 20px rgba(217, 119, 6, 0.3);
+    }
+
+    .package-btn-primary:hover {
+      box-shadow: 0 10px 25px rgba(217, 119, 6, 0.4);
+      transform: translateY(-2px);
+    }
+
+    .package-btn-secondary {
+      background: var(--bg-cream);
+      color: var(--text-main);
+      border: 1px solid var(--border-warm);
+    }
+
+    .package-btn-secondary:hover {
+      background: #FFFFFF;
+      border-color: var(--text-main);
+    }
+
+    /* Free Sample Guarantee Banner */
+    .sample-banner {
+      max-width: 980px;
+      margin: 0 auto 56px;
+      padding: 32px 36px;
+      border-radius: 24px;
+      background: linear-gradient(135deg, #1C1917, #2A2420);
+      color: #FAF7F2;
+      border: 1px solid rgba(217, 119, 6, 0.35);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      flex-wrap: wrap;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.15);
+    }
+
+    .sample-banner-text h3 {
+      font-family: var(--font-display);
+      font-size: 1.55rem;
+      font-weight: 900;
+      margin-bottom: 6px;
+      color: #FFFFFF;
+    }
+
+    .sample-banner-text p {
+      color: #D6D3D1;
+      font-size: 0.92rem;
+      max-width: 600px;
+    }
+
+    .sample-banner-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 28px;
+      border-radius: 9999px;
+      background: var(--whatsapp-green);
+      color: #FFFFFF;
+      font-size: 0.95rem;
+      font-weight: 800;
+      text-decoration: none;
+      box-shadow: 0 8px 25px rgba(37, 211, 102, 0.4);
+      transition: all 0.2s;
+    }
+
+    .sample-banner-btn:hover {
+      background: var(--whatsapp-dark);
+      transform: translateY(-2px);
+    }
+
+    /* Floating WhatsApp Button */
+    .whatsapp-float {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 999;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--whatsapp-green);
+      color: #FFFFFF;
+      padding: 12px 20px;
+      border-radius: 9999px;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 0.9rem;
+      box-shadow: 0 10px 30px rgba(37, 211, 102, 0.45);
+      transition: all 0.25s ease;
+    }
+
+    .whatsapp-float:hover {
+      background: var(--whatsapp-dark);
+      transform: translateY(-3px) scale(1.03);
+      box-shadow: 0 15px 35px rgba(37, 211, 102, 0.55);
+    }
+
+    /* Footer */
+    .footer {
+      border-top: 1px solid var(--border-warm);
+      padding: 48px 0 36px;
+      margin-top: 48px;
+      text-align: center;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .footer a {
+      color: var(--text-main);
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    @media (max-width: 768px) {
+      .nav-links { display: none; }
+      .sample-banner { text-align: center; justify-content: center; }
+      .featured-video-container {
+        grid-template-columns: 1fr;
+        padding: 24px;
+      }
+      .featured-video-frame {
+        height: 480px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Ambient Light Vignettes -->
+  <div class="ambient-texture"></div>
+  <div class="bg-grid-warm"></div>
+
+  <div class="container">
+
+    <!-- Top Sticky Navigation Bar -->
+    <header class="nav-bar">
+      <a href="/showcase" class="brand-logo">
+        <div class="brand-logo-icon">G</div>
+        <div>
+          <div class="brand-title">GROOVE HUB</div>
+          <div class="brand-subtitle">VIDEO EDITING STUDIO</div>
+        </div>
+      </a>
+
+      <ul class="nav-links">
+        <li><a href="#showcase">Featured Edit</a></li>
+        <li><a href="#toolkit">Viral Architecture</a></li>
+        <li><a href="#packages">Editing Packages</a></li>
+      </ul>
+
+      <a href="https://wa.me/918005554768?text=Hi%20Groove%20Hub!%20I%20have%20raw%20footage%20and%20want%20to%20get%20sample%20video%20edits." target="_blank" class="nav-cta-btn">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.664-.699c.971.53 2.052.812 3.195.812 3.181 0 5.767-2.586 5.768-5.766 0-3.18-2.586-5.768-5.767-5.768zm7.399 5.766c-.002 4.079-3.32 7.397-7.399 7.397-1.327 0-2.583-.356-3.676-.975l-4.086 1.072 1.091-3.987c-.687-1.134-1.051-2.451-1.05-3.807.002-4.079 3.32-7.397 7.4-7.397 4.079 0 7.398 3.319 7.4 7.397z"/></svg>
+        <span>Request Sample on WhatsApp</span>
+      </a>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+      <div class="hero-badge">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        <span>Retention-Engineered Video Editing & Viral Growth</span>
+      </div>
+
+      <h1 class="hero-heading">
+        We Turn Raw Creator Footage Into<br />
+        <span class="serif-italic gradient-text-warm">High-Retention Viral Video Cuts.</span>
+      </h1>
+
+      <p class="hero-subheading">
+        Alex Hormozi & Ali Abdaal style kinetic typography, cinema sound design, pattern interrupts, and 3-second hook retention architecture engineered to scale your audience on Instagram Reels, YouTube Shorts & TikTok.
+      </p>
+
+      <div class="hero-cta-group">
+        <a href="#showcase" class="btn-hero-primary">
+          <span>Watch Our Featured Edit</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </a>
+        <a href="https://wa.me/918005554768?text=Hi%20Groove%20Hub!%20I%20want%20to%20send%20my%20raw%20video%20for%20a%20test%20edit." target="_blank" class="btn-hero-secondary">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="#25D366"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.664-.699c.971.53 2.052.812 3.195.812 3.181 0 5.767-2.586 5.768-5.766 0-3.18-2.586-5.768-5.767-5.768zm7.399 5.766c-.002 4.079-3.32 7.397-7.399 7.397-1.327 0-2.583-.356-3.676-.975l-4.086 1.072 1.091-3.987c-.687-1.134-1.051-2.451-1.05-3.807.002-4.079 3.32-7.397 7.4-7.397 4.079 0 7.398 3.319 7.4 7.397z"/></svg>
+          <span>Claim 1 Free Test Edit</span>
+        </a>
+      </div>
+
+      <!-- Trust Strip -->
+      <div class="trust-strip">
+        <div class="trust-item">
+          <div class="trust-number">10M+</div>
+          <div class="trust-label">Views Generated</div>
+        </div>
+        <div class="trust-item">
+          <div class="trust-number">24-48h</div>
+          <div class="trust-label">Fast Delivery</div>
+        </div>
+        <div class="trust-item">
+          <div class="trust-number">94.8%</div>
+          <div class="trust-label">Avg Retention Rate</div>
+        </div>
+        <div class="trust-item">
+          <div class="trust-number">100%</div>
+          <div class="trust-label">Escrow Protected</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Featured Video Work Section (User Work: IMG_2389.MOV) -->
+    <section class="section-wrap" id="showcase">
+      <div class="section-header">
+        <div class="section-tag">Featured Client Work</div>
+        <h2 class="section-title">Our Featured Edit: <span class="gradient-text-warm">Master Reel Cut</span></h2>
+        <p class="section-desc">Real work produced by Groove Hub — engineered in full 9:16 vertical format with kinetic typography, custom sound design, and retention-focused pacing.</p>
+      </div>
+
+      <!-- Centered Premium Vertical Video Showcase Player -->
+      <div class="featured-video-container">
+        <div class="featured-video-frame">
+          <video 
+            id="featured-work-video" 
+            src="/static/client_showcase_work.mp4" 
+            poster="/static/images/portfolio/client_work_poster.jpg"
+            playsinline 
+            controls 
+            preload="metadata"
+            class="featured-video-element">
+          </video>
+          <div class="featured-video-badge">
+            <span class="live-dot"></span>
+            <span>1080x1920 • 9:16 VERTICAL MASTER</span>
+          </div>
+        </div>
+
+        <div class="featured-video-details">
+          <div class="featured-video-tag">VIRAL REEL & SHORT-FORM EDIT</div>
+          <h3 class="featured-video-title">Retention-Engineered Creator Reel Cut</h3>
+          <p class="featured-video-desc">
+            Paced for peak audience retention on Instagram Reels, YouTube Shorts, and TikTok. Featuring synchronized sound effects, punch-in framing, color grading, and zero dead air.
+          </p>
+          
+          <div class="featured-stats-strip">
+            <div class="f-stat-item">
+              <strong>1080x1920</strong>
+              <span>Vertical 9:16</span>
+            </div>
+            <div class="f-stat-item">
+              <strong>60 FPS</strong>
+              <span>Smooth Pacing</span>
+            </div>
+            <div class="f-stat-item">
+              <strong>Stereo EQ</strong>
+              <span>Master Audio</span>
+            </div>
+          </div>
+
+          <div class="featured-video-actions">
+            <a href="https://wa.me/918005554768?text=Hi%20Groove%20Hub!%20I%20saw%20your%20featured%20video%20on%20the%20showcase%20and%20want%20a%20similar%20edit." target="_blank" class="btn-featured-whatsapp">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.664-.699c.971.53 2.052.812 3.195.812 3.181 0 5.767-2.586 5.768-5.766 0-3.18-2.586-5.768-5.767-5.768zm7.399 5.766c-.002 4.079-3.32 7.397-7.399 7.397-1.327 0-2.583-.356-3.676-.975l-4.086 1.072 1.091-3.987c-.687-1.134-1.051-2.451-1.05-3.807.002-4.079 3.32-7.397 7.4-7.397 4.079 0 7.398 3.319 7.4 7.397z"/></svg>
+              <span>Get An Edit Like This On WhatsApp</span>
+            </a>
+            <a href="#packages" class="btn-featured-packages">
+              <span>View Packages & Pricing ↓</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6-Pillar Viral Video Architecture -->
+    <section class="section-wrap" id="toolkit">
+      <div class="section-header">
+        <div class="section-tag">What We Do On Every Edit</div>
+        <h2 class="section-title">The 6-Pillar Viral <span class="gradient-text-warm">Editing Architecture</span></h2>
+        <p class="section-desc">Every piece of footage that passes through Groove Hub is engineered using our retention-tested editing system.</p>
+      </div>
+
+      <div class="toolkit-grid">
+        <div class="toolkit-card">
+          <div class="toolkit-icon-box">⚡</div>
+          <h3 class="toolkit-title">01. 3-Second Hook Engineering</h3>
+          <p class="toolkit-desc">We eliminate cold intros. We add visual punch-ins, audio risers, and provocative statement overlays to stop the user from scrolling in the first 3 seconds.</p>
+        </div>
+
+        <div class="toolkit-card">
+          <div class="toolkit-icon-box">✍️</div>
+          <h3 class="toolkit-title">02. Kinetic Word-by-Word Captions</h3>
+          <p class="toolkit-desc">Hormozi-style animated typography synced to the speaker's voice with bold colors, emoji pops, and bounce physics that make reading effortless.</p>
+        </div>
+
+        <div class="toolkit-card">
+          <div class="toolkit-icon-box">🎧</div>
+          <h3 class="toolkit-title">03. Multi-Layer Cinema Sound Design</h3>
+          <p class="toolkit-desc">Whooshes, cash register chimes, risers, bass impacts, and background tracks meticulously ducked under the speaker to trigger subconscious engagement.</p>
+        </div>
+
+        <div class="toolkit-card">
+          <div class="toolkit-icon-box">✂️</div>
+          <h3 class="toolkit-title">04. Micro-Cuts & Contextual B-Roll</h3>
+          <p class="toolkit-desc">We cut all "ums", pauses, and breath gaps. Contextual stock footage and motion graphics are layered every 2 to 3 seconds so the eye never gets bored.</p>
+        </div>
+
+        <div class="toolkit-card">
+          <div class="toolkit-icon-box">🎨</div>
+          <h3 class="toolkit-title">05. OLED-Calibrated Color Grading</h3>
+          <p class="toolkit-desc">Custom Rec.709 color grade and contrast curve optimized for vibrant smartphone screens, ensuring crisp skin tones and eye-popping highlights.</p>
+        </div>
+
+        <div class="toolkit-card">
+          <div class="toolkit-icon-box">🚀</div>
+          <h3 class="toolkit-title">06. Safe-Zone Platform Formatting</h3>
+          <p class="toolkit-desc">Rendered strictly within safe zones so Instagram captions, TikTok usernames, and YouTube buttons never obstruct your text or visuals.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Packages & Pricing -->
+    <section class="section-wrap" id="packages">
+      <div class="section-header">
+        <div class="section-tag">Flexible Partnership Models</div>
+        <h2 class="section-title">Video Editing Packages <span class="gradient-text-warm">& Retainers</span></h2>
+        <p class="section-desc">Scale your video production with predictable turnaround, dedicated editors, and 100% escrow protection on every project.</p>
+      </div>
+
+      <div class="packages-grid">
+        
+        <!-- Tier 1 -->
+        <div class="package-card">
+          <div class="package-tier">Starter Pack</div>
+          <h3 class="package-title">Creator Kickstart</h3>
+          <p class="package-desc">Perfect for creators testing weekly short-form content with professional pacing.</p>
+          <ul class="package-features-list">
+            <li><span class="chk-icon">✓</span> <strong>10 Viral Shorts / Reels / TikToks</strong></li>
+            <li><span class="chk-icon">✓</span> Kinetic subtitles & emoji pops</li>
+            <li><span class="chk-icon">✓</span> Sound design & trending background audio</li>
+            <li><span class="chk-icon">✓</span> 48-Hour delivery per video</li>
+            <li><span class="chk-icon">✓</span> 2 Revisions included per reel</li>
+            <li><span class="chk-icon">✓</span> 100% Escrow milestone protection</li>
+          </ul>
+          <a href="https://wa.me/918005554768?text=Hi%20Groove%20Hub!%20I%20am%20interested%20in%20the%20Creator%20Kickstart%20(10%20Reels)%20package." target="_blank" class="package-btn package-btn-secondary">
+            <span>Inquire on WhatsApp</span>
+          </a>
+        </div>
+
+        <!-- Tier 2 (Highlighted) -->
+        <div class="package-card highlighted">
+          <div class="popular-tag">MOST POPULAR FOR CREATORS</div>
+          <div class="package-tier">Growth Retainer</div>
+          <h3 class="package-title">Viral Scale</h3>
+          <p class="package-desc">For serious creators and brand founders publishing daily content across all platforms.</p>
+          <ul class="package-features-list">
+            <li><span class="chk-icon">✓</span> <strong>25 Viral Shorts / Reels / TikToks</strong></li>
+            <li><span class="chk-icon">✓</span> <strong>Priority 24-Hour turnaround</strong></li>
+            <li><span class="chk-icon">✓</span> Hook scripting review & retention advice</li>
+            <li><span class="chk-icon">✓</span> Premium sound effects & custom motion graphics</li>
+            <li><span class="chk-icon">✓</span> Custom high-CTR thumbnail covers</li>
+            <li><span class="chk-icon">✓</span> Dedicated Lead Video Editor</li>
+            <li><span class="chk-icon">✓</span> Unlimited revisions until 100% satisfied</li>
+          </ul>
+          <a href="https://wa.me/918005554768?text=Hi%20Groove%20Hub!%20I%20want%20the%20Viral%20Scale%20(25%20Reels)%20package." target="_blank" class="package-btn package-btn-primary">
+            <span>Get Started on WhatsApp</span>
+          </a>
+        </div>
+
+        <!-- Tier 3 -->
+        <div class="package-card">
+          <div class="package-tier">Full Production</div>
+          <h3 class="package-title">Omnichannel Studio</h3>
+          <p class="package-desc">Complete long-form and short-form video outsourcing for high-growth brands.</p>
+          <ul class="package-features-list">
+            <li><span class="chk-icon">✓</span> <strong>4 YouTube Long-Form Videos (10-25 min)</strong></li>
+            <li><span class="chk-icon">✓</span> <strong>30 Viral Cutdown Shorts / Reels</strong></li>
+            <li><span class="chk-icon">✓</span> Multi-cam podcast / interview sync</li>
+            <li><span class="chk-icon">✓</span> Custom 3D After Effects motion titles</li>
+            <li><span class="chk-icon">✓</span> Dedicated Creative Director & Slack / WhatsApp sync</li>
+            <li><span class="chk-icon">✓</span> Full raw source file project handoff</li>
+          </ul>
+          <a href="https://wa.me/918005554768?text=Hi%20Groove%20Hub!%20I%20am%20interested%20in%20the%20Omnichannel%20Studio%20full%20retainer." target="_blank" class="package-btn package-btn-secondary">
+            <span>Book Strategy Call</span>
+          </a>
+        </div>
+
+      </div>
+
+      <!-- Zero-Risk Free Sample Banner -->
+      <div class="sample-banner">
+        <div class="sample-banner-text">
+          <h3>⚡ Test Our Work with 1 Free Sample Edit</h3>
+          <p>Send us any raw unedited video file from your phone or camera. We will edit it with our full hook, kinetic subtitle, and sound design formula for free so you can evaluate the quality before paying anything.</p>
+        </div>
+        <a href="https://wa.me/918005554768?text=Hi%20Groove%20Hub!%20I%20have%20raw%20footage%20and%20want%20to%20send%20it%20for%20my%201%20Free%20Sample%20Edit." target="_blank" class="sample-banner-btn">
+          <span>Send Raw File on WhatsApp</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </a>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <p style="font-weight: 700; color: var(--text-main); margin-bottom: 8px;">GROOVE HUB CREATIVE STUDIOS</p>
+      <p style="margin-bottom: 16px;">Specialized Video Editing for High-Growth Creators, Founders & Performance Brands.</p>
+      <p>© 2026 Groove Hub. All rights reserved. • 100% Escrow Protected • 24-48h Guaranteed Delivery</p>
+    </footer>
+
+  </div>
+
+  <!-- Floating Sticky WhatsApp CTA -->
+  <a href="https://wa.me/918005554768?text=Hi%20Groove%20Hub!%20I%20have%20raw%20footage%20and%20want%20to%20get%20sample%20video%20edits." target="_blank" class="whatsapp-float">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.664-.699c.971.53 2.052.812 3.195.812 3.181 0 5.767-2.586 5.768-5.766 0-3.18-2.586-5.768-5.767-5.768zm7.399 5.766c-.002 4.079-3.32 7.397-7.399 7.397-1.327 0-2.583-.356-3.676-.975l-4.086 1.072 1.091-3.987c-.687-1.134-1.051-2.451-1.05-3.807.002-4.079 3.32-7.397 7.4-7.397 4.079 0 7.398 3.319 7.4 7.397z"/></svg>
+    <span>Chat on WhatsApp</span>
+  </a>
+
+</body>
+</html>

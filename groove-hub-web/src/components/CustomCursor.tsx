@@ -10,12 +10,12 @@ export function CustomCursor() {
   const mouseX = useMotionValue(-100);
   const mouseY = useMotionValue(-100);
 
-  const springConfig = { damping: 25, stiffness: 250, mass: 0.5 };
+  const springConfig = { damping: 26, stiffness: 260, mass: 0.45 };
   const smoothX = useSpring(mouseX, springConfig);
   const smoothY = useSpring(mouseY, springConfig);
 
   useEffect(() => {
-    // Only run on desktop devices with fine pointers
+    // Only run on desktop devices with fine pointers and motion enabled
     if (typeof window === "undefined") return;
     const isTouch = window.matchMedia("(pointer: coarse)").matches;
     const isReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -62,7 +62,7 @@ export function CustomCursor() {
     <>
       <motion.div
         aria-hidden="true"
-        className="pointer-events-none fixed top-0 left-0 z-[9999] rounded-full border border-[#FF553E]/40"
+        className="pointer-events-none fixed top-0 left-0 z-[9999] rounded-full border border-[#F4B183]/50"
         style={{
           x: smoothX,
           y: smoothY,
@@ -70,13 +70,13 @@ export function CustomCursor() {
           translateY: "-50%",
           width: isPointer ? 44 : 26,
           height: isPointer ? 44 : 26,
-          backgroundColor: isPointer ? "rgba(255, 85, 62, 0.12)" : "transparent",
+          backgroundColor: isPointer ? "rgba(244, 177, 131, 0.14)" : "transparent",
           transition: "width 0.2s, height 0.2s, background-color 0.2s",
         }}
       />
       <motion.div
         aria-hidden="true"
-        className="pointer-events-none fixed top-0 left-0 z-[9999] h-1.5 w-1.5 rounded-full bg-[#FF553E]"
+        className="pointer-events-none fixed top-0 left-0 z-[9999] h-1.5 w-1.5 rounded-full bg-[#F4B183]"
         style={{
           x: mouseX,
           y: mouseY,

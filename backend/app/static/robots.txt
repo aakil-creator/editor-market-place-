@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Allow: /work
+Allow: /static/
+Disallow: /team-portal
+Disallow: /api/
+
+Sitemap: https://syncra-qui2.onrender.com/sitemap.xml

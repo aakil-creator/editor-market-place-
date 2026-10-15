@@ -13,19 +13,19 @@ export function FAQAccordion() {
   };
 
   return (
-    <section id="faq" className="py-24 px-4 sm:px-6 relative overflow-hidden bg-[#07090E]/60">
+    <section id="faq" className="py-28 px-4 sm:px-6 relative bg-[#2A0A0E] border-t border-[#F4B183]/15">
       <div className="max-w-4xl mx-auto">
         
         {/* Section Header */}
         <div className="text-center max-w-xl mx-auto mb-16">
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3.5 py-1 text-xs font-semibold text-[#00E5BC] uppercase tracking-wider mb-4">
+          <div className="inline-flex items-center gap-2 rounded-full border border-[#F4B183]/30 bg-[#3B0D12]/80 px-4 py-1 text-xs font-semibold text-[#F4B183] uppercase tracking-wider mb-4">
             <HelpCircle className="w-3.5 h-3.5" />
             <span>Got Questions?</span>
           </div>
-          <h2 className="font-display font-extrabold text-3xl sm:text-4xl text-white tracking-tight mb-4">
+          <h2 className="font-serif font-bold text-3xl sm:text-4xl text-[#FFF4E8] tracking-tight mb-4">
             Frequently Asked Questions
           </h2>
-          <p className="text-sm sm:text-base text-gray-300">
+          <p className="text-sm sm:text-base text-[#D9C5B2]">
             Straight answers about how we work, how we shoot in Chennai, and how our pricing works.
           </p>
         </div>
@@ -38,17 +38,17 @@ export function FAQAccordion() {
             return (
               <div
                 key={index}
-                className="rounded-2xl border border-white/10 bg-[#0E131F]/90 overflow-hidden transition-colors hover:border-white/20"
+                className="rounded-2xl border border-[#F4B183]/20 bg-[#3B0D12]/80 overflow-hidden transition-colors hover:border-[#F4B183]/45"
               >
                 <button
                   onClick={() => toggle(index)}
                   aria-expanded={isOpen}
-                  className="w-full py-5 px-6 sm:px-7 flex items-center justify-between gap-4 text-left font-display font-bold text-base sm:text-lg text-white hover:text-[#00E5BC] transition-colors"
+                  className="w-full py-5 px-6 sm:px-7 flex items-center justify-between gap-4 text-left font-serif font-bold text-base sm:text-lg text-[#FFF4E8] hover:text-[#F4B183] transition-colors cursor-pointer"
                 >
                   <span>{faq.question}</span>
                   <ChevronDown
-                    className={`w-5 h-5 text-gray-400 shrink-0 transition-transform duration-300 ${
-                      isOpen ? "rotate-180 text-[#FF553E]" : ""
+                    className={`w-5 h-5 text-[#A88C83] shrink-0 transition-transform duration-300 ${
+                      isOpen ? "rotate-180 text-[#F4B183]" : ""
                     }`}
                   />
                 </button>
@@ -61,7 +61,7 @@ export function FAQAccordion() {
                       exit={{ height: 0, opacity: 0 }}
                       transition={{ duration: 0.3, ease: "easeInOut" }}
                     >
-                      <div className="px-6 sm:px-7 pb-6 pt-1 text-sm text-gray-300 leading-relaxed font-normal border-t border-white/5">
+                      <div className="px-6 sm:px-7 pb-6 pt-1 text-xs sm:text-sm text-[#D9C5B2] leading-relaxed font-normal border-t border-[#F4B183]/10">
                         {faq.answer}
                       </div>
                     </motion.div>

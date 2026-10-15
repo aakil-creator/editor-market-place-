@@ -22,8 +22,8 @@ export interface BusinessNiche {
 export interface PackageTier {
   id: string;
   name: string;
-  price: string;
-  period: string;
+  price?: string; // Optional: empty string or omitted displays "Pricing on request"
+  period?: string;
   description: string;
   popular?: boolean;
   deliverables: string[];
@@ -39,8 +39,8 @@ export interface FAQItem {
 export const siteConfig = {
   // Brand Identity
   brandName: "GROOVE HUB",
-  tagline: "We make reels that fill your gym, studio and store.",
-  shortDescription: "Groove Hub grows local businesses in Chennai on Instagram by making high-quality, purposeful reels.",
+  tagline: "We grow local businesses in Chennai on Instagram with high-quality reels.",
+  shortDescription: "Groove Hub grows local businesses in Chennai on Instagram with high-quality reels. We are a team of four: a video shooter, a video editor, a scriptwriter, and a strategic thinker.",
   
   // Location & Service Area
   city: "Chennai",
@@ -60,32 +60,34 @@ export const siteConfig = {
     "Across Greater Chennai"
   ],
 
-  // Contact Placeholders (Edit these in one place!)
-  whatsappNumber: "[WHATSAPP_NUMBER]", // e.g. "919876543210" without '+'
-  email: "[EMAIL@YOURDOMAIN.COM]",
-  instagramHandle: "[YOUR_INSTAGRAM_HANDLE]",
-  instagramUrl: "https://instagram.com/[YOUR_INSTAGRAM_HANDLE]",
+  // Direct Contact Configuration
+  // Put all contact info here. If email or instagramHandle is empty, the UI cleanly hides that element.
+  whatsappNumber: "919344546733",
+  email: "", // Optional: leave empty string to hide email links
+  instagramHandle: "", // Optional: leave empty string to hide Instagram links
+  instagramUrl: "", // Optional: e.g. "https://instagram.com/groovehub"
+  priceRange: "", // Optional for Schema.org
 
   // Core Irresistible Offer
   primaryOffer: "Text us and we'll do a free shoot and a free reel so you can see our work before you pay.",
   offerSubtext: "Zero cost. Zero contract. If you don't love what we shoot and edit, you owe us nothing.",
 
-  // Team of Four Roles
+  // Team of Four Roles (Authentic, grounded, no corporate fluff)
   team: [
     {
       role: "Shooter",
       name: "Video Shooter",
-      title: "The Shooter",
+      title: "The Video Shooter",
       action: "Plans angles & shoots at your location",
-      description: "Visits your shop or studio in Chennai with proper lighting, stabilization, and sharp 4K equipment to capture authentic, high-detail footage.",
+      description: "Visits your shop or studio in Chennai with proper lighting, stabilization, and camera gear to capture clean, authentic footage of your space and work.",
       icon: "Camera"
     },
     {
       role: "Editor",
       name: "Video Editor",
-      title: "The Editor",
+      title: "The Video Editor",
       action: "Cuts tight & designs retention audio",
-      description: "Trims every dead second, adds clean kinetic captions, sound design, and color grading tuned specifically for mobile phone screens.",
+      description: "Trims every dead second, adds clean kinetic subtitles, sound effects, and color grading tuned specifically for mobile phone screens.",
       icon: "Scissors"
     },
     {
@@ -93,13 +95,13 @@ export const siteConfig = {
       name: "Scriptwriter",
       title: "The Scriptwriter",
       action: "Writes every hook before shooting",
-      description: "Scripts the visual hook, text cues, and story arc for every single reel so your video has a clear commercial purpose.",
+      description: "Scripts the visual hook, dialogue, text cues, and story arc for every single reel so your video has a clear commercial purpose.",
       icon: "PenTool"
     },
     {
       role: "Strategist",
       name: "Strategic Thinker",
-      title: "The Strategist",
+      title: "The Strategic Thinker",
       action: "Finds what your business is missing",
       description: "Studies your local competitors in Chennai, reviews what questions your real customers ask, and crafts a purposeful content roadmap.",
       icon: "Compass"
@@ -110,17 +112,17 @@ export const siteConfig = {
   comparison: {
     agencyTitle: "Typical Digital Marketing Agency",
     agencyPoints: [
-      "Asks you to provide your own video clips and photos",
-      "Posts generic Canva templates with stock quotes",
-      "Focuses on vanity boosts, ad spend, and generic followers",
-      "Treats your business like just another ticket in a queue"
+      "Asks you to take your own phone clips and photos",
+      "Posts generic templates with stock quotes",
+      "Focuses on vanity boosts and generic follower numbers",
+      "Treats your business like another ticket in a queue"
     ],
     grooveTitle: "Groove Hub Growth Studio",
     groovePoints: [
       "We come to your location in Chennai and shoot everything ourselves",
       "Every reel is written with a real hook and shot with a clear goal",
       "Focuses on driving walk-ins, phone calls, and local customers",
-      "A dedicated team of four (Shooter, Editor, Writer, Strategist) working on every cut"
+      "A dedicated team of four (Shooter, Editor, Writer, Strategist) working on every reel"
     ]
   },
 
@@ -149,7 +151,7 @@ export const siteConfig = {
     {
       step: "05",
       title: "Edit and grow",
-      description: "We cut tight, add clean sound effects and captions, color-grade for phone screens, and hand over production-ready reels that convert views into customers."
+      description: "We cut tight, add clean sound effects and captions, grade for phone screens, and hand over production-ready reels that convert views into customers."
     }
   ],
 
@@ -210,12 +212,12 @@ export const siteConfig = {
         {
           hook: "\"From dry summer frizz to liquid glass hair in 90 mins\"",
           concept: "Before-and-after shine reveal with macro hair movement",
-          purpose: "Drives instant DM inquiries for hair botox/keratin treatments."
+          purpose: "Drives instant DM inquiries for hair botox and keratin treatments."
         },
         {
           hook: "\"Behind the scenes: 5 AM South Indian bridal makeover\"",
-          concept: "Micro-cuts of jewelry pinning, saree draping, and flawless base",
-          purpose: "Secures high-ticket wedding makeup bookings 6 months in advance."
+          concept: "Micro-cuts of jewelry pinning, saree draping, and clean skin base",
+          purpose: "Secures high-ticket wedding makeup bookings months in advance."
         },
         {
           hook: "\"3 haircut mistakes people with round faces make in Chennai\"",
@@ -233,7 +235,7 @@ export const siteConfig = {
         {
           hook: "\"3 ways to style this pure Kanchipuram weave for a modern cocktail\"",
           concept: "Model draping transition with close-up zari shine",
-          purpose: "Shows versatility and attracts younger festive buyers."
+          purpose: "Shows versatility and attracts festive shoppers."
         },
         {
           hook: "\"How to verify real handmade silver jewellery in 10 seconds\"",
@@ -272,17 +274,18 @@ export const siteConfig = {
     }
   ] as BusinessNiche[],
 
-  // Placeholder Packages
+  // Packages
+  // If price is empty or omitted, the UI displays "Pricing on request".
   packages: [
     {
       id: "starter",
       name: "Starter Consistency",
-      price: "[PRICE_TIER_1]",
+      price: "", // Empty: Displays "Pricing on request"
       period: "month",
-      description: "For local stores and independent creators starting to build a consistent presence on Instagram.",
+      description: "For local stores and independent studios wanting to build a steady, credible presence on Instagram.",
       deliverables: [
         "8 Custom-Shot Reels per month",
-        "1 Location Shoot Session in Chennai (half-day)",
+        "1 Location Shoot Session in Chennai",
         "Scripting & Hook Research for all 8 reels",
         "Full Video Editing, Color Grade & Sound FX",
         "Kinetic Word-by-Word Captions"
@@ -292,76 +295,75 @@ export const siteConfig = {
         "1 round of revision per reel",
         "Delivery within 48-72h of shoot"
       ],
-      whatsappMessage: "Hi Groove Hub, I am interested in the Starter Consistency package ([PRICE_TIER_1]/mo). Can we talk?"
+      whatsappMessage: "Hi Groove Hub! I am interested in the Starter Consistency package. Can we discuss pricing and how it works?"
     },
     {
       id: "growth",
       name: "Growth Momentum",
-      price: "[PRICE_TIER_2]",
+      price: "", // Empty: Displays "Pricing on request"
       period: "month",
       popular: true,
       description: "Our core package designed to keep your business consistently top-of-mind with high-retention reel output.",
       deliverables: [
         "16 Custom-Shot Reels per month",
         "2 Location Shoot Sessions in Chennai",
-        "Complete Topic & Competitor Gap Analysis",
+        "Topic & Competitor Gap Analysis in your neighborhood",
         "Hook Optimization & Narrative Storyboarding",
-        "High-Energy Sound Design, Motion Titles & Grade",
-        "Cover Image / Thumbnail Design for every reel"
+        "Sound Design, Motion Titles & Grade",
+        "Cover Image / Thumbnail for every reel"
       ],
       features: [
         "Dedicated 4-person team (Shooter, Editor, Writer, Strategist)",
         "Priority 24-48h post-production turnaround",
-        "Bi-weekly strategy check-in"
+        "Bi-weekly content review"
       ],
-      whatsappMessage: "Hi Groove Hub, I am interested in the Growth Momentum package ([PRICE_TIER_2]/mo). Can we schedule a call?"
+      whatsappMessage: "Hi Groove Hub! I am interested in the Growth Momentum package. Can we talk about pricing and schedule our first shoot?"
     },
     {
       id: "scale",
-      name: "Scale & Dominance",
-      price: "[PRICE_TIER_3]",
+      name: "Scale & Retention",
+      price: "", // Empty: Displays "Pricing on request"
       period: "month",
-      description: "For established salons, multi-trainer gyms, and luxury boutiques ready to become the market leader in Chennai.",
+      description: "For established salons, multi-trainer gyms, and boutiques ready to become the market leader in Chennai.",
       deliverables: [
         "24 Custom-Shot Reels per month",
         "3 Location Shoot Sessions in Chennai",
         "Full Funnel Strategy: Awareness + Conversion + Offers",
-        "Storytelling & Customer Spotlight Production",
-        "Lossless 4K Master Renders + Audio EQ",
+        "Customer Story & Showcase Production",
+        "Master renders tuned specifically for phone screens",
         "Custom Cover Frames & Story Repurposing Cuts"
       ],
       features: [
-        "Dedicated senior creative lead",
-        "Expedited 24h turnaround for timely promos",
-        "Unlimited revisions within scope"
+        "Direct collaboration with your 4-person team",
+        "Expedited turnaround for timely store promotions",
+        "Revisions included per reel"
       ],
-      whatsappMessage: "Hi Groove Hub, I want to discuss the Scale & Dominance package ([PRICE_TIER_3]/mo) for my business."
+      whatsappMessage: "Hi Groove Hub! I want to discuss the Scale & Retention package for my business."
     },
     {
       id: "custom",
       name: "Custom Studio Retainer",
       price: "Custom",
       period: "project / retainer",
-      description: "For multi-branch businesses, major store launches, seasonal collections, or custom video production requirements.",
+      description: "For store launches, seasonal festive collections, or specialized video production requirements.",
       deliverables: [
         "Tailored reel volume & shooting schedule",
-        "Multi-location shoots across Chennai & TN",
-        "Long-form YouTube + Short-form repurposing options",
-        "Commercial and festive campaign rollouts"
+        "Shoots at your store or studio in Chennai",
+        "Custom creative formats & promotional rollouts"
       ],
       features: [
-        "Fully tailored scope and SLA",
-        "Direct founder access and coordination"
+        "Fully tailored scope and deliverables",
+        "Direct collaboration with your 4-person team"
       ],
-      whatsappMessage: "Hi Groove Hub, I would like to discuss a custom production scope for my business."
+      whatsappMessage: "Hi Groove Hub! I would like to discuss a custom production scope for my business."
     }
   ] as PackageTier[],
 
-  // Sensible, Direct FAQ Answers
+  // Grounded, warm, direct FAQ Answers
   faqs: [
     {
       question: "How does the free reel work?",
-      answer: "We keep it very simple: text us on WhatsApp, tell us about your business, and we'll agree on a date to visit your shop or studio in Chennai. We plan a simple concept, shoot for about 45 minutes, edit the reel with our full team, and send you the completed video. You can post it on your Instagram. If you love the experience and want regular reels, we discuss a monthly package. If not, the reel is yours to keep with zero strings attached."
+      answer: "We keep it very simple: text us on WhatsApp, tell us about your business, and we'll agree on a date to visit your shop or studio in Chennai. We plan a simple concept, shoot for about 45 minutes, edit the reel with our full team, and send you the completed video. You can post it on your Instagram. If you love the experience and want regular reels, we discuss a monthly plan. If not, the reel is yours to keep with zero strings attached."
     },
     {
       question: "Do you come to my shop or studio in Chennai?",
@@ -377,20 +379,21 @@ export const siteConfig = {
     },
     {
       question: "Do you post the reels for me or just send the files?",
-      answer: "We provide high-resolution, export-ready video files along with recommended captions, hashtags, and ideal posting time windows. Many store owners prefer posting directly from their own phone to answer DMs immediately, but we can also handle scheduled publishing if you prefer hands-off management."
+      answer: "We provide high-resolution, export-ready video files along with recommended captions, hashtags, and ideal posting time windows. Many store owners prefer posting directly from their own phone to answer DMs immediately, but we can also guide you on scheduled publishing if you prefer."
     },
     {
       question: "What does it cost?",
-      answer: "Our plans are designed to be affordable for independent Chennai stores and studios, starting at [PRICE_TIER_1] per month. Every package includes planning, shooting, scriptwriting, and editing. There are no hidden fees, and you can start with our free shoot and reel to experience our quality before spending a rupee."
+      answer: "Our plans are designed to be practical for independent Chennai stores and studios. Every package includes planning, shooting, scriptwriting, and editing with no hidden fees. Text us on WhatsApp for our current pricing, or start with our free shoot and reel to experience our work before paying anything."
     }
   ] as FAQItem[]
 };
 
 /**
  * Helper to build prefilled WhatsApp URLs
+ * Always uses the verified WHATSAPP_NUMBER and safely URL-encodes messages.
  */
 export function getWhatsAppUrl(customMessage?: string): string {
-  const number = siteConfig.whatsappNumber;
+  const number = siteConfig.whatsappNumber || "919344546733";
   const defaultText = `Hi Groove Hub! I run a local business in Chennai and I want to get my free shoot and free reel.`;
   const text = encodeURIComponent(customMessage || defaultText);
   return `https://wa.me/${number}?text=${text}`;

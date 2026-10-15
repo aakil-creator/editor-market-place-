@@ -1,14 +1,14 @@
 {
-  "name": "Groove Hub - Creator Marketplace",
+  "name": "Groove Hub — Reels Studio Chennai",
   "short_name": "Groove Hub",
-  "description": "Connecting content creators with vetted video editors and English language coaches. 100% escrow protected.",
+  "description": "Groove Hub plans, scripts, shoots and edits Instagram reels for local businesses in Chennai.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "orientation": "any",
-  "background_color": "#0f1117",
-  "theme_color": "#6c5ce7",
-  "categories": ["business", "productivity", "education"],
+  "orientation": "portrait",
+  "background_color": "#0a1a40",
+  "theme_color": "#0a1a40",
+  "categories": ["business", "video", "marketing"],
   "icons": [
     {
       "src": "/static/icons/icon-192.png",
@@ -37,24 +37,17 @@
   ],
   "shortcuts": [
     {
-      "name": "Browse Talent",
-      "short_name": "Talent",
-      "description": "Find video editors and English tutors",
-      "url": "/providers",
+      "name": "Book a Free Reel",
+      "short_name": "Free Reel",
+      "description": "Text us for a free shoot and reel",
+      "url": "https://wa.me/919344546733?text=Hi%20Groove%20Hub!%20I'd%20like%20to%20get%20a%20free%20shoot%20and%20reel%20for%20my%20business.",
       "icons": [{ "src": "/static/icons/icon-192.png", "sizes": "192x192" }]
     },
     {
-      "name": "My Bookings",
-      "short_name": "Bookings",
-      "description": "View and manage your active orders",
-      "url": "/bookings",
-      "icons": [{ "src": "/static/icons/icon-192.png", "sizes": "192x192" }]
-    },
-    {
-      "name": "Settings",
-      "short_name": "Settings",
-      "description": "Manage account and preferences",
-      "url": "/settings",
+      "name": "Featured Work",
+      "short_name": "Work",
+      "description": "Watch real on-location client reels",
+      "url": "/work",
       "icons": [{ "src": "/static/icons/icon-192.png", "sizes": "192x192" }]
     }
   ]

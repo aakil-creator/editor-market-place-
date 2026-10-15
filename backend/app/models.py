@@ -452,15 +452,15 @@ class AgencyTeamSubscription(Base):
     plan_type = Column(String, default="MONTHLY") # MONTHLY or HALF_YEARLY
     status = Column(String, default="ACTIVE") # ACTIVE, EXPIRED, CANCELLED
     price_paid = Column(Float, default=24999.0)
-    whatsapp_number = Column(String, default="+919876543210") # Team WhatsApp hotline
     vip_link_token = Column(String, unique=True, index=True, nullable=False)
+    whatsapp_number = Column(String, default="919344546733")
 
-    # 5-Person Team Roster
-    strategic_thinker_name = Column(String, default="Strategic Lead - Alex (Store & Competitor Analyst)")
-    script_writer_name = Column(String, default="Script Master - Sarah (Ad & Reel Scripts)")
-    videographer_editor_name = Column(String, default="Creative Producer - Marcus (Shoot & High-Retention Edit)")
-    account_handler_name = Column(String, default="Growth Specialist - David (Views & Leads Handler)")
-    app_management_team = Column(String, default="Managed by User & Sashi via Groove Hub App")
+    # Dedicated Studio Team of Four Roster
+    strategic_thinker_name = Column(String, default="The Strategic Thinker")
+    script_writer_name = Column(String, default="The Scriptwriter")
+    videographer_editor_name = Column(String, default="The Video Shooter & Video Editor")
+    account_handler_name = Column(String, default="Groove Hub Studio Chennai")
+    app_management_team = Column(String, default="Groove Hub Core Team")
 
     start_date = Column(DateTime, default=datetime.utcnow)
     end_date = Column(DateTime, nullable=True)
