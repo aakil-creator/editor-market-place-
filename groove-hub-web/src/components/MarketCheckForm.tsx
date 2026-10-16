@@ -54,38 +54,38 @@ Please review our profile and local competitors nearby.`;
   };
 
   return (
-    <section id="free-check" className="py-28 px-4 sm:px-6 relative bg-[#2A0A0E]/75 backdrop-blur-sm border-t border-[#F4B183]/15">
+    <section id="free-check" className="py-28 px-4 sm:px-6 relative bg-transparent border-t border-white/60">
       <div className="max-w-4xl mx-auto">
         
-        <div className="rounded-3xl border border-[#F4B183]/25 bg-[#3B0D12]/90 p-6 sm:p-10 lg:p-12 shadow-2xl relative backdrop-blur-xl">
+        <div className="rounded-3xl border border-white/80 bg-white/75 p-6 sm:p-10 lg:p-12 shadow-2xl relative backdrop-blur-xl">
           
           <div className="relative z-10">
             {/* Header */}
             <div className="text-center max-w-xl mx-auto mb-10">
-              <div className="inline-flex items-center gap-1.5 rounded-full border border-[#F4B183]/30 bg-[#2A0A0E] px-3.5 py-1 text-xs font-semibold text-[#F4B183] uppercase tracking-wider mb-4">
+              <div className="inline-flex items-center gap-1.5 rounded-full border border-[#6c5ce7]/30 bg-white/80 px-3.5 py-1 text-xs font-semibold text-[#6c5ce7] uppercase tracking-wider mb-4 shadow-sm backdrop-blur-md">
                 <Search className="w-3.5 h-3.5" />
                 <span>Zero Cost Analysis</span>
               </div>
-              <h2 className="font-serif font-bold text-2xl sm:text-3xl md:text-4xl text-[#FFF4E8] mb-3 leading-tight">
+              <h2 className="font-serif font-bold text-2xl sm:text-3xl md:text-4xl text-[#1e293b] mb-3 leading-tight">
                 Free Local Market Check
               </h2>
-              <p className="text-sm sm:text-base text-[#D9C5B2]">
+              <p className="text-sm sm:text-base text-[#334155]">
                 We review your Instagram and your competitors nearby in Chennai and tell you what you’re missing. Our team reviews it manually.
               </p>
             </div>
 
             {submitted ? (
-              <div className="text-center py-10 px-4 rounded-2xl bg-[#2A0A0E]/80 border border-[#25D366]/40">
+              <div className="text-center py-10 px-4 rounded-2xl bg-white/80 border border-[#25D366]/40 shadow-sm">
                 <CheckCircle2 className="w-12 h-12 text-[#25D366] mx-auto mb-4" />
-                <h3 className="font-serif font-bold text-xl text-[#FFF4E8] mb-2">
+                <h3 className="font-serif font-bold text-xl text-[#1e293b] mb-2">
                   Opening WhatsApp with your details!
                 </h3>
-                <p className="text-sm text-[#D9C5B2] max-w-md mx-auto mb-6">
+                <p className="text-sm text-[#475569] max-w-md mx-auto mb-6">
                   If WhatsApp did not open automatically, click the button below to message our team directly.
                 </p>
                 <button
                   onClick={() => setSubmitted(false)}
-                  className="text-xs text-[#F4B183] hover:underline font-bold"
+                  className="text-xs text-[#6c5ce7] hover:underline font-bold"
                 >
                   ← Edit details or submit another check
                 </button>
@@ -96,7 +96,7 @@ Please review our profile and local competitors nearby.`;
                   
                   {/* Business Name */}
                   <div>
-                    <label className="block text-xs font-bold text-[#D9C5B2] uppercase tracking-wider mb-2">
+                    <label className="block text-xs font-bold text-[#475569] uppercase tracking-wider mb-2">
                       Business Name *
                     </label>
                     <input
@@ -105,19 +105,19 @@ Please review our profile and local competitors nearby.`;
                       placeholder="e.g. Iron Forge Gym / Bloom Bridal Studio"
                       value={formData.businessName}
                       onChange={(e) => setFormData({ ...formData, businessName: e.target.value })}
-                      className="w-full px-4 py-3 rounded-xl bg-[#2A0A0E] border border-[#F4B183]/20 text-[#FFF4E8] text-sm placeholder:text-[#A88C83] focus:outline-none focus:border-[#F4B183] focus:ring-1 focus:ring-[#F4B183] transition-all"
+                      className="w-full px-4 py-3 rounded-xl bg-white/80 border border-gray-200 text-[#1e293b] text-sm placeholder:text-[#94a3b8] focus:outline-none focus:border-[#6c5ce7] focus:ring-1 focus:ring-[#6c5ce7] shadow-sm transition-all"
                     />
                   </div>
 
                   {/* Business Type */}
                   <div>
-                    <label className="block text-xs font-bold text-[#D9C5B2] uppercase tracking-wider mb-2">
+                    <label className="block text-xs font-bold text-[#475569] uppercase tracking-wider mb-2">
                       Business Category *
                     </label>
                     <select
                       value={formData.businessType}
                       onChange={(e) => setFormData({ ...formData, businessType: e.target.value })}
-                      className="w-full px-4 py-3 rounded-xl bg-[#2A0A0E] border border-[#F4B183]/20 text-[#FFF4E8] text-sm focus:outline-none focus:border-[#F4B183] focus:ring-1 focus:ring-[#F4B183] transition-all"
+                      className="w-full px-4 py-3 rounded-xl bg-white/80 border border-gray-200 text-[#1e293b] text-sm focus:outline-none focus:border-[#6c5ce7] focus:ring-1 focus:ring-[#6c5ce7] shadow-sm transition-all"
                     >
                       <option value="Gym / Fitness Center">Gym / Fitness Center</option>
                       <option value="Yoga / Dance Studio">Yoga / Dance Studio</option>
@@ -131,7 +131,7 @@ Please review our profile and local competitors nearby.`;
 
                   {/* Area in Chennai */}
                   <div>
-                    <label className="block text-xs font-bold text-[#D9C5B2] uppercase tracking-wider mb-2">
+                    <label className="block text-xs font-bold text-[#475569] uppercase tracking-wider mb-2">
                       Area in Chennai *
                     </label>
                     <input
@@ -140,13 +140,13 @@ Please review our profile and local competitors nearby.`;
                       placeholder="e.g. Anna Nagar, Adyar, T. Nagar, OMR"
                       value={formData.area}
                       onChange={(e) => setFormData({ ...formData, area: e.target.value })}
-                      className="w-full px-4 py-3 rounded-xl bg-[#2A0A0E] border border-[#F4B183]/20 text-[#FFF4E8] text-sm placeholder:text-[#A88C83] focus:outline-none focus:border-[#F4B183] focus:ring-1 focus:ring-[#F4B183] transition-all"
+                      className="w-full px-4 py-3 rounded-xl bg-white/80 border border-gray-200 text-[#1e293b] text-sm placeholder:text-[#94a3b8] focus:outline-none focus:border-[#6c5ce7] focus:ring-1 focus:ring-[#6c5ce7] shadow-sm transition-all"
                     />
                   </div>
 
                   {/* Instagram Handle */}
                   <div>
-                    <label className="block text-xs font-bold text-[#D9C5B2] uppercase tracking-wider mb-2">
+                    <label className="block text-xs font-bold text-[#475569] uppercase tracking-wider mb-2">
                       Instagram Handle *
                     </label>
                     <input
@@ -155,7 +155,7 @@ Please review our profile and local competitors nearby.`;
                       placeholder="@yourbusinessname"
                       value={formData.instagramHandle}
                       onChange={(e) => setFormData({ ...formData, instagramHandle: e.target.value })}
-                      className="w-full px-4 py-3 rounded-xl bg-[#2A0A0E] border border-[#F4B183]/20 text-[#FFF4E8] text-sm placeholder:text-[#A88C83] focus:outline-none focus:border-[#F4B183] focus:ring-1 focus:ring-[#F4B183] transition-all"
+                      className="w-full px-4 py-3 rounded-xl bg-white/80 border border-gray-200 text-[#1e293b] text-sm placeholder:text-[#94a3b8] focus:outline-none focus:border-[#6c5ce7] focus:ring-1 focus:ring-[#6c5ce7] shadow-sm transition-all"
                     />
                   </div>
 
@@ -163,7 +163,7 @@ Please review our profile and local competitors nearby.`;
 
                 {/* WhatsApp Phone */}
                 <div>
-                  <label className="block text-xs font-bold text-[#D9C5B2] uppercase tracking-wider mb-2">
+                  <label className="block text-xs font-bold text-[#475569] uppercase tracking-wider mb-2">
                     Your WhatsApp Phone Number *
                   </label>
                   <input
@@ -172,7 +172,7 @@ Please review our profile and local competitors nearby.`;
                     placeholder="e.g. 98765 43210"
                     value={formData.whatsappNumber}
                     onChange={(e) => setFormData({ ...formData, whatsappNumber: e.target.value })}
-                    className="w-full px-4 py-3 rounded-xl bg-[#2A0A0E] border border-[#F4B183]/20 text-[#FFF4E8] text-sm placeholder:text-[#A88C83] focus:outline-none focus:border-[#F4B183] focus:ring-1 focus:ring-[#F4B183] transition-all"
+                    className="w-full px-4 py-3 rounded-xl bg-white/80 border border-gray-200 text-[#1e293b] text-sm placeholder:text-[#94a3b8] focus:outline-none focus:border-[#6c5ce7] focus:ring-1 focus:ring-[#6c5ce7] shadow-sm transition-all"
                   />
                 </div>
 
@@ -181,12 +181,12 @@ Please review our profile and local competitors nearby.`;
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full flex items-center justify-center gap-2.5 rounded-full bg-[#25D366] hover:bg-[#20BA5A] text-white py-4 px-6 font-bold text-sm sm:text-base shadow-xl shadow-[#25D366]/25 transition-all duration-200 active:scale-98 disabled:opacity-50 cursor-pointer"
+                    className="w-full flex items-center justify-center gap-2.5 rounded-full bg-[#6c5ce7] hover:bg-[#5b4bc4] text-white py-4 px-6 font-bold text-sm sm:text-base shadow-xl shadow-[#6c5ce7]/25 transition-all duration-200 active:scale-98 disabled:opacity-50 cursor-pointer"
                   >
                     <Send className="w-4 h-4" />
                     <span>Send details &amp; Get Free Market Check on WhatsApp</span>
                   </button>
-                  <p className="text-center text-[11px] text-[#A88C83] mt-2.5">
+                  <p className="text-center text-[11px] text-[#64748b] mt-2.5">
                     Opens WhatsApp with your details prefilled. No spam. 100% free review.
                   </p>
                 </div>

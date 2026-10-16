@@ -98,19 +98,19 @@ export function WorkShowcase() {
   };
 
   return (
-    <section id="our-work" className="py-28 px-4 sm:px-6 relative bg-[#2A0A0E]/75 backdrop-blur-sm border-t border-[#F4B183]/15">
+    <section id="our-work" className="py-28 px-4 sm:px-6 relative bg-transparent border-t border-white/60">
       <div className="max-w-6xl mx-auto">
         
         {/* Section Heading */}
         <div className="text-center max-w-2xl mx-auto mb-16">
-          <div className="inline-flex items-center gap-2 rounded-full border border-[#F4B183]/30 bg-[#3B0D12]/80 px-4 py-1.5 text-xs font-semibold text-[#F4B183] uppercase tracking-wider mb-4">
+          <div className="inline-flex items-center gap-2 rounded-full border border-[#6c5ce7]/30 bg-white/80 px-4 py-1.5 text-xs font-semibold text-[#6c5ce7] uppercase tracking-wider mb-4 shadow-sm backdrop-blur-md">
             <Sparkles className="w-3.5 h-3.5" />
             <span>Our Work in Chennai</span>
           </div>
-          <h2 className="font-serif font-bold text-3xl sm:text-4xl md:text-5xl text-[#FFF4E8] tracking-tight mb-4 leading-tight">
-            Real reels shot at <span className="italic font-normal text-[#F4B183]">real local locations.</span>
+          <h2 className="font-serif font-bold text-3xl sm:text-4xl md:text-5xl text-[#1e293b] tracking-tight mb-4 leading-tight">
+            Real reels shot at <span className="italic font-normal text-[#6c5ce7]">real local locations.</span>
           </h2>
-          <p className="text-base sm:text-lg text-[#D9C5B2] font-normal leading-relaxed">
+          <p className="text-base sm:text-lg text-[#334155] font-normal leading-relaxed">
             Every reel is shot on location in Chennai by our team, scripted with a clear hook, and edited for mobile phone retention.
           </p>
         </div>
@@ -126,14 +126,15 @@ export function WorkShowcase() {
                 key={reel.id}
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-40px" }}
+                viewport={{ once: true, margin: "-20px" }}
                 whileHover={{ scale: 1.02, transition: { duration: 0.25 } }}
-                className="glass-card p-6 sm:p-7 rounded-3xl border border-[#F4B183]/25 bg-[#3B0D12]/80 flex flex-col items-center shadow-2xl transition-all"
+                whileTap={{ scale: 0.98 }}
+                className="glass-card p-6 sm:p-7 rounded-3xl border border-white/80 bg-white/70 backdrop-blur-xl flex flex-col items-center shadow-xl shadow-black/5 transition-all"
               >
                 {/* Phone Mockup Frame */}
                 <div className="w-full max-w-[280px] sm:max-w-[300px] mb-6">
                   <div
-                    className="phone-mockup-frame group cursor-pointer relative"
+                    className="phone-mockup-frame group cursor-pointer relative border-4 border-white/90 shadow-2xl active:scale-98 transition-transform"
                     onClick={() => togglePlay(reel.id)}
                   >
                     <div className="phone-mockup-speaker" />
@@ -145,10 +146,11 @@ export function WorkShowcase() {
                       data-reel-id={reel.id}
                       src={reel.videoSrc}
                       poster={reel.posterSrc}
+                      autoPlay
                       playsInline
                       loop
                       muted={isMuted}
-                      preload="metadata"
+                      preload="auto"
                       className="w-full h-full object-cover"
                       aria-label={`Reel showcase video for ${reel.title}`}
                     />
@@ -156,13 +158,13 @@ export function WorkShowcase() {
                     {/* Sound Control Button */}
                     <button
                       onClick={(e) => toggleSound(e, reel.id)}
-                      className="absolute top-4 right-4 z-30 p-2 rounded-full bg-black/60 backdrop-blur-md text-white border border-white/15 hover:bg-black/85 transition-colors"
+                      className="absolute top-4 right-4 z-30 p-2 rounded-full bg-black/60 backdrop-blur-md text-white border border-white/15 hover:bg-black/85 transition-colors active:scale-90"
                       aria-label={isMuted ? "Unmute reel video" : "Mute reel video"}
                     >
                       {isMuted ? (
                         <VolumeX className="w-3.5 h-3.5 text-gray-300" />
                       ) : (
-                        <Volume2 className="w-3.5 h-3.5 text-[#F4B183]" />
+                        <Volume2 className="w-3.5 h-3.5 text-[#6c5ce7]" />
                       )}
                     </button>
 
@@ -172,7 +174,7 @@ export function WorkShowcase() {
                         isPlaying ? "opacity-0 group-hover:opacity-100" : "opacity-100"
                       }`}
                     >
-                      <div className="w-14 h-14 rounded-full bg-[#F4B183] text-[#2A0A0E] flex items-center justify-center shadow-xl group-hover:scale-110 transition-transform">
+                      <div className="w-14 h-14 rounded-full bg-[#6c5ce7] text-white flex items-center justify-center shadow-xl group-hover:scale-110 active:scale-95 transition-transform">
                         {isPlaying ? (
                           <Pause className="w-6 h-6 fill-current" />
                         ) : (
@@ -181,10 +183,18 @@ export function WorkShowcase() {
                       </div>
                     </div>
 
-                    {/* Bottom overlay badge */}
-                    <div className="absolute bottom-4 left-4 z-20">
-                      <span className="text-[10px] font-bold uppercase tracking-wider bg-black/70 backdrop-blur-md text-[#FFF4E8] border border-white/15 px-3 py-1 rounded-full">
-                        Tap to {isPlaying ? "Pause" : "Play"}
+                    {/* Bottom overlay badge with live audio equalizer */}
+                    <div className="absolute bottom-4 left-4 z-20 flex items-center gap-2">
+                      <span className="text-[10px] font-bold uppercase tracking-wider bg-black/75 backdrop-blur-md text-white border border-white/15 px-3 py-1 rounded-full flex items-center gap-1.5 shadow-sm">
+                        {isPlaying && (
+                          <span className="flex items-end gap-0.5 mr-0.5 h-3">
+                            <span className="w-0.5 bg-[#22c55e] rounded-full animate-[pulse_0.6s_ease-in-out_infinite] h-2" />
+                            <span className="w-0.5 bg-[#22c55e] rounded-full animate-[pulse_0.4s_ease-in-out_infinite_0.1s] h-3" />
+                            <span className="w-0.5 bg-[#22c55e] rounded-full animate-[pulse_0.7s_ease-in-out_infinite_0.2s] h-1.5" />
+                            <span className="w-0.5 bg-[#22c55e] rounded-full animate-[pulse_0.5s_ease-in-out_infinite_0.3s] h-2.5" />
+                          </span>
+                        )}
+                        <span>{isPlaying ? "Playing Reel" : "Tap to Play"}</span>
                       </span>
                     </div>
                   </div>
@@ -193,27 +203,27 @@ export function WorkShowcase() {
                 {/* Reel Metadata */}
                 <div className="w-full text-left">
                   <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-xs font-bold text-[#F4B183] uppercase tracking-wider">
+                    <span className="text-xs font-bold text-[#6c5ce7] uppercase tracking-wider">
                       {reel.category}
                     </span>
-                    <span className="text-[11px] font-medium text-[#A88C83]">
+                    <span className="text-[11px] font-medium text-[#64748b]">
                       Shot in Chennai
                     </span>
                   </div>
 
-                  <h3 className="font-serif font-bold text-xl text-[#FFF4E8] mb-2">
+                  <h3 className="font-serif font-bold text-xl text-[#1e293b] mb-2">
                     {reel.title}
                   </h3>
 
-                  <p className="text-xs sm:text-sm text-[#D9C5B2] leading-relaxed mb-4">
+                  <p className="text-xs sm:text-sm text-[#475569] leading-relaxed mb-4">
                     {reel.description}
                   </p>
 
-                  <div className="flex flex-wrap gap-2 pt-3 border-t border-[#F4B183]/15">
+                  <div className="flex flex-wrap gap-2 pt-3 border-t border-black/5">
                     {reel.tags.map((tag) => (
                       <span
                         key={tag}
-                        className="text-[11px] font-medium text-[#D9C5B2] bg-[#2A0A0E]/80 px-2.5 py-1 rounded-md border border-[#F4B183]/15"
+                        className="text-[11px] font-medium text-[#334155] bg-white/80 px-2.5 py-1 rounded-md border border-white/90 shadow-sm"
                       >
                         {tag}
                       </span>

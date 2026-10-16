@@ -37,9 +37,10 @@ export const metadata: Metadata = {
     "Reels for Gyms Chennai",
     "Reels for Salons Chennai",
     "Boutique video production Chennai",
-    "Groove Hub"
+    "Grove Hub",
+    "Grove Hub Chennai"
   ],
-  authors: [{ name: "Groove Hub Team" }],
+  authors: [{ name: "Grove Hub Team" }],
   creator: siteConfig.brandName,
   openGraph: {
     type: "website",
@@ -102,7 +103,7 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       </head>
-      <body className="font-sans antialiased bg-[#2A0A0E] text-[#FFF4E8] min-h-screen selection:bg-[#F4B183] selection:text-[#2A0A0E]">
+      <body className="font-sans antialiased bg-transparent text-[#1e293b] min-h-screen selection:bg-[#6c5ce7] selection:text-white">
         <SmoothScroll>
           <CustomCursor />
           {children}

@@ -498,14 +498,15 @@ def get_static_file(path: str):
     if file_path.is_file():
         if file_path.suffix in [".html"]:
             return FileResponse(file_path, headers=CACHE_HTML_HEADERS)
-        if file_path.suffix in [".js", ".css", ".png", ".jpg", ".jpeg", ".webp", ".svg", ".json", ".ico", ".woff2", ".woff", ".ttf", ".txt"]:
+        if file_path.suffix in [".js", ".css", ".png", ".jpg", ".jpeg", ".webp", ".svg", ".json", ".ico", ".woff2", ".woff", ".ttf", ".txt", ".vcf"]:
             media_types = {
                 ".woff2": "font/woff2",
                 ".woff": "font/woff",
                 ".ttf": "font/ttf",
                 ".txt": "text/plain",
                 ".css": "text/css",
-                ".js": "application/javascript"
+                ".js": "application/javascript",
+                ".vcf": "text/vcard"
             }
             mtype = media_types.get(file_path.suffix.lower())
             return FileResponse(file_path, media_type=mtype, headers=CACHE_STATIC_HEADERS)
@@ -540,6 +541,13 @@ if next_static_dir.is_dir():
 @app.get("/")
 async def root():
     return FileResponse(STATIC_DIR / "index.html", headers=CACHE_HTML_HEADERS)
+
+@app.get("/card")
+async def digital_card_page():
+    card_path = STATIC_DIR / "card.html"
+    if card_path.is_file():
+        return FileResponse(card_path, headers=CACHE_HTML_HEADERS)
+    return RedirectResponse(url="/", status_code=status.HTTP_302_FOUND)
 
 @app.get("/work")
 async def work_page():

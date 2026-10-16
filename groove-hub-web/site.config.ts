@@ -22,7 +22,9 @@ export interface BusinessNiche {
 export interface PackageTier {
   id: string;
   name: string;
-  price?: string; // Optional: empty string or omitted displays "Pricing on request"
+  subtitle?: string;
+  badge?: string;
+  price?: string; // Empty: Displays "Pricing on request"
   period?: string;
   description: string;
   popular?: boolean;
@@ -38,9 +40,9 @@ export interface FAQItem {
 
 export const siteConfig = {
   // Brand Identity
-  brandName: "GROOVE HUB",
+  brandName: "GROVE HUB",
   tagline: "We grow local businesses in Chennai on Instagram with high-quality reels.",
-  shortDescription: "Groove Hub grows local businesses in Chennai on Instagram with high-quality reels. We are a team of four: a video shooter, a video editor, a scriptwriter, and a strategic thinker.",
+  shortDescription: "Grove Hub grows local businesses in Chennai on Instagram with high-quality reels. We are a team of four: a video shooter, a video editor, a scriptwriter, and a strategic thinker.",
   
   // Location & Service Area
   city: "Chennai",
@@ -274,86 +276,90 @@ export const siteConfig = {
     }
   ] as BusinessNiche[],
 
-  // Packages
-  // If price is empty or omitted, the UI displays "Pricing on request".
+  // Packages Extracted from Official Brochure (Rates omitted per instruction - Displays "Pricing on request")
   packages: [
     {
-      id: "starter",
-      name: "Starter Consistency",
-      price: "", // Empty: Displays "Pricing on request"
+      id: "basic",
+      name: "Basic Monthly Retainer",
+      badge: "Standard",
+      subtitle: "Maintenance + Editing + Shoot",
+      price: "", // Rates not posted per instruction: Displays "Pricing on request"
       period: "month",
-      description: "For local stores and independent studios wanting to build a steady, credible presence on Instagram.",
+      description: "Dedicated monthly maintenance, scheduled on-location shoot sessions with crew, and end-to-end video editing pipeline.",
       deliverables: [
-        "8 Custom-Shot Reels per month",
-        "1 Location Shoot Session in Chennai",
-        "Scripting & Hook Research for all 8 reels",
-        "Full Video Editing, Color Grade & Sound FX",
-        "Kinetic Word-by-Word Captions"
+        "Dedicated monthly page & account maintenance",
+        "Scheduled on-location shoot sessions with crew",
+        "Complete post-production video editing pipeline",
+        "Discounted extra reels support for ongoing campaigns"
       ],
       features: [
-        "Raw footage securely archived",
-        "1 round of revision per reel",
-        "Delivery within 48-72h of shoot"
+        "2 revisions included: text styling, captions & audio",
+        "Advance shoot & milestone scheduling with crew",
+        "Milestone-based quality assurance"
       ],
-      whatsappMessage: "Hi Groove Hub! I am interested in the Starter Consistency package. Can we discuss pricing and how it works?"
+      whatsappMessage: "Hi Groove Hub! I am interested in the Basic Monthly Retainer package. Can you share details on how we can get started?"
     },
     {
       id: "growth",
-      name: "Growth Momentum",
-      price: "", // Empty: Displays "Pricing on request"
-      period: "month",
+      name: "Full Account Growth Suite",
+      badge: "Most Popular",
       popular: true,
-      description: "Our core package designed to keep your business consistently top-of-mind with high-retention reel output.",
+      subtitle: "Complete Hands-Off Omnipresence",
+      price: "", // Rates not posted per instruction: Displays "Pricing on request"
+      period: "month",
+      description: "Our core monthly package for businesses seeking complete hands-off omnipresence and consistent viral engagement across Chennai.",
       deliverables: [
-        "16 Custom-Shot Reels per month",
-        "2 Location Shoot Sessions in Chennai",
-        "Topic & Competitor Gap Analysis in your neighborhood",
-        "Hook Optimization & Narrative Storyboarding",
-        "Sound Design, Motion Titles & Grade",
-        "Cover Image / Thumbnail for every reel"
+        "15 High-Quality Commercial Reels (Shoots + Edits)",
+        "Script writing, viral hook ideation & trend audio curation",
+        "Bio optimization & dynamic animated subtitle captions",
+        "Scheduled posting at peak hours + Instagram engagement"
       ],
       features: [
-        "Dedicated 4-person team (Shooter, Editor, Writer, Strategist)",
-        "Priority 24-48h post-production turnaround",
-        "Bi-weekly content review"
+        "Dedicated 4-person production & strategy team",
+        "Multi-tasking brand requests handling",
+        "Priority 24-48h post-production turnaround"
       ],
-      whatsappMessage: "Hi Groove Hub! I am interested in the Growth Momentum package. Can we talk about pricing and schedule our first shoot?"
+      whatsappMessage: "Hi Groove Hub! I am interested in the Full Account Growth Suite. Can you share details on scheduling our first shoot?"
     },
     {
-      id: "scale",
-      name: "Scale & Retention",
-      price: "", // Empty: Displays "Pricing on request"
-      period: "month",
-      description: "For established salons, multi-trainer gyms, and boutiques ready to become the market leader in Chennai.",
+      id: "quarterly",
+      name: "Flagship Quarterly Retainer",
+      badge: "Best Value",
+      subtitle: "90-Day Production, Studio Shoots & Total Page Dominance",
+      price: "", // Rates not posted per instruction: Displays "Pricing on request"
+      period: "3 months",
+      description: "Comprehensive 90-day production, studio shoots, and total page dominance engineered for market-leading brands.",
       deliverables: [
-        "24 Custom-Shot Reels per month",
-        "3 Location Shoot Sessions in Chennai",
-        "Full Funnel Strategy: Awareness + Conversion + Offers",
-        "Customer Story & Showcase Production",
-        "Master renders tuned specifically for phone screens",
-        "Custom Cover Frames & Story Repurposing Cuts"
+        "30 Reels / Month (90 Total commercial reels)",
+        "9 Showroom Spotlights & Store Walkthroughs",
+        "9 Backstage Videos (Behind-the-Scenes BTS)",
+        "90 Days Complete Page Maintenance",
+        "12 Event & Launch Clips"
       ],
       features: [
-        "Direct collaboration with your 4-person team",
-        "Expedited turnaround for timely store promotions",
-        "Revisions included per reel"
+        "Dedicated Production Team assigned to your brand",
+        "Broadcast lighting, gimbal setups & 4K multi-angle cameras",
+        "Comprehensive 90-day content calendar & strategy"
       ],
-      whatsappMessage: "Hi Groove Hub! I want to discuss the Scale & Retention package for my business."
+      whatsappMessage: "Hi Groove Hub! I am interested in the Flagship Quarterly Retainer (3 Months). Can we discuss the production timeline?"
     },
     {
       id: "custom",
-      name: "Custom Studio Retainer",
-      price: "Custom",
+      name: "Custom Enterprise & Events",
+      badge: "Tailored Scope",
+      subtitle: "Specialized Campaigns & Brand Launches",
+      price: "", // Rates not posted per instruction: Displays "Pricing on request"
       period: "project / retainer",
-      description: "For store launches, seasonal festive collections, or specialized video production requirements.",
+      description: "Tailored production scope for multi-location shoots, festive seasons, showroom grand openings, or specialized commercial requirements.",
       deliverables: [
-        "Tailored reel volume & shooting schedule",
-        "Shoots at your store or studio in Chennai",
-        "Custom creative formats & promotional rollouts"
+        "Tailored commercial reel volume & custom shooting schedule",
+        "Multi-angle 4K production & professional audio capture",
+        "High-production commercial grading & sound design",
+        "Promotional rollout strategy & teaser cutdowns"
       ],
       features: [
-        "Fully tailored scope and deliverables",
-        "Direct collaboration with your 4-person team"
+        "Custom creative formats & tailored delivery milestones",
+        "Direct collaboration with senior directors & editors"
       ],
       whatsappMessage: "Hi Groove Hub! I would like to discuss a custom production scope for my business."
     }
