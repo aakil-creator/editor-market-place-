@@ -8,8 +8,8 @@
     --primary-glow: rgba(108, 92, 231, 0.35);
 
     /* Card Backgrounds: 60-75% Frosted White */
-    --bg-glass-card: rgba(255, 255, 255, 0.70);
-    --bg-glass-card-hover: rgba(255, 255, 255, 0.82);
+    --bg-glass-card: rgba(255, 255, 255, 0.72);
+    --bg-glass-card-hover: rgba(255, 255, 255, 0.85);
     --border-glass: rgba(255, 255, 255, 0.75);
 
     /* Dark Readable Typography */
@@ -28,18 +28,51 @@
   }
 
   html {
-    scroll-behavior: smooth;
     background-color: transparent;
     color: var(--text-primary);
+    scroll-behavior: initial !important;
   }
 
   body {
     background-color: transparent;
     color: var(--text-primary);
-    overflow-x: hidden;
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    overscroll-behavior-y: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Lenis smooth scrolling specifications */
+  html.lenis,
+  html.lenis body {
+    height: auto;
+  }
+
+  .lenis.lenis-smooth {
+    scroll-behavior: auto !important;
+  }
+
+  .lenis:not(.lenis-autoToggle).lenis-stopped {
+    overflow: clip;
+  }
+
+  .lenis [data-lenis-prevent],
+  .lenis [data-lenis-prevent-wheel],
+  .lenis [data-lenis-prevent-touch],
+  .lenis [data-lenis-prevent-vertical],
+  .lenis [data-lenis-prevent-horizontal] {
+    overscroll-behavior: contain;
+  }
+
+  .lenis.lenis-smooth iframe {
+    pointer-events: none;
+  }
+
+  .lenis.lenis-autoToggle {
+    transition-property: overflow;
+    transition-duration: 1ms;
+    transition-behavior: allow-discrete;
   }
 
   /* Custom Clean Scrollbar */
@@ -65,7 +98,7 @@
   }
 }
 
-/* Gentle Reduced Motion Handling (Allows smooth transitions without jarring flashes) */
+/* Gentle Reduced Motion Handling */
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
@@ -90,13 +123,15 @@
   position: relative;
   overflow: hidden;
   background: var(--bg-glass-card);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   border: 1px solid var(--border-glass);
   border-radius: 20px;
   box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.08), 0 4px 12px -2px rgba(0, 0, 0, 0.04);
   color: #1e293b;
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transform: translateZ(0);
+  will-change: transform;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease, background 0.25s ease, border-color 0.25s ease;
 }
 
 .glass-card::before {
@@ -132,13 +167,14 @@
 }
 
 .glass-card-elevated {
-  background: rgba(255, 255, 255, 0.75);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.85);
   border-radius: 20px;
   box-shadow: 0 16px 40px -8px rgba(0, 0, 0, 0.12);
   color: #1e293b;
+  transform: translateZ(0);
 }
 
 /* Primary CTA Button Styles (primary: #6c5ce7) */
@@ -168,6 +204,7 @@
   box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.25),
               0 0 30px rgba(108, 92, 231, 0.15);
   background: #000000;
+  transform: translateZ(0);
 }
 
 .phone-mockup-speaker {

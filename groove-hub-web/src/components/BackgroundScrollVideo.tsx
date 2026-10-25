@@ -4,142 +4,92 @@ import { useEffect, useRef, useState } from "react";
 
 export function BackgroundScrollVideo() {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [videoSrc, setVideoSrc] = useState<string>("/bg-scroll-720.mp4");
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [videoSrc, setVideoSrc] = useState<string>("/bg-scroll.mp4");
 
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
-    // 1. Choose mobile-friendly 720p or desktop 1080p
+    // Check device type: choose 720p for mobile, 1080p for desktop
     const isMobile = window.innerWidth < 768;
     const optimalSrc = isMobile ? "/bg-scroll-720.mp4" : "/bg-scroll.mp4";
-    if (video.src && !video.src.includes(optimalSrc)) {
-      setVideoSrc(optimalSrc);
-      video.src = optimalSrc;
-      video.load();
-    }
+    setVideoSrc(optimalSrc);
 
-    // 2. Mobile Video Priming (Ensures iOS Safari & Chrome allocate hardware decoder)
-    let isPrimed = false;
-    const primeVideo = () => {
-      if (!isPrimed && video) {
-        isPrimed = true;
-        video.muted = true;
-        const playPromise = video.play();
-        if (playPromise !== undefined) {
-          playPromise
-            .then(() => {
-              video.pause();
-            })
-            .catch(() => {
-              // Ignore browser autoplay restrictions
-            });
+    // Continuous hardware-accelerated playback
+    video.muted = true;
+    video.playsInline = true;
+    const startPlay = () => {
+      video.play().catch(() => {});
+    };
+    startPlay();
+
+    // Listen once to unlock autoplay on mobile if browser blocked it
+    window.addEventListener("touchstart", startPlay, { passive: true, once: true });
+    window.addEventListener("pointerdown", startPlay, { passive: true, once: true });
+
+    // Smooth GPU Parallax & Velocity Modulation (100% decoupled from video seeks)
+    let targetParallax = 0;
+    let currentParallax = 0;
+    let lastScrollY = window.scrollY || 0;
+    let targetPlaybackRate = 1.0;
+    let currentPlaybackRate = 1.0;
+    let animId: number;
+
+    const onScroll = () => {
+      const scrollY = window.scrollY || window.pageYOffset || document.documentElement.scrollTop || 0;
+      const docHeight = Math.max(
+        document.documentElement.scrollHeight,
+        document.body.scrollHeight,
+        1
+      );
+      const winHeight = window.innerHeight;
+      const maxScroll = Math.max(1, docHeight - winHeight);
+      const progress = Math.min(1, Math.max(0, scrollY / maxScroll));
+
+      // Parallax offset: gently move video container on the GPU
+      targetParallax = -progress * (isMobile ? 80 : 140);
+
+      // Velocity: calculate scroll speed to modulate playback rate interactively
+      const delta = Math.abs(scrollY - lastScrollY);
+      lastScrollY = scrollY;
+      if (delta > 2) {
+        targetPlaybackRate = Math.min(2.0, 1.0 + delta * 0.03);
+      }
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+
+    const loop = () => {
+      // 1. Lerp Parallax transform on GPU (never blocks scrolling or touch events)
+      const pDiff = targetParallax - currentParallax;
+      if (Math.abs(pDiff) > 0.02) {
+        currentParallax += pDiff * 0.08;
+        if (containerRef.current) {
+          containerRef.current.style.transform = `translate3d(0, ${currentParallax.toFixed(2)}px, 0) scale(1.08)`;
         }
       }
-    };
 
-    // Prime immediately and on first user gesture
-    primeVideo();
-    window.addEventListener("touchstart", primeVideo, { passive: true, once: true });
-    window.addEventListener("touchmove", primeVideo, { passive: true, once: true });
-    window.addEventListener("scroll", primeVideo, { passive: true, once: true });
-    window.addEventListener("pointerdown", primeVideo, { passive: true, once: true });
-
-    // 3. Robust Seek Queue to prevent mobile decoder choke / seeking freeze
-    let isSeeking = false;
-    let pendingTime: number | null = null;
-
-    const executeSeek = (targetTime: number) => {
-      if (!video) return;
-      if (isSeeking || video.seeking) {
-        pendingTime = targetTime;
-        return;
-      }
-
-      if (Math.abs(video.currentTime - targetTime) > 0.02) {
-        isSeeking = true;
-        try {
-          video.currentTime = targetTime;
-        } catch {
-          isSeeking = false;
+      // 2. Smoothly decay playback rate back to 1.0
+      targetPlaybackRate = 1.0 + (targetPlaybackRate - 1.0) * 0.94;
+      const rateDiff = targetPlaybackRate - currentPlaybackRate;
+      if (Math.abs(rateDiff) > 0.02) {
+        currentPlaybackRate += rateDiff * 0.08;
+        if (video) {
+          video.playbackRate = Math.max(0.8, Math.min(2.0, currentPlaybackRate));
         }
       }
+
+      animId = requestAnimationFrame(loop);
     };
 
-    const handleSeeked = () => {
-      isSeeking = false;
-      if (pendingTime !== null) {
-        const nextTime = pendingTime;
-        pendingTime = null;
-        executeSeek(nextTime);
-      }
-    };
-
-    video.addEventListener("seeked", handleSeeked);
-
-    // 4. Scroll position calculation & 60fps/120fps linear interpolation
-    let targetProgress = 0;
-    let currentProgress = 0;
-    let animFrameId: number;
-
-    const sampleScroll = () => {
-      const scrollTop =
-        window.scrollY ||
-        window.pageYOffset ||
-        document.documentElement.scrollTop ||
-        document.body.scrollTop ||
-        0;
-
-      const totalScrollable =
-        Math.max(
-          document.documentElement.scrollHeight,
-          document.body.scrollHeight,
-          document.documentElement.offsetHeight,
-          document.body.offsetHeight
-        ) - window.innerHeight;
-
-      targetProgress = totalScrollable > 0 ? Math.min(1, Math.max(0, scrollTop / totalScrollable)) : 0;
-    };
-
-    const renderLoop = () => {
-      // Direct sampling on every frame guarantees 0-lag tracking during touch inertia
-      sampleScroll();
-
-      // Responsive interpolation: snappier on fast swipes, silky smooth on slow glide
-      const diff = targetProgress - currentProgress;
-      const lerpFactor = Math.abs(diff) > 0.1 ? 0.18 : 0.12;
-      currentProgress += diff * lerpFactor;
-
-      const dur = video.duration;
-      if (dur && !isNaN(dur) && dur > 0) {
-        // Clamp between 0.01s and slightly before end to prevent black buffer frame
-        const safeTargetTime = Math.min(dur - 0.04, Math.max(0.01, currentProgress * dur));
-        executeSeek(safeTargetTime);
-      }
-
-      animFrameId = requestAnimationFrame(renderLoop);
-    };
-
-    // Listeners for mobile touch & window resize
-    window.addEventListener("scroll", sampleScroll, { passive: true });
-    window.addEventListener("touchmove", sampleScroll, { passive: true });
-    window.addEventListener("resize", sampleScroll, { passive: true });
-    window.addEventListener("orientationchange", sampleScroll, { passive: true });
-
-    sampleScroll();
-    animFrameId = requestAnimationFrame(renderLoop);
+    animId = requestAnimationFrame(loop);
 
     return () => {
-      video.removeEventListener("seeked", handleSeeked);
-      window.removeEventListener("scroll", sampleScroll);
-      window.removeEventListener("touchmove", sampleScroll);
-      window.removeEventListener("resize", sampleScroll);
-      window.removeEventListener("orientationchange", sampleScroll);
-      window.removeEventListener("touchstart", primeVideo);
-      window.removeEventListener("touchmove", primeVideo);
-      window.removeEventListener("scroll", primeVideo);
-      window.removeEventListener("pointerdown", primeVideo);
-      cancelAnimationFrame(animFrameId);
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("touchstart", startPlay);
+      window.removeEventListener("pointerdown", startPlay);
+      cancelAnimationFrame(animId);
     };
   }, []);
 
@@ -158,37 +108,51 @@ export function BackgroundScrollVideo() {
         zIndex: 0,
       }}
     >
-      {/* Full-screen Video with Native Poster Fallback and Hardware Acceleration */}
-      <video
-        ref={videoRef}
-        src={videoSrc}
-        poster="/bgposter.jpg"
-        muted
-        playsInline
-        // @ts-ignore
-        webkit-playsinline="true"
-        autoPlay
-        preload="auto"
-        className="w-full h-full object-cover"
+      {/* Parallax Container moving on GPU */}
+      <div
+        ref={containerRef}
+        className="w-full h-full"
         style={{
           position: "absolute",
           top: 0,
           left: 0,
           width: "100%",
-          height: "100%",
-          objectFit: "cover",
-          filter: "contrast(1.05) brightness(1.02)",
-          transform: "translateZ(0)",
+          height: "115%",
+          transform: "translate3d(0, 0, 0) scale(1.08)",
           willChange: "transform",
         }}
-      />
+      >
+        <video
+          ref={videoRef}
+          src={videoSrc}
+          poster="/bgposter.jpg"
+          muted
+          loop
+          autoPlay
+          playsInline
+          // @ts-ignore
+          webkit-playsinline="true"
+          preload="auto"
+          className="w-full h-full object-cover"
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+            filter: "contrast(1.04) brightness(1.02)",
+            transform: "translateZ(0)",
+          }}
+        />
+      </div>
 
-      {/* Crystal Clear Readability Tint (8-16% Contrast Overlay) */}
+      {/* Crystal Clear Readability Tint Overlay */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
           background:
-            "radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.16) 100%)",
+            "radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.15) 100%)",
         }}
       />
     </div>

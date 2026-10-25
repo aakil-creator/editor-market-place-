@@ -2,14 +2,59 @@
 
 import { useRef, useState, useEffect } from "react";
 import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
-import { MessageCircle, Play, Pause, Volume2, VolumeX, Sparkles, CheckCircle2, TrendingUp } from "lucide-react";
+import { MessageCircle, Sparkles, CheckCircle2 } from "lucide-react";
 import { getWhatsAppUrl } from "../../site.config";
 
 export function Hero() {
   const containerRef = useRef<HTMLDivElement>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const [isPlaying, setIsPlaying] = useState(true);
-  const [isMuted, setIsMuted] = useState(true);
+  const [activeHeroIndex, setActiveHeroIndex] = useState(0);
+
+  const heroShowcases = [
+    {
+      id: "gym",
+      label: "Gyms",
+      title: "Iron Forge CrossFit",
+      location: "Anna Nagar",
+      poster: "/posters/gym-reel.jpg",
+      hook: "Stop making this deadlift mistake",
+      stat: "94% Retention",
+    },
+    {
+      id: "cafe",
+      label: "Cafes",
+      title: "Roast & Crumb Bakery",
+      location: "Adyar",
+      poster: "/posters/cafe-reel.jpg",
+      hook: "Listen to the 4 AM sourdough crackle",
+      stat: "91% Retention",
+    },
+    {
+      id: "boutique",
+      label: "Boutiques",
+      title: "Zari & Silk Bridal Atelier",
+      location: "T. Nagar",
+      poster: "/posters/tech-reel.jpg",
+      hook: "Golden bell hook for festive couture",
+      stat: "96% Retention",
+    },
+    {
+      id: "salon",
+      label: "Salons",
+      title: "Aura Aesthetics Studio",
+      location: "Alwarpet",
+      poster: "/posters/salon-reel.jpg",
+      hook: "From frizz to liquid glass hair",
+      stat: "93% Retention",
+    },
+  ];
+
+  // Auto-cycle through industries every 4 seconds
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setActiveHeroIndex((prev) => (prev + 1) % 4);
+    }, 4200);
+    return () => clearInterval(timer);
+  }, []);
 
   // Mouse tilt tracking for floating cards on desktop
   const mouseX = useMotionValue(0);
@@ -40,20 +85,14 @@ export function Hero() {
     mouseY.set(0);
   };
 
-  // Device tilt & autonomous floating physics
-  const [deviceTilt, setDeviceTilt] = useState({ x: 0, y: 0 });
-
+  // Mobile device orientation: updates motion values directly on GPU (0 React re-renders)
   useEffect(() => {
-    // Gyroscope / Device orientation support for mobile web
     const handleOrientation = (e: DeviceOrientationEvent) => {
       if (e.gamma !== null && e.beta !== null) {
-        // gamma: left-to-right [-90, 90], beta: front-to-back [-180, 180]
-        const clampedGamma = Math.min(25, Math.max(-25, e.gamma)) / 25; // -1 to 1
-        const clampedBeta = Math.min(30, Math.max(-30, e.beta - 45)) / 30; // normalized around typical 45deg viewing angle
-        setDeviceTilt({
-          x: clampedBeta * 6,
-          y: clampedGamma * 8,
-        });
+        const clampedGamma = Math.min(25, Math.max(-25, e.gamma)) / 25;
+        const clampedBeta = Math.min(30, Math.max(-30, e.beta - 45)) / 30;
+        mouseX.set(clampedGamma * 0.4);
+        mouseY.set(clampedBeta * 0.4);
       }
     };
 
@@ -66,52 +105,7 @@ export function Hero() {
         window.removeEventListener("deviceorientation", handleOrientation);
       }
     };
-  }, []);
-
-  // Autoplay / Viewport detection for video
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            video.play().catch(() => {});
-            setIsPlaying(true);
-          } else {
-            video.pause();
-            setIsPlaying(false);
-          }
-        });
-      },
-      { threshold: 0.25 }
-    );
-
-    observer.observe(video);
-    return () => observer.disconnect();
-  }, []);
-
-  const toggleVideoPlayback = (e: React.MouseEvent | React.TouchEvent) => {
-    e.stopPropagation();
-    const video = videoRef.current;
-    if (!video) return;
-    if (video.paused) {
-      video.play().catch(() => {});
-      setIsPlaying(true);
-    } else {
-      video.pause();
-      setIsPlaying(false);
-    }
-  };
-
-  const toggleSound = (e: React.MouseEvent | React.TouchEvent) => {
-    e.stopPropagation();
-    const video = videoRef.current;
-    if (!video) return;
-    video.muted = !video.muted;
-    setIsMuted(video.muted);
-  };
+  }, [mouseX, mouseY]);
 
   const whatsappHeroUrl = getWhatsAppUrl(
     "Hi Grove Hub! I saw your website and want to get a free shoot and free reel for my business in Chennai."
@@ -131,36 +125,27 @@ export function Hero() {
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          className="inline-flex items-center gap-2.5 rounded-full border border-white/80 bg-white/85 px-4 py-1.5 text-xs font-semibold text-[#1e293b] backdrop-blur-md mb-8 shadow-sm hover:border-[#6c5ce7]/40 transition-colors"
+          className="inline-flex items-center gap-2 rounded-full border border-[#6c5ce7]/30 bg-white/80 px-4 py-1.5 text-xs font-semibold text-[#6c5ce7] uppercase tracking-wider mb-8 shadow-sm backdrop-blur-md"
         >
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#22c55e] opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-[#22c55e]"></span>
-          </span>
-          <span className="text-[#1e293b] font-bold tracking-wide">GROVE HUB</span>
-          <span className="text-[#cbd5e1]">•</span>
-          <span className="text-[#475569]">Active Production in Chennai</span>
+          <span className="w-2 h-2 rounded-full bg-[#22c55e] animate-pulse" />
+          <span>Shoot Squad Active in Chennai</span>
+          <span className="text-gray-300">•</span>
+          <span className="text-[#475569] lowercase font-normal">booking slots for this week</span>
         </motion.div>
 
-        {/* Big Centered Headline with Elegant Serif mixing Regular and Italic */}
-        <h1
-          aria-label="Great businesses don't stay small because of their work. They stay small because nobody sees it."
-          className="font-serif text-4xl sm:text-5xl md:text-6xl lg:text-[4.25rem] text-[#1e293b] leading-[1.12] tracking-tight max-w-4xl mb-7"
-        >
-          <span className="inline-block overflow-hidden pb-1">
+        {/* Big Brutally Clear Headline */}
+        <h1 className="font-serif font-black text-4xl sm:text-5xl md:text-6xl lg:text-7xl text-[#1e293b] tracking-tight leading-[1.08] mb-6 max-w-4xl text-center">
+          <span className="block overflow-hidden pb-1">
             <motion.span
               initial={{ y: "100%", opacity: 0 }}
               animate={{ y: "0%", opacity: 1 }}
-              transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+              transition={{ duration: 0.8, delay: 0.05, ease: [0.16, 1, 0.3, 1] }}
               className="inline-block"
             >
-              Great businesses don&apos;t{" "}
-              <span className="italic font-normal text-[#6c5ce7]">stay small</span>{" "}
-              because of their work.
+              Great Chennai businesses
             </motion.span>
           </span>
-          <br className="hidden sm:inline" />
-          <span className="inline-block overflow-hidden pb-1">
+          <span className="block overflow-hidden pb-1">
             <motion.span
               initial={{ y: "100%", opacity: 0 }}
               animate={{ y: "0%", opacity: 1 }}
@@ -184,7 +169,7 @@ export function Hero() {
           We plan, shoot, write and edit every reel so your business gets seen.
         </motion.p>
 
-        {/* One Primary Button */}
+        {/* Primary Buttons */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -202,9 +187,9 @@ export function Hero() {
           </a>
           <a
             href="#our-work"
-            className="text-xs sm:text-sm font-semibold text-[#475569] hover:text-[#1e293b] transition-colors py-2 px-4"
+            className="text-xs sm:text-sm font-semibold text-[#475569] hover:text-[#1e293b] transition-colors py-2 px-4 cursor-pointer"
           >
-            Watch real reels below ↓
+            Explore Production Blueprints ↓
           </a>
         </motion.div>
 
@@ -214,8 +199,8 @@ export function Hero() {
           {/* Card 1: Reel Video Preview Frame (Center) */}
           <motion.div
             style={{
-              rotateX: deviceTilt.x !== 0 ? deviceTilt.x : tiltX,
-              rotateY: deviceTilt.y !== 0 ? deviceTilt.y : tiltY,
+              rotateX: tiltX,
+              rotateY: tiltY,
             }}
             initial={{ opacity: 0, scale: 0.95, y: 30 }}
             animate={{
@@ -230,58 +215,70 @@ export function Hero() {
             }}
             className="relative mx-auto w-full max-w-[270px] sm:max-w-[290px] rounded-[32px] overflow-hidden border-2 border-white/80 shadow-2xl shadow-black/10 bg-white/70 p-2 backdrop-blur-xl transition-transform"
           >
-            <div className="relative aspect-[9/16] w-full rounded-[24px] overflow-hidden bg-black group cursor-pointer" onClick={toggleVideoPlayback}>
-              <video
-                ref={videoRef}
-                src="/reels/reel-1.mp4"
-                poster="/posters/reel-1.jpg"
-                autoPlay
-                playsInline
-                loop
-                muted={isMuted}
-                preload="auto"
-                className="w-full h-full object-cover"
-                aria-label="Groove Hub sample reel"
+            {/* Industry quick switcher */}
+            <div className="flex items-center justify-between gap-1 mb-2 px-1">
+              {heroShowcases.map((showcase, idx) => (
+                <button
+                  key={showcase.id}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setActiveHeroIndex(idx);
+                  }}
+                  className={`text-[10px] font-bold px-2 py-1 rounded-full transition-all cursor-pointer ${
+                    activeHeroIndex === idx
+                      ? "bg-[#6c5ce7] text-white shadow-xs"
+                      : "bg-white/60 text-[#475569] hover:bg-white/95"
+                  }`}
+                >
+                  {showcase.label}
+                </button>
+              ))}
+            </div>
+
+            <div
+              className="relative aspect-[9/16] w-full rounded-[24px] overflow-hidden bg-black group cursor-pointer"
+              onClick={() => setActiveHeroIndex((prev) => (prev + 1) % heroShowcases.length)}
+            >
+              <img
+                src={heroShowcases[activeHeroIndex].poster}
+                alt={heroShowcases[activeHeroIndex].title}
+                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
               />
 
               {/* Status pill overlay with live animated audio equalizer */}
-              <div className="absolute top-3 left-3 z-20 flex items-center gap-2 px-3 py-1 rounded-full bg-black/65 backdrop-blur-md text-[10px] font-semibold text-white border border-white/15">
+              <div className="absolute top-3 left-3 z-20 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/75 backdrop-blur-md text-[10px] font-semibold text-white border border-white/15">
                 <span className="w-2 h-2 rounded-full bg-[#22c55e] animate-pulse" />
-                <span>Real Shoot • Chennai</span>
-                {isPlaying && (
-                  <div className="flex items-end gap-0.5 ml-1 h-3.5">
-                    <span className="w-0.5 bg-[#22c55e] rounded-full animate-[pulse_0.6s_ease-in-out_infinite] h-2" />
-                    <span className="w-0.5 bg-[#22c55e] rounded-full animate-[pulse_0.4s_ease-in-out_infinite_0.1s] h-3.5" />
-                    <span className="w-0.5 bg-[#22c55e] rounded-full animate-[pulse_0.7s_ease-in-out_infinite_0.2s] h-1.5" />
-                    <span className="w-0.5 bg-[#22c55e] rounded-full animate-[pulse_0.5s_ease-in-out_infinite_0.3s] h-3" />
-                  </div>
-                )}
+                <span>{heroShowcases[activeHeroIndex].location}</span>
+                <span className="text-[9px] text-[#22c55e] font-bold ml-0.5">• {heroShowcases[activeHeroIndex].stat}</span>
               </div>
 
-              {/* Sound toggle button */}
-              <button
-                onClick={toggleSound}
-                className="absolute top-3 right-3 z-20 p-2 rounded-full bg-black/60 backdrop-blur-md text-white border border-white/10 hover:bg-black/80 transition-colors active:scale-90"
-                aria-label={isMuted ? "Unmute video" : "Mute video"}
-              >
-                {isMuted ? <VolumeX className="w-3.5 h-3.5 text-gray-300" /> : <Volume2 className="w-3.5 h-3.5 text-white" />}
-              </button>
-
-              {/* Center Play/Pause indicator on hover or pause */}
-              <div
-                className={`absolute inset-0 flex items-center justify-center bg-black/25 transition-opacity ${
-                  isPlaying ? "opacity-0 group-hover:opacity-100" : "opacity-100"
-                }`}
-              >
-                <div className="w-12 h-12 rounded-full bg-[#6c5ce7] text-white flex items-center justify-center shadow-lg transition-transform group-hover:scale-110 active:scale-95">
-                  {isPlaying ? <Pause className="w-5 h-5 fill-current" /> : <Play className="w-5 h-5 fill-current ml-0.5" />}
+              {/* Sound equalizer indicator */}
+              <div className="absolute top-3 right-3 z-20 p-1.5 rounded-full bg-black/60 backdrop-blur-md text-white border border-white/10">
+                <div className="flex items-end gap-0.5 h-3 px-1">
+                  <span className="w-0.5 bg-[#22c55e] rounded-full animate-[pulse_0.6s_ease-in-out_infinite] h-2" />
+                  <span className="w-0.5 bg-[#22c55e] rounded-full animate-[pulse_0.4s_ease-in-out_infinite_0.1s] h-3" />
+                  <span className="w-0.5 bg-[#22c55e] rounded-full animate-[pulse_0.7s_ease-in-out_infinite_0.2s] h-1.5" />
                 </div>
+              </div>
+
+              {/* Bottom hook overlay */}
+              <div className="absolute bottom-3 left-3 right-3 z-20 p-2.5 rounded-xl bg-black/80 backdrop-blur-md border border-white/15 text-left">
+                <span className="text-[9px] font-bold uppercase tracking-wider text-[#a29bfe] block mb-0.5">
+                  High-Retention Hook
+                </span>
+                <p className="text-[11px] font-semibold text-white italic leading-tight">
+                  "{heroShowcases[activeHeroIndex].hook}"
+                </p>
               </div>
             </div>
 
             <div className="px-3 py-2 text-left">
-              <p className="text-xs font-semibold text-[#1e293b]">Chennai Location Shoot</p>
-              <p className="text-[11px] text-[#64748b]">Shot, scripted &amp; edited by Grove Hub</p>
+              <p className="text-xs font-semibold text-[#1e293b]">
+                {heroShowcases[activeHeroIndex].title}
+              </p>
+              <p className="text-[11px] text-[#64748b]">
+                Scripted, shot &amp; edited by Grove Hub Chennai
+              </p>
             </div>
           </motion.div>
 
@@ -303,11 +300,11 @@ export function Hero() {
               Zero Cost. Zero Contract.
             </h2>
             <p className="text-xs text-[#475569] leading-relaxed">
-              We shoot for 45 minutes at your location in Chennai. If you don&apos;t love the final cut, you owe us nothing.
+              We shoot and edit one complete reel on location in Chennai for free. If you don't love it, you owe us nothing.
             </p>
           </motion.div>
 
-          {/* Card 3: Floating Reach Card (Right) */}
+          {/* Card 3: Floating Crew Spec Card (Right) */}
           <motion.div
             style={{ x: floatX2, y: floatY2 }}
             initial={{ opacity: 0, x: 30, y: 20 }}
@@ -315,71 +312,19 @@ export function Hero() {
             transition={{ duration: 0.9, delay: 0.9, ease: [0.16, 1, 0.3, 1] }}
             className="hidden md:flex absolute bottom-8 right-0 translate-x-6 w-64 flex-col text-left p-5 rounded-2xl bg-white/80 backdrop-blur-xl border border-white/90 shadow-xl shadow-black/5 text-[#1e293b]"
           >
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-1.5 text-xs font-semibold text-[#6c5ce7]">
-                <TrendingUp className="w-4 h-4 text-[#6c5ce7]" />
-                <span>On-Location Studio</span>
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-7 h-7 rounded-full bg-[#6c5ce7]/15 flex items-center justify-center text-[#6c5ce7]">
+                <Sparkles className="w-4 h-4" />
               </div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-[#16a34a] bg-[#22c55e]/10 px-2 py-0.5 rounded-full">
-                Active
-              </span>
+              <span className="text-xs font-bold text-[#6c5ce7] uppercase tracking-wider">The Squad</span>
             </div>
-            <div className="text-2xl font-serif font-black text-[#1e293b] mb-0.5">
-              100% In-Person
-            </div>
-            <p className="text-xs text-[#475569] leading-snug">
-              Every reel shot in your store with professional camera gear, studio lighting &amp; wireless mics.
+            <h2 className="font-serif text-base font-bold text-[#1e293b] mb-1">
+              Team of Four on Every Shoot
+            </h2>
+            <p className="text-xs text-[#475569] leading-relaxed">
+              Shooter + Editor + Scriptwriter + Strategist working on your store's Instagram growth.
             </p>
           </motion.div>
-
-          {/* Mobile Living Floating Cards (Visible on mobile screens with organic float animation) */}
-          <div className="flex md:hidden flex-col gap-3.5 mt-6 w-full max-w-[290px] mx-auto text-left">
-            <motion.div
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: [0, -4, 0] }}
-              transition={{
-                opacity: { duration: 0.6, delay: 0.8 },
-                y: { repeat: Infinity, duration: 4.5, ease: "easeInOut" }
-              }}
-              className="p-4 rounded-2xl bg-white/80 backdrop-blur-xl border border-white/90 shadow-lg shadow-black/5"
-            >
-              <div className="flex items-center gap-2 mb-1.5">
-                <div className="w-6 h-6 rounded-full bg-[#22c55e]/15 flex items-center justify-center text-[#16a34a]">
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                </div>
-                <span className="text-[11px] font-bold text-[#6c5ce7] uppercase tracking-wider">Free First Reel</span>
-              </div>
-              <h3 className="font-serif text-sm font-bold text-[#1e293b]">Zero Cost • Zero Contract</h3>
-              <p className="text-[11px] text-[#475569] mt-0.5 leading-snug">
-                We shoot for 45 mins at your location in Chennai. If you don&apos;t love it, you owe nothing.
-              </p>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: [0, -4, 0] }}
-              transition={{
-                opacity: { duration: 0.6, delay: 1.0 },
-                y: { repeat: Infinity, duration: 5, delay: 0.5, ease: "easeInOut" }
-              }}
-              className="p-4 rounded-2xl bg-white/80 backdrop-blur-xl border border-white/90 shadow-lg shadow-black/5"
-            >
-              <div className="flex items-center justify-between mb-1">
-                <div className="flex items-center gap-1.5 text-[11px] font-bold text-[#6c5ce7]">
-                  <TrendingUp className="w-3.5 h-3.5 text-[#6c5ce7]" />
-                  <span>On-Location Studio</span>
-                </div>
-                <span className="text-[9px] font-bold uppercase tracking-wider text-[#16a34a] bg-[#22c55e]/10 px-2 py-0.5 rounded-full">
-                  Active
-                </span>
-              </div>
-              <div className="text-xl font-serif font-black text-[#1e293b]">100% In-Person</div>
-              <p className="text-[11px] text-[#475569] mt-0.5 leading-snug">
-                Every reel shot with professional camera gear, studio lighting &amp; wireless mics.
-              </p>
-            </motion.div>
-          </div>
-
 
         </div>
 

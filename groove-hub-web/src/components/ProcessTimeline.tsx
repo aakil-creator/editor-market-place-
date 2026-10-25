@@ -11,7 +11,7 @@ export function ProcessTimeline() {
 
   const { scrollYProgress } = useScroll({
     target: containerRef,
-    offset: ["start start", "end end"],
+    offset: ["start 85%", "end 20%"],
   });
 
   useMotionValueEvent(scrollYProgress, "change", (latest) => {
