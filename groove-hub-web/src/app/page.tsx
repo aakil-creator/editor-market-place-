@@ -14,7 +14,7 @@ import { Footer } from "@/components/Footer";
 
 export default function Home() {
   return (
-    <main className="relative bg-transparent min-h-screen text-[#1e293b] overflow-x-clip">
+    <main className="relative bg-[#f8fafc] min-h-screen text-[#1e293b] overflow-x-clip">
       {/* Dynamic Background Scroll Video (Layer 0, non-negative z-index for mobile WebKit) */}
       <BackgroundScrollVideo />
 

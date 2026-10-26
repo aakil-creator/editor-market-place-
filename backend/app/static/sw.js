@@ -43,6 +43,15 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Media streams & HTTP Range requests: NEVER intercept or cache
+  if (
+    url.pathname.endsWith('.mp4') ||
+    url.pathname.endsWith('.webm') ||
+    request.headers.get('range')
+  ) {
+    return;
+  }
+
   // API requests: Network only
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(

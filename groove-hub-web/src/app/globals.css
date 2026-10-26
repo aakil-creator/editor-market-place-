@@ -28,13 +28,13 @@
   }
 
   html {
-    background-color: transparent;
+    background-color: #f8fafc;
     color: var(--text-primary);
     scroll-behavior: initial !important;
   }
 
   body {
-    background-color: transparent;
+    background-color: #f8fafc;
     color: var(--text-primary);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
@@ -129,8 +129,6 @@
   border-radius: 20px;
   box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.08), 0 4px 12px -2px rgba(0, 0, 0, 0.04);
   color: #1e293b;
-  transform: translateZ(0);
-  will-change: transform;
   transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease, background 0.25s ease, border-color 0.25s ease;
 }
 

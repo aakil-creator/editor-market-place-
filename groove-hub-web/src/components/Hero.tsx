@@ -85,14 +85,23 @@ export function Hero() {
     mouseY.set(0);
   };
 
-  // Mobile device orientation: updates motion values directly on GPU (0 React re-renders)
+  // Mobile device orientation: updates motion values with deadband filter to eliminate gyro jitter
   useEffect(() => {
+    let lastGamma = 0;
+    let lastBeta = 0;
+
     const handleOrientation = (e: DeviceOrientationEvent) => {
       if (e.gamma !== null && e.beta !== null) {
+        // Deadzone filter: ignore micro-tremors and sensor quantization noise (< 1.5 degrees)
+        if (Math.abs(e.gamma - lastGamma) < 1.5 && Math.abs(e.beta - lastBeta) < 1.5) {
+          return;
+        }
+        lastGamma = e.gamma;
+        lastBeta = e.beta;
         const clampedGamma = Math.min(25, Math.max(-25, e.gamma)) / 25;
         const clampedBeta = Math.min(30, Math.max(-30, e.beta - 45)) / 30;
-        mouseX.set(clampedGamma * 0.4);
-        mouseY.set(clampedBeta * 0.4);
+        mouseX.set(clampedGamma * 0.3);
+        mouseY.set(clampedBeta * 0.3);
       }
     };
 

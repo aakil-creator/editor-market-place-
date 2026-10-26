@@ -1,40 +1,41 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export function BackgroundScrollVideo() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [videoLoaded, setVideoLoaded] = useState(false);
 
   useEffect(() => {
     const video = videoRef.current;
-    if (!video) return;
+    if (video) {
+      video.muted = true;
+      video.playsInline = true;
+      video.loop = true;
 
-    // Ensure continuous, hardware-accelerated playback (NO seeking = ZERO blinking)
-    video.muted = true;
-    video.playsInline = true;
-    video.loop = true;
+      const onCanPlay = () => setVideoLoaded(true);
+      video.addEventListener("canplay", onCanPlay);
 
-    const playVideo = () => {
-      if (video.paused) {
-        video.play().catch(() => {});
-      }
-    };
+      const playVideo = () => {
+        if (video.paused) {
+          video.play().catch(() => {});
+        }
+      };
+      playVideo();
 
-    playVideo();
+      window.addEventListener("touchstart", playVideo, { passive: true, once: true });
+      window.addEventListener("pointerdown", playVideo, { passive: true, once: true });
+    }
 
-    // Auto-resume on user interaction if browser policy suspended autoplay
-    window.addEventListener("touchstart", playVideo, { passive: true, once: true });
-    window.addEventListener("pointerdown", playVideo, { passive: true, once: true });
-    window.addEventListener("scroll", playVideo, { passive: true, once: true });
-
-    // Smooth GPU Parallax linked directly to scroll
+    // Event-driven smooth parallax on GPU (sleeps when stationary to prevent compositor thrashing)
     const isMobile = window.innerWidth < 768;
-    const maxParallax = isMobile ? 80 : 160;
+    const maxParallax = isMobile ? 60 : 120;
 
-    let currentParallax = 0;
-    let targetParallax = 0;
-    let animId: number;
+    let currentY = 0;
+    let targetY = 0;
+    let isTicking = false;
+    let animId: number | null = null;
 
     const onScroll = () => {
       const scrollY = window.scrollY || window.pageYOffset || document.documentElement.scrollTop || 0;
@@ -47,34 +48,41 @@ export function BackgroundScrollVideo() {
       const maxScroll = Math.max(1, docHeight - winHeight);
       const progress = Math.min(1, Math.max(0, scrollY / maxScroll));
 
-      // Parallax shift: moves background smoothly on GPU
-      targetParallax = -progress * maxParallax;
+      targetY = -progress * maxParallax;
+
+      // Only schedule animation loop when parallax has actually changed
+      if (!isTicking) {
+        isTicking = true;
+        animId = requestAnimationFrame(renderLoop);
+      }
+    };
+
+    const renderLoop = () => {
+      const diff = targetY - currentY;
+
+      if (Math.abs(diff) > 0.08) {
+        currentY += diff * 0.12;
+        if (containerRef.current) {
+          containerRef.current.style.transform = `translate3d(0, ${currentY.toFixed(2)}px, 0)`;
+        }
+        animId = requestAnimationFrame(renderLoop);
+      } else {
+        // Settle completely: stop calling requestAnimationFrame so GPU can sleep
+        currentY = targetY;
+        if (containerRef.current) {
+          containerRef.current.style.transform = `translate3d(0, ${currentY.toFixed(2)}px, 0)`;
+        }
+        isTicking = false;
+        animId = null;
+      }
     };
 
     window.addEventListener("scroll", onScroll, { passive: true });
     onScroll();
 
-    // 60fps/120fps GPU Animation Loop
-    const renderLoop = () => {
-      // Smooth lerp (linear interpolation) for buttery momentum
-      const pDiff = targetParallax - currentParallax;
-      currentParallax += pDiff * 0.1;
-
-      if (containerRef.current) {
-        containerRef.current.style.transform = `translate3d(0, ${currentParallax.toFixed(2)}px, 0) scale(1.08)`;
-      }
-
-      animId = requestAnimationFrame(renderLoop);
-    };
-
-    animId = requestAnimationFrame(renderLoop);
-
     return () => {
       window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("scroll", playVideo);
-      window.removeEventListener("touchstart", playVideo);
-      window.removeEventListener("pointerdown", playVideo);
-      cancelAnimationFrame(animId);
+      if (animId) cancelAnimationFrame(animId);
     };
   }, []);
 
@@ -93,31 +101,25 @@ export function BackgroundScrollVideo() {
         zIndex: 0,
       }}
     >
-      {/* Parallax Building Container moving entirely on GPU */}
+      {/* Parallax Building Layer: High-res foundation image + Seamless 20s forward-reverse video */}
       <div
         ref={containerRef}
         className="w-full h-full"
         style={{
           position: "absolute",
-          top: "-6%",
+          top: "-5%",
           left: 0,
           width: "100%",
-          height: "116%",
-          transform: "translate3d(0, 0, 0) scale(1.08)",
-          willChange: "transform",
+          height: "112%",
+          transform: "translate3d(0, 0, 0)",
         }}
       >
-        <video
-          ref={videoRef}
-          poster="/bgposter.jpg"
-          muted
-          loop
-          autoPlay
-          playsInline
-          // @ts-ignore
-          webkit-playsinline="true"
-          preload="auto"
-          className="w-full h-full object-cover"
+        {/* Layer 1: High-resolution crisp poster background (instant load, zero-flicker foundation) */}
+        <img
+          src="/bgposter.jpg"
+          alt=""
+          role="presentation"
+          className="absolute inset-0 w-full h-full object-cover"
           style={{
             position: "absolute",
             top: 0,
@@ -125,11 +127,32 @@ export function BackgroundScrollVideo() {
             width: "100%",
             height: "100%",
             objectFit: "cover",
-            transform: "translateZ(0)",
-            filter: "contrast(1.04) brightness(1.02)",
+          }}
+        />
+
+        {/* Layer 2: Seamless 20-second ambient video without CSS filters or scale distortion */}
+        <video
+          ref={videoRef}
+          muted
+          loop
+          autoPlay
+          playsInline
+          // @ts-ignore
+          webkit-playsinline="true"
+          preload="auto"
+          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ${
+            videoLoaded ? "opacity-90" : "opacity-0"
+          }`}
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
           }}
         >
-          <source src="/bg-scroll-720.mp4" type="video/mp4" />
+          <source src="/bg-scroll-seamless.mp4" type="video/mp4" />
         </video>
       </div>
 
@@ -138,7 +161,7 @@ export function BackgroundScrollVideo() {
         className="absolute inset-0 pointer-events-none"
         style={{
           background:
-            "radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.14) 100%)",
+            "radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.12) 100%)",
         }}
       />
     </div>

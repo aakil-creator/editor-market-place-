@@ -98,7 +98,7 @@ export function ProcessTimeline() {
                     <span className="font-serif font-black text-2xl sm:text-3xl text-[#6c5ce7] flex items-center gap-2">
                       <span>{step.step}</span>
                       {activeStep === index && (
-                        <span className="w-2 h-2 rounded-full bg-[#6c5ce7] animate-ping" />
+                        <span className="w-2 h-2 rounded-full bg-[#6c5ce7] animate-pulse" />
                       )}
                     </span>
                     <span
