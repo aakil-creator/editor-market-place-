@@ -16,18 +16,20 @@ export function SmoothScroll({ children }: { children: React.ReactNode }) {
 
     const isMobile = window.innerWidth < 768;
 
-    // Unified 60fps/120fps Smooth Scrolling Engine for Desktop AND Mobile Phone
+    // High-performance smooth scrolling for desktop with native 120Hz touch momentum on mobile
     const lenis = new Lenis({
-      duration: isMobile ? 0.95 : 1.15,
+      duration: 1.15,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       orientation: "vertical",
       gestureOrientation: "vertical",
       smoothWheel: true,
       wheelMultiplier: 1.0,
-      syncTouch: true, // Enables matching smooth scrolling animation on mobile phone
-      syncTouchLerp: 0.12, // Responsive touch tracking without sluggish lag
-      touchInertiaExponent: 1.6, // Natural deceleration without getting stuck
-      touchMultiplier: 1.0,
+      syncTouch: false, // Keep native 120Hz touch scrolling on phones/tablets to prevent getting stuck
+    });
+
+    // Notify any listeners on scroll ticks
+    lenis.on("scroll", () => {
+      // Keep scroll event triggers active
     });
 
     (window as any).__lenis = lenis;
