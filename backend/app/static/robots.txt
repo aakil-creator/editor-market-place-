@@ -1,8 +1,6 @@
 User-Agent: *
 Allow: /
-Allow: /portfolio
-Allow: /static/
-Disallow: /admin
+Disallow: /team-portal
 Disallow: /api/
 
-Sitemap: https://editors.groovehub.in/sitemap.xml
+Sitemap: https://syncra-qui2.onrender.com/sitemap.xml

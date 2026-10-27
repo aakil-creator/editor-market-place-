@@ -459,8 +459,8 @@ class AgencyTeamSubscription(Base):
     strategic_thinker_name = Column(String, default="The Strategic Thinker")
     script_writer_name = Column(String, default="The Scriptwriter")
     videographer_editor_name = Column(String, default="The Video Shooter & Video Editor")
-    account_handler_name = Column(String, default="Groove Hub Studio Chennai")
-    app_management_team = Column(String, default="Groove Hub Core Team")
+    account_handler_name = Column(String, default="Grove Hub Studio Chennai")
+    app_management_team = Column(String, default="Grove Hub Core Team")
 
     start_date = Column(DateTime, default=datetime.utcnow)
     end_date = Column(DateTime, nullable=True)

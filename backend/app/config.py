@@ -1,5 +1,5 @@
 """
-GROOVE HUB — Central Configuration & Single Source of Truth
+GROVE HUB — Central Configuration & Single Source of Truth
 Chennai, Tamil Nadu, India
 
 All contact details, social links, pricing, and brand identity must be
@@ -25,7 +25,7 @@ INSTAGRAM_HANDLE = os.getenv("GROOVE_INSTAGRAM", "").strip()
 INSTAGRAM_URL = f"https://instagram.com/{INSTAGRAM_HANDLE}" if INSTAGRAM_HANDLE else ""
 
 # Core Brand Identity & Irresistible Offer
-BRAND_NAME = "GROOVE HUB"
+BRAND_NAME = "GROVE HUB"
 TAGLINE = "Instagram reels studio for local businesses in Chennai"
 PRIMARY_OFFER = "Text us and we'll do a free shoot and reel so you can see our work before you pay."
 OFFER_SUBTEXT = "Zero cost. Zero risk. We shoot at your place in Chennai so you see our quality first."
@@ -132,7 +132,7 @@ PRICING_PLANS: List[Dict[str, Any]] = [
             "Full Video Editing, Color Grade & Sound FX",
             "Kinetic Subtitles & Cover Frames"
         ],
-        "whatsapp_message": "Hi Groove Hub! I'm interested in the Starter Consistency package. Can we discuss pricing and how it works for my business?"
+        "whatsapp_message": "Hi Grove Hub! I'm interested in the Starter Consistency package. Can we discuss pricing and how it works for my business?"
     },
     {
         "id": "growth",
@@ -150,7 +150,7 @@ PRICING_PLANS: List[Dict[str, Any]] = [
             "Sound Design, Mobile Color Grade & Motion Titles",
             "Bi-weekly content review"
         ],
-        "whatsapp_message": "Hi Groove Hub! I'm interested in the Growth Momentum package. Can we talk about pricing and schedule our first shoot?"
+        "whatsapp_message": "Hi Grove Hub! I'm interested in the Growth Momentum package. Can we talk about pricing and schedule our first shoot?"
     },
     {
         "id": "scale",
@@ -167,13 +167,13 @@ PRICING_PLANS: List[Dict[str, Any]] = [
             "Priority post-production turnaround",
             "Direct collaboration with all 4 team members"
         ],
-        "whatsapp_message": "Hi Groove Hub! I would like to discuss the Scale package for my business in Chennai."
+        "whatsapp_message": "Hi Grove Hub! I would like to discuss the Scale package for my business in Chennai."
     }
 ]
 
 # Team Portal Authentication Credentials
 SECRET_KEY = os.getenv("SECRET_KEY", "groove-hub-secret-session-key-chennai-2026")
-TEAM_PORTAL_PASSWORD = os.getenv("TEAM_PORTAL_PASSWORD", "groovehub2026")
+TEAM_PORTAL_PASSWORD = os.getenv("TEAM_PORTAL_PASSWORD", "grovehub2026")
 SESSION_COOKIE_NAME = "groove_team_session"
 
 # Color Palette (Canonical System)
@@ -189,6 +189,6 @@ COLORS = {
 def get_whatsapp_url(message: str = None) -> str:
     """Generate a clean wa.me link with encoded prefilled message."""
     if not message:
-        message = "Hi Groove Hub! I run a local business in Chennai and I'd like to book a free shoot and reel."
+        message = "Hi Grove Hub! I run a local business in Chennai and I'd like to book a free shoot and reel."
     encoded = urllib.parse.quote(message)
     return f"https://wa.me/{WHATSAPP_NUMBER}?text={encoded}"

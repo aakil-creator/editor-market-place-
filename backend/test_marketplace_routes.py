@@ -42,11 +42,36 @@ def test_production_docs_disabled():
     res_openapi = client.get("/openapi.json")
     assert res_openapi.status_code == 404
 
-def test_marketplace_root_serves_app():
+def test_agency_site_primary_at_root():
+    """Verify that root / serves the GROOVE / GROVE HUB agency website directly."""
     res = client.get("/")
     assert res.status_code == 200
     text = res.text
-    assert "EditorMarketplace" in text or "Groove Hub" in text
+    assert ("GROVE HUB" in text or "GROOVE HUB" in text or "Grove Hub" in text)
+    assert "919344546733" in text
+    assert "free shoot" in text.lower() or "free reel" in text.lower()
+    # Verify no dead external domain links
+    assert "groovehub.in" not in text
+    assert "grovehub.in" not in text
+    assert "editors.groovehub.in" not in text
+
+def test_digital_visiting_card_served_directly():
+    """Verify that /card serves the digital visiting card directly on Render with 200 OK (no redirect)."""
+    res = client.get("/card", follow_redirects=False)
+    assert res.status_code == 200
+    text = res.text
+    assert ("GROVE HUB" in text or "GROOVE HUB" in text or "Grove Hub" in text)
+    assert "919344546733" in text
+    assert "groovehub.in" not in text
+    assert "grovehub.in" not in text
+    assert "editors.groovehub.in" not in text
+
+def test_marketplace_route_serves_spa():
+    """Verify that /marketplace serves the EditorMarketplace SPA."""
+    res = client.get("/marketplace")
+    assert res.status_code == 200
+    text = res.text
+    assert "EditorMarketplace" in text or "Grove Hub" in text or "Groove Hub" in text
     assert 'id="app"' in text
     assert "app.js" in text
     assert "Escrow Protected" in text
@@ -55,11 +80,12 @@ def test_portfolio_page_serves_creator_showcase():
     res = client.get("/portfolio")
     assert res.status_code == 200
     text = res.text
-    # Check marketplace & Groove Hub product branding
+    # Check marketplace & Groove / Grove Hub product branding
     assert "EditorMarketplace" in text
-    assert "A Groove Hub product" in text
-    # Check link to agency site
-    assert "groovehub.in" in text
+    assert ("A Grove Hub product" in text or "A Groove Hub product" in text)
+    # Check agency link points to internal root / (not external domain)
+    assert "groovehub.in" not in text
+    assert "grovehub.in" not in text
     assert "Grow your business with reels" in text
     # Check honest claims
     assert "Alex Hormozi" not in text
@@ -69,38 +95,31 @@ def test_portfolio_page_serves_creator_showcase():
     # Check 100% Escrow Protection
     assert "Escrow Protected" in text or "Escrow" in text
 
-def test_agency_routes_301_redirect():
-    # /showcase -> groovehub.in
+def test_agency_routes_internal_redirects():
+    # /showcase -> /#our-work
     res_showcase = client.get("/showcase", follow_redirects=False)
     assert res_showcase.status_code == 301
-    assert "groovehub.in" in res_showcase.headers["location"]
+    assert res_showcase.headers["location"] == "/#our-work"
 
-    # /work -> groovehub.in
+    # /work -> /#our-work
     res_work = client.get("/work", follow_redirects=False)
     assert res_work.status_code == 301
-    assert "groovehub.in" in res_work.headers["location"]
+    assert res_work.headers["location"] == "/#our-work"
 
-    # /card -> groovehub.in/card
-    res_card = client.get("/card", follow_redirects=False)
-    assert res_card.status_code == 301
-    assert res_card.headers["location"] == "https://groovehub.in/card"
-
-    # /team-portal -> groovehub.in
+    # /team-portal -> /
     res_tp = client.get("/team-portal", follow_redirects=False)
     assert res_tp.status_code == 301
-    assert "groovehub.in" in res_tp.headers["location"]
+    assert res_tp.headers["location"] == "/"
 
-def test_spa_routes_fallback_to_marketplace():
-    for route in ["/login", "/register", "/checkout", "/messages", "/bookings"]:
-        res = client.get(route)
-        assert res.status_code == 200
-        assert 'id="app"' in res.text
-
-def test_robots_and_sitemap():
+def test_robots_and_sitemap_point_to_render():
     res_robots = client.get("/robots.txt")
     assert res_robots.status_code == 200
-    assert "editors.groovehub.in" in res_robots.text
+    assert "syncra-qui2.onrender.com" in res_robots.text
+    assert "groovehub.in" not in res_robots.text
+    assert "grovehub.in" not in res_robots.text
 
     res_sm = client.get("/sitemap.xml")
     assert res_sm.status_code == 200
-    assert "editors.groovehub.in" in res_sm.text
+    assert "syncra-qui2.onrender.com" in res_sm.text
+    assert "groovehub.in" not in res_sm.text
+    assert "grovehub.in" not in res_sm.text

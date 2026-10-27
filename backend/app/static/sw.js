@@ -1,5 +1,5 @@
-// Service Worker for Groove Hub Mobile PWA
-const CACHE_NAME = 'groove-hub-v9-features';
+// Service Worker for Grove Hub Mobile PWA
+const CACHE_NAME = 'grove-hub-v10-features';
 const PRECACHE_ASSETS = [
   '/static/icons/icon-192.png',
   '/static/icons/icon-512.png',
@@ -122,7 +122,7 @@ self.addEventListener('push', (event) => {
   if (!event.data) return;
   try {
     const data = event.data.json();
-    const title = data.title || 'Groove Hub 🌿';
+    const title = data.title || 'Grove Hub 🌿';
     const options = {
       body: data.message || data.body || 'New notification',
       icon: data.icon || '/static/icons/icon-192.png',

@@ -1,7 +1,7 @@
 {
-  "name": "EditorMarketplace — A Groove Hub product",
+  "name": "EditorMarketplace — A Grove Hub product",
   "short_name": "EditorMarket",
-  "description": "Hire top-tier video editors with 100% escrow protection. A Groove Hub product.",
+  "description": "Hire top-tier video editors with 100% escrow protection. A Grove Hub product.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

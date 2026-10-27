@@ -406,7 +406,7 @@ openapi_url = "/openapi.json" if IS_DEV else None
 
 app = FastAPI(
     title="EditorMarketplace",
-    description="A Groove Hub product — Marketplace for video editors with escrow protection",
+    description="A Grove Hub product — Marketplace for video editors with escrow protection",
     version="1.0.0",
     docs_url=docs_url,
     redoc_url=redoc_url,
@@ -426,7 +426,7 @@ _cors_origins = [
     origin.strip()
     for origin in os.getenv(
         "CORS_ORIGINS",
-        "https://editors.groovehub.in,https://groovehub.in,https://syncra-qui2.onrender.com,https://localhost,capacitor://localhost,http://localhost:8000,http://127.0.0.1:8000"
+        "https://syncra-qui2.onrender.com,https://localhost,capacitor://localhost,http://localhost:8000,http://127.0.0.1:8000,http://localhost:3000"
     ).split(",")
     if origin.strip()
 ]
@@ -468,6 +468,11 @@ app.mount("/api", api_app)
 
 # Serve static files + SPA fallback through a single catch-all route
 STATIC_DIR = pathlib.Path(os.path.join(os.path.dirname(__file__), "static"))
+
+# Mount Next.js static assets (_next)
+next_static_dir = STATIC_DIR / "_next"
+if next_static_dir.exists():
+    app.mount("/_next", StaticFiles(directory=str(next_static_dir)), name="next_static")
 
 CACHE_HTML_HEADERS = {
     "Cache-Control": "public, max-age=300, stale-while-revalidate=600"
@@ -535,38 +540,56 @@ def get_static_file(path: str):
         return FileResponse(file_path, media_type=media_type, headers=CACHE_STATIC_HEADERS)
     return None
 
+# Primary Agency Website
 @app.get("/")
 async def root():
     return FileResponse(STATIC_DIR / "index.html", headers=CACHE_HTML_HEADERS)
 
+# Digital Visiting Card
+@app.get("/card")
+@app.get("/card/")
+async def digital_visiting_card():
+    card_path = STATIC_DIR / "card.html"
+    if card_path.is_file():
+        return FileResponse(card_path, headers=CACHE_HTML_HEADERS)
+    return FileResponse(STATIC_DIR / "index.html", headers=CACHE_HTML_HEADERS)
+
+# Editor Marketplace
+@app.get("/marketplace")
+@app.get("/marketplace/")
+@app.get("/app")
+async def marketplace_page():
+    marketplace_path = STATIC_DIR / "marketplace.html"
+    if marketplace_path.is_file():
+        return FileResponse(marketplace_path, headers=CACHE_HTML_HEADERS)
+    return FileResponse(STATIC_DIR / "index.html", headers=CACHE_HTML_HEADERS)
+
+# Creator Portfolio
 @app.get("/portfolio")
+@app.get("/portfolio/")
 async def portfolio_page():
     portfolio_path = STATIC_DIR / "portfolio.html"
     if portfolio_path.is_file():
         return FileResponse(portfolio_path, headers=CACHE_HTML_HEADERS)
     return FileResponse(STATIC_DIR / "index.html", headers=CACHE_HTML_HEADERS)
 
-# 301 Permanent Redirects for agency routes -> groovehub.in
+# Agency Internal Redirects
 @app.get("/showcase")
 @app.get("/work")
 async def redirect_agency_work():
-    return RedirectResponse(url="https://groovehub.in/#our-work", status_code=status.HTTP_301_MOVED_PERMANENTLY)
-
-@app.get("/card")
-async def redirect_agency_card():
-    return RedirectResponse(url="https://groovehub.in/card", status_code=status.HTTP_301_MOVED_PERMANENTLY)
+    return RedirectResponse(url="/#our-work", status_code=status.HTTP_301_MOVED_PERMANENTLY)
 
 @app.get("/team-portal")
 @app.get("/agency-team/portal")
 async def redirect_agency_team_portal():
-    return RedirectResponse(url="https://groovehub.in", status_code=status.HTTP_301_MOVED_PERMANENTLY)
+    return RedirectResponse(url="/", status_code=status.HTTP_301_MOVED_PERMANENTLY)
 
 @app.get("/robots.txt")
 async def robots_endpoint():
     robots_path = STATIC_DIR / "robots.txt"
     if robots_path.is_file():
         return FileResponse(robots_path, media_type="text/plain", headers=CACHE_STATIC_HEADERS)
-    return Response(content="User-agent: *\nAllow: /\nAllow: /portfolio\nAllow: /static/\nDisallow: /admin\nDisallow: /api/\nSitemap: https://editors.groovehub.in/sitemap.xml\n", media_type="text/plain")
+    return Response(content="User-agent: *\nAllow: /\nAllow: /card\nAllow: /marketplace\nAllow: /portfolio\nDisallow: /admin\nDisallow: /api/\nSitemap: https://syncra-qui2.onrender.com/sitemap.xml\n", media_type="text/plain")
 
 @app.get("/sitemap.xml")
 async def sitemap_endpoint():
@@ -576,8 +599,10 @@ async def sitemap_endpoint():
     xml = (
         '<?xml version="1.0" encoding="UTF-8"?>\n'
         '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
-        '<url><loc>https://editors.groovehub.in/</loc></url>\n'
-        '<url><loc>https://editors.groovehub.in/portfolio</loc></url>\n'
+        '<url><loc>https://syncra-qui2.onrender.com/</loc></url>\n'
+        '<url><loc>https://syncra-qui2.onrender.com/card</loc></url>\n'
+        '<url><loc>https://syncra-qui2.onrender.com/marketplace</loc></url>\n'
+        '<url><loc>https://syncra-qui2.onrender.com/portfolio</loc></url>\n'
         '</urlset>'
     )
     return Response(content=xml, media_type="application/xml")
@@ -1002,7 +1027,7 @@ def request_otp(req: OtpRequest, request: Request, db = Depends(get_db)):
         user = User(
             name=f"User {clean_phone[-4:]}",
             phone=clean_phone,
-            email=f"{clean_phone}@phonelogin.groovehub.local",
+            email=f"{clean_phone}@phonelogin.grovehub.local",
             password_hash=hash_password(f"otp_{clean_phone}_{random.randint(10000, 99999)}"),
             user_type=user_type_enum,
             is_verified=True,
@@ -1093,7 +1118,7 @@ def verify_otp(req: OtpVerifyRequest, request: Request, db = Depends(get_db)):
             name=f"User {clean_phone[-4:]}",
             username=uname,
             phone=clean_phone,
-            email=f"{clean_phone}@phonelogin.groovehub.local",
+            email=f"{clean_phone}@phonelogin.grovehub.local",
             password_hash=hash_password(f"otp_{clean_phone}_{random.randint(10000, 99999)}"),
             user_type=user_type_enum,
             is_verified=True,
@@ -1540,7 +1565,7 @@ def create_package(package_data: PackageCreate, current_user = Depends(get_curre
     if not profile:
         profile = Profile(
             user_id=current_user.id,
-            bio="Creator on Groove Hub",
+            bio="Creator on Grove Hub",
             niche=package_data.niche or "editors_animators",
             rating=5.0,
             total_bookings=0,
@@ -2560,7 +2585,7 @@ def get_admin_search_analytics(
     current_user: User = Depends(get_current_user),
     db = Depends(get_db)
 ):
-    """Admin endpoint displaying complete analytics on what buyers are searching for on Groove Hub."""
+    """Admin endpoint displaying complete analytics on what buyers are searching for on Grove Hub."""
     if current_user.user_type != UserType.ADMIN and current_user.email not in ADMIN_EMAILS:
         raise HTTPException(status_code=403, detail="Admin authorization required")
 
@@ -3420,21 +3445,21 @@ TIER_TEST_TASKS = {
                 "title": "🏢 Task 1: Local Gym/Cafe 30s Brand Promo Reel",
                 "brief": "Edit a 30s fast-paced vertical brand ad from raw smartphone clips. Hook in first 3s, sync to upbeat royalty-free music, insert lower-third business name, and create a high-converting CTA outro.",
                 "deliverables": "1080x1920 (9:16 vertical MP4), dynamic text hooks, sound design & SFX.",
-                "sample_footage_url": "https://groovehub.com/samples/raw_local_ad_footage.zip"
+                "sample_footage_url": "https://grovehub.com/samples/raw_local_ad_footage.zip"
             },
             {
                 "id": "beg_task_2",
                 "title": "🛍️ Task 2: E-Commerce 45s UGC Product Video Ad",
                 "brief": "Edit a high-converting product demo ad. Highlight the customer's pain point, show product unboxing/usage with punch-in zooms, and animate a 20% OFF coupon badge.",
                 "deliverables": "1080x1920 (9:16 vertical MP4), price tag callout, sound pops, and subtitle hooks.",
-                "sample_footage_url": "https://groovehub.com/samples/raw_ecommerce_clips.zip"
+                "sample_footage_url": "https://grovehub.com/samples/raw_ecommerce_clips.zip"
             },
             {
                 "id": "beg_task_3",
                 "title": "📝 Task 3: Dynamic Animated Subtitles Reel (30s)",
                 "brief": "Add dynamic kinetic animated captions to raw talking-head footage with word-by-word highlight colors, emojis, and sound pops.",
                 "deliverables": "1080x1920 MP4 with 100% accurate subtitle timing, high-contrast captions, and visual emoji pops.",
-                "sample_footage_url": "https://groovehub.com/samples/raw_creator_talking_head.zip"
+                "sample_footage_url": "https://grovehub.com/samples/raw_creator_talking_head.zip"
             }
         ]
     },
@@ -3448,14 +3473,14 @@ TIER_TEST_TASKS = {
                 "title": "⚡ Task 1: High-Retention Brand Commercial (45s)",
                 "brief": "Multi-angle brand promo with seamless speed ramps, motion graphics callouts, and multi-layered SFX audio design (risers, impacts, whooshes).",
                 "deliverables": "Cinema-level sound mastering, 9:16 export, scroll-stopping hook.",
-                "sample_footage_url": "https://groovehub.com/samples/raw_commercial_footage.zip"
+                "sample_footage_url": "https://grovehub.com/samples/raw_commercial_footage.zip"
             },
             {
                 "id": "inter_task_2",
                 "title": "🎨 Task 2: Cinematic Multi-Angle Product Promo (60s)",
                 "brief": "Color-correct and grade log/flat footage into a punchy commercial look with branded lower thirds and dynamic split-screen transitions.",
                 "deliverables": "Professional color grading LUTs, audio normalization, 4K master export.",
-                "sample_footage_url": "https://groovehub.com/samples/raw_brand_promo_log.zip"
+                "sample_footage_url": "https://grovehub.com/samples/raw_brand_promo_log.zip"
             }
         ]
     },
@@ -3469,7 +3494,7 @@ TIER_TEST_TASKS = {
                 "title": "👑 Task 1: Benchmark High-Ticket Brand Commercial Master",
                 "brief": "Master-grade commercial ad featuring 3 scroll-stopping hook variants, high-end motion graphics, bespoke audio engineering, and multi-platform ratio deliverables (9:16 vertical & 16:9 widescreen).",
                 "deliverables": "Direct-response retention mastery, broadcast audio engineering, top-tier motion graphics.",
-                "sample_footage_url": "https://groovehub.com/samples/raw_pro_commercial_master.zip"
+                "sample_footage_url": "https://grovehub.com/samples/raw_pro_commercial_master.zip"
             }
         ]
     }
@@ -3826,17 +3851,17 @@ def handle_moderation_violation(db, sender: User, receiver_id: int, booking_id, 
         # Second offence — suspend (keep is_active True so user can still
         # read own bookings/payments and appeal; get_current_user blocks sends via is_blocked)
         sender.is_blocked = True
-        sender.block_reason = f"Account suspended: Sharing direct contact details ({reason}) violates Groove Hub platform safety rules. (Strike {prior + 1})"
+        sender.block_reason = f"Account suspended: Sharing direct contact details ({reason}) violates Grove Hub platform safety rules. (Strike {prior + 1})"
         db.commit()
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail=f"Security Alert: Your message was blocked and your account has been suspended for attempting to share off-platform contact details ({reason}). To protect buyers and sellers under escrow, all communications and payments must stay on Groove Hub."
+            detail=f"Security Alert: Your message was blocked and your account has been suspended for attempting to share off-platform contact details ({reason}). To protect buyers and sellers under escrow, all communications and payments must stay on Grove Hub."
         )
 
     # First offence — warn, do not suspend
     raise HTTPException(
         status_code=status.HTTP_400_BAD_REQUEST,
-        detail=f"Warning (Strike 1): Your message was blocked — {reason}. Keep all contact details and payments on Groove Hub. A repeat violation will suspend your account."
+        detail=f"Warning (Strike 1): Your message was blocked — {reason}. Keep all contact details and payments on Grove Hub. A repeat violation will suspend your account."
     )
 
 
@@ -4389,7 +4414,7 @@ def get_admin_all_chats(
     db = Depends(get_db)
 ):
     """
-    Admin endpoint to view all conversations across Groove Hub,
+    Admin endpoint to view all conversations across Grove Hub,
     including flagged messages and blocked user statuses.
     """
     if current_user.user_type != UserType.ADMIN:
@@ -5016,9 +5041,9 @@ def team_portal_data(request: Request, db = Depends(get_db)):
 @api_app.get("/agency-team/plans")
 def get_agency_growth_team_plans():
     return {
-        "agency_name": "Groove Hub Dedicated Team of Four",
+        "agency_name": "Grove Hub Dedicated Team of Four",
         "tagline": "Your Complete Store Reels Engine: Strategy, Scripting, Shoots & Edits in Chennai",
-        "app_management": "Managed directly by Groove Hub Studio Chennai",
+        "app_management": "Managed directly by Grove Hub Studio Chennai",
         "team_roster": [
             {
                 "role_id": 1,
@@ -5127,11 +5152,11 @@ def subscribe_agency_team(
     db.add(audit)
     db.commit()
     
-    whatsapp_msg = f"Hi Groove Hub! I registered '{sub.store_name}' for an on-location reels shoot in Chennai."
+    whatsapp_msg = f"Hi Grove Hub! I registered '{sub.store_name}' for an on-location reels shoot in Chennai."
     wa_url = get_whatsapp_url(whatsapp_msg)
     
     return {
-        "message": f"Successfully registered for Groove Hub ({sub.plan_type} Plan)!",
+        "message": f"Successfully registered for Grove Hub ({sub.plan_type} Plan)!",
         "subscription_id": sub.id,
         "vip_link_token": sub.vip_link_token,
         "web_portal_url": f"/team-portal",
@@ -5145,7 +5170,7 @@ def subscribe_agency_team(
 def get_agency_team_dashboard(token: str, db = Depends(get_db)):
     sub = db.query(AgencyTeamSubscription).filter(AgencyTeamSubscription.vip_link_token == token).first()
     if not sub:
-        wa_text = "Hi Groove Hub! I'd like to ask about an on-location reel shoot for my store in Chennai."
+        wa_text = "Hi Grove Hub! I'd like to ask about an on-location reel shoot for my store in Chennai."
         return {
             "is_preview": True,
             "store_name": "Local Business Showcase",
@@ -5161,7 +5186,7 @@ def get_agency_team_dashboard(token: str, db = Depends(get_db)):
                 "strategic_thinker": "The Strategic Thinker",
                 "script_writer": "The Scriptwriter",
                 "videographer_editor": "The Video Shooter & Video Editor",
-                "app_management": "Groove Hub Core Team"
+                "app_management": "Grove Hub Core Team"
             },
             "store_flaws": [],
             "competitor_comparison": [],
@@ -5175,7 +5200,7 @@ def get_agency_team_dashboard(token: str, db = Depends(get_db)):
         }
     
     audit = db.query(StoreAuditReport).filter(StoreAuditReport.subscription_id == sub.id).first()
-    wa_msg = f"Hi Groove Hub! Checking in regarding the shoot for {sub.store_name}."
+    wa_msg = f"Hi Grove Hub! Checking in regarding the shoot for {sub.store_name}."
     wa_url = get_whatsapp_url(wa_msg)
     
     return {
@@ -5196,7 +5221,7 @@ def get_agency_team_dashboard(token: str, db = Depends(get_db)):
             "strategic_thinker": sub.strategic_thinker_name or "The Strategic Thinker",
             "script_writer": sub.script_writer_name or "The Scriptwriter",
             "videographer_editor": sub.videographer_editor_name or "The Video Shooter & Video Editor",
-            "app_management": sub.app_management_team or "Groove Hub Core Team"
+            "app_management": sub.app_management_team or "Grove Hub Core Team"
         },
         "store_flaws": audit.store_flaws if (audit and audit.store_flaws) else [],
         "competitor_comparison": audit.competitor_comparison if (audit and audit.competitor_comparison) else [],

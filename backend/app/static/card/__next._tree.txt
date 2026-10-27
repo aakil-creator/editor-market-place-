@@ -1,0 +1,9 @@
+:HL["/_next/static/chunks/1pt2k2lcjo_m6.css","style"]
+:HL["/_next/static/media/2a65768255d6b625-s.p.3u4lli0-axodc.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
+:HL["/_next/static/media/70e3db2de7f94926-s.p.39pl-v7c3qrze.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
+:HL["/_next/static/media/fba5a26ea33df6a3-s.p.18rizl4rsrl42.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
+:HL["/grove_hub_logo_transparent.png","image"]
+:HL["/grove_hub_qr_code.png","image"]
+2:[["children",{"s":"__PAGE__","h":160}]]
+1:[["children",{"s":"card","h":96,"c":"$Q2"}]]
+0:{"b":"Bs98xzZ9oSJkKqgM0j449","t":{"t":{"s":"","h":80,"c":"$Q1"}}}

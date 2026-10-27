@@ -1,4 +1,4 @@
-// Groove Hub - Main Application
+// Grove Hub - Main Application
 
 // State
 let currentToken = localStorage.getItem('access_token') || null;
@@ -145,7 +145,7 @@ function renderLogo(size = 24, showText = true) {
                 <path d="M2 17l10 5 10-5"/>
                 <path d="M2 12l10 5 10-5"/>
             </svg>
-            ${showText ? `<span>Groove Hub</span>` : ''}
+            ${showText ? `<span>Grove Hub</span>` : ''}
         </div>
     `;
 }
@@ -973,7 +973,7 @@ function startJourney(preselectedRole = 'BUYER') {
                     <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(91, 52, 234, 0.1); color: #5b34ea; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">🚀</div>
                     <div>
                         <h3 style="font-size: 1.2rem; font-weight: 800; margin: 0; color: var(--text-primary);">Start Your Journey</h3>
-                        <p style="font-size: 0.75rem; color: var(--text-secondary); margin: 2px 0 0;">Choose how you want to use Groove Hub</p>
+                        <p style="font-size: 0.75rem; color: var(--text-secondary); margin: 2px 0 0;">Choose how you want to use Grove Hub</p>
                     </div>
                 </div>
                 <button type="button" id="close-journey-modal" style="background:transparent; border:none; color:var(--text-muted); font-size:1.3rem; cursor:pointer; padding: 4px;">✕</button>
@@ -1609,7 +1609,7 @@ function buyerWelcomeCard(recentBookings = []) {
                         100% Escrow Protection & Direct In-App Chat Active
                     </div>
                     <div style="font-size: 0.8125rem; color: var(--text-secondary); line-height: 1.45;">
-                        You never send money directly to creators. Your payment is safely locked in Groove Hub escrow and released <strong>only after you inspect and approve</strong> the delivered files. Use our built-in chat for all messages, revisions, and files.
+                        You never send money directly to creators. Your payment is safely locked in Grove Hub escrow and released <strong>only after you inspect and approve</strong> the delivered files. Use our built-in chat for all messages, revisions, and files.
                     </div>
                 </div>
             </div>
@@ -3060,7 +3060,7 @@ function CreateBooking() {
                     key: rzpKey,
                     amount: orderData.amount_paise,
                     currency: "INR",
-                    name: "Groove Hub",
+                    name: "Grove Hub",
                     description: `${selectedPkg.title} (100% Escrow Protected)`,
                     image: "/static/icons/icon-192.png",
                     order_id: orderData.order_id && !orderData.order_id.startsWith('order_sim_') && !orderData.order_id.startsWith('order_') ? orderData.order_id : undefined,
@@ -3765,7 +3765,7 @@ function PaymentsPortal() {
                     key: rzpKey,
                     amount: amountPaise,
                     currency: "INR",
-                    name: "Groove Hub",
+                    name: "Grove Hub",
                     description: `Booking #${bookingId} (100% Escrow Protected)`,
                     image: "/static/icons/icon-192.png",
                     prefill: {
@@ -3861,7 +3861,7 @@ function PaymentsPortal() {
                     <div class="invoice-paper">
                         <div class="invoice-paper-header">
                             <div>
-                                <span class="brand-title">Groove Hub</span>
+                                <span class="brand-title">Grove Hub</span>
                                 <div style="font-size: 0.75rem; color: #636e72; margin-top: 2px;">
                                     Premier Video Editing & Tutoring Platform<br>
                                     Escrow Protected Commercial Hub
@@ -5902,7 +5902,7 @@ function PrivacyPolicy() {
                 <p style="color: var(--text-muted); font-size: 0.8125rem; margin-bottom: 24px;">Last updated: September 21, 2026</p>
 
                 <div style="color: var(--text-secondary); line-height: 1.7; font-size: 0.9375rem; display: flex; flex-direction: column; gap: 16px;">
-                    <p>At <strong>Groove Hub</strong>, your privacy and data security are our top priorities. This Privacy Policy describes how we collect, use, and protect your personal information when you use our platform and mobile applications.</p>
+                    <p>At <strong>Grove Hub</strong>, your privacy and data security are our top priorities. This Privacy Policy describes how we collect, use, and protect your personal information when you use our platform and mobile applications.</p>
 
                     <h3 style="color: var(--text-primary); margin-top: 12px;">1. Information We Collect</h3>
                     <p>We collect information necessary to connect creators with video editors and tutors, including:
@@ -5950,10 +5950,10 @@ function TermsOfService() {
                 <p style="color: var(--text-muted); font-size: 0.8125rem; margin-bottom: 24px;">Last updated: September 21, 2026</p>
 
                 <div style="color: var(--text-secondary); line-height: 1.7; font-size: 0.9375rem; display: flex; flex-direction: column; gap: 16px;">
-                    <p>Welcome to <strong>Groove Hub</strong>. By accessing our platform, website, or mobile application, you agree to be bound by these Terms of Service.</p>
+                    <p>Welcome to <strong>Grove Hub</strong>. By accessing our platform, website, or mobile application, you agree to be bound by these Terms of Service.</p>
 
                     <h3 style="color: var(--text-primary); margin-top: 12px;">1. Marketplace Services</h3>
-                    <p>Groove Hub provides a connection platform connecting content creators ("Buyers") with freelance video editors, animators, and English tutors ("Providers").</p>
+                    <p>Grove Hub provides a connection platform connecting content creators ("Buyers") with freelance video editors, animators, and English tutors ("Providers").</p>
 
                     <h3 style="color: var(--text-primary); margin-top: 12px;">2. Platform Commission & Escrow</h3>
                     <p>• The platform charges <strong>no commission</strong> on any bookings.
@@ -6202,7 +6202,7 @@ window.openBookingChat = async (bookingId, partyName = 'Collaborator') => {
             </div>
             <div style="background: rgba(99, 102, 241, 0.08); border-bottom: 1px solid var(--border); padding: 8px 14px; font-size: 0.75rem; color: var(--text-secondary); display: flex; align-items: center; gap: 8px;">
                 <span>🛡️</span>
-                <span><strong>Escrow Protection Active:</strong> Never send personal payments or UPI outside Groove Hub. Funds remain safely protected until you approve the work.</span>
+                <span><strong>Escrow Protection Active:</strong> Never send personal payments or UPI outside Grove Hub. Funds remain safely protected until you approve the work.</span>
             </div>
             <div class="chat-messages" id="chat-messages-container">
                 <div class="loading"><div class="spinner"></div></div>
@@ -6786,7 +6786,7 @@ function GrooveChat() {
         chatBox.appendChild(inputRow);
 
         document.body.appendChild(chatBox);
-        addBotMessage('👋 Hey there! I\'m Groove, your Groove Hub assistant. Ask me anything — try "I need a video editor right now" or "Find me an English tutor"!');
+        addBotMessage('👋 Hey there! I\'m Groove, your Grove Hub assistant. Ask me anything — try "I need a video editor right now" or "Find me an English tutor"!');
         textarea.focus();
     }
 
@@ -6935,13 +6935,13 @@ function GrooveChat() {
         }
 
         const replies = {
-            greeting: { text: '👋 Hey there! Welcome to Groove Hub. What can I help you with today? Try asking for a "video editor" or "English tutor"!' },
+            greeting: { text: '👋 Hey there! Welcome to Grove Hub. What can I help you with today? Try asking for a "video editor" or "English tutor"!' },
             find_video_editor_urgent: { text: '🎬 Here are active video editors available RIGHT NOW:\n\n' },
             find_video_editor: { text: '🎬 I can help you find video editors! Try these:\n\n• Browse all editors: click "Browse Talent" below\n• Create a booking: click "Create Booking" below\n\nWant me to take you to the marketplace?' },
             find_english_tutor: { text: '🗣️ I can help you find English tutors! Try these:\n\n• Browse tutors: click "Browse Talent" below\n• Create a booking: click "Create Booking" below\n\nLooking for IELTS prep, spoken English, or business English?' },
             find_writer: { text: '✍️ I can help you find writers! Try these:\n\n• Browse writers: click "Browse Talent" below\n• Create a booking: click "Create Booking" below\n\nNeed content writing, copywriting, or creative writing?' },
             edit_profile: { text: '👤 I\'ll take you to your profile page where you can edit your details, bio, and settings.' },
-            show_help: { text: '🤖 I\'m Groove, your Groove Hub assistant! Here\'s what I can help with:\n\n🎬 **Video Editors** — "I need a video editor right now"\n🗣️ **English Tutors** — "I want an English coach"\n✍️ **Writers** — "I need someone to write content"\n📦 **Create Package** — "I want to create a service"\n📋 **Create Booking** — "I want to book someone"\n💳 **Payments** — "Where\'s my money" or "payment status"\n👤 **Edit Profile** — "change my profile"\n🔧 **Admin Panel** — "admin" (admins only)\n\nJust type what you need!' },
+            show_help: { text: '🤖 I\'m Groove, your Grove Hub assistant! Here\'s what I can help with:\n\n🎬 **Video Editors** — "I need a video editor right now"\n🗣️ **English Tutors** — "I want an English coach"\n✍️ **Writers** — "I need someone to write content"\n📦 **Create Package** — "I want to create a service"\n📋 **Create Booking** — "I want to book someone"\n💳 **Payments** — "Where\'s my money" or "payment status"\n👤 **Edit Profile** — "change my profile"\n🔧 **Admin Panel** — "admin" (admins only)\n\nJust type what you need!' },
             payment_status: { text: '💳 I\'ll take you to your payments dashboard where you can see your escrow balance, pending payments, and transaction history.' },
             create_booking: { text: '📋 I\'ll take you to the booking page where you can select a provider and package to get started!' },
             create_package: { text: '📦 I\'ll take you to the package creation page where you can define your service offerings for buyers!' },

@@ -1,4 +1,4 @@
-// Groove Hub - Main Application
+// Grove Hub - Main Application
 if (window.location.hostname === '127.0.0.1') {
     window.location.replace(window.location.href.replace('127.0.0.1', 'localhost'));
 }
@@ -602,14 +602,14 @@ function showSuspendedModal(detail) {
             </div>
             <h2 style="color: #ef4444; font-size: 1.35rem; font-weight: 800; margin: 0 0 10px;">Account Suspended</h2>
             <div style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 10px; padding: 12px 14px; margin-bottom: 18px; font-size: 0.85rem; color: var(--text-primary); text-align: left; line-height: 1.45;">
-                ${escapeHTML(detail || 'Your account was suspended for attempting to exchange phone numbers or direct contact information outside Groove Hub.')}
+                ${escapeHTML(detail || 'Your account was suspended for attempting to exchange phone numbers or direct contact information outside Grove Hub.')}
             </div>
             <p style="font-size: 0.8125rem; color: var(--text-secondary); line-height: 1.5; margin: 0 0 20px;">
-                To protect buyers and creators under our <strong>100% Escrow Guarantee</strong>, Groove Hub strictly prohibits sharing phone numbers, WhatsApp, UPI, or external channels. All transactions and chats must remain on the platform.
+                To protect buyers and creators under our <strong>100% Escrow Guarantee</strong>, Grove Hub strictly prohibits sharing phone numbers, WhatsApp, UPI, or external channels. All transactions and chats must remain on the platform.
             </p>
             <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                 <button class="btn btn-secondary" onclick="document.getElementById('security-suspended-modal').remove(); router('/')" style="flex: 1 1 120px;">Close</button>
-                <a href="mailto:rahura2026@gmail.com?subject=Groove Hub Account Suspension Appeal" class="btn btn-primary" style="flex: 1.5 1 180px; text-decoration: none; display: flex; align-items: center; justify-content: center;">Contact Admin Support</a>
+                <a href="mailto:rahura2026@gmail.com?subject=Grove Hub Account Suspension Appeal" class="btn btn-primary" style="flex: 1.5 1 180px; text-decoration: none; display: flex; align-items: center; justify-content: center;">Contact Admin Support</a>
             </div>
         </div>
     `;
@@ -640,7 +640,7 @@ function showToast(message, type = 'info') {
     // Trigger system push notification if permitted
     if (window.Notification && Notification.permission === 'granted' && (type === 'success' || type === 'info')) {
         try {
-            new Notification('Groove Hub 🌿', {
+            new Notification('Grove Hub 🌿', {
                 body: message,
                 icon: '/static/icons/grove_hub_emblem_dark.png'
             });
@@ -1050,9 +1050,9 @@ window.toggleTheme = toggleTheme;
 function renderLogo(size = 28, showText = true) {
     return `
         <div class="logo" style="cursor: pointer; display: inline-flex; align-items: center; gap: 8px;" onclick="router('/')">
-            <img class="logo-light-mode" src="/static/icons/grove_hub_emblem_light.png" alt="Groove Hub" style="height: ${size}px; width: auto; max-width: ${Math.round(size * 1.5)}px; object-fit: contain; vertical-align: middle;" />
-            <img class="logo-dark-mode" src="/static/icons/grove_hub_emblem_dark.png" alt="Groove Hub" style="height: ${size}px; width: auto; max-width: ${Math.round(size * 1.5)}px; object-fit: contain; vertical-align: middle; filter: drop-shadow(0 1px 3px rgba(0,0,0,0.3));" />
-            ${showText ? `<span style="font-weight: 800; font-size: ${Math.max(16, Math.round(size * 0.62))}px; letter-spacing: -0.4px; color: var(--text-primary);">Groove Hub</span>` : ''}
+            <img class="logo-light-mode" src="/static/icons/grove_hub_emblem_light.png" alt="Grove Hub" style="height: ${size}px; width: auto; max-width: ${Math.round(size * 1.5)}px; object-fit: contain; vertical-align: middle;" />
+            <img class="logo-dark-mode" src="/static/icons/grove_hub_emblem_dark.png" alt="Grove Hub" style="height: ${size}px; width: auto; max-width: ${Math.round(size * 1.5)}px; object-fit: contain; vertical-align: middle; filter: drop-shadow(0 1px 3px rgba(0,0,0,0.3));" />
+            ${showText ? `<span style="font-weight: 800; font-size: ${Math.max(16, Math.round(size * 0.62))}px; letter-spacing: -0.4px; color: var(--text-primary);">Grove Hub</span>` : ''}
         </div>
     `;
 }
@@ -2639,8 +2639,8 @@ function AuthPortal(initialTab = 'login') {
     const view = el`<div class="main" style="padding: 24px 16px;">
         <div class="card" style="max-width: 440px; margin: 20px auto 40px; box-shadow: var(--shadow-lg); border: 1px solid var(--border);">
             <div class="card-header" style="display: flex; flex-direction: column; align-items: center; padding: 24px 20px 16px; border-bottom: 1px solid var(--border);">
-                <img class="logo-light-mode" src="/static/icons/grove_hub_logo_light.png" alt="Groove Hub" style="height: 68px; width: auto; max-width: 230px; object-fit: contain; margin-bottom: 6px; cursor: pointer;" onclick="router('/')" />
-                <img class="logo-dark-mode" src="/static/icons/grove_hub_logo_dark.png" alt="Groove Hub" style="height: 68px; width: auto; max-width: 230px; object-fit: contain; margin-bottom: 6px; cursor: pointer; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.3));" onclick="router('/')" />
+                <img class="logo-light-mode" src="/static/icons/grove_hub_logo_light.png" alt="Grove Hub" style="height: 68px; width: auto; max-width: 230px; object-fit: contain; margin-bottom: 6px; cursor: pointer;" onclick="router('/')" />
+                <img class="logo-dark-mode" src="/static/icons/grove_hub_logo_dark.png" alt="Grove Hub" style="height: 68px; width: auto; max-width: 230px; object-fit: contain; margin-bottom: 6px; cursor: pointer; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.3));" onclick="router('/')" />
                 <!-- Auth Tabs -->
                 <div class="tabs" style="width: 100%; margin-top: 18px; display: flex;">
                     <button type="button" class="tab ${authPortalActiveTab === 'login' ? 'active' : ''}" id="auth-tab-login" style="flex: 1; text-align: center; font-weight: 700;">
@@ -3961,7 +3961,7 @@ function ProviderProfessionOnboarding() {
                     <div style="font-size:2.5rem; margin-bottom:8px;">👋</div>
                     <h1 style="font-size:1.55rem; font-weight:900; margin:0 0 8px;">What service do you provide?</h1>
                     <p style="color:var(--text-secondary); margin:0; line-height:1.5;">
-                        Choose your main job first. Groove Hub will then show the right profile fields, package examples and client tasks for you.
+                        Choose your main job first. Grove Hub will then show the right profile fields, package examples and client tasks for you.
                     </p>
                 </div>
                 <div class="grid grid-2" style="gap:12px;">
@@ -4735,17 +4735,17 @@ function BuyerDashboard() {
                     <!-- Marketplace Footer Strip linking to Agency -->
                     <div style="margin-top: 48px; padding: 32px 20px; border-top: 1px solid var(--border); text-align: center; background: var(--bg-card); border-radius: var(--radius);">
                         <div style="font-weight: 800; font-size: 1.1rem; color: var(--text-primary); margin-bottom: 6px;">EditorMarketplace</div>
-                        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;">A Groove Hub product • Hire vetted video editors with 100% Escrow Protection.</p>
+                        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;">A Grove Hub product • Hire vetted video editors with 100% Escrow Protection.</p>
                         <div style="display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; margin-bottom: 20px;">
                             <a href="/portfolio" style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 8px; background: var(--bg-hover); color: var(--text-primary); font-size: 0.82rem; font-weight: 600; text-decoration: none; border: 1px solid var(--border);">
                                 🎬 Creator Editing Portfolio
                             </a>
-                            <a href="https://groovehub.in" target="_blank" rel="noopener noreferrer" style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 8px; background: #2A0A0E; color: #FFF4E8; font-size: 0.82rem; font-weight: 700; text-decoration: none; border: 1px solid #F4B183;">
-                                🚀 Grow your business with reels (Groove Hub Agency)
+                            <a href="/" style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 8px; background: #2A0A0E; color: #FFF4E8; font-size: 0.82rem; font-weight: 700; text-decoration: none; border: 1px solid #F4B183;">
+                                🚀 Grow your business with reels (Grove Hub Agency)
                             </a>
                         </div>
                         <p style="font-size: 0.75rem; color: var(--text-dim);">
-                            © 2026 EditorMarketplace — A Groove Hub product. 100% Escrow Protected.
+                            © 2026 EditorMarketplace — A Grove Hub product. 100% Escrow Protected.
                         </p>
                     </div>
 
@@ -4914,7 +4914,7 @@ function providerWelcomeCard(profile) {
                     </span>
                 </div>
                 <div style="font-size: 0.8125rem; color: var(--text-secondary); margin-top: 3px;">
-                    Creator &amp; Provider Command Center • 100% Escrow Protected • groovehub.com/@${currentUser?.username || 'creator'}
+                    Creator &amp; Provider Command Center • 100% Escrow Protected • grovehub.com/@${currentUser?.username || 'creator'}
                 </div>
             </div>
             <span class="badge badge-success" style="font-weight: 700; padding: 6px 12px; font-size: 0.8rem;">PROVIDER</span>
@@ -4970,7 +4970,7 @@ function buyerWelcomeCard(recentBookings = []) {
                         100% Escrow Protection & Direct In-App Chat Active
                     </div>
                     <div style="font-size: 0.8125rem; color: var(--text-secondary); line-height: 1.45;">
-                        You never send money directly to creators. Your payment is safely locked in Groove Hub escrow and released <strong>only after you inspect and approve</strong> the delivered files. Use our built-in chat for all messages, revisions, and files.
+                        You never send money directly to creators. Your payment is safely locked in Grove Hub escrow and released <strong>only after you inspect and approve</strong> the delivered files. Use our built-in chat for all messages, revisions, and files.
                     </div>
                 </div>
             </div>
@@ -5895,7 +5895,7 @@ function Settings() {
                                     <input type="text" class="form-input" id="setting-username" value="${escapeHTML(currentUser?.username || '')}" required minlength="3" maxlength="30" placeholder="your_unique_handle" style="padding-left: 32px; font-weight: 700;" pattern="[a-zA-Z0-9_]{3,30}" title="3-30 letters, numbers, or underscores">
                                 </div>
                                 <small style="color: var(--text-muted); font-size: 0.75rem; margin-top: 5px; display: block;">
-                                    Your unique creator link: <strong>groovehub.com/@${escapeHTML(currentUser?.username || 'username')}</strong>. Clients can search and find you directly.
+                                    Your unique creator link: <strong>grovehub.com/@${escapeHTML(currentUser?.username || 'username')}</strong>. Clients can search and find you directly.
                                 </small>
                             </div>
 
@@ -6800,7 +6800,7 @@ function CreatePackage() {
         business_ads: [
             { id: 'meta_ads', icon: '📢', label: 'Instagram & Facebook Ads', badge: '📢 Meta', type: 'per_deliverable', title: 'Instagram & Facebook Ad Campaign Service', price: 2500, turnaround: '48 Hours', revisions: 2, scope: 'Campaign setup, audience targeting, creative guidance and basic performance review.' },
             { id: 'local_shop_ads', icon: '🏪', label: 'Local Shop Brand Ad', badge: '🏪 Local', type: 'per_deliverable', title: 'Local Shop Promotional Ad Package', price: 2000, turnaround: '48 Hours', revisions: 2, scope: 'Ad concept, hook, branded creative, CTA and platform-ready delivery for a shop or local business.' },
-            { id: 'remote_footage_edit', icon: '📤', label: 'Remote Footage Upload & Edit', badge: '📤 Remote', type: 'per_deliverable', title: 'Remote Video Upload & Professional Edit', price: 1800, turnaround: '24-48 Hours', revisions: 2, scope: 'Customer uploads raw footage through Groove Hub; creator edits, captions, sound and exports the final ad/reel.' },
+            { id: 'remote_footage_edit', icon: '📤', label: 'Remote Footage Upload & Edit', badge: '📤 Remote', type: 'per_deliverable', title: 'Remote Video Upload & Professional Edit', price: 1800, turnaround: '24-48 Hours', revisions: 2, scope: 'Customer uploads raw footage through Grove Hub; creator edits, captions, sound and exports the final ad/reel.' },
             { id: 'real_meet_onsite', icon: '📹', label: 'Real-Meet Shoot + Edit', badge: '📹 On-Site', type: 'per_deliverable', title: 'On-Site Shop Videography + Full Promotional Edit', price: 3500, turnaround: '48 Hours', revisions: 2, scope: 'Creator visits the shop/business, captures footage, edits the promotional video and delivers 9:16 social-ready files.' },
             { id: 'social_management', icon: '📱', label: 'Social Media Management', badge: '📱 Monthly', type: 'monthly', title: 'Local Business Social Media Management', price: 6000, turnaround: 'Monthly Retainer', revisions: 3, scope: 'Content planning, posts/reels, captions, basic community management and monthly reporting.' }
         ],
@@ -8142,7 +8142,7 @@ function CreateBooking() {
                     key: rzpKey,
                     amount: orderData.amount_paise,
                     currency: "INR",
-                    name: "Groove Hub",
+                    name: "Grove Hub",
                     description: `${selectedPkg.title} (100% Escrow Protected)`,
                     image: "/static/icons/icon-192.png",
                     order_id: orderData.order_id && orderData.order_id.startsWith('order_') ? orderData.order_id : undefined,
@@ -8246,8 +8246,8 @@ function CreateBooking() {
                         </div>
                         <div class="form-group">
                             <label class="form-label">Source video / files (optional)</label>
-                            <input class="form-input" id="booking-source-url" type="url" placeholder="Paste your Drive, Dropbox or uploaded Groove Hub file link">
-                            <div style="font-size:.72rem;color:var(--text-muted);margin-top:5px;">For large files, upload them through Groove Hub and paste the returned file link here.</div>
+                            <input class="form-input" id="booking-source-url" type="url" placeholder="Paste your Drive, Dropbox or uploaded Grove Hub file link">
+                            <div style="font-size:.72rem;color:var(--text-muted);margin-top:5px;">For large files, upload them through Grove Hub and paste the returned file link here.</div>
                         </div>
                         <div id="free-sample-panel" style="display:none; background:rgba(16,185,129,.08); border:1px solid rgba(16,185,129,.25); border-radius:12px; padding:14px; margin-bottom:14px;">
                             <div style="font-weight:800;color:var(--text-primary);">🎁 Free sample available</div>
@@ -8782,7 +8782,7 @@ function PaymentsPortal() {
                     key: rzpKey,
                     amount: amountPaise,
                     currency: "INR",
-                    name: "Groove Hub",
+                    name: "Grove Hub",
                     description: `Booking #${bookingId} (100% Escrow Protected)`,
                     image: "/static/icons/icon-192.png",
                     prefill: {
@@ -8865,7 +8865,7 @@ function PaymentsPortal() {
                     <div class="invoice-paper">
                         <div class="invoice-paper-header">
                             <div>
-                                <span class="brand-title">Groove Hub</span>
+                                <span class="brand-title">Grove Hub</span>
                                 <div style="font-size: 0.75rem; color: #636e72; margin-top: 2px;">
                                     Premier Video Editing & Tutoring Platform<br>
                                     Escrow Protected Commercial Hub
@@ -10207,7 +10207,7 @@ function AdminDashboard() {
                         </div>
                         <div>
                             <div style="font-size: 1.25rem; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                                <span>Groove Hub Admin Command Console</span>
+                                <span>Grove Hub Admin Command Console</span>
                                 <span class="mode-badge-pill mode-badge-admin">Exclusive Admin Access</span>
                             </div>
                             <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 3px;">
@@ -10842,7 +10842,7 @@ function PrivacyPolicy() {
                 <p style="color: var(--text-muted); font-size: 0.8125rem; margin-bottom: 24px;">Last updated: September 21, 2026</p>
 
                 <div style="color: var(--text-secondary); line-height: 1.7; font-size: 0.9375rem; display: flex; flex-direction: column; gap: 16px;">
-                    <p>At <strong>Groove Hub</strong>, your privacy and data security are our top priorities. This Privacy Policy describes how we collect, use, and protect your personal information when you use our platform and mobile applications.</p>
+                    <p>At <strong>Grove Hub</strong>, your privacy and data security are our top priorities. This Privacy Policy describes how we collect, use, and protect your personal information when you use our platform and mobile applications.</p>
 
                     <h3 style="color: var(--text-primary); margin-top: 12px;">1. Information We Collect</h3>
                     <p>We collect information necessary to connect creators with video editors and tutors, including:
@@ -10890,10 +10890,10 @@ function TermsOfService() {
                 <p style="color: var(--text-muted); font-size: 0.8125rem; margin-bottom: 24px;">Last updated: September 21, 2026</p>
 
                 <div style="color: var(--text-secondary); line-height: 1.7; font-size: 0.9375rem; display: flex; flex-direction: column; gap: 16px;">
-                    <p>Welcome to <strong>Groove Hub</strong>. By accessing our platform, website, or mobile application, you agree to be bound by these Terms of Service.</p>
+                    <p>Welcome to <strong>Grove Hub</strong>. By accessing our platform, website, or mobile application, you agree to be bound by these Terms of Service.</p>
 
                     <h3 style="color: var(--text-primary); margin-top: 12px;">1. Marketplace Services</h3>
-                    <p>Groove Hub provides a connection platform connecting content creators ("Buyers") with freelance video editors, animators, and English tutors ("Providers").</p>
+                    <p>Grove Hub provides a connection platform connecting content creators ("Buyers") with freelance video editors, animators, and English tutors ("Providers").</p>
 
                     <h3 style="color: var(--text-primary); margin-top: 12px;">2. Platform Commission & Escrow</h3>
                     <p>• The platform charges <strong>no commission</strong> on any bookings.
@@ -11109,7 +11109,7 @@ function VerifyEmailPage() {
             currentUser = await apiFetch('/auth/me');
             localStorage.setItem('current_user', JSON.stringify(currentUser));
             try { sessionStorage.removeItem('pending_verification'); } catch (_) {}
-            showToast('Email verified! Welcome to Groove Hub.', 'success');
+            showToast('Email verified! Welcome to Grove Hub.', 'success');
             router(currentUser?.user_type === 'ADMIN' ? '/admin' : '/');
         } catch (err) {
             if (errBox) errBox.innerHTML = `<div style="background: rgba(239,68,68,0.12); border:1px solid #ef4444; color:#ef4444; padding:10px 14px; border-radius:8px; font-size:0.85rem;">⚠️ ${escapeHTML(err.message || 'Verification failed.')}</div>`;
@@ -11225,7 +11225,7 @@ window.openBookingChat = async (bookingId, partyName = 'Collaborator') => {
             </div>
             <div style="background: rgba(99, 102, 241, 0.08); border-bottom: 1px solid var(--border); padding: 8px 14px; font-size: 0.75rem; color: var(--text-secondary); display: flex; align-items: center; gap: 8px;">
                 <span>🛡️</span>
-                <span><strong>Escrow Protection Active:</strong> Never send personal payments or UPI outside Groove Hub. Funds remain safely protected until you approve the work.</span>
+                <span><strong>Escrow Protection Active:</strong> Never send personal payments or UPI outside Grove Hub. Funds remain safely protected until you approve the work.</span>
             </div>
             <div class="chat-messages" id="chat-messages-container">
                 <div class="loading"><div class="spinner"></div></div>
@@ -11859,7 +11859,7 @@ function GrooveChat() {
         chatBox.appendChild(inputRow);
 
         document.body.appendChild(chatBox);
-        addBotMessage('👋 Hey there! I\'m Groove, your Groove Hub assistant. Ask me anything — try "I need a video editor right now" or "Find me an English tutor"!');
+        addBotMessage('👋 Hey there! I\'m Groove, your Grove Hub assistant. Ask me anything — try "I need a video editor right now" or "Find me an English tutor"!');
         textarea.focus();
     }
 
@@ -12010,13 +12010,13 @@ function GrooveChat() {
         }
 
         const replies = {
-            greeting: { text: '👋 Hey there! Welcome to Groove Hub. What can I help you with today? Try asking for a "video editor" or "English tutor"!' },
+            greeting: { text: '👋 Hey there! Welcome to Grove Hub. What can I help you with today? Try asking for a "video editor" or "English tutor"!' },
             find_video_editor_urgent: { text: '🎬 Here are active video editors available RIGHT NOW:\n\n' },
             find_video_editor: { text: '🎬 I can help you find video editors! Try these:\n\n• Browse all editors: click "Browse Talent" below\n• Create a booking: click "Create Booking" below\n\nWant me to take you to the marketplace?' },
             find_english_tutor: { text: '🗣️ I can help you find English tutors! Try these:\n\n• Browse tutors: click "Browse Talent" below\n• Create a booking: click "Create Booking" below\n\nLooking for IELTS prep, spoken English, or business English?' },
             find_writer: { text: '✍️ I can help you find writers! Try these:\n\n• Browse writers: click "Browse Talent" below\n• Create a booking: click "Create Booking" below\n\nNeed content writing, copywriting, or creative writing?' },
             edit_profile: { text: '👤 I\'ll take you to your profile page where you can edit your details, bio, and settings.' },
-            show_help: { text: '🤖 I\'m Groove, your Groove Hub assistant! Here\'s what I can help with:\n\n🎬 **Video Editors** — "I need a video editor right now"\n🗣️ **English Tutors** — "I want an English coach"\n✍️ **Writers** — "I need someone to write content"\n📦 **Create Package** — "I want to create a service"\n📋 **Create Booking** — "I want to book someone"\n💳 **Payments** — "Where\'s my money" or "payment status"\n👤 **Edit Profile** — "change my profile"\n🔧 **Admin Panel** — "admin" (admins only)\n\nJust type what you need!' },
+            show_help: { text: '🤖 I\'m Groove, your Grove Hub assistant! Here\'s what I can help with:\n\n🎬 **Video Editors** — "I need a video editor right now"\n🗣️ **English Tutors** — "I want an English coach"\n✍️ **Writers** — "I need someone to write content"\n📦 **Create Package** — "I want to create a service"\n📋 **Create Booking** — "I want to book someone"\n💳 **Payments** — "Where\'s my money" or "payment status"\n👤 **Edit Profile** — "change my profile"\n🔧 **Admin Panel** — "admin" (admins only)\n\nJust type what you need!' },
             payment_status: { text: '💳 I\'ll take you to your payments dashboard where you can see your escrow balance, pending payments, and transaction history.' },
             create_booking: { text: '📋 I\'ll take you to the booking page where you can select a provider and package to get started!' },
             create_package: { text: '📦 I\'ll take you to the package creation page where you can define your service offerings for buyers!' },
@@ -12405,7 +12405,7 @@ function MessagesInbox() {
                     <div style="width: 64px; height: 64px; border-radius: 50%; background: rgba(99, 102, 241, 0.1); color: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 2rem; margin-bottom: 14px;">
                         💬
                     </div>
-                    <h3 style="margin: 0 0 6px 0; color: var(--text-primary); font-weight: 800;">Your Groove Hub Inbox</h3>
+                    <h3 style="margin: 0 0 6px 0; color: var(--text-primary); font-weight: 800;">Your Grove Hub Inbox</h3>
                     <p style="font-size: 0.85rem; max-width: 380px; line-height: 1.45; margin: 0 0 18px 0;">Select a conversation on the left, or browse talent to talk with creators before placing your order.</p>
                     <button class="btn btn-primary" onclick="router('/')">Explore Creators</button>
                 </div>
@@ -13098,7 +13098,7 @@ function generateBitmojiSVG(state = {}, userName = 'Creator', userInitial = 'C')
         <g transform="translate(20, 24)">
             <rect width="180" height="28" rx="14" fill="rgba(0,0,0,0.35)" stroke="rgba(255,255,255,0.25)" stroke-width="1" />
             <circle cx="16" cy="14" r="5" fill="#10b981" />
-            <text x="30" y="18" fill="#ffffff" font-family="'Outfit', sans-serif" font-size="11" font-weight="700" letter-spacing="0.5">GROOVE HUB VERIFIED</text>
+            <text x="30" y="18" fill="#ffffff" font-family="'Outfit', sans-serif" font-size="11" font-weight="700" letter-spacing="0.5">GROVE HUB VERIFIED</text>
         </g>
 
         <g transform="translate(340, 24)">
@@ -13617,7 +13617,7 @@ window.showProviderIdCardModal = function(provider) {
             <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,0.15);padding-bottom:14px;margin-bottom:18px;">
                 <div style="display:flex;align-items:center;gap:8px;">
                     <img src="/static/icons/grove_hub_logo_dark.png" alt="Grove Hub" style="height:28px;width:auto;" onerror="this.style.display='none';" />
-                    <span style="font-weight:900;font-size:0.9rem;letter-spacing:1px;color:#f8fafc;">GROOVE HUB CREATOR ID</span>
+                    <span style="font-weight:900;font-size:0.9rem;letter-spacing:1px;color:#f8fafc;">GROVE HUB CREATOR ID</span>
                 </div>
                 <button type="button" onclick="this.closest('.modal-backdrop').remove()" style="background:none;border:none;color:#94a3b8;font-size:1.4rem;cursor:pointer;line-height:1;">&times;</button>
             </div>
@@ -13663,7 +13663,7 @@ window.renderWatermarkedVideoPlayer = function(videoUrl, isApproved = false, boo
     const watermarkedTag = isApproved ? '' : `
         <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-25deg);pointer-events:none;z-index:10;user-select:none;opacity:0.45;text-align:center;">
             <div style="font-size:1.6rem;font-weight:900;color:#ffffff;text-shadow:0 0 10px rgba(0,0,0,0.9);letter-spacing:3px;background:rgba(239,68,68,0.85);padding:8px 24px;border-radius:8px;border:2px solid #ffffff;">
-                GROOVE HUB DRAFT
+                GROVE HUB DRAFT
             </div>
             <div style="font-size:0.85rem;font-weight:800;color:#ffffff;text-shadow:0 0 8px rgba(0,0,0,0.9);margin-top:4px;">WATERMARKED PROOF OF WORK</div>
         </div>
@@ -13793,7 +13793,7 @@ window.renderAdminSearchAnalytics = async function() {
                     <span style="font-size:1.6rem;">🔍</span>
                     <div>
                         <h2 style="font-size:1.3rem;font-weight:900;color:var(--text-primary);margin:0;">Buyer Search Trends & Market Demand Analytics</h2>
-                        <div style="font-size:0.8rem;color:var(--text-secondary);margin-top:2px;">Real-time intelligence on what clients are searching for on Groove Hub</div>
+                        <div style="font-size:0.8rem;color:var(--text-secondary);margin-top:2px;">Real-time intelligence on what clients are searching for on Grove Hub</div>
                     </div>
                 </div>
                 <button type="button" onclick="this.closest('.modal-backdrop').remove()" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--text-muted);">&times;</button>
