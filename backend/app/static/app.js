@@ -4732,6 +4732,23 @@ function BuyerDashboard() {
 
                         <!-- 2. Render Top Rated Best Editors Sidebar Showcase -->
                         ${renderBestEditorsSidebar(allProviders)}
+                    <!-- Marketplace Footer Strip linking to Agency -->
+                    <div style="margin-top: 48px; padding: 32px 20px; border-top: 1px solid var(--border); text-align: center; background: var(--bg-card); border-radius: var(--radius);">
+                        <div style="font-weight: 800; font-size: 1.1rem; color: var(--text-primary); margin-bottom: 6px;">EditorMarketplace</div>
+                        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;">A Groove Hub product • Hire vetted video editors with 100% Escrow Protection.</p>
+                        <div style="display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; margin-bottom: 20px;">
+                            <a href="/portfolio" style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 8px; background: var(--bg-hover); color: var(--text-primary); font-size: 0.82rem; font-weight: 600; text-decoration: none; border: 1px solid var(--border);">
+                                🎬 Creator Editing Portfolio
+                            </a>
+                            <a href="https://groovehub.in" target="_blank" rel="noopener noreferrer" style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 8px; background: #2A0A0E; color: #FFF4E8; font-size: 0.82rem; font-weight: 700; text-decoration: none; border: 1px solid #F4B183;">
+                                🚀 Grow your business with reels (Groove Hub Agency)
+                            </a>
+                        </div>
+                        <p style="font-size: 0.75rem; color: var(--text-dim);">
+                            © 2026 EditorMarketplace — A Groove Hub product. 100% Escrow Protected.
+                        </p>
+                    </div>
+
 
                         <!-- 3. Render Verified Creators Showcase -->
                         ${filteredProviders.map(pr => {
@@ -6556,7 +6573,7 @@ const VETTING_TIERS_CONFIG = {
             {
                 id: 'beg_task_3',
                 title: '📝 Test Task 3: Dynamic Animated Subtitles Reel (30s)',
-                objective: 'Add viral Alex Hormozi style dynamic animated captions to talking-head footage.',
+                objective: 'Add dynamic kinetic animated captions to talking-head footage.',
                 brief: 'Accurately time every word with animated highlight pop colors (yellow/green), insert context emojis at emphasis words, and add subtle whoosh sound effects on key phrase transitions.',
                 deliverables: '1080x1920 MP4 with 100% accurate subtitle timing, high-contrast captions, and visual emoji pops.',
                 sample_footage_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800'

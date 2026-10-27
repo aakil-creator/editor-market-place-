@@ -1,14 +1,14 @@
 {
-  "name": "Groove Hub — Reels Studio Chennai",
-  "short_name": "Groove Hub",
-  "description": "Groove Hub plans, scripts, shoots and edits Instagram reels for local businesses in Chennai.",
+  "name": "EditorMarketplace — A Groove Hub product",
+  "short_name": "EditorMarket",
+  "description": "Hire top-tier video editors with 100% escrow protection. A Groove Hub product.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#0a1a40",
-  "theme_color": "#0a1a40",
-  "categories": ["business", "video", "marketing"],
+  "background_color": "#0f172a",
+  "theme_color": "#6c5ce7",
+  "categories": ["business", "video", "productivity"],
   "icons": [
     {
       "src": "/static/icons/icon-192.png",
@@ -37,17 +37,17 @@
   ],
   "shortcuts": [
     {
-      "name": "Book a Free Reel",
-      "short_name": "Free Reel",
-      "description": "Text us for a free shoot and reel",
-      "url": "https://wa.me/919344546733?text=Hi%20Groove%20Hub!%20I'd%20like%20to%20get%20a%20free%20shoot%20and%20reel%20for%20my%20business.",
+      "name": "Hire Video Editors",
+      "short_name": "Marketplace",
+      "description": "Browse and book vetted video editors",
+      "url": "/",
       "icons": [{ "src": "/static/icons/icon-192.png", "sizes": "192x192" }]
     },
     {
-      "name": "Featured Work",
-      "short_name": "Work",
-      "description": "Watch real on-location client reels",
-      "url": "/work",
+      "name": "Creator Portfolio",
+      "short_name": "Portfolio",
+      "description": "Watch video editing showcases & retention cuts",
+      "url": "/portfolio",
       "icons": [{ "src": "/static/icons/icon-192.png", "sizes": "192x192" }]
     }
   ]

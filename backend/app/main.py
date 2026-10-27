@@ -405,7 +405,8 @@ redoc_url = "/redoc" if IS_DEV else None
 openapi_url = "/openapi.json" if IS_DEV else None
 
 app = FastAPI(
-    title="Groove Hub",
+    title="EditorMarketplace",
+    description="A Groove Hub product — Marketplace for video editors with escrow protection",
     version="1.0.0",
     docs_url=docs_url,
     redoc_url=redoc_url,
@@ -414,7 +415,7 @@ app = FastAPI(
 
 # API app
 api_app = FastAPI(
-    title="Groove Hub API",
+    title="EditorMarketplace API",
     version="1.0.0",
     docs_url=docs_url,
     redoc_url=redoc_url,
@@ -425,7 +426,7 @@ _cors_origins = [
     origin.strip()
     for origin in os.getenv(
         "CORS_ORIGINS",
-        "https://syncra-qui2.onrender.com,https://localhost,capacitor://localhost,http://localhost:8000,http://127.0.0.1:8000"
+        "https://editors.groovehub.in,https://groovehub.in,https://syncra-qui2.onrender.com,https://localhost,capacitor://localhost,http://localhost:8000,http://127.0.0.1:8000"
     ).split(",")
     if origin.strip()
 ]
@@ -534,72 +535,57 @@ def get_static_file(path: str):
         return FileResponse(file_path, media_type=media_type, headers=CACHE_STATIC_HEADERS)
     return None
 
-next_static_dir = STATIC_DIR / "_next"
-if next_static_dir.is_dir():
-    app.mount("/_next", StaticFiles(directory=str(next_static_dir)), name="next_static")
-
 @app.get("/")
 async def root():
     return FileResponse(STATIC_DIR / "index.html", headers=CACHE_HTML_HEADERS)
 
-@app.get("/card")
-async def digital_card_page():
-    card_path = STATIC_DIR / "card.html"
-    if card_path.is_file():
-        return FileResponse(card_path, headers=CACHE_HTML_HEADERS)
-    return RedirectResponse(url="/", status_code=status.HTTP_302_FOUND)
-
-@app.get("/work")
-async def work_page():
-    return FileResponse(STATIC_DIR / "work.html", headers=CACHE_HTML_HEADERS)
-
-# 301 Permanent Redirects for legacy routes
 @app.get("/portfolio")
+async def portfolio_page():
+    portfolio_path = STATIC_DIR / "portfolio.html"
+    if portfolio_path.is_file():
+        return FileResponse(portfolio_path, headers=CACHE_HTML_HEADERS)
+    return FileResponse(STATIC_DIR / "index.html", headers=CACHE_HTML_HEADERS)
+
+# 301 Permanent Redirects for agency routes -> groovehub.in
 @app.get("/showcase")
-async def redirect_portfolio_to_work():
-    return RedirectResponse(url="/work", status_code=status.HTTP_301_MOVED_PERMANENTLY)
+@app.get("/work")
+async def redirect_agency_work():
+    return RedirectResponse(url="https://groovehub.in/#our-work", status_code=status.HTTP_301_MOVED_PERMANENTLY)
 
-@app.get("/marketplace")
-@app.get("/app")
-@app.get("/login")
-@app.get("/register")
-@app.get("/forgot-password")
-@app.get("/reset-password")
-@app.get("/verify-email")
-@app.get("/logout")
-@app.get("/checkout")
-@app.get("/pay")
-@app.get("/outreach")
-@app.get("/posters")
-async def redirect_marketplace_to_root():
-    return RedirectResponse(url="/", status_code=status.HTTP_301_MOVED_PERMANENTLY)
-
-@app.get("/agency-team/portal")
-async def redirect_agency_team_portal():
-    return RedirectResponse(url="/team-portal", status_code=status.HTTP_301_MOVED_PERMANENTLY)
+@app.get("/card")
+async def redirect_agency_card():
+    return RedirectResponse(url="https://groovehub.in/card", status_code=status.HTTP_301_MOVED_PERMANENTLY)
 
 @app.get("/team-portal")
-async def team_portal_page():
-    return FileResponse(STATIC_DIR / "team_portal.html", headers=CACHE_HTML_HEADERS)
+@app.get("/agency-team/portal")
+async def redirect_agency_team_portal():
+    return RedirectResponse(url="https://groovehub.in", status_code=status.HTTP_301_MOVED_PERMANENTLY)
 
 @app.get("/robots.txt")
 async def robots_endpoint():
     robots_path = STATIC_DIR / "robots.txt"
     if robots_path.is_file():
         return FileResponse(robots_path, media_type="text/plain", headers=CACHE_STATIC_HEADERS)
-    return Response(content="User-agent: *\nAllow: /\nAllow: /work\nAllow: /static/\nDisallow: /team-portal\nDisallow: /api/\nSitemap: https://syncra-qui2.onrender.com/sitemap.xml\n", media_type="text/plain")
+    return Response(content="User-agent: *\nAllow: /\nAllow: /portfolio\nAllow: /static/\nDisallow: /admin\nDisallow: /api/\nSitemap: https://editors.groovehub.in/sitemap.xml\n", media_type="text/plain")
 
 @app.get("/sitemap.xml")
 async def sitemap_endpoint():
     sitemap_path = STATIC_DIR / "sitemap.xml"
     if sitemap_path.is_file():
         return FileResponse(sitemap_path, media_type="application/xml", headers=CACHE_STATIC_HEADERS)
-    return Response(content="<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n<url><loc>https://syncra-qui2.onrender.com/</loc></url>\n<url><loc>https://syncra-qui2.onrender.com/work</loc></url>\n</urlset>", media_type="application/xml")
+    xml = (
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+        '<url><loc>https://editors.groovehub.in/</loc></url>\n'
+        '<url><loc>https://editors.groovehub.in/portfolio</loc></url>\n'
+        '</urlset>'
+    )
+    return Response(content=xml, media_type="application/xml")
 
 @app.get("/health")
 @api_app.get("/health")
 def root_health_check():
-    return {"status": "ok"}
+    return {"status": "ok", "service": "editor-marketplace"}
 
 @app.get("/{full_path:path}")
 async def spa_fallback(full_path: str):
@@ -3446,7 +3432,7 @@ TIER_TEST_TASKS = {
             {
                 "id": "beg_task_3",
                 "title": "📝 Task 3: Dynamic Animated Subtitles Reel (30s)",
-                "brief": "Add Alex Hormozi style animated captions to raw talking-head footage with word-by-word highlight colors, emojis, and sound pops.",
+                "brief": "Add dynamic kinetic animated captions to raw talking-head footage with word-by-word highlight colors, emojis, and sound pops.",
                 "deliverables": "1080x1920 MP4 with 100% accurate subtitle timing, high-contrast captions, and visual emoji pops.",
                 "sample_footage_url": "https://groovehub.com/samples/raw_creator_talking_head.zip"
             }

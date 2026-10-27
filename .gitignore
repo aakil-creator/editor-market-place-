@@ -35,3 +35,7 @@ backend/app/static/carrara.mp4
 *bg-scroll-original.mp4
 groove-hub-web/.next/
 groove-hub-web/out/
+legacy/groove-hub-web/node_modules/
+legacy/groove-hub-web/.next/
+legacy/groove-hub-web/out/
+*.zip
