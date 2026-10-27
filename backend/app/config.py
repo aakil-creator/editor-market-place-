@@ -20,7 +20,7 @@ WHATSAPP_NUMBER = os.getenv("GROOVE_WHATSAPP", "919344546733").strip()
 WHATSAPP_DISPLAY = os.getenv("GROOVE_WHATSAPP_DISPLAY", "+91 93445 46733").strip()
 
 # Email & Instagram handle (empty string cleanly hides elements in the UI)
-EMAIL = os.getenv("GROOVE_EMAIL", "").strip()
+EMAIL = os.getenv("GROOVE_EMAIL", "aaqil2025@gmail.com").strip()
 INSTAGRAM_HANDLE = os.getenv("GROOVE_INSTAGRAM", "").strip()
 INSTAGRAM_URL = f"https://instagram.com/{INSTAGRAM_HANDLE}" if INSTAGRAM_HANDLE else ""
 
