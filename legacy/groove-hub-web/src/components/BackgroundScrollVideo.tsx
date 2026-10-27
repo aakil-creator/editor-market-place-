@@ -13,7 +13,7 @@ export function BackgroundScrollVideo() {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    // Use alpha: false for direct GPU blitting (maximum frame rate and zero transparency bleed)
+    // Use alpha: false for direct GPU hardware blitting (prevents composition overhead and white flashes)
     const ctx = canvas.getContext("2d", { alpha: false });
     if (!ctx) return;
 
@@ -22,22 +22,42 @@ export function BackgroundScrollVideo() {
 
     let canvasWidth = window.innerWidth;
     let canvasHeight = window.innerHeight;
-    let lastRenderedIndex = -1;
+    let dpr = Math.min(window.devicePixelRatio || 1, 2);
 
-    // High DPI Retina scaling
-    const resizeCanvas = () => {
+    // High DPI Retina setup without matrix accumulation
+    const setupCanvasSize = () => {
       canvasWidth = window.innerWidth;
       canvasHeight = window.innerHeight;
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+
       canvas.width = Math.floor(canvasWidth * dpr);
       canvas.height = Math.floor(canvasHeight * dpr);
-      ctx.scale(dpr, dpr);
-      lastRenderedIndex = -1; // Force redraw on resize
-      renderCurrentPosition();
+
+      // Direct transform matrix (safe against repeated calls)
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = "high";
     };
 
-    // Calculate aspect ratio 'cover' dimensions
-    const drawCover = (img: HTMLImageElement) => {
+    // Ignore small mobile URL bar collapse/expand events (< 150px height delta)
+    let lastRecordedWidth = window.innerWidth;
+    let lastRecordedHeight = window.innerHeight;
+
+    const onResize = () => {
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      if (w !== lastRecordedWidth || Math.abs(h - lastRecordedHeight) > 150) {
+        lastRecordedWidth = w;
+        lastRecordedHeight = h;
+        setupCanvasSize();
+        renderBlend(currentProgress);
+      }
+    };
+
+    setupCanvasSize();
+
+    // Aspect ratio 'cover' calculations
+    const drawCover = (img: HTMLImageElement, alpha: number = 1.0) => {
       if (!img || !img.complete || img.naturalWidth === 0) return;
 
       const imgRatio = img.naturalWidth / img.naturalHeight;
@@ -59,74 +79,126 @@ export function BackgroundScrollVideo() {
         drawY = 0;
       }
 
+      ctx.globalAlpha = alpha;
       ctx.drawImage(img, drawX, drawY, drawW, drawH);
     };
 
-    // Draw the target frame, or the closest available loaded frame
-    const renderFrame = (targetIdx: number) => {
-      if (targetIdx === lastRenderedIndex) return;
+    // Find the exact frame, or gracefully scan outward for the nearest loaded frame
+    const getCandidateFrame = (targetIdx: number): HTMLImageElement | null => {
+      const exact = imagesRef.current[targetIdx];
+      if (exact && exact.complete && exact.naturalWidth > 0) {
+        return exact;
+      }
+      for (let dist = 1; dist < TOTAL_FRAMES; dist++) {
+        const prev = targetIdx - dist;
+        if (prev >= 0) {
+          const pImg = imagesRef.current[prev];
+          if (pImg && pImg.complete && pImg.naturalWidth > 0) return pImg;
+        }
+        const next = targetIdx + dist;
+        if (next < TOTAL_FRAMES) {
+          const nImg = imagesRef.current[next];
+          if (nImg && nImg.complete && nImg.naturalWidth > 0) return nImg;
+        }
+      }
+      return null;
+    };
 
-      let candidate: HTMLImageElement | null = imagesRef.current[targetIdx];
+    // Continuous Sub-Frame Alpha Crossfading (Apple-grade fluid analog transition)
+    const renderBlend = (progress: number) => {
+      const clamped = Math.min(1, Math.max(0, progress));
+      const exactFrame = clamped * (TOTAL_FRAMES - 1);
+      const floorIdx = Math.floor(exactFrame);
+      const ceilIdx = Math.min(TOTAL_FRAMES - 1, floorIdx + 1);
+      const fraction = exactFrame - floorIdx;
 
-      // If exact frame is still downloading, gracefully fall back to the nearest loaded frame
-      if (!candidate || !candidate.complete || candidate.naturalWidth === 0) {
-        for (let dist = 1; dist < TOTAL_FRAMES; dist++) {
-          const prev = targetIdx - dist;
-          if (prev >= 0 && imagesRef.current[prev]?.complete && imagesRef.current[prev]!.naturalWidth > 0) {
-            candidate = imagesRef.current[prev];
-            break;
-          }
-          const next = targetIdx + dist;
-          if (next < TOTAL_FRAMES && imagesRef.current[next]?.complete && imagesRef.current[next]!.naturalWidth > 0) {
-            candidate = imagesRef.current[next];
-            break;
-          }
+      const imgFloor = getCandidateFrame(floorIdx);
+      if (imgFloor) {
+        drawCover(imgFloor, 1.0);
+      }
+
+      if (fraction > 0.005 && ceilIdx !== floorIdx) {
+        const imgCeil = getCandidateFrame(ceilIdx);
+        if (imgCeil && imgCeil !== imgFloor) {
+          drawCover(imgCeil, fraction);
         }
       }
 
-      if (candidate && candidate.complete && candidate.naturalWidth > 0) {
-        drawCover(candidate);
-        lastRenderedIndex = targetIdx;
-      }
+      ctx.globalAlpha = 1.0;
     };
 
-    // 1. Preload Frame 1 immediately for instant presentation
-    const frame1 = new Image();
-    frame1.src = `${folder}/frame_001.webp`;
-    frame1.onload = () => {
-      imagesRef.current[0] = frame1;
-      setIsLoaded(true);
-      resizeCanvas();
-      drawCover(frame1);
-      lastRenderedIndex = 0;
-    };
+    // --- Progressive Priority Preloader with Background Async Decoding ---
+    let isCancelled = false;
 
-    // 2. Preload remaining frames progressively
-    for (let i = 2; i <= TOTAL_FRAMES; i++) {
+    const loadSingleFrame = async (idx: number): Promise<HTMLImageElement | null> => {
+      if (imagesRef.current[idx]) return imagesRef.current[idx];
+
       const img = new Image();
-      const idx = i - 1;
-      img.src = `${folder}/frame_${String(i).padStart(3, "0")}.webp`;
-      img.onload = () => {
-        imagesRef.current[idx] = img;
-        // If the user is currently looking at this frame, render it immediately
-        if (targetFrameIndex === idx && lastRenderedIndex !== idx) {
-          renderFrame(idx);
-        }
-      };
-    }
+      img.src = `${folder}/frame_${String(idx + 1).padStart(3, "0")}.webp`;
 
-    // 3. Smooth Scroll Progress Tracking
+      try {
+        if (typeof (img as any).decode === "function") {
+          await (img as any).decode();
+        } else {
+          await new Promise<void>((resolve, reject) => {
+            img.onload = () => resolve();
+            img.onerror = () => reject();
+          });
+        }
+      } catch {
+        // Fallback: browser will still paint when complete
+      }
+
+      if (!isCancelled) {
+        imagesRef.current[idx] = img;
+      }
+      return img;
+    };
+
+    // 1. Instant Initial Paint: Frame 1 is decoded and displayed immediately
+    loadSingleFrame(0).then((frame1) => {
+      if (frame1 && !isCancelled) {
+        setIsLoaded(true);
+        drawCover(frame1, 1.0);
+      }
+    });
+
+    // 2. High-Priority Near-Field Preload (Frames 2 through 20 covering first 2,500px scroll)
+    const runPriorityPreload = async () => {
+      // Chunk 1: Initial critical scroll range
+      for (let i = 1; i < Math.min(24, TOTAL_FRAMES); i++) {
+        if (isCancelled) return;
+        await loadSingleFrame(i);
+      }
+
+      // Chunk 2: Progressive concurrent batching for remaining frames (6 at a time to prevent socket stalls)
+      const batchSize = 6;
+      for (let i = 24; i < TOTAL_FRAMES; i += batchSize) {
+        if (isCancelled) return;
+        const batch: Promise<HTMLImageElement | null>[] = [];
+        for (let j = i; j < Math.min(i + batchSize, TOTAL_FRAMES); j++) {
+          batch.push(loadSingleFrame(j));
+        }
+        await Promise.all(batch);
+      }
+    };
+
+    runPriorityPreload();
+
+    // --- Scroll Position & Inertia Tracking ---
     let targetProgress = 0;
     let currentProgress = 0;
-    let targetFrameIndex = 0;
+    let isTouching = false;
     let animId: number;
 
-    const computeProgress = () => {
+    const computeProgress = (): number => {
+      // On desktop, sync with Lenis smooth-scroll instance if active
       const lenis = (window as any).__lenis;
       if (lenis && typeof lenis.progress === "number" && !isNaN(lenis.progress)) {
         return Math.min(1, Math.max(0, lenis.progress));
       }
 
+      // Native fallback / mobile touch scroll
       const docElem = document.documentElement;
       const docHeight = Math.max(docElem.scrollHeight, document.body.scrollHeight, 1);
       const winHeight = window.innerHeight;
@@ -135,38 +207,51 @@ export function BackgroundScrollVideo() {
       return Math.min(1, Math.max(0, scrollY / maxScroll));
     };
 
-    const renderCurrentPosition = () => {
-      const idx = Math.min(TOTAL_FRAMES - 1, Math.max(0, Math.floor(currentProgress * TOTAL_FRAMES)));
-      targetFrameIndex = idx;
-      renderFrame(idx);
-    };
-
-    const onScrollEvent = () => {
+    const onScroll = () => {
       targetProgress = computeProgress();
     };
 
-    window.addEventListener("scroll", onScrollEvent, { passive: true });
-    window.addEventListener("touchmove", onScrollEvent, { passive: true });
-    window.addEventListener("resize", resizeCanvas, { passive: true });
-    targetProgress = computeProgress();
-    resizeCanvas();
+    const onTouchStart = () => {
+      isTouching = true;
+    };
 
-    // 4. 60fps/120fps Animation Loop with Sub-Frame Inertia Interpolation
+    const onTouchEnd = () => {
+      // Keep mobile touch sensitivity during inertial deceleration
+      setTimeout(() => {
+        isTouching = false;
+      }, 400);
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onResize, { passive: true });
+    window.addEventListener("touchstart", onTouchStart, { passive: true });
+    window.addEventListener("touchend", onTouchEnd, { passive: true });
+
+    targetProgress = computeProgress();
+    currentProgress = targetProgress;
+
+    // --- 60fps/120fps Sub-Frame Liquid Animation Loop ---
+    let lastRenderedVal = -1;
+
     const renderLoop = () => {
       targetProgress = computeProgress();
-
       const diff = targetProgress - currentProgress;
-      if (Math.abs(diff) > 0.0001) {
-        // Silky sub-frame inertia matching Lenis momentum
-        const lerpSpeed = Math.abs(diff) > 0.06 ? 0.22 : 0.16;
+
+      if (Math.abs(diff) > 0.00005) {
+        // Adaptive Inertia:
+        // On mobile touch, responsive lerp (0.40) locks rotation directly to the user's thumb without drag lag.
+        // On desktop wheel, silky lerp (0.20) provides cinematic momentum across discrete mouse ticks.
+        const lerpSpeed = isTouching ? 0.42 : Math.abs(diff) > 0.04 ? 0.26 : 0.20;
         currentProgress += diff * lerpSpeed;
       } else {
         currentProgress = targetProgress;
       }
 
-      const idx = Math.min(TOTAL_FRAMES - 1, Math.max(0, Math.floor(currentProgress * TOTAL_FRAMES)));
-      targetFrameIndex = idx;
-      renderFrame(idx);
+      // Only draw when the sub-frame position has shifted noticeably (saves GPU power when idle)
+      if (Math.abs(currentProgress - lastRenderedVal) > 0.0001) {
+        renderBlend(currentProgress);
+        lastRenderedVal = currentProgress;
+      }
 
       animId = requestAnimationFrame(renderLoop);
     };
@@ -174,9 +259,11 @@ export function BackgroundScrollVideo() {
     animId = requestAnimationFrame(renderLoop);
 
     return () => {
-      window.removeEventListener("scroll", onScrollEvent);
-      window.removeEventListener("touchmove", onScrollEvent);
-      window.removeEventListener("resize", resizeCanvas);
+      isCancelled = true;
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onResize);
+      window.removeEventListener("touchstart", onTouchStart);
+      window.removeEventListener("touchend", onTouchEnd);
       cancelAnimationFrame(animId);
     };
   }, []);
