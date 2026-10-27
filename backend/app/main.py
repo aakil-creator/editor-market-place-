@@ -474,6 +474,11 @@ next_static_dir = STATIC_DIR / "_next"
 if next_static_dir.exists():
     app.mount("/_next", StaticFiles(directory=str(next_static_dir)), name="next_static")
 
+# Mount pre-rendered frame sequence assets for background scroll engine
+frames_static_dir = STATIC_DIR / "frames"
+if frames_static_dir.exists():
+    app.mount("/frames", StaticFiles(directory=str(frames_static_dir)), name="frames_static")
+
 CACHE_HTML_HEADERS = {
     "Cache-Control": "public, max-age=300, stale-while-revalidate=600"
 }
