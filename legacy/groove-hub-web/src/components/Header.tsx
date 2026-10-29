@@ -3,14 +3,12 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, ArrowUpRight, QrCode } from "lucide-react";
+import { Menu, X, ArrowUpRight } from "lucide-react";
 import { siteConfig, getWhatsAppUrl } from "../../site.config";
-import { SmartCardModal } from "./SmartCardModal";
 
 export function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [smartCardOpen, setSmartCardOpen] = useState(false);
 
   useEffect(() => {
     let ticking = false;
@@ -88,16 +86,6 @@ export function Header() {
 
         {/* Action Buttons (Smart Card + Free Reel CTA) */}
         <div className="hidden sm:flex items-center gap-2.5">
-          {/* Smart Visiting Card & Scanner Button */}
-          <button
-            onClick={() => setSmartCardOpen(true)}
-            className="group inline-flex items-center gap-1.5 rounded-full bg-white/80 hover:bg-white text-[#1e293b] hover:text-[#6c5ce7] border border-gray-200 hover:border-[#6c5ce7]/50 px-3.5 py-2 text-xs font-bold transition-all shadow-xs active:scale-95 cursor-pointer"
-            aria-label="Open Smart Visiting Card Scanner"
-          >
-            <QrCode className="w-3.5 h-3.5 text-[#6c5ce7] group-hover:scale-110 transition-transform" />
-            <span>Digital Card</span>
-          </button>
-
           <a
             href={freeOfferUrl}
             target="_blank"
@@ -131,26 +119,6 @@ export function Header() {
             className="md:hidden max-w-md mx-auto mt-2 rounded-2xl bg-white/95 backdrop-blur-2xl border border-white/80 p-5 shadow-2xl text-[#1e293b]"
           >
             <div className="flex flex-col gap-2.5">
-              {/* Mobile Smart Card Highlight Button */}
-              <motion.button
-                initial={{ opacity: 0, x: -12 }}
-                animate={{ opacity: 1, x: 0 }}
-                whileTap={{ scale: 0.97 }}
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  setSmartCardOpen(true);
-                }}
-                className="flex items-center justify-between px-3.5 py-2.5 text-sm font-bold text-[#6c5ce7] bg-[#6c5ce7]/10 border border-[#6c5ce7]/25 rounded-xl transition-all active:scale-98"
-              >
-                <div className="flex items-center gap-2">
-                  <QrCode className="w-4 h-4 text-[#6c5ce7]" />
-                  <span>Smart Visiting Card &amp; Scanner</span>
-                </div>
-                <span className="text-[10px] uppercase font-bold text-white bg-[#6c5ce7] px-2 py-0.5 rounded-full">
-                  Scan
-                </span>
-              </motion.button>
-
               {navLinks.map((link, idx) => (
                 <motion.a
                   key={link.name}
@@ -186,8 +154,6 @@ export function Header() {
         )}
       </AnimatePresence>
 
-      {/* Smart Card Interactive Scanner Modal */}
-      <SmartCardModal isOpen={smartCardOpen} onClose={() => setSmartCardOpen(false)} />
     </header>
   );
 }

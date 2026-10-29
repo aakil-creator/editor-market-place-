@@ -26,7 +26,6 @@ export function Footer() {
     { name: "Who We Help", href: "#who-we-help" },
     { name: "Packages", href: "#packages" },
     { name: "Free Market Check", href: "#free-check" },
-    { name: "Smart Visiting Card", href: "/card" },
     { name: "FAQ", href: "#faq" },
   ];
 

@@ -550,14 +550,11 @@ def get_static_file(path: str):
 async def root():
     return FileResponse(STATIC_DIR / "index.html", headers=CACHE_HTML_HEADERS)
 
-# Digital Visiting Card
+# Digital Visiting Card (Permanently removed - 301 redirect to homepage)
 @app.get("/card")
 @app.get("/card/")
 async def digital_visiting_card():
-    card_path = STATIC_DIR / "card.html"
-    if card_path.is_file():
-        return FileResponse(card_path, headers=CACHE_HTML_HEADERS)
-    return FileResponse(STATIC_DIR / "index.html", headers=CACHE_HTML_HEADERS)
+    return RedirectResponse(url="/", status_code=status.HTTP_301_MOVED_PERMANENTLY)
 
 # Editor Marketplace
 @app.get("/marketplace")
@@ -594,7 +591,7 @@ async def robots_endpoint():
     robots_path = STATIC_DIR / "robots.txt"
     if robots_path.is_file():
         return FileResponse(robots_path, media_type="text/plain", headers=CACHE_STATIC_HEADERS)
-    return Response(content="User-agent: *\nAllow: /\nAllow: /card\nAllow: /marketplace\nAllow: /portfolio\nDisallow: /admin\nDisallow: /api/\nSitemap: https://syncra-qui2.onrender.com/sitemap.xml\n", media_type="text/plain")
+    return Response(content="User-agent: *\nAllow: /\nAllow: /marketplace\nAllow: /portfolio\nDisallow: /admin\nDisallow: /api/\nSitemap: https://syncra-qui2.onrender.com/sitemap.xml\n", media_type="text/plain")
 
 @app.get("/sitemap.xml")
 async def sitemap_endpoint():
@@ -605,7 +602,6 @@ async def sitemap_endpoint():
         '<?xml version="1.0" encoding="UTF-8"?>\n'
         '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
         '<url><loc>https://syncra-qui2.onrender.com/</loc></url>\n'
-        '<url><loc>https://syncra-qui2.onrender.com/card</loc></url>\n'
         '<url><loc>https://syncra-qui2.onrender.com/marketplace</loc></url>\n'
         '<url><loc>https://syncra-qui2.onrender.com/portfolio</loc></url>\n'
         '</urlset>'

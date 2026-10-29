@@ -55,16 +55,16 @@ def test_agency_site_primary_at_root():
     assert "grovehub.in" not in text
     assert "editors.groovehub.in" not in text
 
-def test_digital_visiting_card_served_directly():
-    """Verify that /card serves the digital visiting card directly on Render with 200 OK (no redirect)."""
+def test_digital_visiting_card_redirects_to_root():
+    """Verify that /card redirects permanently to root (301) and Digital Card is removed."""
     res = client.get("/card", follow_redirects=False)
-    assert res.status_code == 200
-    text = res.text
-    assert ("GROVE HUB" in text or "GROOVE HUB" in text or "Grove Hub" in text)
-    assert "919344546733" in text
-    assert "groovehub.in" not in text
-    assert "grovehub.in" not in text
-    assert "editors.groovehub.in" not in text
+    assert res.status_code == 301
+    assert res.headers["location"] == "/"
+
+    # Verify root page does not show the Digital Card button
+    res_root = client.get("/")
+    assert res_root.status_code == 200
+    assert "Digital Card" not in res_root.text
 
 def test_marketplace_route_serves_spa():
     """Verify that /marketplace serves the EditorMarketplace SPA."""
