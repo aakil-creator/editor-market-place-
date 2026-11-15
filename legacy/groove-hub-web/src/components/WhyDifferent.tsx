@@ -80,7 +80,7 @@ export function WhyDifferent() {
         </div>
 
         {/* Comparison Block: Typical Agency vs Groove Hub */}
-        <div className="rounded-3xl border border-white/80 bg-white/75 backdrop-blur-xl p-6 sm:p-10 lg:p-12 shadow-2xl shadow-black/5 overflow-hidden relative">
+        <div className="rounded-3xl border border-gray-200/80 bg-white/95 backdrop-blur-xl p-6 sm:p-10 lg:p-12 shadow-2xl shadow-black/5 overflow-hidden relative">
           <div className="max-w-3xl mb-8">
             <h3 className="font-serif font-bold text-2xl sm:text-3xl text-[#1e293b] mb-3">
               The Reality of Local Social Media

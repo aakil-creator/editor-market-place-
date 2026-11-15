@@ -9,7 +9,7 @@ import { getWhatsAppUrl } from "../../site.config";
 
 interface ReelBlueprint {
   id: string;
-  category: "gym" | "cafe" | "boutique" | "salon";
+  category: "gym" | "cafe" | "boutique" | "salon" | "clinic" | "realestate" | "auto";
   industryLabel: string;
   title: string;
   location: string;
@@ -27,7 +27,7 @@ interface ReelBlueprint {
 }
 
 export function WorkShowcase() {
-  const [selectedCategory, setSelectedCategory] = useState<"all" | "gym" | "cafe" | "boutique" | "salon">("all");
+  const [selectedCategory, setSelectedCategory] = useState<"all" | "gym" | "cafe" | "boutique" | "salon" | "clinic" | "realestate" | "auto">("all");
 
   const blueprints: ReelBlueprint[] = [
     {
@@ -46,7 +46,7 @@ export function WorkShowcase() {
         lighting: "High-Contrast Rim",
         hookStyle: "Form Mistake Callout",
       },
-      whatsappPrompt: "Hi Grove Hub, I run a Gym/Fitness studio in Chennai and want to discuss shooting high-retention Instagram reels.",
+      whatsappPrompt: "Hi Groove Hub, I run a Gym/Fitness studio in Chennai and want to discuss shooting high-retention Instagram reels.",
     },
     {
       id: "cafe-blueprint",
@@ -64,7 +64,25 @@ export function WorkShowcase() {
         lighting: "Warm Ambient Softbox",
         hookStyle: "Macro Foley ASMR",
       },
-      whatsappPrompt: "Hi Grove Hub, I own a Cafe/Restaurant in Chennai and want to shoot cinematic food and ambience reels.",
+      whatsappPrompt: "Hi Groove Hub, I own a Cafe/Restaurant in Chennai and want to shoot cinematic food and ambience reels.",
+    },
+    {
+      id: "clinic-blueprint",
+      category: "clinic",
+      industryLabel: "Clinics & Healthcare",
+      title: "Apex Advanced Dental Studio & Smile Clinic",
+      location: "Besant Nagar, Chennai",
+      hookHeadline: "Why your teeth hurt with cold water (And it's not a cavity)",
+      description: "Empathetic, reassuring medical explanation featuring 3D intraoral digital wand scans and clear aligner consultations that turns dental fear into immediate patient appointments.",
+      posterSrc: "/posters/tech-reel.jpg",
+      hookStat: "95% Hook Retention",
+      tags: ["Patient Trust Arc", "3D Digital Wand Scan", "Zero-Fear Tone", "Consultation Bookings"],
+      shootSpecs: {
+        duration: "40-Sec Cut",
+        lighting: "Diffused Clinical Daylight",
+        hookStyle: "Curiosity Diagnosis Hook",
+      },
+      whatsappPrompt: "Hi Groove Hub, I run a Clinic/Dental practice in Chennai and want high-trust patient educational reels.",
     },
     {
       id: "boutique-blueprint",
@@ -82,7 +100,7 @@ export function WorkShowcase() {
         lighting: "Diffused Studio Glow",
         hookStyle: "Fabric Texture Hook",
       },
-      whatsappPrompt: "Hi Grove Hub, I run a Boutique/Fashion Studio in Chennai and want high-converting Instagram reels.",
+      whatsappPrompt: "Hi Groove Hub, I run a Boutique/Fashion Studio in Chennai and want high-converting Instagram reels.",
     },
     {
       id: "salon-blueprint",
@@ -100,7 +118,43 @@ export function WorkShowcase() {
         lighting: "Halo Ring + Soft Fill",
         hookStyle: "Instant Transformation",
       },
-      whatsappPrompt: "Hi Grove Hub, I run a Salon/Aesthetics clinic in Chennai and want high-end transformation reels.",
+      whatsappPrompt: "Hi Groove Hub, I run a Salon/Aesthetics clinic in Chennai and want high-end transformation reels.",
+    },
+    {
+      id: "realestate-blueprint",
+      category: "realestate",
+      industryLabel: "Real Estate & Turnkey Interiors",
+      title: "Marina Crest Penthouse & Turnkey Interiors",
+      location: "ECR & Besant Nagar, Chennai",
+      hookHeadline: "Touring a ₹2.8 Cr penthouse with sea-breeze terrace",
+      description: "High-production architectural glidecam tour highlighting Italian marble flooring, custom modular kitchen finishes, and sea-view terrace framing designed for HNI buyer inquiries.",
+      posterSrc: "/posters/gym-reel.jpg",
+      hookStat: "92% Hook Retention",
+      tags: ["Cinematic Glidecam", "Architectural Lighting", "HNI Buyer Leads", "Turnkey Contracts"],
+      shootSpecs: {
+        duration: "50-Sec Cut",
+        lighting: "Natural Golden Hour Fill",
+        hookStyle: "Luxury Walkthrough Hook",
+      },
+      whatsappPrompt: "Hi Groove Hub, I represent a Real Estate/Interior Design firm in Chennai and want architectural showcase reels.",
+    },
+    {
+      id: "auto-blueprint",
+      category: "auto",
+      industryLabel: "Auto Detailing & Supercar Garages",
+      title: "CeramiCraft PPF & Auto Detailing Studio",
+      location: "OMR, Chennai",
+      hookHeadline: "Watch this razor scratch test on self-healing TPU PPF",
+      description: "Visually unmissable scratch-and-heat-gun recovery demonstration, snow-foam wash ASMR, and mirror gloss reflections that sell ₹80,000+ Paint Protection Film packages.",
+      posterSrc: "/posters/salon-reel.jpg",
+      hookStat: "97% Hook Retention",
+      tags: ["Razor Scratch Test", "Self-Healing Proof", "Snow Foam ASMR", "PPF Packages"],
+      shootSpecs: {
+        duration: "35-Sec Cut",
+        lighting: "High-Gloss Inspection LED",
+        hookStyle: "Extreme Demonstration Hook",
+      },
+      whatsappPrompt: "Hi Groove Hub, I operate an Auto Detailing/Garage studio in Chennai and want high-converting showcase reels.",
     },
   ];
 
@@ -110,43 +164,46 @@ export function WorkShowcase() {
   }, [selectedCategory]);
 
   const categories = [
-    { id: "all", label: "All Industries (4)" },
+    { id: "all", label: `All Industries (${blueprints.length})` },
     { id: "gym", label: "Gyms & Fitness" },
     { id: "cafe", label: "Cafes & Dining" },
+    { id: "clinic", label: "Clinics & Doctors" },
     { id: "boutique", label: "Boutiques & Couture" },
     { id: "salon", label: "Salons & Aesthetics" },
+    { id: "realestate", label: "Real Estate & Interiors" },
+    { id: "auto", label: "Auto Detailing" },
   ] as const;
 
   return (
-    <section id="our-work" className="py-28 px-4 sm:px-6 relative bg-transparent border-t border-white/60">
+    <section id="our-work" className="py-24 sm:py-28 px-4 sm:px-6 relative bg-transparent border-t border-white/60">
       <div className="max-w-6xl mx-auto">
         
         {/* Section Heading */}
         <div className="text-center max-w-3xl mx-auto mb-12 sm:mb-16">
-          <div className="inline-flex items-center gap-2 rounded-full border border-[#6c5ce7]/30 bg-white/80 px-4 py-1.5 text-xs font-semibold text-[#6c5ce7] uppercase tracking-wider mb-4 shadow-sm backdrop-blur-md">
+          <div className="inline-flex items-center gap-2 rounded-full border border-[#B85014]/25 bg-white/95 px-4 py-1.5 text-xs font-bold text-[#B85014] uppercase tracking-wider mb-4 shadow-sm backdrop-blur-md">
             <Sparkles className="w-3.5 h-3.5" />
             <span>On-Location Production Blueprints Across Chennai</span>
           </div>
-          <h2 className="font-serif font-bold text-3xl sm:text-4xl md:text-5xl text-[#1e293b] tracking-tight mb-4 leading-tight">
-            How we engineer reels for <span className="italic font-normal text-[#6c5ce7]">Chennai businesses.</span>
+          <h2 className="font-serif font-bold text-3xl sm:text-4xl md:text-5xl text-[#2A0A0E] tracking-tight mb-4 leading-tight">
+            How we engineer reels for <span className="italic font-normal text-[#B85014]">every Chennai business.</span>
           </h2>
-          <p className="text-base sm:text-lg text-[#334155] font-normal leading-relaxed">
-            Every reel we produce is planned on location by our team of four. We test the hook, bring cinema camera stabilization and wireless audio, and craft edits tuned specifically for mobile phone retention.
+          <p className="text-base sm:text-lg text-[#2A0A0E] font-medium leading-relaxed">
+            Every reel we produce is planned on location by our team of four. We test the hook, bring cinema camera stabilization and wireless audio, and craft edits tuned specifically for mobile phone retention across retail, clinical, hospitality, and service brands.
           </p>
         </div>
 
-        {/* Industry Filter Pills */}
-        <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 mb-12 max-w-2xl mx-auto">
+        {/* Filter Switcher Tabs */}
+        <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 mb-12 sm:mb-16">
           {categories.map((cat) => {
             const isActive = selectedCategory === cat.id;
             return (
               <button
                 key={cat.id}
                 onClick={() => setSelectedCategory(cat.id)}
-                className={`px-4 py-2 rounded-full text-xs sm:text-sm font-semibold transition-all duration-200 cursor-pointer ${
+                className={`px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-semibold transition-all duration-200 border cursor-pointer ${
                   isActive
-                    ? "bg-[#6c5ce7] text-white shadow-md shadow-[#6c5ce7]/25 scale-105"
-                    : "bg-white/80 text-[#475569] hover:bg-white border border-white/80 hover:text-[#1e293b] shadow-xs"
+                    ? "bg-[#2A0A0E] text-white border-[#2A0A0E] shadow-md shadow-[#2A0A0E]/15"
+                    : "bg-white/95 text-[#2A0A0E] border-gray-200/90 hover:bg-white font-semibold hover:border-[#F4B183]/40 shadow-xs"
                 }`}
               >
                 {cat.label}
@@ -155,75 +212,60 @@ export function WorkShowcase() {
           })}
         </div>
 
-        {/* Vertical Production Blueprints Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 max-w-5xl mx-auto">
+        {/* Blueprints Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
           <AnimatePresence mode="popLayout">
             {filteredBlueprints.map((item) => (
               <motion.div
                 key={item.id}
                 layout
-                initial={{ opacity: 0, scale: 0.95 }}
+                initial={{ opacity: 0, scale: 0.96 }}
                 animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 0.35 }}
-                className="glass-card p-6 sm:p-7 rounded-3xl border border-white/80 bg-white/75 backdrop-blur-xl flex flex-col justify-between shadow-xl shadow-black/5 hover:shadow-2xl hover:shadow-[#6c5ce7]/10 transition-all group"
+                exit={{ opacity: 0, scale: 0.96 }}
+                transition={{ duration: 0.3 }}
+                className="rounded-3xl border border-gray-200/90 bg-white/95 p-5 sm:p-6 shadow-xl backdrop-blur-xl flex flex-col justify-between hover:shadow-2xl hover:border-[#F4B183]/50 transition-all duration-300 group"
               >
                 <div>
-                  {/* Top Badges */}
-                  <div className="flex items-center justify-between gap-2 mb-5">
-                    <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#6c5ce7] uppercase tracking-wider bg-[#6c5ce7]/10 px-3 py-1 rounded-full border border-[#6c5ce7]/20">
-                      {item.industryLabel}
-                    </span>
-                    <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[#64748b] bg-white/90 px-2.5 py-1 rounded-md border border-white/90 shadow-2xs">
-                      <MapPin className="w-3 h-3 text-[#6c5ce7]" />
-                      {item.location}
-                    </span>
-                  </div>
+                  {/* Phone Simulator Frame */}
+                  <div className="relative aspect-[9/14] sm:aspect-[9/13] w-full rounded-2xl overflow-hidden bg-black mb-5 shadow-inner">
+                    <img
+                      src={item.posterSrc}
+                      alt={item.title}
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    />
 
-                  {/* High-Fidelity Phone Blueprint Frame (Zero Video Files, Instant 60fps) */}
-                  <div className="w-full max-w-[270px] sm:max-w-[290px] mx-auto mb-6">
-                    <div className="phone-mockup-frame relative border-4 border-white/90 shadow-2xl overflow-hidden rounded-[28px] bg-black group-hover:border-[#6c5ce7]/40 transition-colors">
-                      <div className="phone-mockup-speaker" />
+                    {/* Gradient Overlay for Readability */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-black/40" />
 
-                      {/* Crisp Poster Frame */}
-                      <img
-                        src={item.posterSrc}
-                        alt={`Reel Blueprint for ${item.title}`}
-                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-90"
-                      />
+                    {/* Top Stats Strip */}
+                    <div className="absolute top-3 left-3 right-3 flex items-center justify-between text-[11px] font-bold text-white z-20">
+                      <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/15">
+                        <MapPin className="w-3 h-3 text-[#F4B183]" />
+                        <span>{item.location}</span>
+                      </span>
+                      <span className="px-2.5 py-1 rounded-full bg-[#22c55e]/90 text-white backdrop-blur-md font-sans text-[10px] tracking-wide">
+                        {item.hookStat}
+                      </span>
+                    </div>
 
-                      {/* Viewfinder Crosshair Overlays */}
-                      <div className="absolute inset-4 pointer-events-none border border-white/15 rounded-xl z-20 flex flex-col justify-between p-2">
-                        <div className="flex justify-between items-start text-[9px] font-mono text-white/80 tracking-widest uppercase">
-                          <span className="flex items-center gap-1 bg-black/60 px-2 py-0.5 rounded backdrop-blur-xs">
-                            <span className="w-2 h-2 rounded-full bg-[#ef4444] animate-pulse" />
-                            REC 4K
-                          </span>
-                          <span className="bg-black/60 px-2 py-0.5 rounded backdrop-blur-xs text-[#22c55e] font-bold">
-                            {item.hookStat}
-                          </span>
-                        </div>
+                    {/* Center Aesthetic Watermark */}
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-40 group-hover:opacity-60 transition-opacity">
+                      <div className="w-12 h-12 rounded-full border border-white/40 flex items-center justify-center backdrop-blur-xs">
+                        <Camera className="w-5 h-5 text-white" />
+                      </div>
+                    </div>
 
-                        {/* Center Camera Grid Markings */}
-                        <div className="self-center flex items-center justify-center w-8 h-8 rounded-full border border-white/30 text-white/40">
-                          <Camera className="w-4 h-4 text-white/70" />
-                        </div>
-
-                        <div className="flex justify-between items-end text-[9px] font-mono text-white/80 tracking-wider">
-                          <span className="bg-black/60 px-2 py-0.5 rounded backdrop-blur-xs flex items-center gap-1">
-                            <Film className="w-3 h-3 text-[#a29bfe]" />
-                            {item.shootSpecs.duration}
-                          </span>
-                          <span className="bg-black/60 px-2 py-0.5 rounded backdrop-blur-xs flex items-center gap-1">
-                            <Volume2 className="w-3 h-3 text-[#22c55e]" />
-                            Foley Mic
-                          </span>
-                        </div>
+                    {/* Bottom Metadata within Phone Screen */}
+                    <div className="absolute bottom-3 left-3 right-3 z-20 space-y-2">
+                      {/* Audio Track Sim */}
+                      <div className="flex items-center gap-2 px-2.5 py-1 rounded-lg bg-black/60 backdrop-blur-md border border-white/10 text-white/90 text-[10px]">
+                        <Volume2 className="w-3 h-3 text-[#F4B183] shrink-0" />
+                        <span className="truncate font-sans font-medium">Original Commercial Sound Design</span>
                       </div>
 
                       {/* Hook Headline Overlay */}
-                      <div className="absolute bottom-3 left-3 right-3 z-30 p-3 rounded-xl bg-black/80 backdrop-blur-md border border-white/20 text-left">
-                        <div className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-wider text-[#a29bfe] mb-1">
+                      <div className="p-3 rounded-xl bg-black/75 backdrop-blur-md border border-white/20 text-left">
+                        <div className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-wider text-[#F8C7A3] mb-1">
                           <Flame className="w-3 h-3 text-[#f59e0b]" />
                           <span>Tested Commercial Hook</span>
                         </div>
@@ -236,35 +278,41 @@ export function WorkShowcase() {
 
                   {/* Reel Metadata */}
                   <div className="w-full text-left">
-                    <h3 className="font-serif font-bold text-xl text-[#1e293b] mb-2 leading-snug">
+                    <div className="flex items-center justify-between gap-2 mb-1.5">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-[#B85014]">
+                        {item.industryLabel}
+                      </span>
+                    </div>
+
+                    <h3 className="font-serif font-bold text-xl text-[#2A0A0E] mb-2 leading-snug">
                       {item.title}
                     </h3>
 
-                    <p className="text-xs sm:text-sm text-[#475569] leading-relaxed mb-4">
+                    <p className="text-xs sm:text-sm text-[#381418] leading-relaxed mb-4 font-normal">
                       {item.description}
                     </p>
 
                     {/* Production Specifications Pill Grid */}
-                    <div className="grid grid-cols-3 gap-2 p-2.5 rounded-xl bg-black/5 text-[10px] text-[#334155] font-semibold mb-4 text-center">
+                    <div className="grid grid-cols-3 gap-2 p-2.5 rounded-xl bg-[#FFF6ED] border border-gray-200/80 text-[10px] text-[#2A0A0E] font-semibold mb-4 text-center">
                       <div className="border-r border-black/10 pr-1">
-                        <span className="text-[8.5px] uppercase text-[#64748b] block font-bold">Session</span>
+                        <span className="text-[8.5px] uppercase text-[#7A3C45] block font-bold">Session</span>
                         <span>45 Mins</span>
                       </div>
                       <div className="border-r border-black/10 px-1">
-                        <span className="text-[8.5px] uppercase text-[#64748b] block font-bold">Lighting</span>
+                        <span className="text-[8.5px] uppercase text-[#7A3C45] block font-bold">Lighting</span>
                         <span className="truncate block">{item.shootSpecs.lighting}</span>
                       </div>
                       <div className="pl-1">
-                        <span className="text-[8.5px] uppercase text-[#64748b] block font-bold">Crew</span>
+                        <span className="text-[8.5px] uppercase text-[#7A3C45] block font-bold">Crew</span>
                         <span>Team of 4</span>
                       </div>
                     </div>
 
-                    <div className="flex flex-wrap gap-2 pt-2 border-t border-black/5 mb-5">
+                    <div className="flex flex-wrap gap-1.5 pt-2 border-t border-black/5 mb-5">
                       {item.tags.map((tag) => (
                         <span
                           key={tag}
-                          className="text-[11px] font-medium text-[#334155] bg-white/80 px-2.5 py-1 rounded-md border border-white/90 shadow-2xs"
+                          className="text-[10px] font-semibold text-[#2A0A0E] bg-gray-100 px-2.5 py-1 rounded-md border border-gray-200/80 shadow-2xs"
                         >
                           {tag}
                         </span>
@@ -282,7 +330,7 @@ export function WorkShowcase() {
                     className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs sm:text-sm font-semibold bg-[#25D366] hover:bg-[#20ba5a] text-white shadow-md shadow-[#25D366]/20 transition-all active:scale-98"
                   >
                     <MessageCircle className="w-4 h-4 fill-current" />
-                    <span>Book Free Shoot for {item.industryLabel.split(" ")[0]}</span>
+                    <span>Book Free Shoot for Your Business</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </a>
                 </div>

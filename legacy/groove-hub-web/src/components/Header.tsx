@@ -48,8 +48,8 @@ export function Header() {
       <div
         className={`max-w-6xl mx-auto flex items-center justify-between rounded-full transition-all duration-300 px-5 sm:px-6 py-2.5 sm:py-3 ${
           isScrolled
-            ? "bg-white/80 backdrop-blur-xl border border-white/80 shadow-lg shadow-black/5"
-            : "bg-white/65 backdrop-blur-md border border-white/60 shadow-sm"
+            ? "bg-white/95 backdrop-blur-xl border border-gray-200/90 shadow-lg shadow-black/5"
+            : "bg-white/90 backdrop-blur-md border border-gray-200/80 shadow-sm"
         }`}
       >
         {/* Official Brand Logo */}

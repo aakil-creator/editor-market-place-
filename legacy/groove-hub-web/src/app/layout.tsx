@@ -27,7 +27,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://editor-market-place.onrender.com"),
+  metadataBase: new URL("https://syncra-qui2.onrender.com"),
   title: `${siteConfig.brandName} — Instagram Reels Studio in Chennai`,
   description: siteConfig.shortDescription,
   keywords: [
@@ -35,9 +35,17 @@ export const metadata: Metadata = {
     "Video production Chennai",
     "Local business growth Chennai",
     "Reels for Gyms Chennai",
-    "Reels for Salons Chennai",
+    "Reels for Clinics and Doctors Chennai",
+    "Reels for Restaurants and Cafes Chennai",
+    "Reels for Salons and Aesthetics Chennai",
+    "Reels for Real Estate and Architecture Chennai",
+    "Reels for Car Detailing Chennai",
+    "Reels for Boutiques and Silk Sarees Chennai",
+    "Reels for Jewellery Showrooms Chennai",
+    "Reels for Coaching Academies Chennai",
     "Boutique video production Chennai",
-    "Grove Hub",
+    "GROVE HUB",
+    "GROOVE HUB",
     "Grove Hub Chennai"
   ],
   authors: [{ name: "Grove Hub Team" }],
@@ -45,7 +53,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_IN",
-    url: "https://editor-market-place.onrender.com",
+    url: "https://syncra-qui2.onrender.com",
     siteName: siteConfig.brandName,
     title: `${siteConfig.brandName} — Instagram Reels Studio in Chennai`,
     description: siteConfig.shortDescription,
@@ -77,12 +85,12 @@ export default function RootLayout({
 }>) {
   const jsonLd = {
     "@context": "https://schema.org",
-    "@type": "ProfessionalService",
+    "@type": "LocalBusiness",
     name: siteConfig.brandName,
     description: siteConfig.shortDescription,
     telephone: siteConfig.whatsappNumber,
     ...(siteConfig.email ? { email: siteConfig.email } : {}),
-    url: "https://editor-market-place.onrender.com",
+    url: "https://syncra-qui2.onrender.com",
     address: {
       "@type": "PostalAddress",
       addressLocality: siteConfig.city,

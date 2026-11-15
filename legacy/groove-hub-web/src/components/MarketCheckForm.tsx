@@ -57,7 +57,7 @@ Please review our profile and local competitors nearby.`;
     <section id="free-check" className="py-28 px-4 sm:px-6 relative bg-transparent border-t border-white/60">
       <div className="max-w-4xl mx-auto">
         
-        <div className="rounded-3xl border border-white/80 bg-white/75 p-6 sm:p-10 lg:p-12 shadow-2xl relative backdrop-blur-xl">
+        <div className="rounded-3xl border border-gray-200/90 bg-white/95 p-6 sm:p-10 lg:p-12 shadow-2xl relative backdrop-blur-xl">
           
           <div className="relative z-10">
             {/* Header */}
@@ -119,13 +119,24 @@ Please review our profile and local competitors nearby.`;
                       onChange={(e) => setFormData({ ...formData, businessType: e.target.value })}
                       className="w-full px-4 py-3 rounded-xl bg-white/80 border border-gray-200 text-[#1e293b] text-sm focus:outline-none focus:border-[#6c5ce7] focus:ring-1 focus:ring-[#6c5ce7] shadow-sm transition-all"
                     >
-                      <option value="Gym / Fitness Center">Gym / Fitness Center</option>
-                      <option value="Yoga / Dance Studio">Yoga / Dance Studio</option>
-                      <option value="Salon / Bridal Studio">Salon / Bridal Studio</option>
-                      <option value="Boutique / Clothing Store">Boutique / Clothing Store</option>
-                      <option value="Jewellery / Gift Shop">Jewellery / Gift Shop</option>
-                      <option value="Bakery / Cafe">Bakery / Cafe</option>
-                      <option value="Other Local Business">Other Local Business</option>
+                      <option value="Gym / Fitness / Turf Arena">Gym / Fitness / Turf Arena</option>
+                      <option value="Yoga / Dance / Pilates Studio">Yoga / Dance / Pilates Studio</option>
+                      <option value="Salon / Luxury Spa / Aesthetics">Salon / Luxury Spa / Aesthetics</option>
+                      <option value="Bridal Studio / Makeup Artist">Bridal Studio / Makeup Artist</option>
+                      <option value="Bakery / Cafe / Specialty Coffee">Bakery / Cafe / Specialty Coffee</option>
+                      <option value="Restaurant / Fine Dine / Cloud Kitchen">Restaurant / Fine Dine / Cloud Kitchen</option>
+                      <option value="Boutique / Saree / Designer Couture">Boutique / Saree / Designer Couture</option>
+                      <option value="Jewellery / Watches / Luxury Gifts">Jewellery / Watches / Luxury Gifts</option>
+                      <option value="Clinic / Dental / Doctor / Healthcare">Clinic / Dental / Doctor / Healthcare</option>
+                      <option value="Real Estate / Builder / Architecture / Interiors">Real Estate / Builder / Architecture / Interiors</option>
+                      <option value="Automobile / Detailing / Service Garage">Automobile / Detailing / Service Garage</option>
+                      <option value="Academy / Coaching Institute / School">Academy / Coaching Institute / School</option>
+                      <option value="Event Planning / Wedding Decor / Banquets">Event Planning / Wedding Decor / Banquets</option>
+                      <option value="Home Decor / Furniture / Kitchenware">Home Decor / Furniture / Kitchenware</option>
+                      <option value="Professional Services (CA, Law, Tech, Coworking)">Professional Services (CA, Law, Tech, Coworking)</option>
+                      <option value="Pet Care / Vet Clinic / Grooming Spa">Pet Care / Vet Clinic / Grooming Spa</option>
+                      <option value="D2C Brand / E-Commerce / Retail Store">D2C Brand / E-Commerce / Retail Store</option>
+                      <option value="Other Local Business in Chennai">Other Local Business in Chennai</option>
                     </select>
                   </div>
 

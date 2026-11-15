@@ -134,16 +134,16 @@ export function Hero() {
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          className="inline-flex items-center gap-2 rounded-full border border-[#6c5ce7]/30 bg-white/80 px-4 py-1.5 text-xs font-semibold text-[#6c5ce7] uppercase tracking-wider mb-8 shadow-sm backdrop-blur-md"
+          className="inline-flex items-center gap-2 rounded-full border border-[#B85014]/25 bg-white/95 px-4 py-1.5 text-xs font-bold text-[#B85014] uppercase tracking-wider mb-8 shadow-sm backdrop-blur-md"
         >
           <span className="w-2 h-2 rounded-full bg-[#22c55e] animate-pulse" />
           <span>Shoot Squad Active in Chennai</span>
-          <span className="text-gray-300">•</span>
-          <span className="text-[#475569] lowercase font-normal">booking slots for this week</span>
+          <span className="text-black/20">•</span>
+          <span className="text-[#381418] lowercase font-medium">booking slots for this week</span>
         </motion.div>
 
         {/* Big Brutally Clear Headline */}
-        <h1 className="font-serif font-black text-4xl sm:text-5xl md:text-6xl lg:text-7xl text-[#1e293b] tracking-tight leading-[1.08] mb-6 max-w-4xl text-center">
+        <h1 className="font-serif font-black text-4xl sm:text-5xl md:text-6xl lg:text-7xl text-[#2A0A0E] tracking-tight leading-[1.08] mb-6 max-w-4xl text-center">
           <span className="block overflow-hidden pb-1">
             <motion.span
               initial={{ y: "100%", opacity: 0 }}
@@ -162,7 +162,7 @@ export function Hero() {
               className="inline-block"
             >
               They stay small because{" "}
-              <span className="italic font-normal text-[#6c5ce7]">nobody sees it.</span>
+              <span className="italic font-normal text-[#B85014]">nobody sees it.</span>
             </motion.span>
           </span>
         </h1>
@@ -172,10 +172,10 @@ export function Hero() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.35, ease: [0.16, 1, 0.3, 1] }}
-          className="text-base sm:text-lg md:text-xl text-[#334155] font-normal leading-relaxed max-w-2xl mb-10 text-center"
+          className="text-base sm:text-lg md:text-xl text-[#2A0A0E] font-medium leading-relaxed max-w-2xl mb-10 text-center"
         >
           We are a team of four in Chennai — a video shooter, an editor, a scriptwriter, and a strategist.
-          We plan, shoot, write and edit every reel so your business gets seen.
+          We plan, shoot on-location, and edit high-retention reels for all local businesses — from clinics and restaurants to gyms, salons, real estate, and retail.
         </motion.p>
 
         {/* Primary Buttons */}
@@ -189,16 +189,45 @@ export function Hero() {
             href={whatsappHeroUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="group relative inline-flex items-center justify-center gap-3 rounded-full bg-[#6c5ce7] hover:bg-[#5b4bc4] px-8 py-4 text-base font-bold text-white shadow-xl shadow-[#6c5ce7]/30 hover:shadow-[#6c5ce7]/45 transition-all duration-300 active:scale-95 text-center font-sans cursor-pointer"
+            className="group relative inline-flex items-center justify-center gap-3 rounded-full bg-[#F4B183] hover:bg-[#E29E6F] px-8 py-4 text-base font-bold text-white shadow-xl shadow-[#F4B183]/30 hover:shadow-[#F4B183]/45 transition-all duration-300 active:scale-95 text-center font-sans cursor-pointer"
           >
             <MessageCircle className="w-5 h-5 fill-white stroke-none" />
             <span>Get your free shoot &amp; reel</span>
           </a>
           <a
             href="#our-work"
-            className="text-xs sm:text-sm font-semibold text-[#475569] hover:text-[#1e293b] transition-colors py-2 px-4 cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-6 py-3.5 rounded-full bg-white/95 hover:bg-white text-[#2A0A0E] border border-gray-200/90 text-xs sm:text-sm font-bold shadow-xs hover:shadow-sm transition-all active:scale-95 cursor-pointer"
           >
             Explore Production Blueprints ↓
+          </a>
+        </motion.div>
+
+        {/* All Businesses We Shoot Ticker Pill Strip */}
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 0.55, ease: [0.16, 1, 0.3, 1] }}
+          className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 mb-12 sm:mb-16 px-4 py-2 rounded-full bg-white/95 border border-gray-200/90 shadow-xs backdrop-blur-md max-w-3xl text-center"
+        >
+          <span className="text-[11px] font-bold uppercase tracking-wider text-[#2A0A0E] mr-1">
+            Shooting For All Industries:
+          </span>
+          <span className="text-xs font-semibold text-[#4A1A20]">Gyms &amp; Sports</span>
+          <span className="text-black/20 text-xs">•</span>
+          <span className="text-xs font-semibold text-[#4A1A20]">Clinics &amp; Doctors</span>
+          <span className="text-black/20 text-xs">•</span>
+          <span className="text-xs font-semibold text-[#4A1A20]">Restaurants &amp; Cafes</span>
+          <span className="text-black/20 text-xs">•</span>
+          <span className="text-xs font-semibold text-[#4A1A20]">Salons &amp; Aesthetics</span>
+          <span className="text-black/20 text-xs">•</span>
+          <span className="text-xs font-semibold text-[#4A1A20]">Real Estate &amp; Interiors</span>
+          <span className="text-black/20 text-xs">•</span>
+          <span className="text-xs font-semibold text-[#4A1A20]">Car Detailing</span>
+          <span className="text-black/20 text-xs">•</span>
+          <span className="text-xs font-semibold text-[#4A1A20]">Boutiques &amp; Silk</span>
+          <span className="text-black/20 text-xs">•</span>
+          <a href="#who-we-help" className="text-xs font-bold text-[#B85014] hover:underline">
+            + 16 Categories ↓
           </a>
         </motion.div>
 
@@ -222,7 +251,7 @@ export function Hero() {
               scale: { duration: 0.9, delay: 0.6, ease: [0.16, 1, 0.3, 1] },
               y: { repeat: Infinity, duration: 4.5, ease: "easeInOut" }
             }}
-            className="relative mx-auto w-full max-w-[270px] sm:max-w-[290px] rounded-[32px] overflow-hidden border-2 border-white/80 shadow-2xl shadow-black/10 bg-white/70 p-2 backdrop-blur-xl transition-transform"
+            className="relative mx-auto w-full max-w-[270px] sm:max-w-[290px] rounded-[32px] overflow-hidden border-2 border-white shadow-2xl shadow-black/10 bg-white/95 p-2 backdrop-blur-xl transition-transform"
           >
             {/* Industry quick switcher */}
             <div className="flex items-center justify-between gap-1 mb-2 px-1">
@@ -235,8 +264,8 @@ export function Hero() {
                   }}
                   className={`text-[10px] font-bold px-2 py-1 rounded-full transition-all cursor-pointer ${
                     activeHeroIndex === idx
-                      ? "bg-[#6c5ce7] text-white shadow-xs"
-                      : "bg-white/60 text-[#475569] hover:bg-white/95"
+                      ? "bg-[#B85014] text-white shadow-xs"
+                      : "bg-white/90 text-[#2A0A0E] hover:bg-white font-semibold"
                   }`}
                 >
                   {showcase.label}
@@ -272,7 +301,7 @@ export function Hero() {
 
               {/* Bottom hook overlay */}
               <div className="absolute bottom-3 left-3 right-3 z-20 p-2.5 rounded-xl bg-black/80 backdrop-blur-md border border-white/15 text-left">
-                <span className="text-[9px] font-bold uppercase tracking-wider text-[#a29bfe] block mb-0.5">
+                <span className="text-[9px] font-bold uppercase tracking-wider text-[#F8C7A3] block mb-0.5">
                   High-Retention Hook
                 </span>
                 <p className="text-[11px] font-semibold text-white italic leading-tight">
@@ -282,10 +311,10 @@ export function Hero() {
             </div>
 
             <div className="px-3 py-2 text-left">
-              <p className="text-xs font-semibold text-[#1e293b]">
+              <p className="text-xs font-semibold text-[#2A0A0E]">
                 {heroShowcases[activeHeroIndex].title}
               </p>
-              <p className="text-[11px] text-[#64748b]">
+              <p className="text-[11px] text-[#381418] font-medium">
                 Scripted, shot &amp; edited by Grove Hub Chennai
               </p>
             </div>
@@ -297,18 +326,18 @@ export function Hero() {
             initial={{ opacity: 0, x: -30, y: 20 }}
             animate={{ opacity: 1, x: 0, y: 0 }}
             transition={{ duration: 0.9, delay: 0.8, ease: [0.16, 1, 0.3, 1] }}
-            className="hidden md:flex absolute top-12 left-0 -translate-x-6 w-64 flex-col text-left p-5 rounded-2xl bg-white/80 backdrop-blur-xl border border-white/90 shadow-xl shadow-black/5 text-[#1e293b]"
+            className="hidden md:flex absolute top-12 left-0 -translate-x-6 w-64 flex-col text-left p-5 rounded-2xl bg-white/95 backdrop-blur-xl border border-gray-200/90 shadow-xl shadow-black/5 text-[#2A0A0E]"
           >
             <div className="flex items-center gap-2 mb-2">
               <div className="w-7 h-7 rounded-full bg-[#22c55e]/15 flex items-center justify-center text-[#16a34a]">
                 <CheckCircle2 className="w-4 h-4" />
               </div>
-              <span className="text-xs font-bold text-[#6c5ce7] uppercase tracking-wider">Free First Reel</span>
+              <span className="text-xs font-bold text-[#B85014] uppercase tracking-wider">Free First Reel</span>
             </div>
-            <h2 className="font-serif text-base font-bold text-[#1e293b] mb-1">
+            <h2 className="font-serif text-base font-bold text-[#2A0A0E] mb-1">
               Zero Cost. Zero Contract.
             </h2>
-            <p className="text-xs text-[#475569] leading-relaxed">
+            <p className="text-xs text-[#381418] font-medium leading-relaxed">
               We shoot and edit one complete reel on location in Chennai for free. If you don't love it, you owe us nothing.
             </p>
           </motion.div>
@@ -319,18 +348,18 @@ export function Hero() {
             initial={{ opacity: 0, x: 30, y: 20 }}
             animate={{ opacity: 1, x: 0, y: 0 }}
             transition={{ duration: 0.9, delay: 0.9, ease: [0.16, 1, 0.3, 1] }}
-            className="hidden md:flex absolute bottom-8 right-0 translate-x-6 w-64 flex-col text-left p-5 rounded-2xl bg-white/80 backdrop-blur-xl border border-white/90 shadow-xl shadow-black/5 text-[#1e293b]"
+            className="hidden md:flex absolute bottom-8 right-0 translate-x-6 w-64 flex-col text-left p-5 rounded-2xl bg-white/95 backdrop-blur-xl border border-gray-200/90 shadow-xl shadow-black/5 text-[#2A0A0E]"
           >
             <div className="flex items-center gap-2 mb-2">
-              <div className="w-7 h-7 rounded-full bg-[#6c5ce7]/15 flex items-center justify-center text-[#6c5ce7]">
+              <div className="w-7 h-7 rounded-full bg-[#F4B183]/15 flex items-center justify-center text-[#F4B183]">
                 <Sparkles className="w-4 h-4" />
               </div>
-              <span className="text-xs font-bold text-[#6c5ce7] uppercase tracking-wider">The Squad</span>
+              <span className="text-xs font-bold text-[#B85014] uppercase tracking-wider">The Squad</span>
             </div>
-            <h2 className="font-serif text-base font-bold text-[#1e293b] mb-1">
+            <h2 className="font-serif text-base font-bold text-[#2A0A0E] mb-1">
               Team of Four on Every Shoot
             </h2>
-            <p className="text-xs text-[#475569] leading-relaxed">
+            <p className="text-xs text-[#381418] font-medium leading-relaxed">
               Shooter + Editor + Scriptwriter + Strategist working on your store's Instagram growth.
             </p>
           </motion.div>

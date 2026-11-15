@@ -12,12 +12,25 @@ export interface BusinessNiche {
   title: string;
   subtitle: string;
   icon: string;
+  sector: string;
   reelIdeas: {
     hook: string;
     concept: string;
     purpose: string;
   }[];
 }
+
+export const businessSectors = [
+  "All",
+  "Fitness & Sports",
+  "Food & Dining",
+  "Beauty & Wellness",
+  "Fashion & Retail",
+  "Healthcare & Clinics",
+  "Real Estate & Auto",
+  "Education & Services",
+  "Events & Hospitality",
+] as const;
 
 export interface PackageTier {
   id: string;
@@ -157,13 +170,14 @@ export const siteConfig = {
     }
   ],
 
-  // Target Niches in Chennai & Reel Ideas
+  // Target Niches in Chennai & Reel Ideas (Covering ALL Local Business Sectors)
   niches: [
     {
       id: "gyms",
       title: "Gyms & Fitness Centers",
-      subtitle: "Strength, Crossfit, MMA & Personal Training Studios",
+      subtitle: "Strength, CrossFit, MMA & Personal Training Studios",
       icon: "Dumbbell",
+      sector: "Fitness & Sports",
       reelIdeas: [
         {
           hook: "\"Stop making this mistake on your deadlifts\"",
@@ -184,9 +198,10 @@ export const siteConfig = {
     },
     {
       id: "yoga",
-      title: "Yoga & Dance Studios",
-      subtitle: "Classical, Contemporary & Wellness Hubs",
+      title: "Yoga, Pilates & Dance Studios",
+      subtitle: "Classical, Contemporary, Aerial Yoga & Wellness Hubs",
       icon: "Flower2",
+      sector: "Fitness & Sports",
       reelIdeas: [
         {
           hook: "\"Can't touch your toes? Start with this 30-second mobility drill\"",
@@ -207,9 +222,10 @@ export const siteConfig = {
     },
     {
       id: "salons",
-      title: "Salons & Bridal Studios",
-      subtitle: "Hair, Aesthetics, Makeup & Bridal Couture Styling",
+      title: "Salons & Luxury Aesthetics",
+      subtitle: "Hair, Aesthetics, Nail Bars, Skin Treatments & Luxury Spas",
       icon: "Sparkles",
+      sector: "Beauty & Wellness",
       reelIdeas: [
         {
           hook: "\"From dry summer frizz to liquid glass hair in 90 mins\"",
@@ -217,9 +233,9 @@ export const siteConfig = {
           purpose: "Drives instant DM inquiries for hair botox and keratin treatments."
         },
         {
-          hook: "\"Behind the scenes: 5 AM South Indian bridal makeover\"",
-          concept: "Micro-cuts of jewelry pinning, saree draping, and clean skin base",
-          purpose: "Secures high-ticket wedding makeup bookings months in advance."
+          hook: "\"Why standard facials ruin sensitive skin (Do this instead)\"",
+          concept: "Dermat-certified esthetician explaining skin barrier repair",
+          purpose: "Positions the salon as an expert clinic over ordinary parlors."
         },
         {
           hook: "\"3 haircut mistakes people with round faces make in Chennai\"",
@@ -229,33 +245,35 @@ export const siteConfig = {
       ]
     },
     {
-      id: "boutiques",
-      title: "Boutiques, Jewellery & Gifts",
-      subtitle: "Handloom Sarees, Custom Gold/Silver, Curated Gifting",
-      icon: "ShoppingBag",
+      id: "bridal",
+      title: "Bridal Studios & Makeup Artists",
+      subtitle: "South Indian Muhurtham, Sangeet & Reception Makeovers",
+      icon: "Heart",
+      sector: "Beauty & Wellness",
       reelIdeas: [
         {
-          hook: "\"3 ways to style this pure Kanchipuram weave for a modern cocktail\"",
-          concept: "Model draping transition with close-up zari shine",
-          purpose: "Shows versatility and attracts festive shoppers."
+          hook: "\"Behind the scenes: 5 AM South Indian bridal makeover\"",
+          concept: "Micro-cuts of jewelry pinning, saree draping, and clean skin base",
+          purpose: "Secures high-ticket wedding makeup bookings months in advance."
         },
         {
-          hook: "\"How to verify real handmade silver jewellery in 10 seconds\"",
-          concept: "Hands-on macro demonstration by the shop owner",
-          purpose: "Builds instant authenticity and eliminates buying doubt."
+          hook: "\"Sweat-proof bridal makeup for a 35°C Chennai wedding\"",
+          concept: "HD close-up skin texture test after 6 hours under studio lights",
+          purpose: "Proves durability and removes anxiety for prospective brides."
         },
         {
-          hook: "\"Curating a custom welcome hamper for a Chennai wedding\"",
-          concept: "ASMR box packing, wax seal stamp, and handwritten card",
-          purpose: "Generates bulk corporate and wedding gifting orders."
+          hook: "\"The 3 jewelry mistakes that clash with your Kanchipuram silk\"",
+          concept: "Bridal stylist demonstrating antique gold pairing with silk colors",
+          purpose: "Attracts luxury bridal consultations and full package bookings."
         }
       ]
     },
     {
       id: "bakeries",
       title: "Artisanal Bakeries & Cafes",
-      subtitle: "Sourdough, Custom Cakes & Specialty Coffee",
+      subtitle: "Sourdough, Custom Cakes, Specialty Coffee & Desserts",
       icon: "Coffee",
+      sector: "Food & Dining",
       reelIdeas: [
         {
           hook: "\"Listen to the crust crackle on our 4 AM sourdough pull\"",
@@ -271,6 +289,270 @@ export const siteConfig = {
           hook: "\"Why Chennai filter coffee lovers are switching to our cold brew\"",
           concept: "Friendly barista explaining the slow steep process",
           purpose: "Sparks curiosity and afternoon cafe visits."
+        }
+      ]
+    },
+    {
+      id: "restaurants",
+      title: "Restaurants, Fine Dine & Cloud Kitchens",
+      subtitle: "Chettinad, Coastal Seafood, North Indian & Multi-Cuisine Eateries",
+      icon: "UtensilsCrossed",
+      sector: "Food & Dining",
+      reelIdeas: [
+        {
+          hook: "\"How our head chef slow-cooks 40kg of mutton biryani every Sunday\"",
+          concept: "Firewood pot seal crack, steam plume, and succulent meat lift",
+          purpose: "Triggers uncontrollable appetite and weekend family table reservations."
+        },
+        {
+          hook: "\"The secret to our 30-year-old coastal crab roast recipe\"",
+          concept: "Sizzling pan action, curry leaves crackling, and hot banana leaf plating",
+          purpose: "Drives foodies across Chennai to visit your specific branch."
+        },
+        {
+          hook: "\"Late night cravings in Chennai? We deliver hot till 3 AM\"",
+          concept: "Fast-paced kitchen expediting line, tamper-proof seal, and steam unboxing",
+          purpose: "Spikes late-night Swiggy/Zomato and direct order volumes."
+        }
+      ]
+    },
+    {
+      id: "boutiques",
+      title: "Boutiques, Sarees & Designer Couture",
+      subtitle: "Handloom Silks, Designer Lehengas, Menswear & Custom Tailoring",
+      icon: "ShoppingBag",
+      sector: "Fashion & Retail",
+      reelIdeas: [
+        {
+          hook: "\"3 ways to style this pure Kanchipuram weave for a modern cocktail\"",
+          concept: "Model draping transition with close-up zari shine",
+          purpose: "Shows versatility and attracts festive shoppers."
+        },
+        {
+          hook: "\"How to spot machine embroidery pretending to be handloom\"",
+          concept: "Master weaver showing reverse stitch threads and border integrity",
+          purpose: "Instills buyer confidence in high-ticket handloom purchases."
+        },
+        {
+          hook: "\"Custom tailored 3-piece wedding suit in 48 hours\"",
+          concept: "Measuring tape precision, fabric cutting, and sharp fitting reveal",
+          purpose: "Attracts grooms and corporate professionals seeking bespoke fit."
+        }
+      ]
+    },
+    {
+      id: "jewellery",
+      title: "Jewellery Showrooms & Luxury Watches",
+      subtitle: "22K Gold, Certified Diamonds, Antique Silver & Custom Heirlooms",
+      icon: "Gem",
+      sector: "Fashion & Retail",
+      reelIdeas: [
+        {
+          hook: "\"How to verify real handmade silver jewellery in 10 seconds\"",
+          concept: "Hands-on macro demonstration by the shop owner",
+          purpose: "Builds instant authenticity and eliminates buying doubt."
+        },
+        {
+          hook: "\"From raw uncut polki diamond to a 5-carat bridal choker\"",
+          concept: "Craftsmanship close-ups: setting stones, polishing, and velvet box presentation",
+          purpose: "Justifies premium bridal pricing and drives family showroom visits."
+        },
+        {
+          hook: "\"Why lightweight everyday gold is trending for Chennai working women\"",
+          concept: "3 chic office-ready chain and stud combinations under ₹40,000",
+          purpose: "Generates high-frequency impulse retail purchases."
+        }
+      ]
+    },
+    {
+      id: "clinics",
+      title: "Clinics, Dental Studios & Doctors",
+      subtitle: "Dental Studios, Skin Clinics, Eye Care, Physio & Pediatrics",
+      icon: "Stethoscope",
+      sector: "Healthcare & Clinics",
+      reelIdeas: [
+        {
+          hook: "\"Why your teeth hurt when drinking cold water (And it's not a cavity)\"",
+          concept: "Friendly dentist using 3D mouth model to explain enamel erosion",
+          purpose: "Builds patient trust and drives appointment bookings without fear."
+        },
+        {
+          hook: "\"Inside our pain-free invisible aligner scan in Anna Nagar\"",
+          concept: "60-second digital wand scan and instant 3D smile projection",
+          purpose: "Demystifies orthodontic treatment and converts consultations."
+        },
+        {
+          hook: "\"Desk neck pain? Stop cracking it and try this 20-second fix\"",
+          concept: "Senior physiotherapist explaining posture reset and nerve relief",
+          purpose: "Attracts IT professionals in OMR/Guindy for clinic appointments."
+        }
+      ]
+    },
+    {
+      id: "realestate",
+      title: "Real Estate, Builders & Architecture",
+      subtitle: "Luxury Villas, Gated Communities, Architects & Turnkey Interiors",
+      icon: "Building2",
+      sector: "Real Estate & Auto",
+      reelIdeas: [
+        {
+          hook: "\"Touring a ₹2.8 Cr penthouse in Besant Nagar with sea-breeze terrace\"",
+          concept: "Cinematic glidecam tour: private elevator, Italian marble, sunrise deck",
+          purpose: "Generates qualified NRI and high-net-worth buyer leads."
+        },
+        {
+          hook: "\"Before vs After: Turning a cramped 3BHK in Velachery into open-plan luxury\"",
+          concept: "Split-screen transformation of kitchen, false ceiling, and lighting",
+          purpose: "Secures high-margin interior turnkey renovation contracts."
+        },
+        {
+          hook: "\"3 hidden structural costs builders never tell you before booking\"",
+          concept: "Senior architect pointing out ventilation, UDS ratios, and water table",
+          purpose: "Positions the builder/consultant as radically honest and trustworthy."
+        }
+      ]
+    },
+    {
+      id: "automobile",
+      title: "Automobile Detailing & Custom Garages",
+      subtitle: "Ceramic Coating, PPF, Supercar Detailing, Vintage Bikes & Garages",
+      icon: "Car",
+      sector: "Real Estate & Auto",
+      reelIdeas: [
+        {
+          hook: "\"Watch this razor scratch test on our self-healing TPU PPF\"",
+          concept: "Heat gun repairing scratch on luxury car hood in real time",
+          purpose: "Sells ₹80k+ Paint Protection Film packages with undeniable proof."
+        },
+        {
+          hook: "\"Restoring a 1982 Royal Enfield Bullet engine from rust to chrome shine\"",
+          concept: "Time-lapse disassembly, buffing, sonic cleaning, and first kick thud",
+          purpose: "Attracts passionate bike enthusiasts and restoration projects."
+        },
+        {
+          hook: "\"Why washing your car with dish soap ruins your clear coat in Chennai\"",
+          concept: "Macro lens showing swirl marks vs pH-neutral foam wash",
+          purpose: "Converts regular drivers into recurring detailing subscription clients."
+        }
+      ]
+    },
+    {
+      id: "education",
+      title: "Academies, Coaching & Schools",
+      subtitle: "NEET/JEE Coaching, Music/Art Schools, Preschools & STEM Coding",
+      icon: "GraduationCap",
+      sector: "Education & Services",
+      reelIdeas: [
+        {
+          hook: "\"How our student went from 420 to 680 in NEET on their second attempt\"",
+          concept: "Authentic student interview, study schedule, and teacher mentoring snippet",
+          purpose: "Fills academy batches and reassures anxious parents."
+        },
+        {
+          hook: "\"Can you learn Carnatic vocals or guitar in 90 days? Here is week 1\"",
+          concept: "Beginner student hitting clean notes with mentor accompaniment",
+          purpose: "Reduces intimidation for adult learners and enrolls new students."
+        },
+        {
+          hook: "\"Inside our sensory-rich play preschool in Chennai\"",
+          concept: "Joyful kids exploring Montessori water tables, clay modeling, and safety gates",
+          purpose: "Fills admissions queue with trusting local parents."
+        }
+      ]
+    },
+    {
+      id: "events",
+      title: "Event Planners, Wedding Decors & Venues",
+      subtitle: "Destination Weddings, Grand Receptions, Banquet Halls & Caterers",
+      icon: "PartyPopper",
+      sector: "Events & Hospitality",
+      reelIdeas: [
+        {
+          hook: "\"Turning a blank Chennai convention hall into a 10,000-flower royal palace\"",
+          concept: "Hyper-lapse setup from 6 AM trusses to illuminated chandelier reveal",
+          purpose: "Convinces wedding families to hire your luxury decor team."
+        },
+        {
+          hook: "\"3 reception decor ideas that look like ₹10 Lakhs for half the price\"",
+          concept: "Event stylist demonstrating smart lighting, fabric folds, and floral focal points",
+          purpose: "Floods inquiries with budget-conscious couples planning their big day."
+        },
+        {
+          hook: "\"Live wedding catering: The sizzling Jalebi and Chaat counter rush\"",
+          concept: "Crisp golden jalebis dipped in saffron syrup, steaming hot presentation",
+          purpose: "Secures catering contracts for corporate events and weddings."
+        }
+      ]
+    },
+    {
+      id: "furniture",
+      title: "Home Decor, Furniture & Kitchens",
+      subtitle: "Teak Wood Furniture, Modular Kitchens, Designer Lighting & Decors",
+      icon: "Home",
+      sector: "Fashion & Retail",
+      reelIdeas: [
+        {
+          hook: "\"How to tell real Burma Teak from polished plywood in 5 seconds\"",
+          concept: "Carpenter testing wood grain density and water droplet bead",
+          purpose: "Eliminates customer hesitation on ₹1 Lakh+ dining and sofa sets."
+        },
+        {
+          hook: "\"Touring a sleek handle-less acrylic modular kitchen in Anna Nagar\"",
+          concept: "Smooth soft-close drawer pulls, pantry pull-outs, and quartz countertop",
+          purpose: "Generates high-intent showroom visits and site measurement requests."
+        },
+        {
+          hook: "\"3 lighting mistakes that make your Chennai living room look cheap\"",
+          concept: "Interior designer demonstrating warm 3000K layers vs harsh white tube lights",
+          purpose: "Drives retail foot traffic to your architectural lighting showroom."
+        }
+      ]
+    },
+    {
+      id: "corporate",
+      title: "Professional Services, Law & Consultancies",
+      subtitle: "Chartered Accountants, Legal Advocates, Coworking & Tech Agencies",
+      icon: "Briefcase",
+      sector: "Education & Services",
+      reelIdeas: [
+        {
+          hook: "\"3 tax-saving exemptions Chennai business owners forget to claim\"",
+          concept: "CA breaking down legitimate business expense deductions on a notepad",
+          purpose: "Inbounds business clients for retainer accounting and audit services."
+        },
+        {
+          hook: "\"Buying land in Chennai? Check these 3 patta and encumbrance red flags\"",
+          concept: "Senior property advocate explaining legal verification checklist",
+          purpose: "Attracts high-fee title verification and legal opinion retainers."
+        },
+        {
+          hook: "\"Inside our modern collaborative coworking hub in OMR\"",
+          concept: "High-speed internet, ergonomic chairs, private phone booths, and barista coffee",
+          purpose: "Fills dedicated desks and private office suites with tech teams."
+        }
+      ]
+    },
+    {
+      id: "pets",
+      title: "Pet Care, Veterinary Clinics & Grooming",
+      subtitle: "Pet Spas, Veterinary Hospitals, Dog Boarding & Training Resorts",
+      icon: "PawPrint",
+      sector: "Healthcare & Clinics",
+      reelIdeas: [
+        {
+          hook: "\"Watch this nervous Golden Retriever transform during our warm bubble bath\"",
+          concept: "Gentle nail clipping, calming ear massage, and fluffy blowout",
+          purpose: "Melts pet parents' hearts and books weekday grooming slots."
+        },
+        {
+          hook: "\"Why Chennai heat is dangerous for heavy-coat dogs (And how to protect them)\"",
+          concept: "Vet doctor demonstrating hydration checks, paw balm, and cooling tips",
+          purpose: "Positions clinic as the most caring, knowledgeable vet in the neighborhood."
+        },
+        {
+          hook: "\"Inside our cage-free pet resort and splash pool in ECR\"",
+          concept: "Happy dogs playing fetch, swimming, and sleeping in air-conditioned suites",
+          purpose: "Secures holiday boarding bookings weeks in advance."
         }
       ]
     }

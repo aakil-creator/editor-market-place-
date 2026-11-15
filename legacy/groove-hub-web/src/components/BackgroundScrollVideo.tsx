@@ -299,12 +299,14 @@ export function BackgroundScrollVideo() {
         }}
       />
 
-      {/* Subtle Readability Vignette Overlay */}
+      {/* High-Readability Frosted Veil: Softens background video textures so text has 100% crisp contrast */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
           background:
-            "linear-gradient(to bottom, rgba(31, 7, 10, 0.04) 0%, rgba(31, 7, 10, 0.12) 100%)",
+            "linear-gradient(to bottom, rgba(255, 250, 245, 0.82) 0%, rgba(254, 246, 238, 0.88) 50%, rgba(255, 250, 245, 0.84) 100%)",
+          backdropFilter: "blur(2px)",
+          WebkitBackdropFilter: "blur(2px)",
         }}
       />
     </div>
