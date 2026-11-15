@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Camera, Scissors, PenTool, Compass, CheckCircle2, XCircle } from "lucide-react";
+import { Camera, Scissors, PenTool, Compass, CheckCircle2, XCircle, Users } from "lucide-react";
 import { siteConfig } from "../../site.config";
 
 export function WhyDifferent() {
@@ -13,33 +13,35 @@ export function WhyDifferent() {
   };
 
   return (
-    <section id="why-us" className="py-28 px-4 sm:px-6 relative overflow-hidden bg-transparent">
+    <section id="why-us" className="py-24 sm:py-32 px-4 sm:px-6 relative overflow-hidden">
       <div className="max-w-6xl mx-auto">
         
-        {/* Section Heading with Mask Reveal */}
+        {/* Section Heading */}
         <div className="text-center max-w-3xl mx-auto mb-16">
           <motion.div
             initial={{ opacity: 0, y: 15 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
-            className="inline-flex items-center gap-2 rounded-full border border-[#6c5ce7]/30 bg-white/80 px-4 py-1.5 text-xs font-semibold text-[#6c5ce7] uppercase tracking-wider mb-5 shadow-sm backdrop-blur-md"
+            className="inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-[#121217] px-4 py-1.5 text-xs font-bold text-amber-400 uppercase tracking-wider mb-5 shadow-md"
           >
-            A Dedicated Team of Four
+            <Users className="w-3.5 h-3.5" />
+            <span>Dedicated 4-Person Specialist Squad</span>
           </motion.div>
 
-          <h2 className="font-serif font-bold text-3xl sm:text-4xl md:text-5xl text-[#1e293b] tracking-tight mb-5 leading-tight">
-            Why we are different from a <span className="italic font-normal text-[#6c5ce7]">normal agency.</span>
+          <h2 className="font-sans font-black text-3xl sm:text-4xl md:text-5xl text-white tracking-tight mb-5 leading-tight">
+            Why We Are Radically Different From a{" "}
+            <span className="text-gradient-amber">Typical Agency</span>.
           </h2>
 
-          <p className="text-base sm:text-lg text-[#334155] font-normal leading-relaxed">
-            Most digital agencies sit at a desk, ask you to send phone clips, and run generic boosts.
-            We are a team of four in Chennai who visit your location, write the hooks, shoot the footage, and edit every cut.
+          <p className="text-base sm:text-lg text-zinc-300 font-normal leading-relaxed">
+            Most digital agencies sit behind desks in remote offices, ask you to record phone clips yourself, and post generic static templates.
+            We are an on-location production unit in Chennai: we script, visit your storefront, shoot with cinema gear, and edit high-retention vertical reels.
           </p>
         </div>
 
         {/* 4 Team-Role Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-20">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
           {siteConfig.team.map((member, index) => {
             const IconComponent = iconMap[member.icon] || Camera;
             return (
@@ -50,27 +52,26 @@ export function WhyDifferent() {
                 viewport={{ once: true, margin: "-20px" }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
                 whileHover={{ y: -6, transition: { duration: 0.2 } }}
-                whileTap={{ scale: 0.98 }}
-                className="glass-card p-6 sm:p-7 flex flex-col justify-between rounded-2xl border border-white/80 bg-white/70 backdrop-blur-xl hover:border-[#6c5ce7]/50 transition-all group shadow-xl shadow-black/5"
+                className="glass-panel p-6 sm:p-7 flex flex-col justify-between rounded-2xl border-white/10 hover:border-amber-500/40 hover:bg-[#181822]/95 group shadow-xl"
               >
                 <div>
-                  <div className="w-12 h-12 rounded-xl bg-[#6c5ce7]/10 border border-[#6c5ce7]/20 flex items-center justify-center text-[#6c5ce7] mb-6 group-hover:scale-105 transition-transform">
+                  <div className="w-12 h-12 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 mb-6 group-hover:scale-105 group-hover:bg-amber-500/25 transition-all">
                     <IconComponent className="w-6 h-6 stroke-[1.8]" />
                   </div>
 
-                  <span className="text-xs uppercase tracking-wider font-bold text-[#6c5ce7] block mb-1">
+                  <span className="text-[11px] uppercase tracking-wider font-extrabold text-amber-400 block mb-1">
                     Role {index + 1}
                   </span>
 
-                  <h3 className="font-serif font-bold text-xl text-[#1e293b] mb-2">
+                  <h3 className="font-sans font-extrabold text-xl text-white mb-2">
                     {member.title}
                   </h3>
 
-                  <p className="text-xs font-semibold text-[#6c5ce7] mb-3 leading-snug">
+                  <p className="text-xs font-bold text-amber-300/90 mb-3 leading-snug">
                     {member.action}
                   </p>
 
-                  <p className="text-xs sm:text-sm text-[#475569] leading-relaxed font-normal">
+                  <p className="text-xs sm:text-sm text-zinc-300 leading-relaxed font-normal">
                     {member.description}
                   </p>
                 </div>
@@ -79,55 +80,55 @@ export function WhyDifferent() {
           })}
         </div>
 
-        {/* Comparison Block: Typical Agency vs Groove Hub */}
-        <div className="rounded-3xl border border-gray-200/80 bg-white/95 backdrop-blur-xl p-6 sm:p-10 lg:p-12 shadow-2xl shadow-black/5 overflow-hidden relative">
-          <div className="max-w-3xl mb-8">
-            <h3 className="font-serif font-bold text-2xl sm:text-3xl text-[#1e293b] mb-3">
-              The Reality of Local Social Media
+        {/* Comparison Block: Typical Agency vs Grove Hub */}
+        <div className="glass-panel-elevated rounded-3xl border-white/12 p-6 sm:p-10 lg:p-12 shadow-2xl relative overflow-hidden">
+          <div className="max-w-3xl mb-9">
+            <h3 className="font-sans font-black text-2xl sm:text-3xl text-white mb-3">
+              The Reality of Social Media in Chennai
             </h3>
-            <p className="text-sm sm:text-base text-[#334155]">
-              Posting random clips without a hook or someone visiting your location is why most Instagram accounts stay unseen. Here is how we compare:
+            <p className="text-sm sm:text-base text-zinc-300 font-normal">
+              Posting random phone videos without a strategic hook or cinema-grade audio is why 95% of business accounts struggle to get customer walk-ins. Here is how Grove Hub compares:
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
             
             {/* Typical Agency */}
-            <div className="rounded-2xl p-6 sm:p-7 bg-white/60 backdrop-blur-md border border-red-200 shadow-sm">
+            <div className="rounded-2xl p-6 sm:p-7 bg-red-950/20 border border-red-500/25 shadow-inner">
               <div className="flex items-center gap-3 mb-5">
-                <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center text-red-600">
+                <div className="w-8 h-8 rounded-full bg-red-500/20 border border-red-500/40 flex items-center justify-center text-red-400">
                   <XCircle className="w-5 h-5" />
                 </div>
-                <h4 className="font-serif font-bold text-lg text-[#1e293b]">
+                <h4 className="font-sans font-bold text-lg text-zinc-200">
                   {siteConfig.comparison.agencyTitle}
                 </h4>
               </div>
 
               <ul className="space-y-4">
                 {siteConfig.comparison.agencyPoints.map((point, i) => (
-                  <li key={i} className="flex items-start gap-3 text-sm text-[#64748b] leading-relaxed">
-                    <span className="text-red-500 font-bold mt-0.5">✕</span>
+                  <li key={i} className="flex items-start gap-3 text-sm text-zinc-400 leading-relaxed">
+                    <span className="text-red-400 font-bold mt-0.5 shrink-0">✕</span>
                     <span>{point}</span>
                   </li>
                 ))}
               </ul>
             </div>
 
-            {/* Groove Hub */}
-            <div className="rounded-2xl p-6 sm:p-7 bg-white/90 backdrop-blur-md border-2 border-[#6c5ce7] shadow-xl shadow-[#6c5ce7]/10">
+            {/* Grove Hub */}
+            <div className="rounded-2xl p-6 sm:p-7 bg-amber-950/20 border-2 border-amber-500/50 shadow-xl shadow-amber-500/10">
               <div className="flex items-center gap-3 mb-5">
-                <div className="w-8 h-8 rounded-full bg-[#25D366]/20 flex items-center justify-center text-[#25D366]">
+                <div className="w-8 h-8 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400">
                   <CheckCircle2 className="w-5 h-5" />
                 </div>
-                <h4 className="font-serif font-bold text-lg text-[#1e293b]">
-                  {siteConfig.comparison.grooveTitle}
+                <h4 className="font-sans font-bold text-lg text-white">
+                  {siteConfig.comparison.groveTitle || siteConfig.comparison.grooveTitle}
                 </h4>
               </div>
 
               <ul className="space-y-4">
-                {siteConfig.comparison.groovePoints.map((point, i) => (
-                  <li key={i} className="flex items-start gap-3 text-sm text-[#1e293b] leading-relaxed font-medium">
-                    <span className="text-[#25D366] font-bold mt-0.5">✓</span>
+                {(siteConfig.comparison.grovePoints || siteConfig.comparison.groovePoints).map((point, i) => (
+                  <li key={i} className="flex items-start gap-3 text-sm text-zinc-200 leading-relaxed font-normal">
+                    <span className="text-emerald-400 font-bold mt-0.5 shrink-0">✓</span>
                     <span>{point}</span>
                   </li>
                 ))}

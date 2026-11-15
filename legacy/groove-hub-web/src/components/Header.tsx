@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, ArrowUpRight } from "lucide-react";
+import { Menu, X, ArrowUpRight, Sparkles, MessageCircle } from "lucide-react";
 import { siteConfig, getWhatsAppUrl } from "../../site.config";
 
 export function Header() {
@@ -17,8 +17,8 @@ export function Header() {
         window.requestAnimationFrame(() => {
           const y = window.scrollY;
           setIsScrolled((prev) => {
-            if (!prev && y > 35) return true;
-            if (prev && y < 15) return false;
+            if (!prev && y > 30) return true;
+            if (prev && y < 10) return false;
             return prev;
           });
           ticking = false;
@@ -31,129 +31,130 @@ export function Header() {
   }, []);
 
   const navLinks = [
+    { name: "All 16 Businesses", href: "#who-we-help" },
     { name: "Why Us", href: "#why-us" },
-    { name: "Process", href: "#process" },
-    { name: "Our Work", href: "#our-work" },
-    { name: "Who We Help", href: "#who-we-help" },
-    { name: "Packages", href: "#packages" },
+    { name: "Production Pipeline", href: "#process" },
+    { name: "Commercial Blueprint", href: "#our-work" },
+    { name: "Retainers", href: "#packages" },
     { name: "FAQ", href: "#faq" },
   ];
 
   const freeOfferUrl = getWhatsAppUrl(
-    "Hi Groove Hub! I'd like to get my free shoot and free reel for my business in Chennai."
+    "Hi Grove Hub! I run a local business in Chennai and I want to claim my Free On-Location Shoot & Free Reel."
   );
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-40 transition-all duration-300 px-4 sm:px-6 py-3 sm:py-4">
+    <header className="fixed top-0 left-0 right-0 z-50 transition-all duration-300 px-3 sm:px-6 py-3 sm:py-4">
       <div
-        className={`max-w-6xl mx-auto flex items-center justify-between rounded-full transition-all duration-300 px-5 sm:px-6 py-2.5 sm:py-3 ${
+        className={`max-w-6xl mx-auto flex items-center justify-between rounded-full transition-all duration-300 px-4 sm:px-6 py-2.5 sm:py-3 border ${
           isScrolled
-            ? "bg-white/95 backdrop-blur-xl border border-gray-200/90 shadow-lg shadow-black/5"
-            : "bg-white/90 backdrop-blur-md border border-gray-200/80 shadow-sm"
+            ? "bg-[#09090B]/90 backdrop-blur-2xl border-white/12 shadow-[0_12px_36px_rgba(0,0,0,0.6)]"
+            : "bg-[#121217]/80 backdrop-blur-xl border-white/8 shadow-[0_8px_24px_rgba(0,0,0,0.4)]"
         }`}
       >
         {/* Official Brand Logo */}
         <Link href="/" className="flex items-center gap-2.5 group">
-          <div className="relative h-10 w-14 sm:h-11 sm:w-16 flex items-center justify-center group-hover:scale-105 transition-transform duration-300">
+          <div className="relative h-9 w-12 sm:h-10 sm:w-14 flex items-center justify-center transition-transform duration-300 group-hover:scale-105">
             <img
               src="/grove_hub_logo_transparent.png"
               alt="Grove Hub Logo"
-              className="h-full w-auto object-contain drop-shadow-xs"
+              className="h-full w-auto object-contain drop-shadow-[0_2px_10px_rgba(245,158,11,0.25)]"
             />
           </div>
           <div className="flex flex-col">
-            <span className="font-serif font-black tracking-wide text-base sm:text-lg text-[#1e293b] leading-none group-hover:text-[#6c5ce7] transition-colors">
+            <span className="font-sans font-extrabold tracking-tight text-sm sm:text-base text-white leading-none group-hover:text-amber-400 transition-colors">
               GROVE HUB
             </span>
-            <span className="text-[9.5px] uppercase font-bold tracking-widest text-[#6c5ce7] leading-tight">
-              CHENNAI
+            <span className="text-[9px] uppercase font-bold tracking-widest text-amber-400/90 leading-tight mt-0.5">
+              CHENNAI STUDIO
             </span>
           </div>
         </Link>
 
         {/* Desktop Nav Links */}
-        <nav className="hidden md:flex items-center gap-7" aria-label="Main Navigation">
+        <nav className="hidden lg:flex items-center gap-6" aria-label="Main Navigation">
           {navLinks.map((link) => (
             <a
               key={link.name}
               href={link.href}
-              className="text-xs lg:text-sm font-medium text-[#334155] hover:text-[#6c5ce7] transition-colors duration-200"
+              className="text-xs xl:text-sm font-medium text-zinc-300 hover:text-amber-400 transition-colors duration-200"
             >
               {link.name}
             </a>
           ))}
         </nav>
 
-        {/* Action Buttons (Smart Card + Free Reel CTA) */}
-        <div className="hidden sm:flex items-center gap-2.5">
+        {/* Action CTAs */}
+        <div className="hidden sm:flex items-center gap-3">
           <a
             href={freeOfferUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="group relative inline-flex items-center gap-1.5 rounded-full bg-[#6c5ce7] hover:bg-[#5b4bc4] px-4 sm:px-5 py-2 text-xs sm:text-sm font-bold text-white shadow-lg shadow-[#6c5ce7]/25 hover:shadow-[#6c5ce7]/40 transition-all active:scale-95 cursor-pointer"
+            className="group relative inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-300 px-4 sm:px-5 py-2 text-xs sm:text-sm font-bold text-zinc-950 shadow-lg shadow-amber-500/25 hover:shadow-amber-500/40 transition-all active:scale-95 cursor-pointer"
           >
-            <span>Get your free reel</span>
-            <ArrowUpRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 text-white" />
+            <Sparkles className="w-3.5 h-3.5 text-zinc-950 fill-zinc-950/20" />
+            <span>Free First Shoot</span>
+            <ArrowUpRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 text-zinc-950" />
           </a>
         </div>
 
         {/* Mobile Hamburger Toggle */}
         <button
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
-          className="md:hidden flex items-center justify-center p-2 rounded-lg text-[#334155] hover:text-[#6c5ce7] hover:bg-black/5 transition-colors"
+          className="lg:hidden p-2 rounded-full text-zinc-300 hover:text-white hover:bg-white/5 transition-colors"
+          aria-label="Toggle navigation menu"
         >
-          {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          {mobileMenuOpen ? <X className="w-6 h-6 text-amber-400" /> : <Menu className="w-6 h-6" />}
         </button>
       </div>
 
       {/* Mobile Drawer Menu */}
       <AnimatePresence>
         {mobileMenuOpen && (
-          <motion.nav
-            aria-label="Mobile Navigation Drawer"
-            initial={{ opacity: 0, y: -16, scale: 0.96 }}
+          <motion.div
+            initial={{ opacity: 0, y: -10, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -12, scale: 0.96 }}
-            transition={{ type: "spring", damping: 25, stiffness: 320 }}
-            className="md:hidden max-w-md mx-auto mt-2 rounded-2xl bg-white/95 backdrop-blur-2xl border border-white/80 p-5 shadow-2xl text-[#1e293b]"
+            exit={{ opacity: 0, y: -10, scale: 0.98 }}
+            transition={{ duration: 0.2 }}
+            className="lg:hidden mt-2 mx-auto max-w-6xl rounded-2xl bg-[#0F0F14]/98 backdrop-blur-2xl border border-white/10 p-5 shadow-2xl"
           >
-            <div className="flex flex-col gap-2.5">
-              {navLinks.map((link, idx) => (
-                <motion.a
+            <nav className="flex flex-col gap-3">
+              {navLinks.map((link) => (
+                <a
                   key={link.name}
                   href={link.href}
-                  initial={{ opacity: 0, x: -12 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: (idx + 1) * 0.04, duration: 0.25 }}
-                  whileTap={{ scale: 0.97 }}
                   onClick={() => setMobileMenuOpen(false)}
-                  className="px-3.5 py-2 text-sm font-semibold text-[#334155] hover:text-[#6c5ce7] hover:bg-black/5 rounded-xl transition-colors active:bg-[#6c5ce7]/10"
+                  className="px-3 py-2 rounded-lg text-sm font-medium text-zinc-200 hover:text-amber-400 hover:bg-white/5 transition-all"
                 >
                   {link.name}
-                </motion.a>
+                </a>
               ))}
-              <div className="pt-2 border-t border-black/5">
-                <motion.a
+              <div className="pt-3 mt-1 border-t border-white/10 flex flex-col gap-2.5">
+                <a
                   href={freeOfferUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: (navLinks.length + 1) * 0.04, duration: 0.25 }}
-                  whileTap={{ scale: 0.97 }}
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center justify-center gap-2 rounded-xl bg-[#6c5ce7] hover:bg-[#5b4bc4] px-4 py-3 text-sm font-bold text-white shadow-md shadow-[#6c5ce7]/25 active:scale-98"
+                  className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 px-4 py-3 text-sm font-bold text-zinc-950 shadow-md shadow-amber-500/20"
                 >
-                  <span>Text us for a free reel</span>
+                  <Sparkles className="w-4 h-4 fill-zinc-950/20" />
+                  <span>Claim Free Shoot & Free Reel</span>
                   <ArrowUpRight className="w-4 h-4" />
-                </motion.a>
+                </a>
+                <a
+                  href={`https://wa.me/${siteConfig.whatsappNumber}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2.5 text-xs font-semibold text-zinc-300 hover:text-white"
+                >
+                  <MessageCircle className="w-4 h-4 text-emerald-400" />
+                  <span>Direct WhatsApp: +91 93445 46733</span>
+                </a>
               </div>
-            </div>
-          </motion.nav>
+            </nav>
+          </motion.div>
         )}
       </AnimatePresence>
-
     </header>
   );
 }

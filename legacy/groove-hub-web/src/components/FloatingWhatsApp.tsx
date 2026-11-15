@@ -6,7 +6,7 @@ import { getWhatsAppUrl } from "../../site.config";
 
 export function FloatingWhatsApp() {
   const whatsappUrl = getWhatsAppUrl(
-    "Hi Groove Hub! I am interested in getting a free shoot and reel for my business in Chennai."
+    "Hi Grove Hub! I am interested in getting a free shoot and reel for my business in Chennai."
   );
 
   return (
@@ -21,7 +21,7 @@ export function FloatingWhatsApp() {
         href={whatsappUrl}
         target="_blank"
         rel="noopener noreferrer"
-        aria-label="Chat with Groove Hub on WhatsApp"
+        aria-label="Chat with Grove Hub on WhatsApp"
         className="group relative flex items-center gap-2.5 rounded-full bg-[#25D366] px-4 py-3 sm:px-5 sm:py-3.5 text-white font-semibold text-sm sm:text-base shadow-xl shadow-[#25D366]/30 hover:shadow-[#25D366]/50 hover:bg-[#20BA5A] transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-[#25D366]/40 active:scale-95"
       >
         <span className="relative flex h-3 w-3">

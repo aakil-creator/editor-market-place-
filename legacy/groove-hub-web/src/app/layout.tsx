@@ -20,7 +20,7 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 });
 
 export const viewport: Viewport = {
-  themeColor: "#2A0A0E",
+  themeColor: "#09090B",
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,

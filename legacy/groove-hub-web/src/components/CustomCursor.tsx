@@ -62,7 +62,7 @@ export function CustomCursor() {
     <>
       <motion.div
         aria-hidden="true"
-        className="pointer-events-none fixed top-0 left-0 z-[9999] rounded-full border border-[#6c5ce7]/50"
+        className="pointer-events-none fixed top-0 left-0 z-[9999] rounded-full border border-amber-500/50"
         style={{
           x: smoothX,
           y: smoothY,
@@ -70,13 +70,13 @@ export function CustomCursor() {
           translateY: "-50%",
           width: isPointer ? 44 : 26,
           height: isPointer ? 44 : 26,
-          backgroundColor: isPointer ? "rgba(108, 92, 231, 0.15)" : "transparent",
+          backgroundColor: isPointer ? "rgba(245, 158, 11, 0.15)" : "transparent",
           transition: "width 0.2s, height 0.2s, background-color 0.2s",
         }}
       />
       <motion.div
         aria-hidden="true"
-        className="pointer-events-none fixed top-0 left-0 z-[9999] h-1.5 w-1.5 rounded-full bg-[#6c5ce7]"
+        className="pointer-events-none fixed top-0 left-0 z-[9999] h-1.5 w-1.5 rounded-full bg-amber-400"
         style={{
           x: mouseX,
           y: mouseY,

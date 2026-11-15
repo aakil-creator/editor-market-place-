@@ -52,6 +52,17 @@ export interface FAQItem {
 }
 
 export const siteConfig = {
+  // Canonical Brand Colors (Maroon, Peach, Cream)
+  colors: {
+    maroon: "#2A0A0E",
+    peach: "#F4B183",
+    cream: "#FFF4E8",
+    maroonDeep: "#1F070A",
+    maroonCard: "rgba(42, 10, 14, 0.9)",
+    peachHover: "#E29E6F",
+    creamSoft: "#FAF0E4",
+  },
+
   // Brand Identity
   brandName: "GROVE HUB",
   tagline: "We grow local businesses in Chennai on Instagram with high-quality reels.",
@@ -78,9 +89,11 @@ export const siteConfig = {
   // Direct Contact Configuration
   // Put all contact info here. If email or instagramHandle is empty, the UI cleanly hides that element.
   whatsappNumber: "919344546733",
-  email: "", // Optional: leave empty string to hide email links
+  domain: "https://syncra-qui2.onrender.com",
+  
+  email: "aaqil2025@gmail.com", // Optional: leave empty string to hide email links
   instagramHandle: "", // Optional: leave empty string to hide Instagram links
-  instagramUrl: "", // Optional: e.g. "https://instagram.com/groovehub"
+  instagramUrl: "", // Optional: e.g. "https://instagram.com/grovehub"
   priceRange: "", // Optional for Schema.org
 
   // Core Irresistible Offer
@@ -123,7 +136,7 @@ export const siteConfig = {
     }
   ] as TeamRole[],
 
-  // Agency vs Groove Hub Comparison
+  // Agency vs Grove Hub Comparison
   comparison: {
     agencyTitle: "Typical Digital Marketing Agency",
     agencyPoints: [
@@ -132,7 +145,14 @@ export const siteConfig = {
       "Focuses on vanity boosts and generic follower numbers",
       "Treats your business like another ticket in a queue"
     ],
-    grooveTitle: "Groove Hub Growth Studio",
+    groveTitle: "Grove Hub Growth Studio",
+    grovePoints: [
+      "We come to your location in Chennai and shoot everything ourselves",
+      "Every reel is written with a real hook and shot with a clear goal",
+      "Focuses on driving walk-ins, phone calls, and local customers",
+      "A dedicated team of four (Shooter, Editor, Writer, Strategist) working on every reel"
+    ],
+    grooveTitle: "Grove Hub Growth Studio",
     groovePoints: [
       "We come to your location in Chennai and shoot everything ourselves",
       "Every reel is written with a real hook and shot with a clear goal",
@@ -579,7 +599,7 @@ export const siteConfig = {
         "Advance shoot & milestone scheduling with crew",
         "Milestone-based quality assurance"
       ],
-      whatsappMessage: "Hi Groove Hub! I am interested in the Basic Monthly Retainer package. Can you share details on how we can get started?"
+      whatsappMessage: "Hi Grove Hub! I am interested in the Basic Monthly Retainer package. Can you share details on how we can get started?"
     },
     {
       id: "growth",
@@ -601,7 +621,7 @@ export const siteConfig = {
         "Multi-tasking brand requests handling",
         "Priority 24-48h post-production turnaround"
       ],
-      whatsappMessage: "Hi Groove Hub! I am interested in the Full Account Growth Suite. Can you share details on scheduling our first shoot?"
+      whatsappMessage: "Hi Grove Hub! I am interested in the Full Account Growth Suite. Can you share details on scheduling our first shoot?"
     },
     {
       id: "quarterly",
@@ -623,7 +643,7 @@ export const siteConfig = {
         "Broadcast lighting, gimbal setups & 4K multi-angle cameras",
         "Comprehensive 90-day content calendar & strategy"
       ],
-      whatsappMessage: "Hi Groove Hub! I am interested in the Flagship Quarterly Retainer (3 Months). Can we discuss the production timeline?"
+      whatsappMessage: "Hi Grove Hub! I am interested in the Flagship Quarterly Retainer (3 Months). Can we discuss the production timeline?"
     },
     {
       id: "custom",
@@ -643,7 +663,7 @@ export const siteConfig = {
         "Custom creative formats & tailored delivery milestones",
         "Direct collaboration with senior directors & editors"
       ],
-      whatsappMessage: "Hi Groove Hub! I would like to discuss a custom production scope for my business."
+      whatsappMessage: "Hi Grove Hub! I would like to discuss a custom production scope for my business."
     }
   ] as PackageTier[],
 
@@ -682,7 +702,7 @@ export const siteConfig = {
  */
 export function getWhatsAppUrl(customMessage?: string): string {
   const number = siteConfig.whatsappNumber || "919344546733";
-  const defaultText = `Hi Groove Hub! I run a local business in Chennai and I want to get my free shoot and free reel.`;
+  const defaultText = `Hi Grove Hub! I run a local business in Chennai and I want to get my free shoot and free reel.`;
   const text = encodeURIComponent(customMessage || defaultText);
   return `https://wa.me/${number}?text=${text}`;
 }

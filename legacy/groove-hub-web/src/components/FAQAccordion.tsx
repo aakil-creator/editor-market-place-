@@ -6,31 +6,31 @@ import { ChevronDown, HelpCircle } from "lucide-react";
 import { siteConfig } from "../../site.config";
 
 export function FAQAccordion() {
-  const [openIndex, setOpenIndex] = useState<number | null>(0); // first item open by default
+  const [openIndex, setOpenIndex] = useState<number | null>(0);
 
   const toggle = (idx: number) => {
     setOpenIndex(openIndex === idx ? null : idx);
   };
 
   return (
-    <section id="faq" className="py-28 px-4 sm:px-6 relative bg-transparent border-t border-white/60">
+    <section id="faq" className="py-24 sm:py-32 px-4 sm:px-6 relative border-t border-white/8">
       <div className="max-w-4xl mx-auto">
         
         {/* Section Header */}
         <div className="text-center max-w-xl mx-auto mb-16">
-          <div className="inline-flex items-center gap-2 rounded-full border border-[#6c5ce7]/30 bg-white/80 px-4 py-1 text-xs font-semibold text-[#6c5ce7] uppercase tracking-wider mb-4 shadow-sm backdrop-blur-md">
+          <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-[#121217] px-4 py-1.5 text-xs font-bold text-amber-400 uppercase tracking-wider mb-4 shadow-md">
             <HelpCircle className="w-3.5 h-3.5" />
-            <span>Got Questions?</span>
+            <span>Clear Transparency</span>
           </div>
-          <h2 className="font-serif font-bold text-3xl sm:text-4xl text-[#1e293b] tracking-tight mb-4">
+          <h2 className="font-sans font-black text-3xl sm:text-4xl text-white tracking-tight mb-4">
             Frequently Asked Questions
           </h2>
-          <p className="text-sm sm:text-base text-[#334155]">
-            Straight answers about how we work, how we shoot in Chennai, and how our pricing works.
+          <p className="text-sm sm:text-base text-zinc-300 font-normal">
+            Direct, honest answers about our on-location shoots, editing process, turnaround times, and free trial.
           </p>
         </div>
 
-        {/* 6 Accordion Questions */}
+        {/* Accordion Questions */}
         <div className="space-y-4">
           {siteConfig.faqs.map((faq, index) => {
             const isOpen = openIndex === index;
@@ -38,17 +38,17 @@ export function FAQAccordion() {
             return (
               <div
                 key={index}
-                className="rounded-2xl border border-white/80 bg-white/75 backdrop-blur-xl overflow-hidden transition-all hover:border-[#6c5ce7]/40 shadow-sm"
+                className="glass-panel rounded-2xl border-white/10 hover:border-amber-500/40 overflow-hidden shadow-xl transition-all"
               >
                 <button
                   onClick={() => toggle(index)}
                   aria-expanded={isOpen}
-                  className="w-full py-5 px-6 sm:px-7 flex items-center justify-between gap-4 text-left font-serif font-bold text-base sm:text-lg text-[#1e293b] hover:text-[#6c5ce7] transition-colors cursor-pointer"
+                  className="w-full py-5 px-6 sm:px-7 flex items-center justify-between gap-4 text-left font-sans font-bold text-base sm:text-lg text-white hover:text-amber-400 transition-colors cursor-pointer"
                 >
                   <span>{faq.question}</span>
                   <ChevronDown
-                    className={`w-5 h-5 text-[#64748b] shrink-0 transition-transform duration-300 ${
-                      isOpen ? "rotate-180 text-[#6c5ce7]" : ""
+                    className={`w-5 h-5 text-amber-400 shrink-0 transition-transform duration-300 ${
+                      isOpen ? "rotate-180" : ""
                     }`}
                   />
                 </button>
@@ -59,9 +59,9 @@ export function FAQAccordion() {
                       initial={{ height: 0, opacity: 0 }}
                       animate={{ height: "auto", opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.3, ease: "easeInOut" }}
+                      transition={{ duration: 0.25, ease: "easeInOut" }}
                     >
-                      <div className="px-6 sm:px-7 pb-6 pt-1 text-xs sm:text-sm text-[#475569] leading-relaxed font-normal border-t border-black/5">
+                      <div className="px-6 sm:px-7 pb-6 pt-2 text-xs sm:text-sm text-zinc-300 leading-relaxed font-normal border-t border-white/10">
                         {faq.answer}
                       </div>
                     </motion.div>

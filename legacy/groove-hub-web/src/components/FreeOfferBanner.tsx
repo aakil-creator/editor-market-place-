@@ -1,75 +1,76 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { MessageCircle, ArrowRight, CheckCircle2 } from "lucide-react";
+import { MessageCircle, ArrowRight, CheckCircle2, Sparkles, Shield } from "lucide-react";
 import { getWhatsAppUrl } from "../../site.config";
 
 export function FreeOfferBanner() {
   const freeOfferUrl = getWhatsAppUrl(
-    "Hi Groove Hub! I saw your offer: 'Free shoot and free reel'. I'd like to book this for my business in Chennai."
+    "Hi Grove Hub! I saw your offer: 'Free shoot and free reel'. I'd like to book this for my business in Chennai."
   );
 
   return (
-    <section className="py-24 px-4 sm:px-6 relative overflow-hidden bg-transparent border-t border-white/60">
+    <section className="py-24 sm:py-32 px-4 sm:px-6 relative overflow-hidden border-t border-white/8">
       <div className="max-w-5xl mx-auto">
         <motion.div
           initial={{ opacity: 0, scale: 0.96 }}
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true, margin: "-40px" }}
           transition={{ duration: 0.6 }}
-          className="relative rounded-3xl p-8 sm:p-14 lg:p-16 bg-white/75 backdrop-blur-xl text-[#1e293b] shadow-2xl text-center overflow-hidden border border-white/80"
+          className="relative rounded-3xl p-8 sm:p-14 lg:p-16 glass-panel-elevated border-2 border-amber-500/50 shadow-2xl shadow-amber-500/15 text-center overflow-hidden bg-gradient-to-b from-[#181824] via-[#121218] to-[#0D0D12]"
         >
-          {/* Subtle warm decorative glow */}
-          <div className="absolute top-0 right-0 w-80 h-80 bg-[#6c5ce7]/10 rounded-full blur-3xl pointer-events-none" />
+          {/* Ambient Amber Glow in Background */}
+          <div className="absolute top-0 right-1/4 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
 
           <div className="relative z-10 max-w-3xl mx-auto flex flex-col items-center">
             
             {/* Pill Tag */}
-            <div className="inline-flex items-center gap-2 rounded-full bg-[#6c5ce7]/10 border border-[#6c5ce7]/20 px-4 py-1 text-xs font-bold text-[#6c5ce7] uppercase tracking-wider mb-6">
-              Zero Cost • Zero Contract
+            <div className="inline-flex items-center gap-2 rounded-full bg-amber-500/15 border border-amber-500/30 px-4 py-1.5 text-xs font-bold text-amber-400 uppercase tracking-wider mb-6">
+              <Shield className="w-3.5 h-3.5 text-amber-400" />
+              <span>Zero Cost • Zero Obligation • Zero Contracts</span>
             </div>
 
-            {/* Large Uppercase Serif Headline for High Contrast */}
-            <h2 className="font-serif font-black text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-[#1e293b] leading-[1.12] tracking-tight mb-5 uppercase">
-              See our work before <br className="hidden sm:inline" />
-              <span className="italic font-normal text-[#6c5ce7] lowercase">you pay a single rupee.</span>
+            {/* Headline */}
+            <h2 className="font-sans font-black text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-white leading-[1.12] tracking-tight mb-6">
+              Experience Our Quality Before{" "}
+              <span className="text-gradient-amber block sm:inline">You Spend A Single Rupee.</span>
             </h2>
 
             {/* Subheading: Plain English, No Hype */}
-            <p className="text-base sm:text-lg text-[#334155] font-normal leading-relaxed mb-8 max-w-xl">
-              Text us and we&apos;ll do a free shoot and a free reel. We visit your shop or studio in Chennai, shoot for 45 minutes, edit the reel with our full team of four, and hand you the finished video. If you don&apos;t love it, you owe us nothing.
+            <p className="text-base sm:text-lg text-zinc-300 font-normal leading-relaxed mb-9 max-w-2xl">
+              Text us on WhatsApp and we will perform a free shoot and produce a free commercial reel. We visit your shop or clinic in Chennai, shoot for 45 minutes with cinema cameras and lights, script the hooks, and hand you the finished reel. If you don&apos;t love the result, you owe us nothing.
             </p>
 
             {/* 3 Reassurance bullets */}
-            <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-8 mb-9 text-xs sm:text-sm font-semibold text-[#475569]">
-              <span className="flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4 text-[#25D366]" />
-                <span>On-location in Chennai</span>
+            <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-8 mb-10 text-xs sm:text-sm font-semibold text-zinc-200">
+              <span className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                <span>On-Location in Chennai</span>
               </span>
-              <span className="flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4 text-[#25D366]" />
-                <span>Script &amp; hook included</span>
+              <span className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                <span>Commercial Script &amp; Hook Included</span>
               </span>
-              <span className="flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4 text-[#25D366]" />
-                <span>Zero obligation</span>
+              <span className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                <span>Zero Obligation to Continue</span>
               </span>
             </div>
 
-            {/* Main Action Button (primary: #6c5ce7) */}
+            {/* Main Action Button */}
             <a
               href={freeOfferUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-3 rounded-full bg-[#6c5ce7] hover:bg-[#5b4bc4] px-8 sm:px-10 py-4 sm:py-5 text-base sm:text-lg font-bold text-white shadow-xl hover:shadow-2xl hover:shadow-[#6c5ce7]/30 transition-all duration-200 active:scale-95 group font-sans cursor-pointer"
+              className="inline-flex items-center justify-center gap-3 rounded-full btn-amber-glow px-8 sm:px-12 py-4 sm:py-5 text-base sm:text-lg font-black text-zinc-950 shadow-2xl shadow-amber-500/30 transition-all duration-200 active:scale-95 group cursor-pointer"
             >
-              <MessageCircle className="w-5 h-5 fill-white stroke-none" />
-              <span>Claim your free shoot &amp; reel on WhatsApp</span>
-              <ArrowRight className="w-5 h-5 text-white transition-transform group-hover:translate-x-1" />
+              <Sparkles className="w-5 h-5 fill-zinc-950/20 stroke-zinc-950" />
+              <span>Claim Free Shoot &amp; Reel on WhatsApp</span>
+              <ArrowRight className="w-5 h-5 stroke-[2.2] transition-transform group-hover:translate-x-1" />
             </a>
 
-            <div className="mt-4 text-xs text-[#64748b] font-medium">
-              Direct message to +91 93445 46733 • Plain conversation, no sales pressure
+            <div className="mt-5 text-xs text-zinc-400 font-medium">
+              Direct WhatsApp to +91 93445 46733 • Casual chat with our team, no high-pressure sales
             </div>
 
           </div>
