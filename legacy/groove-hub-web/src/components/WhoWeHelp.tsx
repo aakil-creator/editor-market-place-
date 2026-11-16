@@ -281,16 +281,13 @@ export function WhoWeHelp() {
               const Icon = iconMap[niche.icon] || Dumbbell;
               const isSelected = currentNiche.id === niche.id;
               return (
-                <motion.div
+                <div
                   key={niche.id}
-                  whileHover={{ y: -4, scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  transition={{ duration: 0.2 }}
                   onClick={() => handleSelectNiche(niche.id)}
-                  className={`p-4.5 rounded-2xl border transition-colors cursor-pointer flex flex-col justify-between ${
+                  className={`p-4.5 rounded-2xl border transition-all duration-200 cursor-pointer flex flex-col justify-between hover:-translate-y-1 hover:border-amber-500/40 ${
                     isSelected
                       ? "bg-[#181822] border-amber-400/80 shadow-xl shadow-amber-500/10"
-                      : "bg-[#121217] border-white/10 hover:border-amber-500/40 hover:bg-[#181822] shadow-md"
+                      : "bg-[#121217] border-white/10 hover:bg-[#181822] shadow-md"
                   }`}
                 >
                   <div>
@@ -316,7 +313,7 @@ export function WhoWeHelp() {
                     <span>Inspect Playbook</span>
                     <ChevronRight className="w-3.5 h-3.5" />
                   </div>
-                </motion.div>
+                </div>
               );
             })}
           </div>

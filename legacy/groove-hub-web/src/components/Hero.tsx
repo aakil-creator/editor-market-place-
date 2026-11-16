@@ -1,10 +1,10 @@
 "use client";
 
-import { useRef, useState, useEffect } from "react";
-import { motion, useMotionValue, useSpring, useTransform, AnimatePresence } from "framer-motion";
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { 
   MessageCircle, Sparkles, CheckCircle2, ArrowRight, ShieldCheck, 
-  Users, Target, MapPin, Camera, Flame, TrendingUp, Activity
+  Users, Target, MapPin, Camera, Activity
 } from "lucide-react";
 import { siteConfig, getWhatsAppUrl } from "../../site.config";
 
@@ -13,10 +13,10 @@ function AnimatedNumber({ value }: { value: string }) {
   return (
     <motion.span
       key={value}
-      initial={{ opacity: 0, y: 8, filter: "blur(4px)" }}
-      animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-      exit={{ opacity: 0, y: -8, filter: "blur(4px)" }}
-      transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -6 }}
+      transition={{ duration: 0.25, ease: "easeOut" }}
       className="inline-block"
     >
       {value}
@@ -25,7 +25,6 @@ function AnimatedNumber({ value }: { value: string }) {
 }
 
 export function Hero() {
-  const containerRef = useRef<HTMLDivElement>(null);
   const [activeIndustryIndex, setActiveIndustryIndex] = useState(0);
 
   const campaignShowcases = [
@@ -147,34 +146,6 @@ export function Hero() {
     return () => clearInterval(timer);
   }, [campaignShowcases.length]);
 
-  // Subtle mouse tilt with smooth spring
-  const mouseX = useMotionValue(0);
-  const mouseY = useMotionValue(0);
-  const springConfig = { damping: 25, stiffness: 120 };
-  const smoothMouseX = useSpring(mouseX, springConfig);
-  const smoothMouseY = useSpring(mouseY, springConfig);
-
-  const tiltX = useTransform(smoothMouseY, [-0.5, 0.5], [5, -5]);
-  const tiltY = useTransform(smoothMouseX, [-0.5, 0.5], [-7, 7]);
-  const floatX1 = useTransform(smoothMouseX, [-0.5, 0.5], [-9, 9]);
-  const floatY1 = useTransform(smoothMouseY, [-0.5, 0.5], [-7, 7]);
-  const floatX2 = useTransform(smoothMouseX, [-0.5, 0.5], [11, -11]);
-  const floatY2 = useTransform(smoothMouseY, [-0.5, 0.5], [9, -9]);
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!containerRef.current) return;
-    const rect = containerRef.current.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / rect.width - 0.5;
-    y: (e.clientY - rect.top) / rect.height - 0.5;
-    mouseX.set(x);
-    mouseY.set((e.clientY - rect.top) / rect.height - 0.5);
-  };
-
-  const handleMouseLeave = () => {
-    mouseX.set(0);
-    mouseY.set(0);
-  };
-
   const currentCampaign = campaignShowcases[activeIndustryIndex];
 
   const whatsappHeroUrl = getWhatsAppUrl(
@@ -182,24 +153,19 @@ export function Hero() {
   );
 
   return (
-    <section
-      ref={containerRef}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
-      className="relative min-h-[96vh] flex flex-col justify-center items-center pt-32 sm:pt-36 pb-20 px-4 sm:px-6 overflow-hidden"
-    >
+    <section className="relative min-h-[94vh] flex flex-col justify-center items-center pt-32 sm:pt-36 pb-20 px-4 sm:px-6 overflow-hidden">
       <div className="max-w-5xl w-full mx-auto text-center relative z-10 flex flex-col items-center">
         
-        {/* Animated Live Status Badge with Pulsing Halo */}
+        {/* Animated Live Status Badge */}
         <motion.div
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          className="inline-flex items-center gap-2.5 rounded-full border border-amber-500/30 bg-[#121217]/90 px-4 py-1.5 text-xs font-semibold text-amber-300 tracking-wide mb-8 shadow-lg shadow-black/40 backdrop-blur-xl group hover:border-amber-400 transition-colors"
+          transition={{ duration: 0.5 }}
+          className="inline-flex items-center gap-2.5 rounded-full border border-amber-500/30 bg-[#121217] px-4 py-1.5 text-xs font-semibold text-amber-300 tracking-wide mb-8 shadow-md"
         >
           <span className="relative flex h-2 w-2">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400 shadow-[0_0_8px_#34d399]" />
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
           </span>
           <span className="font-bold uppercase tracking-wider text-[11px] text-amber-400">
             Chennai On-Location Performance Studio
@@ -208,50 +174,30 @@ export function Hero() {
           <span className="text-zinc-300">Free First Shoot &amp; Reel Trial Open</span>
         </motion.div>
 
-        {/* Big Authoritative Digital Marketing Headline with Kinetic Gradient */}
+        {/* Big Authoritative Digital Marketing Headline */}
         <h1 className="font-sans font-black text-4xl sm:text-5xl md:text-6xl lg:text-7xl text-white tracking-tight leading-[1.08] mb-6 max-w-4xl text-center">
-          <motion.span
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="block text-white"
-          >
+          <span className="block text-white">
             We Turn Chennai Businesses Into
-          </motion.span>
-          <motion.span
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.2 }}
-            className="block mt-1 sm:mt-2 text-gradient-amber"
-          >
+          </span>
+          <span className="block mt-1 sm:mt-2 text-gradient-amber">
             Dominant Brands on Instagram.
-          </motion.span>
+          </span>
         </h1>
 
-        {/* Digital Marketing Buyer-Centric Subline */}
-        <motion.p
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
-          className="text-base sm:text-lg md:text-xl text-zinc-300 font-normal leading-relaxed max-w-3xl mb-9 text-center"
-        >
+        {/* Subline */}
+        <p className="text-base sm:text-lg md:text-xl text-zinc-300 font-normal leading-relaxed max-w-3xl mb-9 text-center">
           Tired of agencies charging ₹30,000/month to post generic Canva graphics from a desk? We deploy a dedicated 4-person crew (<strong className="text-white font-semibold">Video Director</strong>, <strong className="text-white font-semibold">Retention Editor</strong>, <strong className="text-white font-semibold">Commercial Scriptwriter</strong> &amp; <strong className="text-white font-semibold">Growth Strategist</strong>) directly to your location in Chennai with cinema cameras and high-converting commercial hooks that drive foot traffic, WhatsApp inquiries, and revenue.
-        </motion.p>
+        </p>
 
         {/* Primary Action Buttons */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
-          className="flex flex-col sm:flex-row items-center gap-4 mb-8 sm:mb-10 w-full sm:w-auto"
-        >
+        <div className="flex flex-col sm:flex-row items-center gap-4 mb-8 sm:mb-10 w-full sm:w-auto">
           <a
             href={whatsappHeroUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="w-full sm:w-auto group relative inline-flex items-center justify-center gap-3 rounded-full btn-amber-glow px-8 py-4 text-base font-extrabold text-zinc-950 transition-all duration-300 active:scale-95 text-center cursor-pointer shadow-xl shadow-amber-500/25"
+            className="w-full sm:w-auto group relative inline-flex items-center justify-center gap-3 rounded-full btn-amber-glow px-8 py-4 text-base font-extrabold text-zinc-950 transition-all duration-200 active:scale-95 text-center cursor-pointer shadow-lg shadow-amber-500/25"
           >
-            <Sparkles className="w-5 h-5 fill-zinc-950/20 stroke-zinc-950 animate-pulse" />
+            <Sparkles className="w-5 h-5 fill-zinc-950/20 stroke-zinc-950" />
             <span>Claim Your Free First Shoot &amp; Reel</span>
             <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1 stroke-[2.2]" />
           </a>
@@ -262,66 +208,36 @@ export function Hero() {
             <span>Explore Real Client Case Studies</span>
             <span className="text-amber-400 font-bold">↓</span>
           </a>
-        </motion.div>
+        </div>
 
-        {/* 3 Core Digital Marketing Reassurance Pills with Hover Lift */}
-        <motion.div
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.45, ease: [0.16, 1, 0.3, 1] }}
-          className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 mb-14 text-xs font-semibold text-zinc-300"
-        >
-          <motion.span
-            whileHover={{ scale: 1.04 }}
-            className="flex items-center gap-1.5 bg-[#121217] border border-white/10 px-3 py-1.5 rounded-full shadow-xs"
-          >
+        {/* 3 Core Digital Marketing Reassurance Pills */}
+        <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 mb-14 text-xs font-semibold text-zinc-300">
+          <span className="flex items-center gap-1.5 bg-[#121217] border border-white/10 px-3 py-1.5 rounded-full shadow-xs">
             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
             <span>100% On-Location in Chennai</span>
-          </motion.span>
-          <motion.span
-            whileHover={{ scale: 1.04 }}
-            className="flex items-center gap-1.5 bg-[#121217] border border-white/10 px-3 py-1.5 rounded-full shadow-xs"
-          >
+          </span>
+          <span className="flex items-center gap-1.5 bg-[#121217] border border-white/10 px-3 py-1.5 rounded-full shadow-xs">
             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
             <span>Zero Stock or AI Generated Clips</span>
-          </motion.span>
-          <motion.span
-            whileHover={{ scale: 1.04 }}
-            className="flex items-center gap-1.5 bg-[#121217] border border-white/10 px-3 py-1.5 rounded-full shadow-xs"
-          >
+          </span>
+          <span className="flex items-center gap-1.5 bg-[#121217] border border-white/10 px-3 py-1.5 rounded-full shadow-xs">
             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
             <span>Zero Upfront Contracts • Pay If You Love It</span>
-          </motion.span>
-        </motion.div>
+          </span>
+        </div>
 
-        {/* Animated Digital Marketing Campaign Terminal with Rotating Border Beam */}
+        {/* High-Performance Digital Marketing Campaign Terminal Frame */}
         <div className="w-full max-w-4xl relative mt-2">
           
-          {/* Main Campaign Card Frame with Moving Border Beam */}
-          <motion.div
-            style={{
-              rotateX: tiltX,
-              rotateY: tiltY,
-            }}
-            initial={{ opacity: 0, scale: 0.95, y: 30 }}
-            animate={{
-              opacity: 1,
-              scale: 1,
-              y: [0, -6, 0],
-            }}
-            transition={{
-              opacity: { duration: 0.9, delay: 0.6, ease: [0.16, 1, 0.3, 1] },
-              scale: { duration: 0.9, delay: 0.6, ease: [0.16, 1, 0.3, 1] },
-              y: { repeat: Infinity, duration: 5, ease: "easeInOut" }
-            }}
-            className="border-beam-card relative mx-auto w-full max-w-[340px] sm:max-w-[440px] overflow-hidden p-4 sm:p-5 shadow-[0_25px_65px_-15px_rgba(0,0,0,0.9)] backdrop-blur-2xl transition-transform text-left"
-          >
+          {/* Main Campaign Card Frame */}
+          <div className="border-beam-card relative mx-auto w-full max-w-[340px] sm:max-w-[440px] overflow-hidden p-4 sm:p-5 text-left">
+            
             {/* Dynamic Island Notch */}
             <div className="w-24 h-4 bg-black rounded-full mx-auto mb-3 flex items-center justify-end px-2 border border-white/10">
               <span className="w-1.5 h-1.5 rounded-full bg-blue-500/80 animate-pulse" />
             </div>
 
-            {/* Campaign Industry Tabs with Sliding Pill Animation */}
+            {/* Campaign Industry Tabs */}
             <div className="grid grid-cols-3 gap-1 mb-3.5 p-1 rounded-xl bg-black/40 border border-white/8">
               {campaignShowcases.map((showcase, idx) => {
                 const isActive = activeIndustryIndex === idx;
@@ -333,17 +249,10 @@ export function Hero() {
                       setActiveIndustryIndex(idx);
                     }}
                     className={`relative text-[10px] font-bold py-1.5 px-2 rounded-lg transition-colors cursor-pointer truncate ${
-                      isActive ? "text-zinc-950 font-black" : "text-zinc-400 hover:text-white"
+                      isActive ? "bg-amber-500 text-zinc-950 font-black shadow-sm" : "text-zinc-400 hover:text-white"
                     }`}
                   >
-                    {isActive && (
-                      <motion.div
-                        layoutId="activeHeroPill"
-                        transition={{ type: "spring", stiffness: 380, damping: 30 }}
-                        className="absolute inset-0 bg-gradient-to-r from-amber-400 to-amber-500 rounded-lg shadow-sm"
-                      />
-                    )}
-                    <span className="relative z-10">{showcase.label}</span>
+                    <span>{showcase.label}</span>
                   </button>
                 );
               })}
@@ -367,10 +276,7 @@ export function Hero() {
                     </span>
                   </div>
                   <div className="flex items-center gap-1 text-[10px] text-zinc-400">
-                    <span className="relative flex h-1.5 w-1.5">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
-                      <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-amber-400" />
-                    </span>
+                    <MapPin className="w-3 h-3 text-amber-400" />
                     <span>{currentCampaign.area}</span>
                   </div>
                 </div>
@@ -381,9 +287,9 @@ export function Hero() {
               </div>
             </div>
 
-            {/* Verified Performance Metrics Dashboard with Live Animated Numbers */}
+            {/* Verified Performance Metrics Dashboard */}
             <div className="grid grid-cols-3 gap-2 mb-3.5">
-              <div className="p-2.5 rounded-xl bg-[#09090B] border border-white/10 text-center relative overflow-hidden">
+              <div className="p-2.5 rounded-xl bg-[#09090B] border border-white/10 text-center">
                 <span className="text-[9px] uppercase font-bold text-zinc-400 block mb-0.5">
                   Chennai Reach
                 </span>
@@ -395,7 +301,7 @@ export function Hero() {
                 </span>
               </div>
 
-              <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-center relative overflow-hidden">
+              <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-center">
                 <span className="text-[9px] uppercase font-bold text-amber-300 block mb-0.5">
                   Inquiries
                 </span>
@@ -407,7 +313,7 @@ export function Hero() {
                 </span>
               </div>
 
-              <div className="p-2.5 rounded-xl bg-[#09090B] border border-white/10 text-center relative overflow-hidden">
+              <div className="p-2.5 rounded-xl bg-[#09090B] border border-white/10 text-center">
                 <span className="text-[9px] uppercase font-bold text-zinc-400 block mb-0.5">
                   Hook Hold
                 </span>
@@ -420,24 +326,18 @@ export function Hero() {
               </div>
             </div>
 
-            {/* Live 7-Day Chennai Reach Sparkline Animation */}
+            {/* 7-Day Local Reach Trend Bars */}
             <div className="p-2.5 rounded-xl bg-black/60 border border-white/8 mb-3 flex items-center justify-between">
               <div className="flex items-center gap-1.5">
-                <Activity className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
+                <Activity className="w-3.5 h-3.5 text-amber-400" />
                 <span className="text-[10px] font-bold text-zinc-300">Daily Local Traffic Trend</span>
               </div>
               <div className="flex items-end gap-1.5 h-6">
                 {currentCampaign.chartBars.map((height, i) => (
-                  <motion.div
+                  <div
                     key={i}
-                    initial={{ height: 4 }}
-                    animate={{ height: `${height * 0.22}px` }}
-                    transition={{
-                      duration: 0.6,
-                      delay: i * 0.05,
-                      ease: [0.16, 1, 0.3, 1],
-                    }}
-                    className="w-1.5 rounded-full bg-gradient-to-t from-amber-600 to-amber-400"
+                    style={{ height: `${height * 0.22}px` }}
+                    className="w-1.5 rounded-full bg-gradient-to-t from-amber-600 to-amber-400 transition-all duration-300"
                   />
                 ))}
               </div>
@@ -462,7 +362,7 @@ export function Hero() {
               </p>
             </div>
 
-            {/* On-Location Production Gear Specs with Audio Foley Waveform */}
+            {/* On-Location Production Gear Specs */}
             <div className="flex items-center justify-between p-2 rounded-xl bg-white/5 border border-white/10 text-[10px] text-zinc-300 mb-3">
               <div className="flex items-center gap-1.5 truncate">
                 <Camera className="w-3.5 h-3.5 text-amber-400 shrink-0" />
@@ -505,17 +405,10 @@ export function Hero() {
               <ArrowRight className="w-3 h-3 stroke-[2.2]" />
             </a>
 
-          </motion.div>
+          </div>
 
           {/* Floating Guarantee Card (Left) */}
-          <motion.div
-            style={{ x: floatX1, y: floatY1 }}
-            initial={{ opacity: 0, x: -30, y: 20 }}
-            animate={{ opacity: 1, x: 0, y: 0 }}
-            transition={{ duration: 0.9, delay: 0.8, ease: [0.16, 1, 0.3, 1] }}
-            whileHover={{ scale: 1.04, transition: { duration: 0.2 } }}
-            className="hidden lg:flex absolute top-12 left-0 -translate-x-12 w-64 flex-col text-left p-5 rounded-2xl glass-panel-elevated border-white/15 text-white shadow-xl cursor-default"
-          >
+          <div className="hidden lg:flex absolute top-12 left-0 -translate-x-12 w-64 flex-col text-left p-5 rounded-2xl glass-panel-elevated border-white/15 text-white shadow-xl">
             <div className="flex items-center gap-2 mb-2">
               <div className="w-8 h-8 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
                 <ShieldCheck className="w-4 h-4" />
@@ -530,17 +423,10 @@ export function Hero() {
             <p className="text-xs text-zinc-300 font-normal leading-relaxed">
               We visit your location in Chennai, shoot for 45 minutes, script, and edit 1 complete reel for free. If you don&apos;t love it, you owe us nothing.
             </p>
-          </motion.div>
+          </div>
 
           {/* Floating Squad Spec Card (Right) */}
-          <motion.div
-            style={{ x: floatX2, y: floatY2 }}
-            initial={{ opacity: 0, x: 30, y: 20 }}
-            animate={{ opacity: 1, x: 0, y: 0 }}
-            transition={{ duration: 0.9, delay: 0.9, ease: [0.16, 1, 0.3, 1] }}
-            whileHover={{ scale: 1.04, transition: { duration: 0.2 } }}
-            className="hidden lg:flex absolute bottom-8 right-0 translate-x-12 w-64 flex-col text-left p-5 rounded-2xl glass-panel-elevated border-white/15 text-white shadow-xl cursor-default"
-          >
+          <div className="hidden lg:flex absolute bottom-8 right-0 translate-x-12 w-64 flex-col text-left p-5 rounded-2xl glass-panel-elevated border-white/15 text-white shadow-xl">
             <div className="flex items-center gap-2 mb-2">
               <div className="w-8 h-8 rounded-full bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400">
                 <Users className="w-4 h-4" />
@@ -555,7 +441,7 @@ export function Hero() {
             <p className="text-xs text-zinc-300 font-normal leading-relaxed">
               Video Director + Retention Editor + Commercial Scriptwriter + Growth Strategist assigned to your brand.
             </p>
-          </motion.div>
+          </div>
 
         </div>
 

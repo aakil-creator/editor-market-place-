@@ -37,9 +37,8 @@ export function Packages() {
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-30px" }}
-                whileHover={{ y: -5, transition: { duration: 0.2 } }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-                className={`relative rounded-3xl p-6 sm:p-7 flex flex-col justify-between transition-all duration-300 backdrop-blur-2xl ${
+                transition={{ duration: 0.4, delay: index * 0.08 }}
+                className={`relative rounded-3xl p-6 sm:p-7 flex flex-col justify-between transition-all duration-200 hover:-translate-y-1 ${
                   isPopular
                     ? "glass-panel-elevated border-2 border-amber-400/90 shadow-2xl shadow-amber-500/20 scale-[1.02] lg:scale-[1.03] z-10 bg-[#161620]"
                     : "glass-panel border-white/10 hover:border-amber-500/40 shadow-xl bg-[#121217]/90"

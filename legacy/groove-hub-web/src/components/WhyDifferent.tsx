@@ -50,9 +50,8 @@ export function WhyDifferent() {
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-20px" }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-                whileHover={{ y: -6, transition: { duration: 0.2 } }}
-                className="glass-panel p-6 sm:p-7 flex flex-col justify-between rounded-2xl border-white/10 hover:border-amber-500/40 hover:bg-[#181822]/95 group shadow-xl"
+                transition={{ duration: 0.4, delay: index * 0.08 }}
+                className="glass-panel p-6 sm:p-7 flex flex-col justify-between rounded-2xl border-white/10 hover:border-amber-500/40 hover:bg-[#181822]/95 hover:-translate-y-1 transition-all duration-200 group shadow-xl"
               >
                 <div>
                   <div className="w-12 h-12 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 mb-6 group-hover:scale-105 group-hover:bg-amber-500/25 transition-all">

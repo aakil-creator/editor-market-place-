@@ -5,8 +5,8 @@
     /* Brand Theme: Dark Obsidian Luxury & Cinema Amber */
     --bg-dark: #09090B;
     --bg-surface: #121217;
-    --bg-card: rgba(18, 18, 24, 0.82);
-    --bg-card-hover: rgba(26, 26, 36, 0.95);
+    --bg-card: rgba(18, 18, 24, 0.95);
+    --bg-card-hover: rgba(26, 26, 36, 0.98);
     
     --border-subtle: rgba(255, 255, 255, 0.08);
     --border-hover: rgba(245, 158, 11, 0.35);
@@ -46,7 +46,7 @@
     background: #09090B;
   }
   ::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.18);
     border-radius: 9999px;
   }
   ::-webkit-scrollbar-thumb:hover {
@@ -59,38 +59,33 @@
   }
 }
 
-/* Glassmorphism Panel Utilities */
+/* High-Performance GPU-Optimized Panels (Zero Scroll Lag) */
 .glass-panel {
-  background: rgba(18, 18, 24, 0.85);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  background: rgba(18, 18, 24, 0.94);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  transform: translateZ(0);
 }
 
 .glass-panel:hover {
-  background: rgba(24, 24, 34, 0.96);
+  background: rgba(24, 24, 32, 0.98);
   border-color: rgba(245, 158, 11, 0.4);
-  box-shadow: 0 16px 40px -12px rgba(245, 158, 11, 0.18);
+  box-shadow: 0 12px 32px -10px rgba(245, 158, 11, 0.15);
   transform: translateY(-2px);
 }
 
 .glass-panel-elevated {
-  background: rgba(22, 22, 30, 0.94);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
+  background: rgba(22, 22, 30, 0.96);
   border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 24px 50px -15px rgba(0, 0, 0, 0.7);
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 16px 40px -15px rgba(0, 0, 0, 0.6);
+  transform: translateZ(0);
 }
 
-/* Shimmering Amber Gold Text Gradient */
+/* Amber Gold Text Gradient */
 .text-gradient-amber {
-  background: linear-gradient(135deg, #FFFBEB 0%, #FDE68A 25%, #F59E0B 55%, #D97706 85%, #FDE68A 100%);
-  background-size: 200% auto;
+  background: linear-gradient(135deg, #FFFBEB 0%, #FDE68A 25%, #F59E0B 55%, #D97706 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  animation: shine-text 6s linear infinite;
 }
 
 /* Chrome Silver Text Gradient */
@@ -100,98 +95,27 @@
   -webkit-text-fill-color: transparent;
 }
 
-/* Amber Button Glow with Pulsing Halo */
+/* Amber Button Glow */
 .btn-amber-glow {
   background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
-  box-shadow: 0 4px 20px -2px rgba(245, 158, 11, 0.45);
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-  position: relative;
-  overflow: hidden;
-}
-
-.btn-amber-glow::after {
-  content: "";
-  position: absolute;
-  top: -50%;
-  left: -60%;
-  width: 200%;
-  height: 200%;
-  background: linear-gradient(
-    60deg,
-    transparent 20%,
-    rgba(255, 255, 255, 0.35) 50%,
-    transparent 80%
-  );
-  transform: rotate(30deg);
-  transition: all 0.75s ease;
-  pointer-events: none;
-}
-
-.btn-amber-glow:hover::after {
-  left: 100%;
+  box-shadow: 0 4px 18px -2px rgba(245, 158, 11, 0.45);
+  transition: all 0.2s ease;
 }
 
 .btn-amber-glow:hover {
   background: linear-gradient(135deg, #FBBF24 0%, #F59E0B 100%);
-  box-shadow: 0 8px 35px rgba(245, 158, 11, 0.65);
-  transform: translateY(-1.5px) scale(1.01);
+  box-shadow: 0 8px 30px rgba(245, 158, 11, 0.65);
+  transform: translateY(-1.5px);
 }
 
-/* Moving Border Beam Animation */
+/* Hardware-Accelerated High-End Border Frame */
 .border-beam-card {
   position: relative;
   border-radius: 36px;
   background: #101016;
-}
-
-.border-beam-card::before {
-  content: "";
-  position: absolute;
-  inset: -1.5px;
-  border-radius: 38px;
-  padding: 1.5px;
-  background: conic-gradient(
-    from var(--beam-angle, 0deg),
-    transparent 0deg,
-    rgba(245, 158, 11, 0.1) 60deg,
-    rgba(245, 158, 11, 0.95) 120deg,
-    rgba(251, 191, 36, 1) 150deg,
-    rgba(245, 158, 11, 0.2) 200deg,
-    transparent 280deg
-  );
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  pointer-events: none;
-  animation: spin-beam 5s linear infinite;
-}
-
-/* Keyframes Definitions */
-@property --beam-angle {
-  syntax: "<angle>";
-  inherits: false;
-  initial-value: 0deg;
-}
-
-@keyframes spin-beam {
-  from {
-    --beam-angle: 0deg;
-  }
-  to {
-    --beam-angle: 360deg;
-  }
-}
-
-@keyframes shine-text {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
+  border: 1.5px solid rgba(245, 158, 11, 0.4);
+  box-shadow: 0 0 35px -5px rgba(245, 158, 11, 0.18), 0 25px 60px -15px rgba(0, 0, 0, 0.9);
+  transform: translateZ(0);
 }
 
 @keyframes bar-pulse {
@@ -200,40 +124,5 @@
   }
   50% {
     transform: scaleY(1);
-  }
-}
-
-@keyframes float-gentle {
-  0%, 100% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-8px);
-  }
-}
-
-@keyframes pulse-ring {
-  0% {
-    transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.5);
-  }
-  70% {
-    transform: scale(1);
-    box-shadow: 0 0 0 12px rgba(245, 158, 11, 0);
-  }
-  100% {
-    transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0);
-  }
-}
-
-@keyframes radar-ripple {
-  0% {
-    transform: scale(1);
-    opacity: 0.9;
-  }
-  100% {
-    transform: scale(2.8);
-    opacity: 0;
   }
 }

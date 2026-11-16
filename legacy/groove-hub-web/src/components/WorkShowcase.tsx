@@ -225,9 +225,8 @@ export function WorkShowcase() {
                 initial={{ opacity: 0, scale: 0.96 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.96 }}
-                transition={{ duration: 0.3 }}
-                whileHover={{ y: -6, transition: { duration: 0.2 } }}
-                className="glass-panel-elevated rounded-3xl border-white/12 p-6 sm:p-7 shadow-2xl flex flex-col justify-between hover:border-amber-500/50 hover:shadow-[0_20px_45px_-12px_rgba(245,158,11,0.18)] transition-all duration-300 group"
+                transition={{ duration: 0.25 }}
+                className="glass-panel-elevated rounded-3xl border-white/12 p-6 sm:p-7 shadow-xl flex flex-col justify-between hover:border-amber-500/50 hover:-translate-y-1 transition-all duration-200 group"
               >
                 <div>
                   {/* Card Header */}
