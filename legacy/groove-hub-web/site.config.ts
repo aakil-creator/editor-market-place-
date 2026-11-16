@@ -65,8 +65,8 @@ export const siteConfig = {
 
   // Brand Identity
   brandName: "GROVE HUB",
-  tagline: "We grow local businesses in Chennai on Instagram with high-quality reels.",
-  shortDescription: "Grove Hub grows local businesses in Chennai on Instagram with high-quality reels. We are a team of four: a video shooter, a video editor, a scriptwriter, and a strategic thinker.",
+  tagline: "Chennai's Performance Reels & Digital Marketing Studio. We drive footfall, direct WhatsApp bookings, and local market dominance.",
+  shortDescription: "Grove Hub is an on-location reels and digital marketing studio in Chennai. We send a dedicated 4-person crew (Video Director, Retention Editor, Scriptwriter, and Growth Strategist) directly to your storefront to produce high-converting commercial reels and customer acquisition campaigns.",
   
   // Location & Service Area
   city: "Chennai",

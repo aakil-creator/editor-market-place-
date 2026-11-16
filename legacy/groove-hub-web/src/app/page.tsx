@@ -2,9 +2,11 @@ import { CinematicBackground } from "@/components/CinematicBackground";
 import { Header } from "@/components/Header";
 import { Hero } from "@/components/Hero";
 import { TrustStrip } from "@/components/TrustStrip";
+import { DigitalMarketingPillars } from "@/components/DigitalMarketingPillars";
 import { WhyDifferent } from "@/components/WhyDifferent";
 import { ProcessTimeline } from "@/components/ProcessTimeline";
 import { WorkShowcase } from "@/components/WorkShowcase";
+import { GrowthCalculator } from "@/components/GrowthCalculator";
 import { WhoWeHelp } from "@/components/WhoWeHelp";
 import { MarketCheckForm } from "@/components/MarketCheckForm";
 import { Packages } from "@/components/Packages";
@@ -23,37 +25,43 @@ export default function Home() {
         {/* 1. Glass Nav Bar */}
         <Header />
 
-        {/* 2. Dark Luxury Hero Section with Interactive Phone Mockup */}
+        {/* 2. Hero: Authoritative Digital Marketing Headline + Live Campaign Terminal (Zero AI Clips) */}
         <Hero />
 
-        {/* 3. High-Contrast Infinite Marquee (All 16 Sectors) */}
+        {/* 3. High-Contrast Infinite Marquee (All 16 Sectors in Chennai) */}
         <TrustStrip />
 
-        {/* 4. Why Different: The Dedicated 4-Person Squad + Agency Comparison */}
+        {/* 4. The 4 Pillars of Digital Marketing Customer Acquisition */}
+        <DigitalMarketingPillars />
+
+        {/* 5. Why Different: Dedicated 4-Person Squad vs Typical Desk Agencies */}
         <WhyDifferent />
 
-        {/* 5. Our 5-Step On-Location Pipeline */}
+        {/* 6. Our 5-Step On-Location Production Pipeline */}
         <ProcessTimeline />
 
-        {/* 6. Commercial Blueprints (Clinics, Cafes, Auto, Boutiques, Real Estate, Gyms) */}
+        {/* 7. Real Campaign Case Studies & Performance Blueprints (Zero AI Clips) */}
         <WorkShowcase />
 
-        {/* 7. Who We Help: Comprehensive Playbook for All 16+ Industries */}
+        {/* 8. Interactive ROI & Growth Revenue Calculator */}
+        <GrowthCalculator />
+
+        {/* 9. Who We Help: Comprehensive Playbook for All 16+ Industries & Directory */}
         <WhoWeHelp />
 
-        {/* 8. Free Local Market Check Request */}
+        {/* 10. Free Local 5km Competitor & Instagram Audit */}
         <MarketCheckForm />
 
-        {/* 9. Monthly Production Retainers */}
+        {/* 11. Monthly Production Retainers */}
         <Packages />
 
-        {/* 10. The Free Shoot & Reel Offer */}
+        {/* 12. The Free First Shoot & Reel Trial Offer */}
         <FreeOfferBanner />
 
-        {/* 11. FAQ Accordion */}
+        {/* 13. FAQ Accordion */}
         <FAQAccordion />
 
-        {/* 12. Studio Footer */}
+        {/* 14. Studio Footer */}
         <Footer />
       </div>
     </main>

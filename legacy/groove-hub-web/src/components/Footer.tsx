@@ -10,10 +10,12 @@ export function Footer() {
   };
 
   const footerLinks = [
-    { name: "All 16 Businesses", href: "#who-we-help" },
+    { name: "Marketing Engine", href: "#pillars" },
+    { name: "Case Studies", href: "#our-work" },
+    { name: "ROI Calculator", href: "#calculator" },
+    { name: "All 16 Sectors", href: "#who-we-help" },
     { name: "Why Us", href: "#why-us" },
     { name: "5-Step Pipeline", href: "#process" },
-    { name: "Production Blueprints", href: "#our-work" },
     { name: "Retainers", href: "#packages" },
     { name: "Free Market Check", href: "#free-check" },
     { name: "FAQ", href: "#faq" },

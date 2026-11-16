@@ -31,10 +31,11 @@ export function Header() {
   }, []);
 
   const navLinks = [
-    { name: "All 16 Businesses", href: "#who-we-help" },
+    { name: "Marketing Engine", href: "#pillars" },
+    { name: "Case Studies", href: "#our-work" },
+    { name: "ROI Calculator", href: "#calculator" },
+    { name: "All 16 Sectors", href: "#who-we-help" },
     { name: "Why Us", href: "#why-us" },
-    { name: "Production Pipeline", href: "#process" },
-    { name: "Commercial Blueprint", href: "#our-work" },
     { name: "Retainers", href: "#packages" },
     { name: "FAQ", href: "#faq" },
   ];
