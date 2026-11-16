@@ -87,6 +87,7 @@ export function ProcessTimeline() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-30px" }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
+                whileHover={{ y: -6, transition: { duration: 0.2 } }}
                 className={`glass-panel p-6 sm:p-7 rounded-2xl flex flex-col justify-between transition-all duration-300 group shadow-xl ${
                   isPassed
                     ? "border-amber-500/50 bg-[#181822]/95 shadow-[0_10px_30px_rgba(245,158,11,0.12)]"

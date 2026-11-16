@@ -68,7 +68,8 @@ export function DigitalMarketingPillars() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-30px" }}
                 transition={{ duration: 0.5, delay: idx * 0.1 }}
-                className="glass-panel-elevated rounded-3xl border-white/12 p-7 sm:p-8 flex flex-col justify-between hover:border-amber-500/40 transition-all shadow-xl group"
+                whileHover={{ y: -6, scale: 1.015, transition: { duration: 0.2 } }}
+                className="glass-panel-elevated rounded-3xl border-white/12 p-7 sm:p-8 flex flex-col justify-between hover:border-amber-500/50 hover:shadow-[0_20px_45px_-10px_rgba(245,158,11,0.18)] transition-all shadow-xl group"
               >
                 <div>
                   <div className="flex items-center justify-between mb-5">
