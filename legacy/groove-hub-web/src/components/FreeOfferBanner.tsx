@@ -17,23 +17,23 @@ export function FreeOfferBanner() {
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true, margin: "-40px" }}
           transition={{ duration: 0.6 }}
-          className="relative rounded-3xl p-8 sm:p-14 lg:p-16 glass-panel-elevated border-2 border-amber-500/50 shadow-2xl shadow-amber-500/15 text-center overflow-hidden bg-gradient-to-b from-[#181824] via-[#121218] to-[#0D0D12]"
+          className="relative rounded-3xl p-8 sm:p-14 lg:p-16 glass-panel-elevated border-2 border-emerald-500/50 shadow-2xl shadow-emerald-500/20 text-center overflow-hidden bg-gradient-to-b from-[#12201A] via-[#0E1518] to-[#08090C]"
         >
           {/* Ambient Amber Glow in Background */}
-          <div className="absolute top-0 right-1/4 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute top-0 right-1/4 w-96 h-96 bg-emerald-500/15 rounded-full blur-3xl pointer-events-none" />
 
           <div className="relative z-10 max-w-3xl mx-auto flex flex-col items-center">
             
             {/* Pill Tag */}
-            <div className="inline-flex items-center gap-2 rounded-full bg-amber-500/15 border border-amber-500/30 px-4 py-1.5 text-xs font-bold text-amber-400 uppercase tracking-wider mb-6">
-              <Shield className="w-3.5 h-3.5 text-amber-400" />
+            <div className="inline-flex items-center gap-2 rounded-full bg-emerald-500/15 border border-emerald-500/30 px-4 py-1.5 text-xs font-bold text-emerald-400 uppercase tracking-wider mb-6">
+              <Shield className="w-3.5 h-3.5 text-emerald-400" />
               <span>Zero Cost • Zero Obligation • Zero Contracts</span>
             </div>
 
             {/* Headline */}
             <h2 className="font-sans font-black text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-white leading-[1.12] tracking-tight mb-6">
               Experience Our Quality Before{" "}
-              <span className="text-gradient-amber block sm:inline">You Spend A Single Rupee.</span>
+              <span className="text-gradient-aurora block sm:inline">You Spend A Single Rupee.</span>
             </h2>
 
             {/* Subheading: Plain English, No Hype */}
@@ -62,7 +62,7 @@ export function FreeOfferBanner() {
               href={freeOfferUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-3 rounded-full btn-amber-glow px-8 sm:px-12 py-4 sm:py-5 text-base sm:text-lg font-black text-zinc-950 shadow-2xl shadow-amber-500/30 transition-all duration-200 active:scale-95 group cursor-pointer"
+              className="inline-flex items-center justify-center gap-3 rounded-full btn-emerald-glow px-8 sm:px-12 py-4 sm:py-5 text-base sm:text-lg font-black text-zinc-950 shadow-2xl shadow-amber-500/30 transition-all duration-200 active:scale-95 group cursor-pointer"
             >
               <Sparkles className="w-5 h-5 fill-zinc-950/20 stroke-zinc-950" />
               <span>Claim Free Shoot &amp; Reel on WhatsApp</span>

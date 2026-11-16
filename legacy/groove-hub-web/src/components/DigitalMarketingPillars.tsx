@@ -45,12 +45,12 @@ export function DigitalMarketingPillars() {
         
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-[#121217] px-4 py-1.5 text-xs font-bold text-amber-400 uppercase tracking-wider mb-4 shadow-md">
+          <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-[#0E1118] px-4 py-1.5 text-xs font-bold text-emerald-400 uppercase tracking-wider mb-4 shadow-md">
             <Zap className="w-3.5 h-3.5" />
             <span>Complete Customer Acquisition Engine</span>
           </div>
           <h2 className="font-sans font-black text-3xl sm:text-4xl md:text-5xl text-white tracking-tight mb-5 leading-tight">
-            The 4 Pillars of Our <span className="text-gradient-amber">Chennai Digital Marketing Engine</span>.
+            The 4 Pillars of Our <span className="text-gradient-aurora">Chennai Digital Marketing Engine</span>.
           </h2>
           <p className="text-base sm:text-lg text-zinc-300 font-normal leading-relaxed">
             Most agencies post random static graphics and hope for the best. Here is the full-funnel digital marketing infrastructure Grove Hub builds for your local business.
@@ -68,14 +68,14 @@ export function DigitalMarketingPillars() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-30px" }}
                 transition={{ duration: 0.4, delay: idx * 0.08 }}
-                className="glass-panel-elevated rounded-3xl border-white/12 p-7 sm:p-8 flex flex-col justify-between hover:border-amber-500/50 hover:-translate-y-1 transition-all duration-200 shadow-xl group"
+                className="glass-panel-elevated rounded-3xl border-white/12 p-7 sm:p-8 flex flex-col justify-between hover:border-emerald-500/50 hover:-translate-y-1 transition-all duration-200 shadow-xl group"
               >
                 <div>
                   <div className="flex items-center justify-between mb-5">
-                    <div className="w-12 h-12 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 group-hover:bg-amber-500/25 transition-all">
+                    <div className="w-12 h-12 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 group-hover:bg-emerald-500/25 transition-all">
                       <Icon className="w-6 h-6 stroke-[1.8]" />
                     </div>
-                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-400 bg-white/5 border border-white/10 px-3 py-1 rounded-full">
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-400 bg-white/5 border border-white/10 px-3 py-1 rounded-full">
                       {pillar.badge}
                     </span>
                   </div>
@@ -116,7 +116,7 @@ export function DigitalMarketingPillars() {
             href={getWhatsAppUrl("Hi Grove Hub! I want to discuss how your 4-pillar digital marketing engine would work for my business in Chennai.")}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full btn-amber-glow text-zinc-950 text-xs sm:text-sm font-black shadow-lg shadow-amber-500/20 active:scale-95 shrink-0 transition-all"
+            className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full btn-emerald-glow text-zinc-950 text-xs sm:text-sm font-black shadow-lg shadow-emerald-500/20 active:scale-95 shrink-0 transition-all"
           >
             <span>Book Free Strategy &amp; Shoot</span>
             <ArrowRight className="w-4 h-4 stroke-[2.2]" />

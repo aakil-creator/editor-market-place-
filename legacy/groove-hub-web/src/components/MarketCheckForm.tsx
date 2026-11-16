@@ -62,7 +62,7 @@ Please review our profile and local competitors nearby.`;
           <div className="relative z-10">
             {/* Header */}
             <div className="text-center max-w-xl mx-auto mb-10">
-              <div className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-3.5 py-1 text-xs font-bold text-amber-400 uppercase tracking-wider mb-4 shadow-sm">
+              <div className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-1 text-xs font-bold text-emerald-400 uppercase tracking-wider mb-4 shadow-sm">
                 <Search className="w-3.5 h-3.5" />
                 <span>Zero Cost Analysis</span>
               </div>
@@ -105,7 +105,7 @@ Please review our profile and local competitors nearby.`;
                       placeholder="e.g. Apex Dental / Zari Couture / Iron Gym"
                       value={formData.businessName}
                       onChange={(e) => setFormData({ ...formData, businessName: e.target.value })}
-                      className="w-full px-4 py-3 rounded-xl bg-[#09090B] border border-white/15 text-white text-sm placeholder:text-zinc-600 focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400 shadow-inner transition-all"
+                      className="w-full px-4 py-3 rounded-xl bg-[#09090B] border border-white/15 text-white text-sm placeholder:text-zinc-600 focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 shadow-inner transition-all"
                     />
                   </div>
 
@@ -117,7 +117,7 @@ Please review our profile and local competitors nearby.`;
                     <select
                       value={formData.businessType}
                       onChange={(e) => setFormData({ ...formData, businessType: e.target.value })}
-                      className="w-full px-4 py-3 rounded-xl bg-[#09090B] border border-white/15 text-white text-sm focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400 shadow-inner transition-all"
+                      className="w-full px-4 py-3 rounded-xl bg-[#09090B] border border-white/15 text-white text-sm focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 shadow-inner transition-all"
                     >
                       <option value="Dental Clinic / Doctor / Healthcare">Dental Clinic / Doctor / Healthcare</option>
                       <option value="Restaurant / Fine Dine / Cafe / Bistro">Restaurant / Fine Dine / Cafe / Bistro</option>
@@ -150,7 +150,7 @@ Please review our profile and local competitors nearby.`;
                       placeholder="e.g. Anna Nagar, Adyar, T. Nagar, OMR, Velachery"
                       value={formData.area}
                       onChange={(e) => setFormData({ ...formData, area: e.target.value })}
-                      className="w-full px-4 py-3 rounded-xl bg-[#09090B] border border-white/15 text-white text-sm placeholder:text-zinc-600 focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400 shadow-inner transition-all"
+                      className="w-full px-4 py-3 rounded-xl bg-[#09090B] border border-white/15 text-white text-sm placeholder:text-zinc-600 focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 shadow-inner transition-all"
                     />
                   </div>
 
@@ -165,7 +165,7 @@ Please review our profile and local competitors nearby.`;
                       placeholder="@yourbusinessname"
                       value={formData.instagramHandle}
                       onChange={(e) => setFormData({ ...formData, instagramHandle: e.target.value })}
-                      className="w-full px-4 py-3 rounded-xl bg-[#09090B] border border-white/15 text-white text-sm placeholder:text-zinc-600 focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400 shadow-inner transition-all"
+                      className="w-full px-4 py-3 rounded-xl bg-[#09090B] border border-white/15 text-white text-sm placeholder:text-zinc-600 focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 shadow-inner transition-all"
                     />
                   </div>
 
@@ -182,7 +182,7 @@ Please review our profile and local competitors nearby.`;
                     placeholder="e.g. +91 93445 46733"
                     value={formData.whatsappNumber}
                     onChange={(e) => setFormData({ ...formData, whatsappNumber: e.target.value })}
-                    className="w-full px-4 py-3 rounded-xl bg-[#09090B] border border-white/15 text-white text-sm placeholder:text-zinc-600 focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400 shadow-inner transition-all"
+                    className="w-full px-4 py-3 rounded-xl bg-[#09090B] border border-white/15 text-white text-sm placeholder:text-zinc-600 focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 shadow-inner transition-all"
                   />
                 </div>
 
@@ -191,7 +191,7 @@ Please review our profile and local competitors nearby.`;
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full flex items-center justify-center gap-2.5 rounded-full btn-amber-glow text-zinc-950 py-4 px-6 font-black text-sm sm:text-base shadow-xl shadow-amber-500/25 transition-all duration-200 active:scale-98 disabled:opacity-50 cursor-pointer"
+                    className="w-full flex items-center justify-center gap-2.5 rounded-full btn-emerald-glow text-zinc-950 py-4 px-6 font-black text-sm sm:text-base shadow-xl shadow-emerald-500/25 transition-all duration-200 active:scale-98 disabled:opacity-50 cursor-pointer"
                   >
                     <Send className="w-4 h-4 fill-zinc-950 stroke-none" />
                     <span>Send Details &amp; Request Free Market Check</span>

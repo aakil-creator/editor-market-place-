@@ -64,12 +64,12 @@ export function GrowthCalculator() {
         
         {/* Header */}
         <div className="text-center max-w-2xl mx-auto mb-14">
-          <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-[#121217] px-4 py-1.5 text-xs font-bold text-amber-400 uppercase tracking-wider mb-4 shadow-md">
+          <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-[#0E1118] px-4 py-1.5 text-xs font-bold text-emerald-400 uppercase tracking-wider mb-4 shadow-md">
             <Calculator className="w-3.5 h-3.5" />
             <span>Interactive ROI &amp; Revenue Forecaster</span>
           </div>
           <h2 className="font-sans font-black text-3xl sm:text-4xl md:text-5xl text-white tracking-tight mb-4 leading-tight">
-            Calculate Your <span className="text-gradient-amber">Projected Chennai Reach &amp; Return</span>.
+            Calculate Your <span className="text-gradient-aurora">Projected Chennai Reach &amp; Return</span>.
           </h2>
           <p className="text-base sm:text-lg text-zinc-300 font-normal leading-relaxed">
             See realistic, data-backed estimates for your local industry in Chennai. No vanity metrics—pure customer acquisition forecasting.
@@ -98,15 +98,15 @@ export function GrowthCalculator() {
                         onClick={() => setSelectedNiche(niche)}
                         className={`relative p-3 rounded-xl text-left border text-xs font-bold transition-all cursor-pointer ${
                           isSelected
-                            ? "border-amber-400 shadow-md shadow-amber-500/20 text-zinc-950 font-black"
-                            : "bg-[#09090B] text-zinc-300 border-white/10 hover:border-amber-500/40 hover:text-white"
+                            ? "border-emerald-400 shadow-md shadow-emerald-500/20 text-zinc-950 font-black"
+                            : "bg-[#09090B] text-zinc-300 border-white/10 hover:border-emerald-500/40 hover:text-white"
                         }`}
                       >
                         {isSelected && (
                           <motion.div
                             layoutId="activeNicheIndicator"
                             transition={{ type: "spring", stiffness: 350, damping: 28 }}
-                            className="absolute inset-0 bg-gradient-to-r from-amber-400 to-amber-500 rounded-xl"
+                            className="absolute inset-0 bg-gradient-to-r from-emerald-400 to-emerald-500 rounded-xl"
                           />
                         )}
                         <span className="relative z-10">{niche.name}</span>
@@ -114,7 +114,7 @@ export function GrowthCalculator() {
                     );
                   })}
                 </div>
-                <p className="text-[11px] text-amber-400/90 mt-2 font-mono">
+                <p className="text-[11px] text-emerald-400 mt-2 font-mono">
                   {selectedNiche.ticketLabel}
                 </p>
               </div>
@@ -137,15 +137,15 @@ export function GrowthCalculator() {
                         onClick={() => setReelVolume(vol.count)}
                         className={`relative p-3 rounded-xl border text-center transition-all cursor-pointer ${
                           isSelected
-                            ? "border-amber-400 shadow-md shadow-amber-500/20 text-zinc-950 font-black"
-                            : "bg-[#09090B] text-zinc-300 border-white/10 hover:border-amber-500/40 hover:text-white"
+                            ? "border-emerald-400 shadow-md shadow-emerald-500/20 text-zinc-950 font-black"
+                            : "bg-[#09090B] text-zinc-300 border-white/10 hover:border-emerald-500/40 hover:text-white"
                         }`}
                       >
                         {isSelected && (
                           <motion.div
                             layoutId="activeVolumeIndicator"
                             transition={{ type: "spring", stiffness: 350, damping: 28 }}
-                            className="absolute inset-0 bg-gradient-to-r from-amber-400 to-amber-500 rounded-xl"
+                            className="absolute inset-0 bg-gradient-to-r from-emerald-400 to-emerald-500 rounded-xl"
                           />
                         )}
                         <span className="relative z-10 block text-xs font-black">{vol.label}</span>
@@ -164,7 +164,7 @@ export function GrowthCalculator() {
             <div className="lg:col-span-6 bg-[#09090B] rounded-2xl border border-white/12 p-6 sm:p-7 shadow-inner">
               
               <div className="flex items-center justify-between pb-4 mb-5 border-b border-white/10">
-                <span className="text-xs font-extrabold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+                <span className="text-xs font-extrabold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
                   <TrendingUp className="w-3.5 h-3.5" />
                   Monthly Growth Forecast
                 </span>
@@ -245,14 +245,14 @@ export function GrowthCalculator() {
                 <div className="pt-2 pb-1">
                   <div className="flex items-center justify-between text-[10px] text-zinc-400 font-bold mb-1.5">
                     <span>Market Saturation Velocity</span>
-                    <span className="text-amber-400">{fillPercentage}% Intensity</span>
+                    <span className="text-emerald-400">{fillPercentage}% Intensity</span>
                   </div>
                   <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden p-0.5">
                     <motion.div
                       initial={{ width: "20%" }}
                       animate={{ width: `${fillPercentage}%` }}
                       transition={{ duration: 0.5, ease: "easeInOut" }}
-                      className="h-full rounded-full bg-gradient-to-r from-amber-500 to-amber-300 shadow-[0_0_10px_rgba(245,158,11,0.6)]"
+                      className="h-full rounded-full bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.6)]"
                     />
                   </div>
                 </div>
@@ -269,7 +269,7 @@ export function GrowthCalculator() {
                       animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
                       exit={{ opacity: 0, y: -10, filter: "blur(4px)" }}
                       transition={{ duration: 0.3 }}
-                      className="font-sans font-black text-2xl sm:text-3xl text-gradient-amber block"
+                      className="font-sans font-black text-2xl sm:text-3xl text-gradient-aurora block"
                     >
                       ~{formattedRevenue}
                     </motion.span>
@@ -286,7 +286,7 @@ export function GrowthCalculator() {
                 href={getWhatsAppUrl(whatsappMessage)}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl text-xs sm:text-sm font-black btn-amber-glow text-zinc-950 shadow-md shadow-amber-500/20 active:scale-98 transition-all"
+                className="w-full flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl text-xs sm:text-sm font-black btn-emerald-glow text-zinc-950 shadow-md shadow-amber-500/20 active:scale-98 transition-all"
               >
                 <MessageCircle className="w-4 h-4 fill-zinc-950 stroke-none" />
                 <span>Discuss This Growth Plan &amp; Book Free Shoot</span>

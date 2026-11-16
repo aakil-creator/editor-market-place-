@@ -11,12 +11,12 @@ export function Packages() {
         
         {/* Section Header */}
         <div className="text-center max-w-2xl mx-auto mb-16">
-          <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-[#121217] px-4 py-1.5 text-xs font-bold text-amber-400 uppercase tracking-wider mb-4 shadow-md">
+          <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-[#0E1118] px-4 py-1.5 text-xs font-bold text-emerald-400 uppercase tracking-wider mb-4 shadow-md">
             <Layers className="w-3.5 h-3.5" />
             <span>Transparent Consistency</span>
           </div>
           <h2 className="font-sans font-black text-3xl sm:text-4xl md:text-5xl text-white tracking-tight mb-5 leading-tight">
-            High-Impact Monthly Retainers For <span className="text-gradient-amber">Chennai Businesses</span>.
+            High-Impact Monthly Retainers For <span className="text-gradient-aurora">Chennai Businesses</span>.
           </h2>
           <p className="text-base sm:text-lg text-zinc-300 font-normal leading-relaxed">
             Every plan includes location visits, on-location shooting, hook scripting, and mobile-first editing with our dedicated 4-person crew.
@@ -40,8 +40,8 @@ export function Packages() {
                 transition={{ duration: 0.4, delay: index * 0.08 }}
                 className={`relative rounded-3xl p-6 sm:p-7 flex flex-col justify-between transition-all duration-200 hover:-translate-y-1 ${
                   isPopular
-                    ? "glass-panel-elevated border-2 border-amber-400/90 shadow-2xl shadow-amber-500/20 scale-[1.02] lg:scale-[1.03] z-10 bg-[#161620]"
-                    : "glass-panel border-white/10 hover:border-amber-500/40 shadow-xl bg-[#121217]/90"
+                    ? "glass-panel-elevated border-2 border-emerald-400/90 shadow-2xl shadow-emerald-500/20 scale-[1.02] lg:scale-[1.03] z-10 bg-[#161620]"
+                    : "glass-panel border-white/10 hover:border-emerald-500/40 shadow-xl bg-[#121217]/90"
                 }`}
               >
                 {/* Package Badge Pill */}
@@ -49,7 +49,7 @@ export function Packages() {
                   <div
                     className={`absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-widest shadow-md ${
                       isPopular
-                        ? "btn-amber-glow text-zinc-950 font-black"
+                        ? "btn-emerald-glow text-zinc-950 font-black"
                         : "bg-[#181822] text-amber-300 border border-white/15"
                     }`}
                   >
@@ -60,7 +60,7 @@ export function Packages() {
                 <div>
                   {/* Tier Title */}
                   <div className="mb-4">
-                    <span className="text-[10px] uppercase font-extrabold tracking-wider text-amber-400 block mb-1">
+                    <span className="text-[10px] uppercase font-extrabold tracking-wider text-emerald-400 block mb-1">
                       {pkg.id.toUpperCase()}
                     </span>
                     <h3 className="font-sans font-extrabold text-xl text-white">
@@ -97,7 +97,7 @@ export function Packages() {
                     </span>
                     {pkg.deliverables.map((item, i) => (
                       <div key={i} className="flex items-start gap-2.5 text-xs text-zinc-200 leading-snug">
-                        <Check className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                        <Check className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
                         <span>{item}</span>
                       </div>
                     ))}
@@ -122,7 +122,7 @@ export function Packages() {
                   rel="noopener noreferrer"
                   className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all duration-200 active:scale-95 cursor-pointer ${
                     isPopular
-                      ? "btn-amber-glow text-zinc-950 shadow-lg shadow-amber-500/25"
+                      ? "btn-emerald-glow text-zinc-950 shadow-lg shadow-emerald-500/25"
                       : "glass-panel border-white/15 text-zinc-200 hover:text-white hover:border-amber-400"
                   }`}
                 >

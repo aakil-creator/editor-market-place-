@@ -49,8 +49,8 @@ export function Header() {
       <div
         className={`max-w-6xl mx-auto flex items-center justify-between rounded-full transition-all duration-300 px-4 sm:px-6 py-2.5 sm:py-3 border ${
           isScrolled
-            ? "bg-[#09090B]/90 backdrop-blur-2xl border-white/12 shadow-[0_12px_36px_rgba(0,0,0,0.6)]"
-            : "bg-[#121217]/80 backdrop-blur-xl border-white/8 shadow-[0_8px_24px_rgba(0,0,0,0.4)]"
+            ? "bg-[#08090C]/90 backdrop-blur-2xl border-white/12 shadow-[0_12px_36px_rgba(0,0,0,0.6)]"
+            : "bg-[#0E1118]/85 backdrop-blur-xl border-white/8 shadow-[0_8px_24px_rgba(0,0,0,0.4)]"
         }`}
       >
         {/* Official Brand Logo */}
@@ -63,10 +63,10 @@ export function Header() {
             />
           </div>
           <div className="flex flex-col">
-            <span className="font-sans font-extrabold tracking-tight text-sm sm:text-base text-white leading-none group-hover:text-amber-400 transition-colors">
+            <span className="font-sans font-extrabold tracking-tight text-sm sm:text-base text-white leading-none group-hover:text-emerald-400 transition-colors">
               GROVE HUB
             </span>
-            <span className="text-[9px] uppercase font-bold tracking-widest text-amber-400/90 leading-tight mt-0.5">
+            <span className="text-[9px] uppercase font-bold tracking-widest text-emerald-400 leading-tight mt-0.5">
               CHENNAI STUDIO
             </span>
           </div>
@@ -78,7 +78,7 @@ export function Header() {
             <a
               key={link.name}
               href={link.href}
-              className="text-xs xl:text-sm font-medium text-zinc-300 hover:text-amber-400 transition-colors duration-200"
+              className="text-xs xl:text-sm font-medium text-zinc-300 hover:text-emerald-400 transition-colors duration-200"
             >
               {link.name}
             </a>
@@ -91,7 +91,7 @@ export function Header() {
             href={freeOfferUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="group relative inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-300 px-4 sm:px-5 py-2 text-xs sm:text-sm font-bold text-zinc-950 shadow-lg shadow-amber-500/25 hover:shadow-amber-500/40 transition-all active:scale-95 cursor-pointer"
+            className="group relative inline-flex items-center gap-1.5 rounded-full btn-emerald-glow px-4 sm:px-5 py-2 text-xs sm:text-sm font-bold text-zinc-950 shadow-lg shadow-emerald-500/25 transition-all active:scale-95 cursor-pointer"
           >
             <Sparkles className="w-3.5 h-3.5 text-zinc-950 fill-zinc-950/20" />
             <span>Free First Shoot</span>
@@ -125,7 +125,7 @@ export function Header() {
                   key={link.name}
                   href={link.href}
                   onClick={() => setMobileMenuOpen(false)}
-                  className="px-3 py-2 rounded-lg text-sm font-medium text-zinc-200 hover:text-amber-400 hover:bg-white/5 transition-all"
+                  className="px-3 py-2 rounded-lg text-sm font-medium text-zinc-200 hover:text-emerald-400 hover:bg-white/5 transition-all"
                 >
                   {link.name}
                 </a>

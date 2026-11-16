@@ -75,12 +75,12 @@ export function WhoWeHelp() {
         
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-14">
-          <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-[#121217] px-4 py-1.5 text-xs font-bold text-amber-400 uppercase tracking-wider mb-4 shadow-md">
+          <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-[#0E1118] px-4 py-1.5 text-xs font-bold text-emerald-400 uppercase tracking-wider mb-4 shadow-md">
             <Store className="w-3.5 h-3.5" />
             <span>Serving Every Commercial Business in Chennai</span>
           </div>
           <h2 className="font-sans font-black text-3xl sm:text-4xl md:text-5xl text-white tracking-tight mb-5 leading-tight">
-            We Produce Reels For <span className="text-gradient-amber">All 16+ Industries</span> Across Chennai.
+            We Produce Reels For <span className="text-gradient-aurora">All 16+ Industries</span> Across Chennai.
           </h2>
           <p className="text-base sm:text-lg text-zinc-300 font-normal leading-relaxed">
             From dental clinics, fine-dine restaurants, and luxury spas to real estate builders, car detailing studios, and silk boutiques — every commercial niche has its own retention psychology. Select your industry below to inspect our proven production playbook.
@@ -109,7 +109,7 @@ export function WhoWeHelp() {
                   className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all duration-150 cursor-pointer border ${
                     isActive
                       ? "bg-amber-500 text-zinc-950 border-amber-500 shadow-md shadow-amber-500/20"
-                      : "bg-[#121217] text-zinc-300 border-white/10 hover:text-white hover:border-amber-500/40 hover:bg-white/5"
+                      : "bg-[#121217] text-zinc-300 border-white/10 hover:text-white hover:border-emerald-500/40 hover:bg-white/5"
                   }`}
                 >
                   <span>{sector}</span>
@@ -158,7 +158,7 @@ export function WhoWeHelp() {
                   className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-bold transition-all duration-200 border cursor-pointer ${
                     isActive
                       ? "bg-gradient-to-r from-amber-500 to-amber-600 text-zinc-950 border-amber-400 shadow-lg shadow-amber-500/25"
-                      : "bg-[#121217] text-zinc-300 border-white/10 hover:border-amber-500/40 hover:text-white hover:bg-white/5"
+                      : "bg-[#121217] text-zinc-300 border-white/10 hover:border-emerald-500/40 hover:text-white hover:bg-white/5"
                   }`}
                 >
                   <Icon className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isActive ? "text-zinc-950 stroke-[2.2]" : "text-amber-400"}`} />
@@ -179,7 +179,7 @@ export function WhoWeHelp() {
               href={getWhatsAppUrl(`Hi Grove Hub! I run a ${searchQuery} business in Chennai and want to discuss custom reel concepts.`)}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full btn-amber-glow text-zinc-950 text-xs font-bold shadow-md transition-all"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full btn-emerald-glow text-zinc-950 text-xs font-bold shadow-md transition-all"
             >
               <MessageCircle className="w-3.5 h-3.5 stroke-zinc-950" />
               <span>Get Custom Concept for &ldquo;{searchQuery}&rdquo;</span>
@@ -203,7 +203,7 @@ export function WhoWeHelp() {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 mb-8 border-b border-white/10 gap-4">
                   <div>
                     <div className="flex items-center gap-2 mb-2">
-                      <span className="text-[11px] font-extrabold uppercase tracking-wider text-amber-400 bg-amber-500/15 border border-amber-500/30 px-3 py-0.5 rounded-full">
+                      <span className="text-[11px] font-extrabold uppercase tracking-wider text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-3 py-0.5 rounded-full">
                         {currentNiche.sector}
                       </span>
                       <span className="text-xs text-zinc-400 font-medium">Chennai Commercial Blueprint</span>
@@ -220,7 +220,7 @@ export function WhoWeHelp() {
                     href={getWhatsAppUrl(`Hi Grove Hub! I run a ${currentNiche.title} in Chennai and want to claim my free shoot and free reel.`)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center justify-center gap-2 text-xs sm:text-sm font-bold text-zinc-950 btn-amber-glow px-5 py-3 rounded-full shadow-lg shadow-amber-500/20 transition-all shrink-0 cursor-pointer"
+                    className="inline-flex items-center justify-center gap-2 text-xs sm:text-sm font-bold text-zinc-950 btn-emerald-glow px-5 py-3 rounded-full shadow-lg shadow-amber-500/20 transition-all shrink-0 cursor-pointer"
                   >
                     <span>Claim Free Shoot for This Niche</span>
                     <ArrowRight className="w-4 h-4 stroke-[2.2]" />
@@ -232,7 +232,7 @@ export function WhoWeHelp() {
                   {currentNiche.reelIdeas.map((idea, idx) => (
                     <div
                       key={idx}
-                      className="p-5 rounded-2xl bg-[#09090B]/90 border border-white/10 shadow-md flex flex-col justify-between hover:border-amber-500/40 transition-colors"
+                      className="p-5 rounded-2xl bg-[#09090B]/90 border border-white/10 shadow-md flex flex-col justify-between hover:border-emerald-500/40 transition-colors"
                     >
                       <div>
                         <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-400 block mb-2">
@@ -284,7 +284,7 @@ export function WhoWeHelp() {
                 <div
                   key={niche.id}
                   onClick={() => handleSelectNiche(niche.id)}
-                  className={`p-4.5 rounded-2xl border transition-all duration-200 cursor-pointer flex flex-col justify-between hover:-translate-y-1 hover:border-amber-500/40 ${
+                  className={`p-4.5 rounded-2xl border transition-all duration-200 cursor-pointer flex flex-col justify-between hover:-translate-y-1 hover:border-emerald-500/40 ${
                     isSelected
                       ? "bg-[#181822] border-amber-400/80 shadow-xl shadow-amber-500/10"
                       : "bg-[#121217] border-white/10 hover:bg-[#181822] shadow-md"
@@ -336,7 +336,7 @@ export function WhoWeHelp() {
               href={getWhatsAppUrl("Hi Grove Hub! I run a business in Chennai that is not on your list and want to get a free shoot and reel.")}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full btn-amber-glow text-zinc-950 text-xs sm:text-sm font-extrabold shadow-lg shadow-amber-500/25 active:scale-95 transition-all"
+              className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full btn-emerald-glow text-zinc-950 text-xs sm:text-sm font-extrabold shadow-lg shadow-amber-500/25 active:scale-95 transition-all"
             >
               <MessageCircle className="w-4 h-4 fill-zinc-950 stroke-none" />
               <span>Tell Us Your Business on WhatsApp</span>

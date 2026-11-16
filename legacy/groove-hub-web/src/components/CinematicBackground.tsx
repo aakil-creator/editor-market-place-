@@ -18,14 +18,14 @@ export function CinematicBackground() {
       aria-hidden="true"
     >
       {/* Base Obsidian Foundation */}
-      <div className="absolute inset-0 bg-[#09090B]" />
+      <div className="absolute inset-0 bg-[#08090C]" />
 
       {/* Top Ambient Cinema Amber Spotlight - Pre-rendered GPU gradient */}
       <div
         className="absolute -top-32 left-1/2 -translate-x-1/2 w-[900px] h-[550px] rounded-full opacity-25"
         style={{
           background:
-            "radial-gradient(ellipse at center, rgba(245, 158, 11, 0.35) 0%, rgba(217, 119, 6, 0.12) 45%, rgba(9, 9, 11, 0) 75%)",
+            "radial-gradient(ellipse at center, rgba(16, 185, 129, 0.28) 0%, rgba(5, 150, 105, 0.10) 45%, rgba(8, 9, 12, 0) 75%)",
           filter: "blur(90px)",
         }}
       />
@@ -35,7 +35,7 @@ export function CinematicBackground() {
         className="absolute top-[35%] -right-28 w-[650px] h-[650px] rounded-full opacity-18"
         style={{
           background:
-            "radial-gradient(circle, rgba(99, 102, 241, 0.25) 0%, rgba(9, 9, 11, 0) 70%)",
+            "radial-gradient(circle, rgba(6, 182, 212, 0.20) 0%, rgba(8, 9, 12, 0) 70%)",
           filter: "blur(100px)",
         }}
       />
@@ -45,7 +45,7 @@ export function CinematicBackground() {
         className="absolute top-[65%] -left-32 w-[700px] h-[700px] rounded-full opacity-20"
         style={{
           background:
-            "radial-gradient(circle, rgba(245, 158, 11, 0.28) 0%, rgba(217, 119, 6, 0.08) 50%, rgba(9, 9, 11, 0) 75%)",
+            "radial-gradient(circle, rgba(245, 158, 11, 0.22) 0%, rgba(217, 119, 6, 0.06) 50%, rgba(8, 9, 12, 0) 75%)",
           filter: "blur(100px)",
         }}
       />

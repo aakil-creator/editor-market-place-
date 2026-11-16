@@ -16,7 +16,7 @@ import { Footer } from "@/components/Footer";
 
 export default function Home() {
   return (
-    <main className="relative min-h-screen text-slate-100 bg-[#09090B] overflow-x-clip selection:bg-amber-500 selection:text-zinc-950">
+    <main className="relative min-h-screen text-slate-100 bg-[#08090C] overflow-x-clip selection:bg-emerald-500 selection:text-zinc-950">
       {/* Cinematic Ambient Studio Lighting Foundation */}
       <CinematicBackground />
 

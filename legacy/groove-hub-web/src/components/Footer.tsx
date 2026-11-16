@@ -27,7 +27,7 @@ export function Footer() {
   ];
 
   return (
-    <footer className="border-t border-white/10 bg-[#09090B] text-zinc-300 text-xs sm:text-sm pt-16 pb-12 px-4 sm:px-6 relative">
+    <footer className="border-t border-white/10 bg-[#08090C] text-zinc-300 text-xs sm:text-sm pt-16 pb-12 px-4 sm:px-6 relative">
       <div className="max-w-6xl mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-10 pb-12 border-b border-white/10">
           
@@ -42,10 +42,10 @@ export function Footer() {
                 />
               </div>
               <div className="flex flex-col">
-                <span className="font-sans font-black tracking-tight text-xl text-white leading-none group-hover:text-amber-400 transition-colors">
+                <span className="font-sans font-black tracking-tight text-xl text-white leading-none group-hover:text-emerald-400 transition-colors">
                   GROVE HUB
                 </span>
-                <span className="text-[10px] uppercase font-bold tracking-widest text-amber-400 leading-tight mt-0.5">
+                <span className="text-[10px] uppercase font-bold tracking-widest text-emerald-400 leading-tight mt-0.5">
                   CHENNAI REELS STUDIO
                 </span>
               </div>
@@ -56,21 +56,21 @@ export function Footer() {
             </p>
 
             <div className="flex items-center gap-2 text-zinc-300 font-medium mb-2.5">
-              <MapPin className="w-4 h-4 text-amber-400 shrink-0" />
+              <MapPin className="w-4 h-4 text-emerald-400 shrink-0" />
               <span>{siteConfig.locationDisplay}</span>
             </div>
 
             <div className="flex items-center gap-2 text-zinc-300 font-medium mb-2.5">
-              <Phone className="w-4 h-4 text-amber-400 shrink-0" />
-              <a href={`tel:${siteConfig.whatsappNumber}`} className="hover:text-amber-400 transition-colors">
+              <Phone className="w-4 h-4 text-emerald-400 shrink-0" />
+              <a href={`tel:${siteConfig.whatsappNumber}`} className="hover:text-emerald-400 transition-colors">
                 +91 93445 46733
               </a>
             </div>
 
             {siteConfig.email && (
               <div className="flex items-center gap-2 text-zinc-300 font-medium mb-4">
-                <Mail className="w-4 h-4 text-amber-400 shrink-0" />
-                <a href={`mailto:${siteConfig.email}`} className="hover:text-amber-400 transition-colors">
+                <Mail className="w-4 h-4 text-emerald-400 shrink-0" />
+                <a href={`mailto:${siteConfig.email}`} className="hover:text-emerald-400 transition-colors">
                   {siteConfig.email}
                 </a>
               </div>
@@ -87,7 +87,7 @@ export function Footer() {
                 <li key={link.name}>
                   <a
                     href={link.href}
-                    className="text-zinc-400 hover:text-amber-400 font-medium transition-colors"
+                    className="text-zinc-400 hover:text-emerald-400 font-medium transition-colors"
                   >
                     {link.name}
                   </a>
@@ -132,7 +132,7 @@ export function Footer() {
           </div>
           <button
             onClick={scrollToTop}
-            className="flex items-center gap-1.5 text-zinc-400 hover:text-amber-400 transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 text-zinc-400 hover:text-emerald-400 transition-colors cursor-pointer"
           >
             <span>Back to top</span>
             <ArrowUp className="w-4 h-4" />

@@ -29,12 +29,12 @@ export function ProcessTimeline() {
         
         {/* Section Header */}
         <div className="text-center max-w-2xl mx-auto mb-16">
-          <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-[#121217] px-4 py-1.5 text-xs font-bold text-amber-400 uppercase tracking-wider mb-4 shadow-md">
+          <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-[#0E1118] px-4 py-1.5 text-xs font-bold text-emerald-400 uppercase tracking-wider mb-4 shadow-md">
             <Workflow className="w-3.5 h-3.5" />
             <span>End-to-End On-Location Pipeline</span>
           </div>
           <h2 className="font-sans font-black text-3xl sm:text-4xl md:text-5xl text-white tracking-tight mb-5 leading-tight">
-            Our 5-Step Process From <span className="text-gradient-amber">Location Visit</span> to Finished Reel.
+            Our 5-Step Process From <span className="text-gradient-aurora">Location Visit</span> to Finished Reel.
           </h2>
           <p className="text-base sm:text-lg text-zinc-300 font-normal leading-relaxed">
             We don&apos;t ask you to brainstorm ideas or cut clips on your phone. Our 4-person crew handles every step across Chennai from concept to viral delivery.
@@ -46,7 +46,7 @@ export function ProcessTimeline() {
           <div className="relative h-2 sm:h-1.5 w-full bg-white/10 rounded-full overflow-hidden border border-white/10 shadow-inner">
             <motion.div
               style={{ scaleX: scrollYProgress, transformOrigin: "0%" }}
-              className="absolute inset-0 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 rounded-full shadow-[0_0_12px_rgba(245,158,11,0.5)]"
+              className="absolute inset-0 bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-400 rounded-full shadow-[0_0_12px_rgba(16,185,129,0.5)]"
             />
           </div>
           
@@ -56,7 +56,7 @@ export function ProcessTimeline() {
               <span
                 key={step.step}
                 className={`transition-colors duration-300 ${
-                  activeStep >= idx ? "text-amber-400 font-bold" : "text-zinc-500"
+                  activeStep >= idx ? "text-emerald-400 font-bold" : "text-zinc-500"
                 }`}
               >
                 Step {idx + 1}: {step.title}
@@ -66,7 +66,7 @@ export function ProcessTimeline() {
 
           {/* Mobile Step Active Tracker */}
           <div className="sm:hidden flex justify-between items-center mt-2.5 px-1 text-[11px] font-bold">
-            <span className="text-amber-400 flex items-center gap-1.5">
+            <span className="text-emerald-400 flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
               Step {activeStep + 1} of {siteConfig.process.length}: {siteConfig.process[activeStep]?.title}
             </span>
@@ -96,7 +96,7 @@ export function ProcessTimeline() {
                 <div>
                   {/* Step Number & Badge */}
                   <div className="flex items-center justify-between mb-5">
-                    <span className="font-sans font-black text-2xl sm:text-3xl text-amber-400 flex items-center gap-2">
+                    <span className="font-sans font-black text-2xl sm:text-3xl text-emerald-400 flex items-center gap-2">
                       <span>{step.step}</span>
                       {activeStep === index && (
                         <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse shadow-[0_0_8px_#f59e0b]" />
@@ -114,7 +114,7 @@ export function ProcessTimeline() {
                   </div>
 
                   {/* Step Title */}
-                  <h3 className="font-sans font-bold text-lg text-white mb-2.5 group-hover:text-amber-400 transition-colors leading-snug">
+                  <h3 className="font-sans font-bold text-lg text-white mb-2.5 group-hover:text-emerald-400 transition-colors leading-snug">
                     {step.title}
                   </h3>
 

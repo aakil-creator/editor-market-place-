@@ -23,7 +23,7 @@ export function WhyDifferent() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
-            className="inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-[#121217] px-4 py-1.5 text-xs font-bold text-amber-400 uppercase tracking-wider mb-5 shadow-md"
+            className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-[#0E1118] px-4 py-1.5 text-xs font-bold text-emerald-400 uppercase tracking-wider mb-5 shadow-md"
           >
             <Users className="w-3.5 h-3.5" />
             <span>Dedicated 4-Person Specialist Squad</span>
@@ -31,7 +31,7 @@ export function WhyDifferent() {
 
           <h2 className="font-sans font-black text-3xl sm:text-4xl md:text-5xl text-white tracking-tight mb-5 leading-tight">
             Why We Are Radically Different From a{" "}
-            <span className="text-gradient-amber">Typical Agency</span>.
+            <span className="text-gradient-aurora">Typical Agency</span>.
           </h2>
 
           <p className="text-base sm:text-lg text-zinc-300 font-normal leading-relaxed">
@@ -51,14 +51,14 @@ export function WhyDifferent() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-20px" }}
                 transition={{ duration: 0.4, delay: index * 0.08 }}
-                className="glass-panel p-6 sm:p-7 flex flex-col justify-between rounded-2xl border-white/10 hover:border-amber-500/40 hover:bg-[#181822]/95 hover:-translate-y-1 transition-all duration-200 group shadow-xl"
+                className="glass-panel p-6 sm:p-7 flex flex-col justify-between rounded-2xl border-white/10 hover:border-emerald-500/40 hover:bg-[#181822]/95 hover:-translate-y-1 transition-all duration-200 group shadow-xl"
               >
                 <div>
-                  <div className="w-12 h-12 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 mb-6 group-hover:scale-105 group-hover:bg-amber-500/25 transition-all">
+                  <div className="w-12 h-12 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 mb-6 group-hover:scale-105 group-hover:bg-emerald-500/25 transition-all">
                     <IconComponent className="w-6 h-6 stroke-[1.8]" />
                   </div>
 
-                  <span className="text-[11px] uppercase tracking-wider font-extrabold text-amber-400 block mb-1">
+                  <span className="text-[11px] uppercase tracking-wider font-extrabold text-emerald-400 block mb-1">
                     Role {index + 1}
                   </span>
 
@@ -114,7 +114,7 @@ export function WhyDifferent() {
             </div>
 
             {/* Grove Hub */}
-            <div className="rounded-2xl p-6 sm:p-7 bg-amber-950/20 border-2 border-amber-500/50 shadow-xl shadow-amber-500/10">
+            <div className="rounded-2xl p-6 sm:p-7 bg-emerald-950/25 border-2 border-emerald-500/60 shadow-xl shadow-emerald-500/15">
               <div className="flex items-center gap-3 mb-5">
                 <div className="w-8 h-8 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400">
                   <CheckCircle2 className="w-5 h-5" />

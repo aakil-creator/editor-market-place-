@@ -18,7 +18,7 @@ export function FAQAccordion() {
         
         {/* Section Header */}
         <div className="text-center max-w-xl mx-auto mb-16">
-          <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-[#121217] px-4 py-1.5 text-xs font-bold text-amber-400 uppercase tracking-wider mb-4 shadow-md">
+          <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-[#0E1118] px-4 py-1.5 text-xs font-bold text-emerald-400 uppercase tracking-wider mb-4 shadow-md">
             <HelpCircle className="w-3.5 h-3.5" />
             <span>Clear Transparency</span>
           </div>
@@ -38,16 +38,16 @@ export function FAQAccordion() {
             return (
               <div
                 key={index}
-                className="glass-panel rounded-2xl border-white/10 hover:border-amber-500/40 overflow-hidden shadow-xl transition-all"
+                className="glass-panel rounded-2xl border-white/10 hover:border-emerald-500/40 overflow-hidden shadow-xl transition-all"
               >
                 <button
                   onClick={() => toggle(index)}
                   aria-expanded={isOpen}
-                  className="w-full py-5 px-6 sm:px-7 flex items-center justify-between gap-4 text-left font-sans font-bold text-base sm:text-lg text-white hover:text-amber-400 transition-colors cursor-pointer"
+                  className="w-full py-5 px-6 sm:px-7 flex items-center justify-between gap-4 text-left font-sans font-bold text-base sm:text-lg text-white hover:text-emerald-400 transition-colors cursor-pointer"
                 >
                   <span>{faq.question}</span>
                   <ChevronDown
-                    className={`w-5 h-5 text-amber-400 shrink-0 transition-transform duration-300 ${
+                    className={`w-5 h-5 text-emerald-400 shrink-0 transition-transform duration-300 ${
                       isOpen ? "rotate-180" : ""
                     }`}
                   />
