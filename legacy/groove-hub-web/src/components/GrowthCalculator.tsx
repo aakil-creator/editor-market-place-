@@ -77,7 +77,7 @@ export function GrowthCalculator() {
         </div>
 
         {/* Calculator Main Box with Ambient Glass Elevation */}
-        <div className="glass-panel-elevated rounded-3xl border-white/15 p-6 sm:p-10 shadow-2xl backdrop-blur-2xl bg-[#121217]/95">
+        <div className="glass-panel-elevated rounded-3xl border-white/15 p-4 sm:p-10 shadow-2xl backdrop-blur-2xl bg-[#121217]/95">
           
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
             

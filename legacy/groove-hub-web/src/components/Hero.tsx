@@ -153,7 +153,7 @@ export function Hero() {
   );
 
   return (
-    <section className="relative min-h-[94vh] flex flex-col justify-center items-center pt-32 sm:pt-36 pb-20 px-4 sm:px-6 overflow-hidden">
+    <section className="relative min-h-[92vh] flex flex-col justify-center items-center pt-28 sm:pt-36 pb-16 sm:pb-20 px-3.5 sm:px-6 overflow-hidden">
       <div className="max-w-5xl w-full mx-auto text-center relative z-10 flex flex-col items-center">
         
         {/* Animated Live Status Badge */}
@@ -161,21 +161,21 @@ export function Hero() {
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="inline-flex items-center gap-2.5 rounded-full border border-emerald-500/30 bg-[#0E1118] px-4 py-1.5 text-xs font-semibold text-emerald-300 tracking-wide mb-8 shadow-md"
+          className="inline-flex flex-wrap items-center justify-center gap-1.5 sm:gap-2.5 rounded-2xl sm:rounded-full border border-emerald-500/30 bg-[#0E1118] px-3.5 sm:px-4 py-1.5 text-xs font-semibold text-emerald-300 tracking-wide mb-6 sm:mb-8 shadow-md max-w-full text-center"
         >
           <span className="relative flex h-2 w-2">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
             <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
           </span>
-          <span className="font-bold uppercase tracking-wider text-[11px] text-emerald-400">
+          <span className="font-bold uppercase tracking-wider text-[10px] sm:text-[11px] text-emerald-400">
             Chennai On-Location Performance Studio
           </span>
-          <span className="text-zinc-600">•</span>
-          <span className="text-zinc-300">Free First Shoot &amp; Reel Trial Open</span>
+          <span className="text-zinc-600 hidden sm:inline">•</span>
+          <span className="text-zinc-300 text-[10px] sm:text-xs">Free First Shoot &amp; Reel Trial Open</span>
         </motion.div>
 
         {/* Big Authoritative Digital Marketing Headline */}
-        <h1 className="font-sans font-black text-4xl sm:text-5xl md:text-6xl lg:text-7xl text-white tracking-tight leading-[1.08] mb-6 max-w-4xl text-center">
+        <h1 className="font-sans font-black text-3xl sm:text-5xl md:text-6xl lg:text-7xl text-white tracking-tight leading-[1.12] sm:leading-[1.08] mb-5 sm:mb-6 max-w-4xl text-center px-1">
           <span className="block text-white">
             We Turn Chennai Businesses Into
           </span>
@@ -185,7 +185,7 @@ export function Hero() {
         </h1>
 
         {/* Subline */}
-        <p className="text-base sm:text-lg md:text-xl text-zinc-300 font-normal leading-relaxed max-w-3xl mb-9 text-center">
+        <p className="text-sm sm:text-lg md:text-xl text-zinc-300 font-normal leading-relaxed max-w-3xl mb-7 sm:mb-9 text-center px-1">
           Tired of agencies charging ₹30,000/month to post generic Canva graphics from a desk? We deploy a dedicated 4-person crew (<strong className="text-white font-semibold">Video Director</strong>, <strong className="text-white font-semibold">Retention Editor</strong>, <strong className="text-white font-semibold">Commercial Scriptwriter</strong> &amp; <strong className="text-white font-semibold">Growth Strategist</strong>) directly to your location in Chennai with cinema cameras and high-converting commercial hooks that drive foot traffic, WhatsApp inquiries, and revenue.
         </p>
 
@@ -211,7 +211,7 @@ export function Hero() {
         </div>
 
         {/* 3 Core Digital Marketing Reassurance Pills */}
-        <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 mb-14 text-xs font-semibold text-zinc-300">
+        <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-4 mb-10 sm:mb-14 text-xs font-semibold text-zinc-300">
           <span className="flex items-center gap-1.5 bg-[#121217] border border-white/10 px-3 py-1.5 rounded-full shadow-xs">
             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
             <span>100% On-Location in Chennai</span>

@@ -136,7 +136,7 @@ export function Header() {
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 px-4 py-3 text-sm font-bold text-zinc-950 shadow-md shadow-amber-500/20"
+                  className="flex items-center justify-center gap-2 rounded-xl btn-emerald-glow px-4 py-3 text-sm font-bold text-zinc-950 shadow-md shadow-emerald-500/20"
                 >
                   <Sparkles className="w-4 h-4 fill-zinc-950/20" />
                   <span>Claim Free Shoot & Free Reel</span>
