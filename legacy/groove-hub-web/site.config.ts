@@ -65,7 +65,7 @@ export const siteConfig = {
 
   // Brand Identity
   brandName: "GROVE HUB",
-  tagline: "Chennai's Performance Reels & Digital Marketing Studio. We drive footfall, direct WhatsApp bookings, and local market dominance.",
+  tagline: "Chennai's In-Store Sales & Customer Acquisition Engine. We combine Local Google SEO, On-Location Cinema Reels, and Automated WhatsApp CRM to drive physical store footfall, phone calls, and repeat revenue.",
   shortDescription: "Grove Hub is an on-location reels and digital marketing studio in Chennai. We send a dedicated 4-person crew (Video Director, Retention Editor, Scriptwriter, and Growth Strategist) directly to your storefront to produce high-converting commercial reels and customer acquisition campaigns.",
   
   // Location & Service Area
@@ -140,24 +140,27 @@ export const siteConfig = {
   comparison: {
     agencyTitle: "Typical Digital Marketing Agency",
     agencyPoints: [
-      "Asks you to take your own phone clips and photos",
-      "Posts generic templates with stock quotes",
-      "Focuses on vanity boosts and generic follower numbers",
-      "Treats your business like another ticket in a queue"
+      "Posts generic Canva templates and vanity graphics from a desk",
+      "Zero store sales accountability—focuses only on meaningless impressions",
+      "No Local Google Maps SEO—missing 70% of high-intent nearby buyers",
+      "No CRM systems—inquiries sit unread in DMs and are lost forever",
+      "Asks you to record your own phone videos with shaky cameras"
     ],
-    groveTitle: "Grove Hub Growth Studio",
+    groveTitle: "Grove Hub In-Store Sales & Growth Studio",
     grovePoints: [
-      "We come to your location in Chennai and shoot everything ourselves",
-      "Every reel is written with a real hook and shot with a clear goal",
-      "Focuses on driving walk-ins, phone calls, and local customers",
-      "A dedicated team of four (Shooter, Editor, Writer, Strategist) working on every reel"
+      "Full-Funnel Sales Architecture: Local Google SEO + On-Location Shoots + WhatsApp CRM",
+      "Dominates Google Maps 3-Pack so nearby customers find your physical store first",
+      "Automated WhatsApp CRM captures 100% of leads and cuts no-shows by 85%",
+      "We visit your physical store in Chennai with Sony FX3 cinema cameras and lighting",
+      "Direct Cash Counter Attribution: We track real in-store footfall, phone calls, and revenue"
     ],
-    grooveTitle: "Grove Hub Growth Studio",
+    grooveTitle: "Grove Hub In-Store Sales & Growth Studio",
     groovePoints: [
-      "We come to your location in Chennai and shoot everything ourselves",
-      "Every reel is written with a real hook and shot with a clear goal",
-      "Focuses on driving walk-ins, phone calls, and local customers",
-      "A dedicated team of four (Shooter, Editor, Writer, Strategist) working on every reel"
+      "Full-Funnel Sales Architecture: Local Google SEO + On-Location Shoots + WhatsApp CRM",
+      "Dominates Google Maps 3-Pack so nearby customers find your physical store first",
+      "Automated WhatsApp CRM captures 100% of leads and cuts no-shows by 85%",
+      "We visit your physical store in Chennai with Sony FX3 cinema cameras and lighting",
+      "Direct Cash Counter Attribution: We track real in-store footfall, phone calls, and revenue"
     ]
   },
 
@@ -669,6 +672,14 @@ export const siteConfig = {
 
   // Grounded, warm, direct FAQ Answers
   faqs: [
+    {
+      question: "How does Local SEO & Google Maps help my physical store?",
+      answer: "Over 76% of people who search for a local service on their mobile phone in Chennai (e.g. 'dental clinic in Anna Nagar' or 'car PPF near me') visit a physical store within 24 hours. We optimize your Google Business Profile (GBP), embed local schema, geotag high-resolution photos from our shoots, and automate 5-star review collection from your in-store buyers so you rank in the Google 3-Pack and capture nearby customers before your competitors."
+    },
+    {
+      question: "What is the WhatsApp CRM and how does it increase store sales?",
+      answer: "Most local stores lose 60% of potential buyers because inquiries on Instagram or Google sit unanswered for hours. We set up an automated WhatsApp CRM that captures customer phone numbers within 30 seconds, tags them by their interest, sends automated appointment reminders with Google Maps pins (reducing no-shows by 85%), and runs festival broadcast promotions (Deepavali, Pongal, New Year) to bring previous customers back into your store."
+    },
     {
       question: "How does the free reel work?",
       answer: "We keep it very simple: text us on WhatsApp, tell us about your business, and we'll agree on a date to visit your shop or studio in Chennai. We plan a simple concept, shoot for about 45 minutes, edit the reel with our full team, and send you the completed video. You can post it on your Instagram. If you love the experience and want regular reels, we discuss a monthly plan. If not, the reel is yours to keep with zero strings attached."

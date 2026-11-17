@@ -174,19 +174,19 @@ export function Hero() {
           <span className="text-zinc-300 text-[10px] sm:text-xs">Free First Shoot &amp; Reel Trial Open</span>
         </motion.div>
 
-        {/* Big Authoritative Digital Marketing Headline */}
+        {/* Big Authoritative In-Store Sales Headline */}
         <h1 className="font-sans font-black text-3xl sm:text-5xl md:text-6xl lg:text-7xl text-white tracking-tight leading-[1.12] sm:leading-[1.08] mb-5 sm:mb-6 max-w-4xl text-center px-1">
           <span className="block text-white">
-            We Turn Chennai Businesses Into
+            We Drive In-Store Footfall &amp; Direct Sales
           </span>
           <span className="block mt-1 sm:mt-2 text-gradient-aurora">
-            Dominant Brands on Instagram.
+            For Local Stores in Chennai.
           </span>
         </h1>
 
         {/* Subline */}
         <p className="text-sm sm:text-lg md:text-xl text-zinc-300 font-normal leading-relaxed max-w-3xl mb-7 sm:mb-9 text-center px-1">
-          Tired of agencies charging ₹30,000/month to post generic Canva graphics from a desk? We deploy a dedicated 4-person crew (<strong className="text-white font-semibold">Video Director</strong>, <strong className="text-white font-semibold">Retention Editor</strong>, <strong className="text-white font-semibold">Commercial Scriptwriter</strong> &amp; <strong className="text-white font-semibold">Growth Strategist</strong>) directly to your location in Chennai with cinema cameras and high-converting commercial hooks that drive foot traffic, WhatsApp inquiries, and revenue.
+          Views don&apos;t pay your commercial rent—<strong className="text-white font-semibold">customers walking into your store and paying at your cash counter do</strong>. We engineer a 3-tier sales engine for your business: <strong className="text-emerald-400 font-semibold">Local Google SEO &amp; Maps #1 Rankings</strong> to capture buyers already searching nearby, <strong className="text-white font-semibold">On-Location Cinema Video</strong> to create unstoppable local desire, and an <strong className="text-emerald-400 font-semibold">Automated WhatsApp CRM</strong> to close every inquiry into paying in-store footfall.
         </p>
 
         {/* Primary Action Buttons */}
@@ -210,19 +210,19 @@ export function Hero() {
           </a>
         </div>
 
-        {/* 3 Core Digital Marketing Reassurance Pills */}
+        {/* 3 Core In-Store Sales Reassurance Pills */}
         <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-4 mb-10 sm:mb-14 text-xs font-semibold text-zinc-300">
-          <span className="flex items-center gap-1.5 bg-[#121217] border border-white/10 px-3 py-1.5 rounded-full shadow-xs">
+          <span className="flex items-center gap-1.5 bg-[#0E1118] border border-white/10 px-3 py-1.5 rounded-full shadow-xs text-[11px] sm:text-xs">
             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-            <span>100% On-Location in Chennai</span>
+            <span>Local Google Maps &amp; SEO Domination</span>
           </span>
-          <span className="flex items-center gap-1.5 bg-[#121217] border border-white/10 px-3 py-1.5 rounded-full shadow-xs">
+          <span className="flex items-center gap-1.5 bg-[#0E1118] border border-white/10 px-3 py-1.5 rounded-full shadow-xs text-[11px] sm:text-xs">
             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-            <span>Zero Stock or AI Generated Clips</span>
+            <span>Automated WhatsApp CRM &amp; Sales Pipelines</span>
           </span>
-          <span className="flex items-center gap-1.5 bg-[#121217] border border-white/10 px-3 py-1.5 rounded-full shadow-xs">
+          <span className="flex items-center gap-1.5 bg-[#0E1118] border border-white/10 px-3 py-1.5 rounded-full shadow-xs text-[11px] sm:text-xs">
             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-            <span>Zero Upfront Contracts • Pay If You Love It</span>
+            <span>100% On-Location Shoots in Chennai</span>
           </span>
         </div>
 

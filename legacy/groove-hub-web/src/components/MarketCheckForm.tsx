@@ -64,13 +64,13 @@ Please review our profile and local competitors nearby.`;
             <div className="text-center max-w-xl mx-auto mb-10">
               <div className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-1 text-xs font-bold text-emerald-400 uppercase tracking-wider mb-4 shadow-sm">
                 <Search className="w-3.5 h-3.5" />
-                <span>Zero Cost Analysis</span>
+                <span>Zero Cost Store Sales Analysis</span>
               </div>
               <h2 className="font-sans font-black text-2xl sm:text-3xl md:text-4xl text-white mb-3 leading-tight">
-                Get a Free Local Market Check
+                Get a Free Local SEO &amp; CRM Store Audit
               </h2>
               <p className="text-sm sm:text-base text-zinc-300 font-normal">
-                We review your Instagram and your direct competitors nearby in Chennai to identify exactly why you are missing local customers. Reviewed manually by our strategist.
+                We audit your Google Maps ranking, Instagram discovery, and competitor walk-in flow in Chennai to uncover exactly why you are losing in-store sales. Free manual review by our strategist.
               </p>
             </div>
 

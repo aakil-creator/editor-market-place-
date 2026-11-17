@@ -36,7 +36,7 @@ export function TrustStrip() {
     >
       <div className="max-w-6xl mx-auto px-4 mb-3.5 text-center">
         <p className="text-[11px] sm:text-xs uppercase tracking-[0.2em] font-extrabold text-emerald-400">
-          On-Location Video Production For All 16+ Commercial Business Sectors Across Chennai
+          Local SEO, WhatsApp CRM &amp; In-Store Sales Systems For All 16+ Commercial Sectors in Chennai
         </p>
       </div>
 

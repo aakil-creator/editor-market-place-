@@ -31,13 +31,13 @@ export function Header() {
   }, []);
 
   const navLinks = [
-    { name: "Marketing Engine", href: "#pillars" },
+    { name: "Store Sales Engine", href: "#sales-engine" },
+    { name: "Local SEO & Maps", href: "#local-seo" },
+    { name: "WhatsApp CRM", href: "#whatsapp-crm" },
     { name: "Case Studies", href: "#our-work" },
     { name: "ROI Calculator", href: "#calculator" },
     { name: "All 16 Sectors", href: "#who-we-help" },
-    { name: "Why Us", href: "#why-us" },
     { name: "Retainers", href: "#packages" },
-    { name: "FAQ", href: "#faq" },
   ];
 
   const freeOfferUrl = getWhatsAppUrl(
