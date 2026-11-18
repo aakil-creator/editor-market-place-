@@ -35,8 +35,8 @@ export function WhyDifferent() {
           </h2>
 
           <p className="text-base sm:text-lg text-zinc-300 font-normal leading-relaxed">
-            Most digital agencies sit behind desks in remote offices, ask you to record phone clips yourself, and post generic static templates.
-            We are an on-location production unit in Chennai: we script, visit your storefront, shoot with cinema gear, and edit high-retention vertical reels.
+            Most digital agencies sit behind desks in remote offices and post generic static templates.
+            We are an on-location production unit in Chennai: we script, visit your storefront, shoot with professional lighting and audio, and edit high-retention vertical reels.
           </p>
         </div>
 
@@ -86,7 +86,7 @@ export function WhyDifferent() {
               The Reality of Social Media in Chennai
             </h3>
             <p className="text-sm sm:text-base text-zinc-300 font-normal">
-              Posting random phone videos without a strategic hook or cinema-grade audio is why 95% of business accounts struggle to get customer walk-ins. Here is how Grove Hub compares:
+              Posting unscripted videos without a strategic hook, clear lighting, or crisp audio is why 95% of business accounts struggle to get customer walk-ins. Here is how Grove Hub compares:
             </p>
           </div>
 

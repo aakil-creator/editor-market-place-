@@ -38,7 +38,7 @@ export function FreeOfferBanner() {
 
             {/* Subheading: Plain English, No Hype */}
             <p className="text-base sm:text-lg text-zinc-300 font-normal leading-relaxed mb-9 max-w-2xl">
-              Text us on WhatsApp and we will perform a free shoot and produce a free commercial reel. We visit your shop or clinic in Chennai, shoot for 45 minutes with cinema cameras and lights, script the hooks, and hand you the finished reel. If you don&apos;t love the result, you owe us nothing.
+              Text us on WhatsApp and we will perform a free shoot and produce a free commercial reel. We visit your shop or clinic in Chennai, shoot for 45 minutes with professional lighting and audio gear, script the hooks, and hand you the finished reel. If you don&apos;t love the result, you owe us nothing.
             </p>
 
             {/* 3 Reassurance bullets */}

@@ -41,7 +41,7 @@ export function WorkShowcase() {
       clientTitle: "Apex Advanced Dental & Smile Studio",
       location: "Besant Nagar, Chennai",
       problem: "Struggling to fill weekday consultation chairs; patients hesitated on high-value clear aligners & smile makeovers due to dental anxiety.",
-      solution: "Our crew visited on-location with Sony FX3 & wireless lapels. Shot 4 myth-busting reels showing real patient ease and equipment cleanliness. Optimized for Chennai explore feed.",
+      solution: "Our crew visited on-location with wireless lapels and clinical soft lighting. Shot 4 myth-busting reels showing real patient ease and equipment cleanliness. Optimized for Chennai explore feed.",
       hookHeadline: "Why 80% of tooth discoloration isn't from coffee",
       hookWhyItWorks: "Addressed patient embarrassment head-on with a comforting educational tone, guiding viewers to a 1-tap WhatsApp consultation in the bio.",
       metrics: {
@@ -51,7 +51,7 @@ export function WorkShowcase() {
         retention: "94.8%",
         roi: "4.8x ROI Equivalent",
       },
-      cameraSetup: "Sony FX3 • 24mm f/1.4 • Diffused Clinical Daylight • Sennheiser Wireless Audio",
+      cameraSetup: "4K 60fps Crisp Wide • Diffused Clinical Daylight • Sennheiser Wireless Audio",
       funnelSteps: ["Educational Myth Hook", "3D Digital Scan Demo", "Bio Link CTA", "WhatsApp Consultation"],
       whatsappPrompt: "Hi Grove Hub! I run a Clinic / Dental practice in Chennai and want to discuss high-trust patient educational reels.",
     },
@@ -72,9 +72,9 @@ export function WorkShowcase() {
         retention: "91.2%",
         roi: "Organic Footfall Surge",
       },
-      cameraSetup: "Macro Probe Lens • 10-bit S-Log3 • Warm Softbox • Custom Foley Sound Design",
+      cameraSetup: "High-Definition Macro Detail • Warm Softbox • Custom Foley Sound Design",
       funnelSteps: ["Sensory ASMR Hook", "Plating Aesthetic", "Neighborhood Tag", "Weekend Footfall"],
-      whatsappPrompt: "Hi Grove Hub! I own a Cafe / Restaurant in Chennai and want to shoot cinematic food and ambience reels.",
+      whatsappPrompt: "Hi Grove Hub! I own a Cafe / Restaurant in Chennai and want to shoot high-retention food and ambience reels.",
     },
     {
       id: "auto-study",
@@ -93,7 +93,7 @@ export function WorkShowcase() {
         retention: "96.4%",
         roi: "6.2x Campaign Value",
       },
-      cameraSetup: "High-Speed 120fps • Inspection LED • Polarized Filter • Studio Boom Mic",
+      cameraSetup: "Smooth 60fps Slow-Mo • Inspection LED • Polarized Filter • Studio Boom Mic",
       funnelSteps: ["Razor Scratch Hook", "Instant Healing Proof", "DM Price Quote", "Workshop Booking"],
       whatsappPrompt: "Hi Grove Hub! I operate an Auto Detailing / Garage studio in Chennai and want high-converting showcase reels.",
     },
@@ -114,7 +114,7 @@ export function WorkShowcase() {
         retention: "95.6%",
         roi: "5.1x Festive Sales",
       },
-      cameraSetup: "Macro Fabric Grade • 4K HDR • Diffused Studio Light • Wireless Lavalier",
+      cameraSetup: "Detailed Texture 4K • Diffused Studio Light • Wireless Lavalier",
       funnelSteps: ["Authenticity Test Hook", "Zari Shimmer Macro", "WhatsApp Catalogue", "Showroom Walk-in"],
       whatsappPrompt: "Hi Grove Hub! I run a Boutique / Fashion Studio in Chennai and want high-converting Instagram reels.",
     },
@@ -135,7 +135,7 @@ export function WorkShowcase() {
         retention: "92.1%",
         roi: "High-Ticket Contracts",
       },
-      cameraSetup: "Gimbal 24mm Wide • Natural Golden Hour Fill • 4K 10-bit S-Log3",
+      cameraSetup: "3-Axis Gimbal Wide • Natural Golden Hour Fill • 4K 60fps HDR",
       funnelSteps: ["Sea-View Lifestyle Hook", "Penthouse Walkthrough", "Brochure Download", "Private Site Visit"],
       whatsappPrompt: "Hi Grove Hub! I represent a Real Estate / Interior Design firm in Chennai and want architectural showcase reels.",
     },
@@ -156,7 +156,7 @@ export function WorkShowcase() {
         retention: "93.7%",
         roi: "3.9x Member Retainer",
       },
-      cameraSetup: "Dynamic Gimbal • Kinetic Beat Sync • High-Contrast Rim Lights • Bass Audio Foley",
+      cameraSetup: "Dynamic Gimbal Tracking • Kinetic Beat Sync • High-Contrast Rim Lights • Bass Audio Foley",
       funnelSteps: ["Form Mistake Callout", "Trainer Solution", "Free 1-Day Trial Pass", "Membership Signup"],
       whatsappPrompt: "Hi Grove Hub! I run a Gym / Fitness studio in Chennai and want to discuss shooting high-retention Instagram reels.",
     },
@@ -191,7 +191,7 @@ export function WorkShowcase() {
             How We Engineer High-ROI Campaigns for <span className="text-gradient-aurora">Chennai Businesses</span>.
           </h2>
           <p className="text-base sm:text-lg text-zinc-300 font-normal leading-relaxed">
-            Real client challenges, the commercial script strategy we deployed on-location with cinema cameras, and the measurable customer inquiries generated across Chennai.
+            Real client challenges, the commercial script strategy we deployed on-location with professional lighting and audio, and the measurable customer inquiries generated across Chennai.
           </p>
         </div>
 

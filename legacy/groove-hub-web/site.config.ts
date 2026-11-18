@@ -65,7 +65,7 @@ export const siteConfig = {
 
   // Brand Identity
   brandName: "GROVE HUB",
-  tagline: "Chennai's In-Store Sales & Customer Acquisition Engine. We combine Local Google SEO, On-Location Cinema Reels, and Automated WhatsApp CRM to drive physical store footfall, phone calls, and repeat revenue.",
+  tagline: "Chennai's In-Store Sales & Customer Acquisition Engine. We combine Local Google SEO, On-Location Commercial Reels, and Automated WhatsApp CRM to drive physical store footfall, phone calls, and repeat revenue.",
   shortDescription: "Grove Hub is an on-location reels and digital marketing studio in Chennai. We send a dedicated 4-person crew (Video Director, Retention Editor, Scriptwriter, and Growth Strategist) directly to your storefront to produce high-converting commercial reels and customer acquisition campaigns.",
   
   // Location & Service Area
@@ -107,7 +107,7 @@ export const siteConfig = {
       name: "Video Shooter",
       title: "The Video Shooter",
       action: "Plans angles & shoots at your location",
-      description: "Visits your shop or studio in Chennai with proper lighting, stabilization, and camera gear to capture clean, authentic footage of your space and work.",
+      description: "Visits your shop or studio in Chennai with professional lighting, gimbal stabilization, and wireless audio to capture clean, authentic footage of your space and work.",
       icon: "Camera"
     },
     {
@@ -144,14 +144,14 @@ export const siteConfig = {
       "Zero store sales accountability—focuses only on meaningless impressions",
       "No Local Google Maps SEO—missing 70% of high-intent nearby buyers",
       "No CRM systems—inquiries sit unread in DMs and are lost forever",
-      "Asks you to record your own phone videos with shaky cameras"
+      "Asks you to record yourself with no creative director, script, or professional lighting"
     ],
     groveTitle: "Grove Hub In-Store Sales & Growth Studio",
     grovePoints: [
       "Full-Funnel Sales Architecture: Local Google SEO + On-Location Shoots + WhatsApp CRM",
       "Dominates Google Maps 3-Pack so nearby customers find your physical store first",
       "Automated WhatsApp CRM captures 100% of leads and cuts no-shows by 85%",
-      "We visit your physical store in Chennai with Sony FX3 cinema cameras and lighting",
+      "Our dedicated 4-person crew visits your physical store in Chennai with professional lighting, wireless audio & stabilization",
       "Direct Cash Counter Attribution: We track real in-store footfall, phone calls, and revenue"
     ],
     grooveTitle: "Grove Hub In-Store Sales & Growth Studio",
@@ -159,7 +159,7 @@ export const siteConfig = {
       "Full-Funnel Sales Architecture: Local Google SEO + On-Location Shoots + WhatsApp CRM",
       "Dominates Google Maps 3-Pack so nearby customers find your physical store first",
       "Automated WhatsApp CRM captures 100% of leads and cuts no-shows by 85%",
-      "We visit your physical store in Chennai with Sony FX3 cinema cameras and lighting",
+      "Our dedicated 4-person crew visits your physical store in Chennai with professional lighting, wireless audio & stabilization",
       "Direct Cash Counter Attribution: We track real in-store footfall, phone calls, and revenue"
     ]
   },
@@ -184,7 +184,7 @@ export const siteConfig = {
     {
       step: "04",
       title: "Shoot",
-      description: "We bring our cameras, mics, and portable lights to your location. We direct the session calmly without interrupting your customers."
+      description: "We bring our lighting rigs, wireless mics, and stabilization gear to your location. We direct the session calmly without interrupting your customers."
     },
     {
       step: "05",
@@ -454,7 +454,7 @@ export const siteConfig = {
         },
         {
           hook: "\"Why washing your car with dish soap ruins your clear coat in Chennai\"",
-          concept: "Macro lens showing swirl marks vs pH-neutral foam wash",
+          concept: "High-definition macro detail showing swirl marks vs pH-neutral foam wash",
           purpose: "Converts regular drivers into recurring detailing subscription clients."
         }
       ]
@@ -644,7 +644,7 @@ export const siteConfig = {
       ],
       features: [
         "Dedicated Production Team assigned to your brand",
-        "Broadcast lighting, gimbal setups & 4K multi-angle cameras",
+        "Studio lighting, 3-axis gimbal setups & multi-angle 4K capture",
         "Comprehensive 90-day content calendar & strategy"
       ],
       whatsappMessage: "Hi Grove Hub! I am interested in the Flagship Quarterly Retainer (3 Months). Can we discuss the production timeline?"
@@ -687,7 +687,7 @@ export const siteConfig = {
     },
     {
       question: "Do you come to my shop or studio in Chennai?",
-      answer: "Yes, always. We are not an agency sitting behind a desk asking you to take shaky videos on your phone. Our video shooter visits your store, salon, gym, or cafe with professional camera gear, wireless microphones, and lighting. We handle the entire shoot so you can focus on running your business."
+      answer: "Yes, always. We are not an agency sitting behind a desk asking you to shoot videos yourself. Our production shooter and director visit your store, salon, gym, or cafe with professional lighting, wireless microphones, and stabilization rigs. We handle the entire shoot so you can focus on running your business."
     },
     {
       question: "How many reels do you make per month?",

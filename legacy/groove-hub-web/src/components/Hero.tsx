@@ -42,7 +42,7 @@ export function Hero() {
       retention: "94.8%",
       hook: "Why 80% of tooth discoloration isn't from coffee",
       strategy: "Demystifies clear aligner myths and removes dental embarrassment; drives immediate WhatsApp consultation appointments.",
-      cameraSetup: "Sony FX3 Cinema • 4K 60fps • Sennheiser Wireless Audio",
+      cameraSetup: "4K 60fps Ultra HD • Wireless Lapel Audio • Studio Key Light",
       chartBars: [45, 65, 80, 55, 90, 85, 100],
       funnel: ["Local Explore Reel", "7s Problem Hook", "Profile Bio Visit", "WhatsApp Booking"],
     },
@@ -60,7 +60,7 @@ export function Hero() {
       retention: "91.2%",
       hook: "Listen to the 4 AM sourdough crackle & butter pour",
       strategy: "Sensory ASMR video triggers uncontrollable cravings; turns casual weekend scrollers into table reservations.",
-      cameraSetup: "Macro Probe Lens • 10-bit S-Log3 • Foley Audio Design",
+      cameraSetup: "High-Definition Macro Detail • Warm Studio Fill • Foley Audio Design",
       chartBars: [50, 70, 60, 85, 95, 100, 92],
       funnel: ["Foodie Viral Reel", "ASMR Audio Hook", "Google Map Tap", "Weekend Footfall"],
     },
@@ -78,7 +78,7 @@ export function Hero() {
       retention: "96.4%",
       hook: "Pouring lighter fluid on a ₹1.2 Cr Porsche paint protection",
       strategy: "Extreme heat and scratch demonstration eliminates customer skepticism on ₹80,000+ Paint Protection Film retainers.",
-      cameraSetup: "High-Speed 120fps • Inspection LED • Polarized Filter",
+      cameraSetup: "Smooth 60fps Detail • High-CRI LED • Polarized Glare Cut",
       chartBars: [35, 55, 75, 70, 85, 90, 98],
       funnel: ["Scratch Demo Hook", "Extreme Proof Shot", "DM Price Quote", "Workshop Visit"],
     },
@@ -96,7 +96,7 @@ export function Hero() {
       retention: "95.6%",
       hook: "How to spot machine-printed fake zari in under 3 seconds",
       strategy: "Educates brides and families on authentic Kanchipuram weave weight, creating immediate trust and showroom walk-ins.",
-      cameraSetup: "Macro Fabric Grade • 4K HDR • Diffused Studio Light",
+      cameraSetup: "Detailed Texture 4K • Diffused Studio Softbox • Dynamic Color",
       chartBars: [60, 75, 80, 90, 85, 95, 100],
       funnel: ["Authenticity Test", "Zari Shimmer Macro", "WhatsApp Catalogue", "Showroom Walk-in"],
     },
@@ -114,7 +114,7 @@ export function Hero() {
       retention: "92.1%",
       hook: "Touring Chennai's only infinity pool facing the Bay of Bengal",
       strategy: "Architectural glidecam walkthrough highlights Italian marble finishes and sea views, securing high-net-worth site appointments.",
-      cameraSetup: "Gimbal 24mm Wide • Natural Sunset Fill • 4K 10-bit",
+      cameraSetup: "3-Axis Gimbal Wide • Golden Hour Fill • 4K 60fps HDR",
       chartBars: [40, 50, 65, 80, 75, 90, 96],
       funnel: ["Sea-View Hook", "Penthouse Tour", "Brochure Download", "Private Site Visit"],
     },
@@ -132,7 +132,7 @@ export function Hero() {
       retention: "93.7%",
       hook: "Stop destroying your lower back on deadlift lockouts",
       strategy: "Biometric form correction positions the gym as the leading authority on injury-free strength training; packs trial classes.",
-      cameraSetup: "Dynamic Gimbal • Kinetic Beat Sync • Bass Audio Foley",
+      cameraSetup: "Kinetic Gimbal Motion • Fast Beat Sync • Punchy Audio Foley",
       chartBars: [45, 60, 70, 85, 80, 95, 100],
       funnel: ["Form Mistake Hook", "Trainer Correction", "Free 1-Day Pass", "Annual Membership"],
     },
@@ -186,7 +186,7 @@ export function Hero() {
 
         {/* Subline */}
         <p className="text-sm sm:text-lg md:text-xl text-zinc-300 font-normal leading-relaxed max-w-3xl mb-7 sm:mb-9 text-center px-1">
-          Views don&apos;t pay your commercial rent—<strong className="text-white font-semibold">customers walking into your store and paying at your cash counter do</strong>. We engineer a 3-tier sales engine for your business: <strong className="text-emerald-400 font-semibold">Local Google SEO &amp; Maps #1 Rankings</strong> to capture buyers already searching nearby, <strong className="text-white font-semibold">On-Location Cinema Video</strong> to create unstoppable local desire, and an <strong className="text-emerald-400 font-semibold">Automated WhatsApp CRM</strong> to close every inquiry into paying in-store footfall.
+          Views don&apos;t pay your commercial rent—<strong className="text-white font-semibold">customers walking into your store and paying at your cash counter do</strong>. We engineer a 3-tier sales engine for your business: <strong className="text-emerald-400 font-semibold">Local Google SEO &amp; Maps #1 Rankings</strong> to capture buyers already searching nearby, <strong className="text-white font-semibold">On-Location Commercial Video</strong> to create unstoppable local desire, and an <strong className="text-emerald-400 font-semibold">Automated WhatsApp CRM</strong> to close every inquiry into paying in-store footfall.
         </p>
 
         {/* Primary Action Buttons */}

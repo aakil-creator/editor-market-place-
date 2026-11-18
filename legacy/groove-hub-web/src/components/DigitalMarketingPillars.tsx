@@ -63,11 +63,11 @@ export function DigitalMarketingPillars() {
       id: "video",
       icon: Store,
       badge: "Pillar 03 • On-Location Production",
-      title: "On-Location Cinema Commercials (Zero AI / Stock)",
+      title: "On-Location Commercial Production (Zero AI / Stock)",
       subtitle: "Build Unshakeable Buyer Trust Before the Customer Enters Your Store",
-      description: "Generic Canva graphics and fake AI clips don't inspire confidence. Our dedicated 4-person crew visits your actual clinic, showroom, or facility in Chennai with Sony FX3 cinema cameras, capturing your real space, team expertise, and client transformations with commercial hooks tailored to your highest-margin products.",
+      description: "Generic Canva graphics and fake AI clips don't inspire confidence. Our dedicated 4-person crew visits your actual clinic, showroom, or facility in Chennai, capturing your real space, team expertise, and client transformations with commercial hooks tailored to your highest-margin products.",
       deliverables: [
-        "Sony FX3 4K 10-bit On-Location Cinematography",
+        "Ultra-Crisp 4K 60FPS On-Location Video Production",
         "Commercial Scriptwriting Focused on High-Margin Services",
         "Diffused Portable Studio Lighting & Wireless Lapel Audio",
         "Mobile-First Kinetic Editing, Sound Design & Dynamic Subtitles",
@@ -80,7 +80,7 @@ export function DigitalMarketingPillars() {
         { label: "Commercial Focus", value: "High-Margin", sub: "Inventory That Pays Rent" }
       ],
       color: "emerald",
-      anchorId: "cinema-production",
+      anchorId: "video-production",
     },
   ];
 
@@ -103,7 +103,7 @@ export function DigitalMarketingPillars() {
             From Google Maps &amp; Instagram Discovery Directly to <span className="text-gradient-aurora">Your Cash Register</span>.
           </h2>
           <p className="text-base sm:text-lg text-zinc-300 font-normal leading-relaxed">
-            Views and impressions don&apos;t pay commercial rent in Chennai. We connect <strong className="text-emerald-400 font-semibold">Local SEO (to capture buyers already searching nearby)</strong> and an <strong className="text-emerald-400 font-semibold">Automated WhatsApp CRM (to close inquiries into physical store footfall)</strong> with on-location cinema commercial production.
+            Views and impressions don&apos;t pay commercial rent in Chennai. We connect <strong className="text-emerald-400 font-semibold">Local SEO (to capture buyers already searching nearby)</strong> and an <strong className="text-emerald-400 font-semibold">Automated WhatsApp CRM (to close inquiries into physical store footfall)</strong> with on-location commercial video production.
           </p>
         </div>
 
@@ -323,7 +323,7 @@ export function DigitalMarketingPillars() {
                             On-Location Production Spec
                           </span>
                           <span className="text-[9px] font-mono text-amber-400 px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/25">
-                            4K 60FPS S-LOG3
+                            4K 60FPS HDR
                           </span>
                         </div>
 
@@ -334,8 +334,8 @@ export function DigitalMarketingPillars() {
                           </div>
 
                           <div className="p-3 rounded-xl bg-white/5 border border-white/8">
-                            <span className="text-[10px] uppercase font-bold text-zinc-400 block mb-1">Cinema Gear Deployed:</span>
-                            <p className="text-xs font-semibold text-emerald-400">Sony FX3 Cinema Rig • Wireless Sennheiser Audio • Studio Lighting</p>
+                            <span className="text-[10px] uppercase font-bold text-zinc-400 block mb-1">Production Kit Deployed:</span>
+                            <p className="text-xs font-semibold text-emerald-400">4K Multi-Angle Rigs • Wireless Sennheiser Audio • Studio Lighting</p>
                           </div>
 
                           <div className="p-3 rounded-xl bg-white/5 border border-white/8">
@@ -376,7 +376,7 @@ export function DigitalMarketingPillars() {
               {
                 step: "01",
                 title: "Local Intent Search & Discovery",
-                description: "Customers find you at the top of Google Maps (Local SEO) or stop scrolling on Instagram Explore (Cinema Reels).",
+                description: "Customers find you at the top of Google Maps (Local SEO) or stop scrolling on Instagram Explore (Commercial Reels).",
                 icon: Search,
               },
               {
