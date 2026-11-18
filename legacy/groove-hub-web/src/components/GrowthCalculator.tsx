@@ -32,7 +32,7 @@ export function GrowthCalculator() {
   ];
 
   const [selectedNiche, setSelectedNiche] = useState<NicheMetric>(niches[0]);
-  const [reelVolume, setReelVolume] = useState<number>(16); // 8, 16, 24
+  const [reelVolume, setReelVolume] = useState<number>(15); // 6, 15, 30
 
   // Projected Reach Calculation: Approx 8,000 - 15,000 organic Chennai reach per high-retention commercial reel
   const reachPerReel = 9500;
@@ -126,9 +126,9 @@ export function GrowthCalculator() {
                 </label>
                 <div className="grid grid-cols-3 gap-2.5">
                   {[
-                    { count: 8, label: "8 Reels / Mo", sub: "2 / Week" },
-                    { count: 16, label: "16 Reels / Mo", sub: "Popular • 4 / Week" },
-                    { count: 24, label: "24 Reels / Mo", sub: "Dominance • 6 / Week" },
+                    { count: 6, label: "6 Reels / Mo", sub: "Basic • +3 Posts" },
+                    { count: 15, label: "15 Reels / Mo", sub: "Growth Suite • Popular" },
+                    { count: 30, label: "30 Reels / Mo", sub: "Flagship • Daily" },
                   ].map((vol) => {
                     const isSelected = reelVolume === vol.count;
                     return (

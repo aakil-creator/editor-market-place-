@@ -587,12 +587,13 @@ export const siteConfig = {
       id: "basic",
       name: "Basic Monthly Retainer",
       badge: "Standard",
-      subtitle: "Maintenance + Editing + Shoot",
+      subtitle: "6 Reels + 3 Posts (Shoots + Edits)",
       price: "", // Rates not posted per instruction: Displays "Pricing on request"
       period: "month",
-      description: "Dedicated monthly maintenance, scheduled on-location shoot sessions with crew, and end-to-end video editing pipeline.",
+      description: "6 high-retention commercial reels and 3 branded static/carousel posts per month, with scheduled on-location shoot sessions with our crew and end-to-end editing.",
       deliverables: [
-        "Dedicated monthly page & account maintenance",
+        "6 High-Quality Commercial Reels (Shoots + Edits)",
+        "3 Branded Static / Carousel Posts (Design + Copy)",
         "Scheduled on-location shoot sessions with crew",
         "Complete post-production video editing pipeline",
         "Discounted extra reels support for ongoing campaigns"
@@ -602,7 +603,7 @@ export const siteConfig = {
         "Advance shoot & milestone scheduling with crew",
         "Milestone-based quality assurance"
       ],
-      whatsappMessage: "Hi Grove Hub! I am interested in the Basic Monthly Retainer package. Can you share details on how we can get started?"
+      whatsappMessage: "Hi Grove Hub! I am interested in the Basic Monthly Retainer (6 Reels + 3 Posts). Can you share details on how we can get started?"
     },
     {
       id: "growth",
@@ -690,7 +691,7 @@ export const siteConfig = {
     },
     {
       question: "How many reels do you make per month?",
-      answer: "Our standard plans range from 8 to 24 reels a month depending on your goals. Most local businesses see great consistency with our 16-reel plan (about 3-4 reels every week), which keeps you consistently visible on the Chennai explore feed without overwhelming your schedule."
+      answer: "Our standard monthly packages start with our Basic Retainer offering 6 commercial reels and 3 branded posts, up to our Full Account Growth Suite with 15 reels a month, or our Flagship tier with 30 reels monthly. We tailor the production volume to your business goals and showroom traffic."
     },
     {
       question: "How long does it take from shoot to delivery?",
