@@ -499,9 +499,11 @@ def get_static_file(path: str):
 
     # Resolve logo aliases / typo fixes
     if clean_path in ["grove_hub_logo_transparent.png", "groove_hub_logo_transparent.png"]:
-        clean_path = "groove_hub_logo_transparent.png"
+        clean_path = "grove_hub_logo_transparent.png"
+    elif clean_path in ["grove_hub_logo_clean.png", "groove_hub_logo_clean.png"]:
+        clean_path = "grove_hub_logo_clean.png"
     elif clean_path in ["grove_hub_logo.png", "groove_hub_logo.png"]:
-        clean_path = "groove_hub_logo.png"
+        clean_path = "grove_hub_logo.png"
 
     file_path = (STATIC_DIR / clean_path).resolve()
     if STATIC_DIR.resolve() not in file_path.parents and file_path != STATIC_DIR.resolve():
