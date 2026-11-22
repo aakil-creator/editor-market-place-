@@ -9,7 +9,7 @@
 
 | Store Name | Category & Area | Contact | Outreach Status | Notes / Next Step |
 |:---|:---|:---|:---:|:---|
-| **Fionis CrossFit** | CrossFit Box (Navalur, OMR) | `+91 98840 51175` | 🟡 **WARM INQUIRY** | Inquired: *"Tell me more about your team"*. Pitching Local SEO + CRM + Free live class shoot. |
+| **Fionis CrossFit** | CrossFit Box (Navalur, OMR) | `+91 98840 51175` | 🟢 **SCHEDULING SHOOT** | Shared schedule: 5 morning batches & 2 evening batches. Inquired shoot duration. Replying with 30-40 min single-batch plan. |
 | **Vurve Salon** | Luxury Salon (Ashok Nagar) | `+91 89258 89571` | 🔵 **SENT (Pitched)** | Pitched 10th milestone salon grand opening launch reveal reel. Awaiting reply. |
 | **Renasci** | Designer Boutique (Nungambakkam) | `+91 98409 93506` | ⚪ Contacted / Sent | Free collection reel pitch sent. Follow up in 48h. |
 | **Kimono** | Designer Linen (Alwarpet) | `+91 73580 76555` | ⚪ Contacted / Sent | Free aesthetic collection reel pitch sent. |
