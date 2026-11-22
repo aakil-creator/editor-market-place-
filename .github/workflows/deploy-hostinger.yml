@@ -1,3 +1,4 @@
+# Auto-deployment trigger verified
 name: Deploy to Hostinger
 
 on:
