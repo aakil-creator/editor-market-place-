@@ -4,64 +4,47 @@
 5:I[20032,["$3","$4"],"SmoothScroll"]
 6:I[39756,["$3","$4"],"default"]
 7:I[37457,["$3","$4"],"default"]
-8:"FloatingWhatsApp"
-9:I[56540,["$3","$4"],"$8"]
-d:"/_next/static/chunks/0spqe53wpmiom.js"
-e:"CinematicBackground"
-f:I[19578,["$3","$4","$d"],"$e"]
-10:I[2971,["$3","$4","$d"],"Header"]
-11:I[32177,["$3","$4","$d"],"Hero"]
-12:I[60183,["$3","$4","$d"],"TrustStrip"]
-13:"DigitalMarketingPillars"
-14:I[33164,["$3","$4","$d"],"$13"]
-15:I[87297,["$3","$4","$d"],"WhyDifferent"]
-16:I[14640,["$3","$4","$d"],"ProcessTimeline"]
-17:I[55501,["$3","$4","$d"],"WorkShowcase"]
-18:"GrowthCalculator"
-19:I[91335,["$3","$4","$d"],"$18"]
-1a:I[35992,["$3","$4","$d"],"WhoWeHelp"]
-1b:I[85065,["$3","$4","$d"],"MarketCheckForm"]
-1c:I[78811,["$3","$4","$d"],"Packages"]
-1d:I[33189,["$3","$4","$d"],"FreeOfferBanner"]
-1e:I[31638,["$3","$4","$d"],"FAQAccordion"]
-1f:I[13642,["$3","$4","$d"],"Footer"]
-20:I[97367,["$3","$4"],"OutletBoundary"]
-21:"$Sreact.suspense"
-24:"ViewportBoundary"
-25:I[97367,["$3","$4"],"$24"]
-26:"MetadataBoundary"
-27:I[97367,["$3","$4"],"$26"]
 :HL["/_next/static/chunks/26tolj9zyunyu.css","style"]
-2:T4b2,{"@context":"https://schema.org","@type":"LocalBusiness","name":"GROVE HUB","description":"Grove Hub is an on-location reels and digital marketing studio in Chennai. We send a dedicated 4-person crew (Video Director, Retention Editor, Scriptwriter, and Growth Strategist) directly to your storefront to produce high-converting commercial reels and customer acquisition campaigns.","telephone":"919344546733","email":"aaqil2025@gmail.com","url":"https://groovehubstudio.in","address":{"@type":"PostalAddress","addressLocality":"Chennai","addressRegion":"Tamil Nadu","addressCountry":"India"},"areaServed":[{"@type":"AdministrativeArea","name":"Adyar, Chennai"},{"@type":"AdministrativeArea","name":"Anna Nagar, Chennai"},{"@type":"AdministrativeArea","name":"T. Nagar, Chennai"},{"@type":"AdministrativeArea","name":"Besant Nagar, Chennai"},{"@type":"AdministrativeArea","name":"Alwarpet, Chennai"},{"@type":"AdministrativeArea","name":"OMR, Chennai"},{"@type":"AdministrativeArea","name":"Velachery, Chennai"},{"@type":"AdministrativeArea","name":"Kilpauk, Chennai"},{"@type":"AdministrativeArea","name":"Nungambakkam, Chennai"},{"@type":"AdministrativeArea","name":"Across Greater Chennai, Chennai"}]}b:X
-c:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$1","c",{"children":[["$","main",null,{"className":"relative min-h-screen text-slate-100 bg-[#08090C] overflow-x-clip selection:bg-emerald-500 selection:text-zinc-950","children":[["$","$Lf",null,{}],["$","div",null,{"className":"relative z-10","children":[["$","$L10",null,{}],["$","$L11",null,{}],["$","$L12",null,{}],["$","$L14",null,{}],["$","$L15",null,{}],["$","$L16",null,{}],["$","$L17",null,{}],["$","$L19",null,{}],["$","$L1a",null,{}],["$","$L1b",null,{}],["$","$L1c",null,{}],["$","$L1d",null,{}],["$","$L1e",null,{}],["$","$L1f",null,{}]]}]]}],[["$","script","script-0",{"src":"/_next/static/chunks/0spqe53wpmiom.js","async":true}]],["$","$L20",null,{"children":["$","$21",null,{"name":"Next.MetadataOutlet","children":"$@22"}]}]]}],"p":"$@23","v":null,"s":"$b"}}]]
-0:{"t":{"t":{"s":"","h":80,"d":{"r":["$","$1","c",{"children":[[["$","link","0",{"rel":"stylesheet","href":"/_next/static/chunks/26tolj9zyunyu.css","precedence":"next"}],["$","script","script-0",{"src":"/_next/static/chunks/19tekny1px-z0.js","async":true}],["$","script","script-1",{"src":"/_next/static/chunks/0detvd9utnq4x.js","async":true}]],["$","html",null,{"lang":"en","className":"fT0K9a_variable XA8t6q_variable","children":[["$","head",null,{"children":["$","script",null,{"type":"application/ld+json","dangerouslySetInnerHTML":{"__html":"$2"}}]}],["$","body",null,{"className":"font-sans antialiased bg-[#08090C] text-slate-100 min-h-screen selection:bg-emerald-500 selection:text-zinc-950","children":["$","$L5",null,{"children":[["$","$L6",null,{"parallelRouterKey":"children","template":["$","$L7",null,{}],"notFound":[[["$","title",null,{"children":"404: This page could not be found."}],["$","div",null,{"style":{"fontFamily":"system-ui,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif,\"Apple Color Emoji\",\"Segoe UI Emoji\"","height":"100vh","textAlign":"center","display":"flex","flexDirection":"column","alignItems":"center","justifyContent":"center"},"children":["$","div",null,{"children":[["$","style",null,{"dangerouslySetInnerHTML":{"__html":"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}"}}],["$","h1",null,{"className":"next-error-h1","style":{"display":"inline-block","margin":"0 20px 0 0","padding":"0 23px 0 0","fontSize":24,"fontWeight":500,"verticalAlign":"top","lineHeight":"49px"},"children":404}],["$","div",null,{"style":{"display":"inline-block"},"children":["$","h2",null,{"style":{"fontSize":14,"fontWeight":400,"lineHeight":"49px","margin":0},"children":"This page could not be found."}]}]]}]}]],[]]}],["$","$L9",null,{}]]}]}]]}]]}],"p":"$@a","v":null,"s":"$b"},"c":"$Qc"},"h":{"r":["$","$1","h",{"children":[null,["$","$L25",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1, maximum-scale=5"}],["$","meta","2",{"name":"theme-color","content":"#09090B"}]]}],["$","$L27",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$21",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"GROVE HUB — Instagram Reels Studio in Chennai"}],["$","meta","1",{"name":"description","content":"Grove Hub is an on-location reels and digital marketing studio in Chennai. We send a dedicated 4-person crew (Video Director, Retention Editor, Scriptwriter, and Growth Strategist) directly to your storefront to produce high-converting commercial reels and customer acquisition campaigns."}],"$L28","$L29","$L2a","$L2b","$L2c","$L2d","$L2e","$L2f","$L30","$L31","$L32","$L33","$L34","$L35","$L36","$L37","$L38","$L39","$L3a","$L3b"]}]}],null]}],"$L3c"]}],"p":"$@3d","v":null,"s":"$b"}},"a":"$@3e","u":"$@3f","b":"VyMlk6kW5fJKH1ULQweqU"}
-40:I[27201,["$3","$4"],"IconMark"]
-22:null
-28:["$","meta","2",{"name":"author","content":"Grove Hub Team"}]
-29:["$","meta","3",{"name":"keywords","content":"Instagram Reels Chennai,Video production Chennai,Local business growth Chennai,Reels for Gyms Chennai,Reels for Clinics and Doctors Chennai,Reels for Restaurants and Cafes Chennai,Reels for Salons and Aesthetics Chennai,Reels for Real Estate and Architecture Chennai,Reels for Car Detailing Chennai,Reels for Boutiques and Silk Sarees Chennai,Reels for Jewellery Showrooms Chennai,Reels for Coaching Academies Chennai,Boutique video production Chennai,GROVE HUB,GROOVE HUB,Grove Hub Chennai"}]
-2a:["$","meta","4",{"name":"creator","content":"GROVE HUB"}]
-2b:["$","meta","5",{"name":"robots","content":"index, follow"}]
-2c:["$","meta","6",{"property":"og:title","content":"GROVE HUB — Instagram Reels Studio in Chennai"}]
-2d:["$","meta","7",{"property":"og:description","content":"Grove Hub is an on-location reels and digital marketing studio in Chennai. We send a dedicated 4-person crew (Video Director, Retention Editor, Scriptwriter, and Growth Strategist) directly to your storefront to produce high-converting commercial reels and customer acquisition campaigns."}]
-2e:["$","meta","8",{"property":"og:url","content":"https://groovehubstudio.in"}]
-2f:["$","meta","9",{"property":"og:site_name","content":"GROVE HUB"}]
-30:["$","meta","10",{"property":"og:locale","content":"en_IN"}]
-31:["$","meta","11",{"property":"og:image","content":"https://groovehubstudio.in/og.jpg"}]
-32:["$","meta","12",{"property":"og:image:width","content":"1080"}]
-33:["$","meta","13",{"property":"og:image:height","content":"1920"}]
-34:["$","meta","14",{"property":"og:image:alt","content":"GROVE HUB — Instagram Reels Studio Chennai"}]
-35:["$","meta","15",{"property":"og:type","content":"website"}]
-36:["$","meta","16",{"name":"twitter:card","content":"summary_large_image"}]
-37:["$","meta","17",{"name":"twitter:title","content":"GROVE HUB — Instagram Reels Studio in Chennai"}]
-38:["$","meta","18",{"name":"twitter:description","content":"Grove Hub is an on-location reels and digital marketing studio in Chennai. We send a dedicated 4-person crew (Video Director, Retention Editor, Scriptwriter, and Growth Strategist) directly to your storefront to produce high-converting commercial reels and customer acquisition campaigns."}]
-39:["$","meta","19",{"name":"twitter:image","content":"https://groovehubstudio.in/og.jpg"}]
-3a:["$","link","20",{"rel":"icon","href":"/favicon.ico?favicon.117ezoe8m31dk.ico","sizes":"48x48","type":"image/x-icon"}]
-3b:["$","$L40","21",{}]
-3c:["$","meta",null,{"name":"next-size-adjust","content":""}]
+2:T7de,{"@context":"https://schema.org","@type":["LocalBusiness","ProfessionalService"],"name":"GROVE HUB — Chennai Growth Studio & Digital Marketing Partner","alternateName":"Grove Hub","description":"Chennai's in-store sales engine and growth studio partner. Local Google SEO, on-location commercial reels, and automated WhatsApp CRM for physical stores.","telephone":"919344546733","email":"aaqil2025@gmail.com","url":"https://groovehubstudio.in","image":"https://groovehubstudio.in/og.jpg","priceRange":"₹₹","address":{"@type":"PostalAddress","addressLocality":"Chennai","addressRegion":"Tamil Nadu","addressCountry":"India"},"areaServed":[{"@type":"AdministrativeArea","name":"Adyar, Chennai"},{"@type":"AdministrativeArea","name":"Anna Nagar, Chennai"},{"@type":"AdministrativeArea","name":"T. Nagar, Chennai"},{"@type":"AdministrativeArea","name":"Besant Nagar, Chennai"},{"@type":"AdministrativeArea","name":"Alwarpet, Chennai"},{"@type":"AdministrativeArea","name":"OMR, Chennai"},{"@type":"AdministrativeArea","name":"Velachery, Chennai"},{"@type":"AdministrativeArea","name":"Kilpauk, Chennai"},{"@type":"AdministrativeArea","name":"Nungambakkam, Chennai"},{"@type":"AdministrativeArea","name":"Across Greater Chennai, Chennai"}],"hasOfferCatalog":{"@type":"OfferCatalog","name":"Digital Marketing & Growth Services","itemListElement":[{"@type":"Offer","itemOffered":{"@type":"Service","name":"Local SEO & Google Maps 3-Pack Optimization","description":"Rank physical stores at the top of Google Maps in Chennai to drive nearby walk-in footfall."}},{"@type":"Offer","itemOffered":{"@type":"Service","name":"On-Location Commercial Reels Production","description":"Authentic on-site commercial video shoots with a 4-person crew (Shooter, Editor, Scriptwriter, Strategist)."}},{"@type":"Offer","itemOffered":{"@type":"Service","name":"Automated WhatsApp CRM & In-Store Sales Systems","description":"Turn social inquiries into paying walk-in customers with automated follow-ups and appointment booking."}}]}}b:X
+c:[["children",{"s":"__PAGE__","h":160,"d":{"r":"$Ld","p":"$@e","v":null,"s":"$b"}}]]
+0:{"t":{"t":{"s":"","h":80,"d":{"r":["$","$1","c",{"children":[[["$","link","0",{"rel":"stylesheet","href":"/_next/static/chunks/26tolj9zyunyu.css","precedence":"next"}],["$","script","script-0",{"src":"/_next/static/chunks/19tekny1px-z0.js","async":true}],["$","script","script-1",{"src":"/_next/static/chunks/0detvd9utnq4x.js","async":true}]],["$","html",null,{"lang":"en","className":"fT0K9a_variable XA8t6q_variable","children":[["$","head",null,{"children":["$","script",null,{"type":"application/ld+json","dangerouslySetInnerHTML":{"__html":"$2"}}]}],["$","body",null,{"className":"font-sans antialiased bg-[#08090C] text-slate-100 min-h-screen selection:bg-emerald-500 selection:text-zinc-950","children":["$","$L5",null,{"children":[["$","$L6",null,{"parallelRouterKey":"children","template":["$","$L7",null,{}],"notFound":[[["$","title",null,{"children":"404: This page could not be found."}],["$","div",null,{"style":{"fontFamily":"system-ui,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif,\"Apple Color Emoji\",\"Segoe UI Emoji\"","height":"100vh","textAlign":"center","display":"flex","flexDirection":"column","alignItems":"center","justifyContent":"center"},"children":["$","div",null,{"children":[["$","style",null,{"dangerouslySetInnerHTML":{"__html":"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}"}}],["$","h1",null,{"className":"next-error-h1","style":{"display":"inline-block","margin":"0 20px 0 0","padding":"0 23px 0 0","fontSize":24,"fontWeight":500,"verticalAlign":"top","lineHeight":"49px"},"children":404}],"$L8"]}]}]],[]]}],"$L9"]}]}]]}]]}],"p":"$@a","v":null,"s":"$b"},"c":"$Qc"},"h":{"r":"$Lf","p":"$@10","v":null,"s":"$b"}},"a":"$@11","u":"$@12","b":"8jCM8Fk4YvDB0--J2-g-K"}
+13:"FloatingWhatsApp"
+14:I[56540,["$3","$4"],"$13"]
+15:"/_next/static/chunks/0spqe53wpmiom.js"
+16:"CinematicBackground"
+17:I[19578,["$3","$4","$15"],"$16"]
+18:I[2971,["$3","$4","$15"],"Header"]
+19:I[32177,["$3","$4","$15"],"Hero"]
+1a:I[60183,["$3","$4","$15"],"TrustStrip"]
+1b:"DigitalMarketingPillars"
+1c:I[33164,["$3","$4","$15"],"$1b"]
+1d:I[87297,["$3","$4","$15"],"WhyDifferent"]
+1e:I[14640,["$3","$4","$15"],"ProcessTimeline"]
+1f:I[55501,["$3","$4","$15"],"WorkShowcase"]
+20:"GrowthCalculator"
+21:I[91335,["$3","$4","$15"],"$20"]
+22:I[35992,["$3","$4","$15"],"WhoWeHelp"]
+23:I[85065,["$3","$4","$15"],"MarketCheckForm"]
+24:I[78811,["$3","$4","$15"],"Packages"]
+25:I[33189,["$3","$4","$15"],"FreeOfferBanner"]
+26:I[31638,["$3","$4","$15"],"FAQAccordion"]
+27:I[13642,["$3","$4","$15"],"Footer"]
+28:I[97367,["$3","$4"],"OutletBoundary"]
+29:"$Sreact.suspense"
+2b:"ViewportBoundary"
+2c:I[97367,["$3","$4"],"$2b"]
+2d:"MetadataBoundary"
+2e:I[97367,["$3","$4"],"$2d"]
+2f:I[27201,["$3","$4"],"IconMark"]
+8:["$","div",null,{"style":{"display":"inline-block"},"children":["$","h2",null,{"style":{"fontSize":14,"fontWeight":400,"lineHeight":"49px","margin":0},"children":"This page could not be found."}]}]
+9:["$","$L14",null,{}]
+d:["$","$1","c",{"children":[["$","main",null,{"className":"relative min-h-screen text-slate-100 bg-[#08090C] overflow-x-clip selection:bg-emerald-500 selection:text-zinc-950","children":[["$","$L17",null,{}],["$","div",null,{"className":"relative z-10","children":[["$","$L18",null,{}],["$","$L19",null,{}],["$","$L1a",null,{}],["$","$L1c",null,{}],["$","$L1d",null,{}],["$","$L1e",null,{}],["$","$L1f",null,{}],["$","$L21",null,{}],["$","$L22",null,{}],["$","$L23",null,{}],["$","$L24",null,{}],["$","$L25",null,{}],["$","$L26",null,{}],["$","$L27",null,{}]]}]]}],[["$","script","script-0",{"src":"/_next/static/chunks/0spqe53wpmiom.js","async":true}]],["$","$L28",null,{"children":["$","$29",null,{"name":"Next.MetadataOutlet","children":"$@2a"}]}]]}]
+f:["$","$1","h",{"children":[null,["$","$L2c",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1, maximum-scale=5"}],["$","meta","2",{"name":"theme-color","content":"#08090C"}]]}],["$","$L2e",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$29",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"GROVE HUB — Chennai Growth Studio & Digital Marketing Partner"}],["$","meta","1",{"name":"description","content":"Grove Hub is Chennai's in-store sales engine and growth studio partner. We combine Local Google SEO (Google 3-Pack), On-Location Commercial Reels, and Automated WhatsApp CRM to drive real store footfall, phone calls, and repeat revenue across Chennai."}],["$","meta","2",{"name":"author","content":"Grove Hub Team"}],["$","meta","3",{"name":"keywords","content":"Digital Marketing Partner Chennai,Growth Studio Chennai,Digital Marketing Agency Chennai,Growth Partner for Local Businesses Chennai,Store Sales Growth Studio,Boutique Digital Marketing Chennai,Instagram Reels Chennai,Video production Chennai,Local business growth Chennai,Local SEO and Google Maps Chennai,WhatsApp CRM for Local Businesses,Reels for Gyms Chennai,Reels for Clinics and Doctors Chennai,Reels for Restaurants and Cafes Chennai,Reels for Salons and Aesthetics Chennai,Reels for Real Estate and Architecture Chennai,Reels for Car Detailing Chennai,Reels for Boutiques and Silk Sarees Chennai,Reels for Jewellery Showrooms Chennai,Reels for Coaching Academies Chennai,Boutique video production Chennai,GROVE HUB,GROOVE HUB,Grove Hub Chennai"}],["$","meta","4",{"name":"creator","content":"GROVE HUB"}],["$","meta","5",{"name":"robots","content":"index, follow"}],["$","meta","6",{"property":"og:title","content":"GROVE HUB — Chennai Growth Studio & Digital Marketing Partner"}],["$","meta","7",{"property":"og:description","content":"Chennai's in-store sales engine and growth studio partner. Local Google SEO, on-location commercial reels, and automated WhatsApp CRM for physical stores."}],["$","meta","8",{"property":"og:url","content":"https://groovehubstudio.in"}],["$","meta","9",{"property":"og:site_name","content":"GROVE HUB — Growth Studio & Digital Marketing Partner"}],["$","meta","10",{"property":"og:locale","content":"en_IN"}],["$","meta","11",{"property":"og:image","content":"https://groovehubstudio.in/og.jpg"}],["$","meta","12",{"property":"og:image:width","content":"1080"}],["$","meta","13",{"property":"og:image:height","content":"1920"}],["$","meta","14",{"property":"og:image:alt","content":"GROVE HUB — Chennai Growth Studio & Digital Marketing Partner"}],["$","meta","15",{"property":"og:type","content":"website"}],["$","meta","16",{"name":"twitter:card","content":"summary_large_image"}],["$","meta","17",{"name":"twitter:title","content":"GROVE HUB — Chennai Growth Studio & Digital Marketing Partner"}],["$","meta","18",{"name":"twitter:description","content":"Chennai's in-store sales engine and growth studio partner."}],["$","meta","19",{"name":"twitter:image","content":"https://groovehubstudio.in/og.jpg"}],["$","link","20",{"rel":"icon","href":"/favicon.ico?favicon.117ezoe8m31dk.ico","sizes":"48x48","type":"image/x-icon"}],["$","$L2f","21",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}]
+2a:null
+12:true
 b:300
-3f:true
 b:C
-3e:0
+11:0
+10:"$undefined"
+e:"$undefined"
 a:"$undefined"
-3d:"$undefined"
-23:"$undefined"
