@@ -63,3 +63,20 @@
 |:---|:---|:---|:---|:---|
 | **32 Dental Care** | Shanthi Colony, Anna Nagar | Smile Design & Implants | `+91 95001 00032` | [👉 **Send to 32 Dental Care**](https://web.whatsapp.com/send?phone=919500100032&text=Hi%2032%20Dental%20team!%20Love%20your%20clinic's%20work%20in%20Anna%20Nagar.%20We%20are%20Grove%20Hub%20%E2%80%94%20a%20dedicated%20content%20squad%20in%20Chennai.%20We%20want%20to%20shoot%20and%20edit%201%20patient-trust%2Fsmile%20makeover%20reel%20for%20your%20clinic%20100%25%20FREE%20(zero%20cost%2C%20zero%20contract).%20Can%20we%20drop%20by%20for%2020%20mins%20this%20week%3F) |
 | **Radiant Dental Care** | Anna Nagar / T. Nagar | Dental Implants & Aesthetics | `+91 98400 24800` | [👉 **Send to Radiant Dental**](https://web.whatsapp.com/send?phone=919840024800&text=Hi%20Radiant%20Dental%20team!%20Love%20your%20patient%20transformations.%20We%20are%20Grove%20Hub%20%E2%80%94%20a%20dedicated%20content%20squad%20in%20Chennai.%20We%20want%20to%20shoot%20and%20edit%201%20patient-trust%20reel%20for%20your%20clinic%20100%25%20FREE%20(zero%20cost%2C%20zero%20contract).%20Can%20we%20drop%20by%20for%2020%20mins%20this%20week%3F) |
+
+---
+
+### ☕ 6. Artisanal Cafes, Sourdough Bakeries & Specialty Dining
+
+| Cafe Name | Area | Category | Phone Number | 1-Click WhatsApp Action |
+|:---|:---|:---|:---|:---|
+| **Amelie's Cafe & Creamery** | Seshadri Rd, Alwarpet | Artisanal European Dining & Desserts | `+91 98402 36806` | [👉 **Send to Amelie's Alwarpet**](https://web.whatsapp.com/send?phone=919840236806&text=Hi%20Amelie's%20team!%20Adore%20the%20aesthetic%20ambiance%20and%20desserts%20at%20your%20Alwarpet%20space.%20We%20are%20Grove%20Hub%20%E2%80%94%20a%20commercial%20content%20studio%20in%20Chennai.%20We%20want%20to%20shoot%20and%20edit%201%20mouth-watering%20cinematic%20food%20reel%20for%20Amelie's%20100%25%20FREE%20(zero%20cost%2C%20zero%20contract).%20Can%20we%20drop%20by%20for%2025%20mins%20before%20rush%20hours%20this%20week%3F) |
+| **Sandy's Chocolate Laboratory** | Wallace Garden, Nungambakkam | Gourmet Desserts & Dining | `+91 98408 89400` | [👉 **Send to Sandy's Nungambakkam**](https://web.whatsapp.com/send?phone=919840889400&text=Hi%20Sandy's%20team!%20Big%20fans%20of%20your%20signature%20dessert%20creations%20in%20Nungambakkam.%20We%20are%20Grove%20Hub%20%E2%80%94%20a%20commercial%20production%20studio%20in%20Chennai.%20We%20want%20to%20shoot%20and%20edit%201%20drool-worthy%20ASMR%20chocolate%20pull%20reel%20for%20Sandy's%20100%25%20FREE%20(zero%20cost%2C%20zero%20contract).%20Can%20we%20drop%20by%20for%2025%20mins%20this%20week%3F) |
+
+---
+
+### 🏛️ 7. Luxury Architecture, Interior Design & Modular Living
+
+| Studio Name | Area | Category | Phone Number | 1-Click WhatsApp Action |
+|:---|:---|:---|:---|:---|
+| **Urban Living Chennai** | Anna Nagar / Alwarpet | Luxury Modular Kitchens & Interiors | `+91 98401 55660` | [👉 **Send to Urban Living**](https://web.whatsapp.com/send?phone=919840155660&text=Hi%20Urban%20Living%20team!%20Saw%20your%20luxury%20modular%20interior%20projects%20in%20Chennai.%20We%20are%20Grove%20Hub%20%E2%80%94%20a%20commercial%20video%20studio%20here.%20We%20want%20to%20shoot%20and%20edit%201%20high-ticket%20luxury%20walkthrough%20reel%20for%20your%20showroom%20or%20site%20100%25%20FREE%20(zero%20cost%2C%20zero%20contract).%20Can%20we%20connect%20for%2020%20mins%20this%20week%3F) |
