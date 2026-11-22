@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Grove Hub | 1-Click WhatsApp Outreach Engine & CRM</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="leads_data.js"></script>
+  <style>
+    :root {
+      --bg: #090d16;
+      --card-bg: #121824;
+      --card-border: #1f293d;
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --wa-green: #25d366;
+      --wa-dark: #128c7e;
+      --accent-gold: #f59e0b;
+      --accent-blue: #38bdf8;
+      --accent-purple: #a855f7;
+      --accent-red: #f43f5e;
+      --radius: 12px;
+      --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.4);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text-main);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      min-height: 100vh;
+      padding: 24px;
+      line-height: 1.5;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    /* Header */
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--card-border);
+      margin-bottom: 24px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .logo-badge {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #10b981, #047857);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      font-weight: 800;
+      box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+    }
+
+    h1 {
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+
+    .subtitle {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 12px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 18px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s ease;
+      text-decoration: none;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #25d366, #128c7e);
+      color: white;
+      box-shadow: 0 4px 14px rgba(37, 211, 102, 0.3);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(37, 211, 102, 0.45);
+    }
+
+    .btn-secondary {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      color: var(--text-main);
+    }
+
+    .btn-secondary:hover {
+      background: #1a2334;
+      border-color: #334155;
+    }
+
+    /* Safety Banner */
+    .safety-banner {
+      background: linear-gradient(90deg, rgba(245, 158, 11, 0.12), rgba(16, 185, 129, 0.12));
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      padding: 14px 20px;
+      border-radius: var(--radius);
+      margin-bottom: 24px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      font-size: 13px;
+    }
+
+    .safety-text strong {
+      color: var(--accent-gold);
+    }
+
+    .daily-counter {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(0, 0, 0, 0.3);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+    }
+
+    .counter-pill {
+      background: #25d366;
+      color: #000;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-weight: 700;
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .stat-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+    }
+
+    .stat-val {
+      font-size: 28px;
+      font-weight: 800;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Filter Controls */
+    .controls-panel {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      margin-bottom: 24px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .search-box {
+      flex: 1;
+      min-width: 260px;
+      position: relative;
+    }
+
+    .search-input {
+      width: 100%;
+      background: #090d16;
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 10px 14px 10px 38px;
+      color: white;
+      font-size: 14px;
+      font-family: inherit;
+    }
+
+    .search-input:focus {
+      outline: none;
+      border-color: var(--wa-green);
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    .category-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .pill-btn {
+      background: #090d16;
+      border: 1px solid var(--card-border);
+      color: var(--text-muted);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .pill-btn.active, .pill-btn:hover {
+      background: rgba(37, 211, 102, 0.15);
+      border-color: var(--wa-green);
+      color: var(--wa-green);
+    }
+
+    /* Leads Table / Grid */
+    .leads-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+      gap: 18px;
+    }
+
+    @media (max-width: 600px) {
+      .leads-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .lead-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 16px;
+      position: relative;
+      transition: border-color 0.2s ease, transform 0.2s ease;
+    }
+
+    .lead-card:hover {
+      border-color: #334155;
+      transform: translateY(-2px);
+      box-shadow: var(--shadow);
+    }
+
+    .lead-card.status-booked {
+      border-left: 4px solid var(--accent-gold);
+    }
+
+    .lead-card.status-sent {
+      border-left: 4px solid var(--accent-blue);
+    }
+
+    .lead-card.status-replied {
+      border-left: 4px solid var(--accent-purple);
+    }
+
+    .lead-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .lead-title-box {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .lead-name {
+      font-size: 18px;
+      font-weight: 700;
+      color: white;
+    }
+
+    .lead-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+    }
+
+    .area-badge {
+      background: rgba(56, 189, 248, 0.12);
+      color: var(--accent-blue);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+
+    .category-badge {
+      background: rgba(168, 85, 247, 0.12);
+      color: var(--accent-purple);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+
+    .phone-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      color: #94a3b8;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: #090d16;
+      padding: 4px 8px;
+      border-radius: 6px;
+      border: 1px solid var(--card-border);
+      width: fit-content;
+    }
+
+    .phone-tag:hover {
+      color: white;
+      border-color: #475569;
+    }
+
+    .pitch-box {
+      background: #090d16;
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 12px 14px;
+      font-size: 13px;
+      color: #cbd5e1;
+      position: relative;
+    }
+
+    .pitch-box-label {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+    }
+
+    .pitch-text {
+      max-height: 85px;
+      overflow-y: auto;
+      line-height: 1.45;
+    }
+
+    .lead-footer {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding-top: 14px;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .status-select {
+      background: #090d16;
+      border: 1px solid var(--card-border);
+      color: white;
+      font-size: 12px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .status-select:focus {
+      outline: none;
+      border-color: var(--wa-green);
+    }
+
+    .wa-action-btn {
+      background: linear-gradient(135deg, #25d366, #128c7e);
+      color: #ffffff;
+      font-weight: 700;
+      font-size: 13px;
+      padding: 9px 18px;
+      border-radius: 8px;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 4px 12px rgba(37, 211, 102, 0.25);
+      transition: all 0.2s ease;
+      flex: 1;
+      justify-content: center;
+      min-width: 170px;
+    }
+
+    .wa-action-btn:hover {
+      background: linear-gradient(135deg, #2ee06e, #149c8d);
+      box-shadow: 0 6px 18px rgba(37, 211, 102, 0.4);
+      transform: translateY(-1px);
+    }
+
+    .copy-btn {
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #cbd5e1;
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.15s ease;
+    }
+
+    .copy-btn:hover {
+      background: #334155;
+      color: white;
+    }
+
+    /* Modal */
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(4px);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .modal-backdrop.show {
+      display: flex;
+    }
+
+    .modal-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      width: 100%;
+      max-width: 520px;
+      padding: 24px;
+      box-shadow: var(--shadow);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .modal-close {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 20px;
+      cursor: pointer;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 16px;
+    }
+
+    .form-group label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    .form-control {
+      background: #090d16;
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      color: white;
+      font-size: 14px;
+      font-family: inherit;
+    }
+
+    .form-control:focus {
+      outline: none;
+      border-color: var(--wa-green);
+    }
+
+    /* Toast */
+    #toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+      display: none;
+      z-index: 200;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <!-- Header -->
+  <header>
+    <div class="brand">
+      <div class="logo-badge">⚡</div>
+      <div>
+        <h1>Grove Hub | 1-Click WhatsApp Engine</h1>
+        <div class="subtitle">High-Ticket Chennai Commercial Reel Pipeline & Safe Direct Launcher</div>
+      </div>
+    </div>
+    <div class="header-actions">
+      <span id="syncPill" style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; background: rgba(37, 211, 102, 0.12); color: var(--wa-green); border: 1px solid rgba(37, 211, 102, 0.3); padding: 6px 12px; border-radius: 20px; font-weight: 600;">
+        🟢 Synced with Central Leads
+      </span>
+      <button class="btn btn-secondary" onclick="syncWithDatabase(true)">🔄 Sync New Stores</button>
+      <button class="btn btn-secondary" onclick="openAddModal()">+ Add New Lead</button>
+      <button class="btn btn-secondary" onclick="exportCSV()">📥 Export CSV</button>
+    </div>
+  </header>
+
+  <!-- Safety & Pacing Banner -->
+  <div class="safety-banner">
+    <div class="safety-text">
+      🛡️ <strong>Zero-Ban Safety Guard:</strong> Uses WhatsApp's official <code>wa.me</code> protocol directly to launch chats. Keep pacing to <strong>20–25 chats/day</strong> to keep your number 100% healthy.
+    </div>
+    <div class="daily-counter">
+      <span>Sent Today:</span>
+      <span class="counter-pill" id="sentTodayCounter">0 / 25</span>
+    </div>
+  </div>
+
+  <!-- Stats Grid -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-label">Total Verified Leads</div>
+      <div class="stat-val" id="statTotal" style="color: var(--accent-blue);">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Not Contacted (Ready)</div>
+      <div class="stat-val" id="statNew" style="color: #cbd5e1;">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Outreach Pitched</div>
+      <div class="stat-val" id="statSent" style="color: var(--accent-blue);">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">🔥 Commercial Shoots Booked</div>
+      <div class="stat-val" id="statBooked" style="color: var(--accent-gold);">0</div>
+    </div>
+  </div>
+
+  <!-- Search & Category Controls -->
+  <div class="controls-panel">
+    <div class="search-box">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="searchInput" class="search-input" placeholder="Search by business name, area (Anna Nagar, Alwarpet, OMR...)" onkeyup="filterLeads()">
+    </div>
+    <div class="category-pills" id="categoryPills">
+      <button class="pill-btn active" onclick="setCategoryFilter('all', this)">All Niches</button>
+      <button class="pill-btn" onclick="setCategoryFilter('Car Detailing', this)">🚗 Car Detailing & PPF</button>
+      <button class="pill-btn" onclick="setCategoryFilter('Luxury Salon', this)">✂️ Luxury Salons</button>
+      <button class="pill-btn" onclick="setCategoryFilter('Fitness', this)">🏋️ Fitness & CrossFit</button>
+      <button class="pill-btn" onclick="setCategoryFilter('Boutique', this)">👗 Designer Boutiques</button>
+      <button class="pill-btn" onclick="setCategoryFilter('Dental', this)">🦷 Aesthetic & Dental</button>
+      <button class="pill-btn" onclick="setCategoryFilter('Dining', this)">☕ Cafes & Dining</button>
+      <button class="pill-btn" onclick="setCategoryFilter('Architecture', this)">🏛️ Architecture</button>
+    </div>
+  </div>
+
+  <!-- Leads Grid -->
+  <div class="leads-grid" id="leadsGrid"></div>
+</div>
+
+<!-- Modal: Add Custom Lead -->
+<div class="modal-backdrop" id="addModal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3 style="font-size: 18px;">+ Add New Business Lead</h3>
+      <button class="modal-close" onclick="closeAddModal()">&times;</button>
+    </div>
+    <div class="form-group">
+      <label>Business Name</label>
+      <input type="text" id="leadName" class="form-control" placeholder="e.g. Quad Fitness Studio">
+    </div>
+    <div class="form-group">
+      <label>Area / Zone</label>
+      <input type="text" id="leadArea" class="form-control" placeholder="e.g. Alwarpet, Chennai">
+    </div>
+    <div class="form-group">
+      <label>Niche / Category</label>
+      <select id="leadCategory" class="form-control">
+        <option value="Car Detailing">Car Detailing & PPF</option>
+        <option value="Luxury Salon">Luxury Salon & Spa</option>
+        <option value="Fitness">Fitness & CrossFit</option>
+        <option value="Boutique">Designer Boutique</option>
+        <option value="Dental">Aesthetic & Dental Clinic</option>
+        <option value="Dining">Cafe & Fine Dining</option>
+        <option value="Architecture">Architecture & Interiors</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>WhatsApp Number (With 91, No + or spaces)</label>
+      <input type="text" id="leadPhone" class="form-control" placeholder="e.g. 919884051175">
+    </div>
+    <div class="form-group">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+        <label>Custom Opening Pitch</label>
+        <button type="button" class="copy-btn" style="padding: 2px 8px; font-size: 11px;" onclick="generateDefaultPitch()">Auto-Draft Pitch</button>
+      </div>
+      <textarea id="leadPitch" class="form-control" rows="3" placeholder="Enter customized opening message..."></textarea>
+    </div>
+    <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+      <button class="btn btn-secondary" onclick="closeAddModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveCustomLead()">Save & Launch</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// App State
+let leads = [];
+let currentCategory = 'all';
+
+// Smart Merge: Synchronizes Central Leads from leads_data.js with user's local outreach progress
+function syncWithDatabase(userTriggered = false) {
+  const central = window.CENTRAL_LEADS || [];
+  let saved = [];
+  try {
+    saved = JSON.parse(localStorage.getItem('grovehub_leads_crm') || '[]');
+  } catch(e) {
+    saved = [];
+  }
+
+  // Create lookup maps of previously saved leads
+  const savedMap = new Map();
+  const customLeads = [];
+
+  saved.forEach(item => {
+    if (item.id) savedMap.set(item.id, item);
+    if (item.phone) savedMap.set(item.phone, item);
+    // Preserve user-added custom leads
+    if (item.isCustom || (item.id && item.id.startsWith('lead-custom'))) {
+      customLeads.push(item);
+    }
+  });
+
+  let newCount = 0;
+  const merged = [];
+
+  // Merge central database leads
+  central.forEach(item => {
+    const existing = savedMap.get(item.id) || savedMap.get(item.phone);
+    if (existing) {
+      merged.push({
+        ...item,
+        status: existing.status || item.defaultStatus || 'new',
+        pitch: existing.pitch || item.pitch,
+        notes: existing.notes || ''
+      });
+    } else {
+      newCount++;
+      merged.push({
+        ...item,
+        status: item.defaultStatus || 'new',
+        notes: ''
+      });
+    }
+  });
+
+  // Re-insert user custom leads if not already present
+  customLeads.forEach(cust => {
+    if (!merged.some(m => m.id === cust.id || m.phone === cust.phone)) {
+      merged.unshift(cust);
+    }
+  });
+
+  leads = merged;
+  saveToStorage();
+  render();
+  updateDailyCounter();
+
+  const syncPill = document.getElementById('syncPill');
+  if (syncPill) {
+    syncPill.innerHTML = `🟢 Synced (${leads.length} stores active)`;
+  }
+
+  if (userTriggered) {
+    showToast(newCount > 0 ? `Synced! Added ${newCount} new store(s).` : `Synced! All ${leads.length} stores are up to date.`);
+  }
+}
+
+function initApp() {
+  syncWithDatabase(false);
+}
+
+function saveToStorage() {
+  localStorage.setItem('grovehub_leads_crm', JSON.stringify(leads));
+}
+
+// 1-Click WhatsApp Launcher & Tracker
+function trackLaunch(id) {
+  const lead = leads.find(l => l.id === id);
+  if (!lead) return;
+
+  // Auto-mark as sent if it was new
+  if (lead.status === 'new') {
+    lead.status = 'sent';
+    saveToStorage();
+    incrementDailyCounter();
+    setTimeout(render, 300);
+  }
+
+  showToast(`Opening WhatsApp for ${lead.name}...`);
+}
+
+function launchWhatsApp(id, mode = 'desktop') {
+  const lead = leads.find(l => l.id === id);
+  if (!lead) return;
+
+  trackLaunch(id);
+  const encodedPitch = encodeURIComponent(lead.pitch);
+
+  if (mode === 'desktop') {
+    window.location.href = `whatsapp://send?phone=${lead.phone}&text=${encodedPitch}`;
+  } else {
+    window.open(`https://web.whatsapp.com/send?phone=${lead.phone}&text=${encodedPitch}`, '_blank');
+  }
+}
+
+function updateLeadStatus(id, newStatus) {
+  const lead = leads.find(l => l.id === id);
+  if (lead) {
+    lead.status = newStatus;
+    saveToStorage();
+    render();
+    showToast(`Updated ${lead.name} to ${newStatus.toUpperCase()}`);
+  }
+}
+
+function copyPitch(id) {
+  const lead = leads.find(l => l.id === id);
+  if (lead) {
+    navigator.clipboard.writeText(lead.pitch).then(() => {
+      showToast(`Pitch for ${lead.name} copied to clipboard!`);
+    });
+  }
+}
+
+function copyPhone(phone) {
+  navigator.clipboard.writeText("+" + phone).then(() => {
+    showToast(`Phone +${phone} copied!`);
+  });
+}
+
+// Daily Pacing Counter
+function getTodayKey() {
+  return 'wa_sent_' + new Date().toISOString().split('T')[0];
+}
+
+function getDailyCount() {
+  return parseInt(localStorage.getItem(getTodayKey()) || '0', 10);
+}
+
+function incrementDailyCounter() {
+  const count = getDailyCount() + 1;
+  localStorage.setItem(getTodayKey(), count.toString());
+  updateDailyCounter();
+}
+
+function updateDailyCounter() {
+  const count = getDailyCount();
+  const el = document.getElementById('sentTodayCounter');
+  if (el) {
+    el.innerText = `${count} / 25`;
+    if (count >= 25) {
+      el.style.background = '#f59e0b';
+      el.style.color = '#000';
+    } else {
+      el.style.background = '#25d366';
+      el.style.color = '#000';
+    }
+  }
+}
+
+// Filtering
+function setCategoryFilter(cat, btn) {
+  currentCategory = cat;
+  document.querySelectorAll('.pill-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  render();
+}
+
+function filterLeads() {
+  render();
+}
+
+// Render Logic
+function render() {
+  const grid = document.getElementById('leadsGrid');
+  const search = document.getElementById('searchInput').value.toLowerCase().trim();
+
+  const filtered = leads.filter(l => {
+    const matchCat = currentCategory === 'all' || l.category === currentCategory;
+    const matchSearch = !search || 
+      l.name.toLowerCase().includes(search) || 
+      l.area.toLowerCase().includes(search) || 
+      l.category.toLowerCase().includes(search) ||
+      l.phone.includes(search);
+    return matchCat && matchSearch;
+  });
+
+  // Update Stats
+  document.getElementById('statTotal').innerText = leads.length;
+  document.getElementById('statNew').innerText = leads.filter(l => l.status === 'new').length;
+  document.getElementById('statSent').innerText = leads.filter(l => l.status === 'sent').length;
+  document.getElementById('statBooked').innerText = leads.filter(l => l.status === 'booked').length;
+
+  if (filtered.length === 0) {
+    grid.innerHTML = `
+      <div style="grid-column: 1/-1; text-align: center; padding: 60px 20px; color: var(--text-muted); background: var(--card-bg); border-radius: 12px; border: 1px dashed var(--card-border);">
+        <div style="font-size: 32px; margin-bottom: 8px;">🔍</div>
+        <h3>No matching businesses found</h3>
+        <p style="font-size: 13px; margin-top: 4px;">Try searching for another area (e.g. Alwarpet, Anna Nagar) or select "All Niches"</p>
+      </div>
+    `;
+    return;
+  }
+
+  grid.innerHTML = filtered.map(lead => {
+    const statusClass = `status-${lead.status}`;
+    const formattedPhone = `+${lead.phone.slice(0,2)} ${lead.phone.slice(2,7)} ${lead.phone.slice(7)}`;
+    
+    return `
+      <div class="lead-card ${statusClass}">
+        <div>
+          <div class="lead-header">
+            <div class="lead-title-box">
+              <div class="lead-name">${lead.name}</div>
+              <div class="lead-meta">
+                <span class="area-badge">📍 ${lead.area}</span>
+                <span class="category-badge">${lead.category}</span>
+              </div>
+            </div>
+            <button class="phone-tag" onclick="copyPhone('${lead.phone}')" title="Click to copy number">
+              📞 ${formattedPhone}
+            </button>
+          </div>
+
+          <div class="pitch-box" style="margin-top: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span class="pitch-box-label">🎯 Pre-Loaded Opening Pitch</span>
+              <button class="copy-btn" style="padding: 2px 8px; font-size: 11px;" onclick="copyPitch('${lead.id}')">Copy Pitch</button>
+            </div>
+            <div class="pitch-text">${lead.pitch}</div>
+          </div>
+        </div>
+
+        <div class="lead-footer">
+          <select class="status-select" onchange="updateLeadStatus('${lead.id}', this.value)">
+            <option value="new" ${lead.status === 'new' ? 'selected' : ''}>⚪ Not Contacted</option>
+            <option value="sent" ${lead.status === 'sent' ? 'selected' : ''}>🔵 Sent (Awaiting)</option>
+            <option value="replied" ${lead.status === 'replied' ? 'selected' : ''}>💬 In Discussion</option>
+            <option value="booked" ${lead.status === 'booked' ? 'selected' : ''}>🔥 Shoot Booked!</option>
+            <option value="pass" ${lead.status === 'pass' ? 'selected' : ''}>❌ Not Interested</option>
+          </select>
+
+          <div style="display: flex; gap: 6px; flex: 1;">
+            <a href="whatsapp://send?phone=${lead.phone}&text=${encodeURIComponent(lead.pitch)}" onclick="trackLaunch('${lead.id}')" class="wa-action-btn" title="Open chat directly in native WhatsApp Desktop app">
+              <span>🚀 Open App</span>
+            </a>
+            <a href="https://web.whatsapp.com/send?phone=${lead.phone}&text=${encodeURIComponent(lead.pitch)}" target="_blank" onclick="trackLaunch('${lead.id}')" class="btn btn-secondary" style="padding: 9px 12px; font-size: 12px; text-decoration: none;" title="Open in WhatsApp Web">
+              🌐 Web
+            </a>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// Modal Helpers
+function openAddModal() {
+  document.getElementById('addModal').classList.add('show');
+}
+
+function closeAddModal() {
+  document.getElementById('addModal').classList.remove('show');
+}
+
+function generateDefaultPitch() {
+  const name = document.getElementById('leadName').value || 'team';
+  const category = document.getElementById('leadCategory').value;
+  let hook = "commercial showcase reel";
+
+  if (category === 'Car Detailing') hook = "hydrophobic water-beading & gloss transformation reel";
+  else if (category === 'Luxury Salon') hook = "client makeover reveal transformation reel";
+  else if (category === 'Fitness') hook = "high-energy workout & athletic training reel";
+  else if (category === 'Boutique') hook = "high-retention luxury designer collection reel";
+  else if (category === 'Dental') hook = "patient-trust & smile transformation reel";
+  else if (category === 'Dining') hook = "mouth-watering cinematic food & ambiance reel";
+  else if (category === 'Architecture') hook = "high-ticket luxury walkthrough showcase reel";
+
+  const pitch = `Hi ${name} team! We are Grove Hub — a commercial video production studio in Chennai. We want to shoot and edit 1 ${hook} for your space 100% FREE (zero cost, zero contract). Can we drop by for 20 mins this week?`;
+  document.getElementById('leadPitch').value = pitch;
+}
+
+function saveCustomLead() {
+  const name = document.getElementById('leadName').value.trim();
+  const area = document.getElementById('leadArea').value.trim();
+  const category = document.getElementById('leadCategory').value;
+  let phone = document.getElementById('leadPhone').value.replace(/[^0-9]/g, '');
+  const pitch = document.getElementById('leadPitch').value.trim();
+
+  if (!name || !phone || !pitch) {
+    alert("Please enter business name, phone number, and pitch!");
+    return;
+  }
+
+  if (!phone.startsWith('91') && phone.length === 10) {
+    phone = '91' + phone;
+  }
+
+  const newLead = {
+    id: "lead-custom-" + Date.now(),
+    name,
+    area: area || "Chennai",
+    category,
+    phone,
+    pitch,
+    status: "new",
+    isCustom: true
+  };
+
+  leads.unshift(newLead);
+  saveToStorage();
+  closeAddModal();
+  render();
+  showToast(`Added ${name} to outreach list!`);
+
+  // Clear inputs
+  document.getElementById('leadName').value = '';
+  document.getElementById('leadArea').value = '';
+  document.getElementById('leadPhone').value = '';
+  document.getElementById('leadPitch').value = '';
+}
+
+// Export to CSV
+function exportCSV() {
+  let csv = "Business Name,Area,Category,Phone,Status,Pitch\n";
+  leads.forEach(l => {
+    const escapedPitch = `"${l.pitch.replace(/"/g, '""')}"`;
+    csv += `"${l.name}","${l.area}","${l.category}","+${l.phone}","${l.status}",${escapedPitch}\n`;
+  });
+
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.setAttribute("href", url);
+  link.setAttribute("download", `GroveHub_WhatsApp_Leads_${new Date().toISOString().split('T')[0]}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  showToast("Exported leads to CSV!");
+}
+
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  toast.innerText = msg;
+  toast.style.display = 'block';
+  setTimeout(() => {
+    toast.style.display = 'none';
+  }, 3000);
+}
+
+// Start
+window.onload = initApp;
+</script>
+</body>
+</html>

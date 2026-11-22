@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GROVE HUB — Monthly Growth Retainer Proposal</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@700&display=swap');
+  
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background-color: #08090C;
+    color: #F1F5F9;
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    padding: 32px 20px;
+    display: flex;
+    justify-content: center;
+    -webkit-font-smoothing: antialiased;
+  }
+  .proposal-card {
+    max-width: 820px;
+    width: 100%;
+    background: #0E1118;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 24px;
+    padding: 40px;
+    box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.7);
+    position: relative;
+    overflow: hidden;
+  }
+  .proposal-card::before {
+    content: '';
+    position: absolute;
+    top: -120px;
+    right: -100px;
+    width: 320px;
+    height: 320px;
+    background: radial-gradient(circle, rgba(16, 185, 129, 0.22) 0%, rgba(8, 9, 12, 0) 70%);
+    pointer-events: none;
+  }
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding-bottom: 24px;
+    margin-bottom: 28px;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .brand img {
+    height: 48px;
+    width: auto;
+  }
+  .brand-text h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: #FFFFFF;
+    letter-spacing: -0.5px;
+  }
+  .brand-text p {
+    font-size: 11px;
+    color: #10B981;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+  .badge {
+    background: rgba(16, 185, 129, 0.12);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    color: #34D399;
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+  }
+  .headline {
+    margin-bottom: 28px;
+  }
+  .headline h2 {
+    font-size: 26px;
+    font-weight: 800;
+    color: #FFFFFF;
+    line-height: 1.25;
+    margin-bottom: 8px;
+  }
+  .headline p {
+    font-size: 14px;
+    color: #94A3B8;
+    line-height: 1.6;
+  }
+  .highlight-gold { color: #F59E0B; }
+  .highlight-emerald { color: #10B981; }
+
+  .deliverables-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+  .deliverable-box {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 16px;
+    padding: 20px;
+    transition: transform 0.2s;
+  }
+  .deliverable-box h3 {
+    font-size: 15px;
+    font-weight: 700;
+    color: #FFFFFF;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .deliverable-box p {
+    font-size: 12px;
+    color: #94A3B8;
+    line-height: 1.5;
+  }
+  .check-icon {
+    color: #10B981;
+    font-size: 16px;
+  }
+
+  .engine-banner {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(14, 17, 24, 0.9) 100%);
+    border: 1px solid rgba(16, 185, 129, 0.35);
+    border-radius: 16px;
+    padding: 20px 24px;
+    margin-bottom: 28px;
+  }
+  .engine-banner h4 {
+    color: #34D399;
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+  }
+  .engine-banner p {
+    font-size: 13px;
+    color: #E2E8F0;
+    line-height: 1.5;
+  }
+
+  .pricing-roi-card {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    background: #090B10;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 18px;
+    padding: 24px;
+    margin-bottom: 28px;
+    align-items: center;
+  }
+  .price-section h4 {
+    font-size: 12px;
+    color: #94A3B8;
+    text-transform: uppercase;
+    font-weight: 700;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+  }
+  .price-amount {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 36px;
+    font-weight: 700;
+    color: #FFFFFF;
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+  .price-amount span {
+    font-size: 14px;
+    color: #64748B;
+    font-weight: 500;
+  }
+  .price-detail {
+    font-size: 11px;
+    color: #10B981;
+    font-weight: 600;
+  }
+  .roi-section {
+    border-left: 1px solid rgba(255, 255, 255, 0.1);
+    padding-left: 20px;
+  }
+  .roi-section h4 {
+    font-size: 12px;
+    color: #F59E0B;
+    text-transform: uppercase;
+    font-weight: 800;
+    margin-bottom: 6px;
+  }
+  .roi-section p {
+    font-size: 12px;
+    color: #CBD5E1;
+    line-height: 1.5;
+  }
+
+  .footer-cta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    padding-top: 22px;
+  }
+  .contact-info p {
+    font-size: 12px;
+    color: #94A3B8;
+  }
+  .contact-info strong {
+    color: #FFFFFF;
+    font-size: 13px;
+  }
+  .action-btn {
+    background: #10B981;
+    color: #08090C;
+    padding: 12px 26px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 800;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 4px 18px rgba(16, 185, 129, 0.35);
+  }
+
+  @media (max-width: 640px) {
+    .proposal-card { padding: 24px; }
+    .deliverables-grid { grid-template-columns: 1fr; }
+    .pricing-roi-card { grid-template-columns: 1fr; }
+    .roi-section { border-left: none; padding-left: 0; border-top: 1px solid rgba(255, 255, 255, 0.1); padding-top: 16px; }
+    .footer-cta { flex-direction: column; gap: 16px; text-align: center; }
+  }
+</style>
+</head>
+<body>
+
+<div class="proposal-card">
+  <div class="header">
+    <div class="brand">
+      <img src="https://groovehubstudio.in/grove_hub_logo_transparent.png" alt="Grove Hub">
+      <div class="brand-text">
+        <h1>GROVE HUB</h1>
+        <p>Chennai Growth Studio</p>
+      </div>
+    </div>
+    <div class="badge">Official Retainer Proposal</div>
+  </div>
+
+  <div class="headline">
+    <h2>Turning In-Store Footfall & WhatsApp Chats Into <span class="highlight-emerald">Predictable Cash Revenue</span>.</h2>
+    <p>Social media views don't pay commercial rent. We build a high-converting, local customer acquisition system engineered specifically for physical stores in Chennai.</p>
+  </div>
+
+  <div class="deliverables-grid">
+    <div class="deliverable-box">
+      <h3><span class="check-icon">✓</span> 6 On-Location Commercial Reels</h3>
+      <p>4K 60fps cinematic video shoots directed at your Chennai store. High-retention hooks, professional wireless lapel audio, and dynamic lighting.</p>
+    </div>
+    <div class="deliverable-box">
+      <h3><span class="check-icon">✓</span> 3 High-Impact Branded Posts</h3>
+      <p>Custom graphic carousels featuring your highest-margin services, customer transformation proofs, and limited-time walk-in offers.</p>
+    </div>
+    <div class="deliverable-box">
+      <h3><span class="check-icon">✓</span> Local Google Maps #1 Ranking</h3>
+      <p>Targeted Google Business Profile optimization with authentic keyword reviews to rank your store in the local Google Maps 3-Pack.</p>
+    </div>
+    <div class="deliverable-box">
+      <h3><span class="check-icon">✓</span> Automated WhatsApp Lead System</h3>
+      <p>Pre-filled WhatsApp consultation funnels linked to every reel to convert casual scrollers directly into booked appointments.</p>
+    </div>
+  </div>
+
+  <div class="engine-banner">
+    <h4>⚡ The Grove Hub Operational Guarantee</h4>
+    <p><strong>Zero Stock Footage. Zero AI Hallucinations. Zero Generic Templates.</strong> Everything is shot on-location at your physical store in Chennai. We handle 100% of the scripting, directing, shooting, and editing. Zero account maintenance needed from you.</p>
+  </div>
+
+  <div class="pricing-roi-card">
+    <div class="price-section">
+      <h4>Basic Monthly Retainer</h4>
+      <div class="price-amount">₹35,000 <span>/ month</span></div>
+      <div class="price-detail">Rolling 30-Day Retainer • Zero Long-Term Lock-in</div>
+    </div>
+    <div class="roi-section">
+      <h4>🎯 The Breakeven Math</h4>
+      <p>If your average customer or membership value is <strong>₹3,500 – ₹10,000</strong>, signing just <strong>3 to 5 new walk-ins per month</strong> completely pays for this entire system. Every additional client is 100% pure profit.</p>
+    </div>
+  </div>
+
+  <div class="footer-cta">
+    <div class="contact-info">
+      <p>Authorized Partner: <strong>Grove Hub Media & Studio</strong></p>
+      <p>Chennai, Tamil Nadu • <strong>+91 93445 46733</strong> • aaqil2025@gmail.com</p>
+    </div>
+    <a href="https://wa.me/919344546733?text=Hi%20Grove%20Hub!%20We%20reviewed%20the%20Monthly%20Retainer%20Proposal%20and%20want%20to%20activate%20our%20campaign." class="action-btn">
+      Confirm Onboarding →
+    </a>
+  </div>
+</div>
+
+</body>
+</html>

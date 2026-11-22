@@ -1,87 +1,87 @@
-# CLIENT SERVICE AGREEMENT & TERMS OF SERVICE
+# GROVE HUB — OFFICIAL CLIENT SERVICE AGREEMENT
+**Commercial Production & Local Growth Retainer Agreement**
 
-**Effective Date:** October 12, 2026  
-**Platform / Provider:** Groove Hub (`https://syncra-qui2.onrender.com/`)  
-**Operated by:** Groove Hub Creative & Media Agency / Editor Marketplace  
+**Effective Date:** November 23, 2026  
+**Provider:** GROVE HUB Media & Growth Studio  
+**Official Domain:** `https://groovehubstudio.in`  
+**Contact:** `+91 93445 46733` | `aaqil2025@gmail.com` | Chennai, Tamil Nadu, India  
 
 ---
 
 ## 1. PARTIES
 This Service Agreement ("Agreement") is entered into by and between:
-1. **Service Provider:** **Groove Hub** ("Agency", "Provider", "We", "Us")  
-2. **Client:** The individual, brand, or corporate entity engaging services or transacting via Groove Hub ("Client", "You").
+1. **Service Provider:** **GROVE HUB** ("Agency", "Provider", "We", "Us")
+2. **Client:** The business entity, store founder, or brand commissioning services ("Client", "You").
 
 ---
 
-## 2. SCOPE OF SERVICES
-Groove Hub provides high-end creative, post-production, media production, and digital services including but not limited to:
-- Professional Video Editing (YouTube, Commercials, Reels/TikToks, Podcasts, Color Grading, Sound Design).
-- Creative Direction, Motion Graphics, Thumbnails & Visual Asset Creation.
-- Creator Marketplace facilitation and managed production sprints.
+## 2. SCOPE OF SERVICES (MONTHLY RETAINER)
+GROVE HUB provides turnkey commercial video production, content creation, and local search customer acquisition systems. 
 
-Any project-specific deliverables, milestones, turnaround windows, and technical specifications will be detailed in the respective **Statement of Work (SOW)**, **Project Order**, or **Official Invoice**.
+Under the **Basic Monthly Retainer**, deliverables include:
+- **6 On-Location Commercial Reels (Shoots + Edits)**:
+  - Directed and filmed on location at Client's physical store/arena in Chennai in 4K 60fps.
+  - Scripted with high-retention 3-second problem hooks and local audience callouts.
+  - Complete post-production editing, dynamic pacing, audio mastering, sound design, color grading, and animated on-screen subtitles.
+- **3 High-Impact Branded Posts**:
+  - Educational carousels, client transformation proofs, or seasonal promotional graphics.
+- **Google Maps 3-Pack Optimization & Review Asset Support**:
+  - Behind-the-scenes photographic assets and structured review acceleration links.
+- **Automated WhatsApp Lead Flow**:
+  - Interactive WhatsApp inquiry links integrated with reel captions.
 
----
-
-## 3. PAYMENT TERMS & PRICING
-- **Payment Structure:** Payments shall be processed via Milestone / Advance Escrow or structured upfront deposits (e.g., 50% upfront deposit upon contract signing, and 50% upon final watermarked preview approval prior to final file delivery).
-- **Accepted Payment Channels:** Razorpay, Direct Bank Wire (NEFT/IMPS/SWIFT), UPI, and Verified Corporate Gateways.
-- **Taxes & Surcharges:** Any applicable statutory taxes (e.g., GST) or currency conversion fees will be itemized on the official invoice.
-- **Late Payments:** Invoices not settled within seven (7) business days of milestone completion or invoice due date may incur a late surcharge of **1.5% per month** or work pause until settled.
-
----
-
-## 4. REVIEW, REVISIONS & ACCEPTANCE
-- **Standard Revisions:** Each contracted deliverable includes **up to two (2) complimentary revision rounds**, provided feedback is consolidated and communicated within five (5) business days of preview delivery.
-- **Out-of-Scope Alterations:** Fundamental script changes, voice-over re-recordings, or complete conceptual shifts after initial client sign-off will be quoted as separate scope add-ons.
-- **Deemed Approval:** If no revision request or written feedback is received within **seven (7) calendar days** of deliverable handover, the milestone shall be deemed fully accepted and approved.
+> **Operational Boundary:** GROVE HUB is a specialized commercial production and customer acquisition studio. This agreement **excludes daily social media account management, manual DM replying, community policing, or password administration**.
 
 ---
 
-## 5. INTELLECTUAL PROPERTY & USAGE RIGHTS
-- **Client Materials:** The Client retains all intellectual property rights to raw assets, trademarks, brand guidelines, and footage provided to Groove Hub. Client represents and warrants that all supplied assets are legally owned or appropriately licensed.
-- **Final Deliverables:** Upon **100% receipt of full payment**, Groove Hub assigns full commercial exploitation and publishing rights for the finalized rendered assets to the Client.
-- **Portfolio Rights:** Unless a formal Non-Disclosure Agreement (NDA) or white-label exclusion is mutually agreed upon in writing, Groove Hub reserves the non-exclusive right to feature finalized public works in agency portfolios, showreels, and case studies.
-- **Working Files:** Raw project archives, project files (`.prproj`, `.aep`, `.drp`), project presets, and raw proprietary plugins remain the property of Provider unless explicitly licensed in the SOW.
+## 3. PRICING & PAYMENT TERMS
+- **Monthly Retainer Investment:** Standard Monthly Retainer is **₹35,000 INR** (or agreed custom project fee itemized on Official Invoice).
+- **Payment Structure:**
+  - **50% Advance Onboarding Deposit** due upon agreement signing to reserve production dates and crew allocation.
+  - **50% Final Retainer Balance** due upon delivery and approval of final rendered assets for that monthly billing cycle.
+- **Accepted Modes:** Direct Bank Wire (IMPS/NEFT), UPI (`+91 93445 46733`), or Corporate Payment Gateways.
+- **Term:** Rolling 30-day monthly retainer. Either party may adjust or cancel with 14 calendar days' written notice prior to the next billing cycle.
 
 ---
 
-## 6. CONFIDENTIALITY & NON-DISCLOSURE
-Both parties agree to treat all business plans, unreleased media, marketing schedules, and proprietary data shared during the engagement as strictly confidential. Neither party will disclose or exploit such information for third-party benefit without prior written consent.
+## 4. PRODUCTION SCHEDULING & ACCESS
+- **On-Location Shoots:** Shoot sessions are scheduled during mutually agreed off-peak or peak hours to capture authentic store action without disrupting operations.
+- **Client Cooperation:** Client agrees to grant reasonable physical store access, ensure key staff/talent are briefed, and provide product/service access necessary to execute the approved shot list.
 
 ---
 
-## 7. TERMINATION & CANCELLATION
-- **Termination for Convenience:** Either party may terminate the project with written notice. In the event of early termination by the Client, the Client shall pay for all hours logged or milestones completed up to the date of notice; initial onboarding deposits for reserved production capacity are non-refundable.
-- **Termination for Cause:** Either party may terminate immediately if the other breaches any material term and fails to remedy the breach within five (5) days of written notice.
+## 5. REVIEWS, REVISIONS & ACCEPTANCE
+- **Standard Revisions:** Each contracted deliverable includes **two (2) rounds of consolidated revisions** (pacing adjustments, text/subtitle corrections, audio volume tweaks).
+- **Turnaround:** Preview cuts are delivered via WhatsApp / Cloud Drive within 24–48 hours post-shoot.
+- **Approval Window:** Feedback must be provided within five (5) business days of preview delivery. If no revision requests are submitted within seven (7) calendar days, deliverables are deemed accepted.
 
 ---
 
-## 8. LIMITATION OF LIABILITY & INDEMNIFICATION
-- In no event shall Groove Hub be liable for any indirect, consequential, punitive, or incidental damages (including loss of ad spend, traffic, or anticipated revenue).
-- The maximum aggregate liability of Groove Hub arising out of or related to this Agreement shall not exceed the total fees actually received by Groove Hub for the specific project deliverable giving rise to the claim.
-- Client agrees to indemnify and hold harmless Groove Hub against any claims, losses, or expenses resulting from copyright infringement claims tied to Client-provided media or unauthorized music/assets requested by Client.
+## 6. INTELLECTUAL PROPERTY & USAGE RIGHTS
+- **Commercial Rights:** Upon full settlement of invoices, Client owns full, perpetual, worldwide commercial exploitation and distribution rights for all finalized rendered videos and posts across Instagram, Facebook, YouTube, Google Maps, and website channels.
+- **Agency Portfolio Rights:** GROVE HUB reserves the non-exclusive right to feature finalized public videos and case study metrics in agency portfolios, showreels, and marketing showcases.
+- **Raw Project Files:** Proprietary project project files (`.prproj`, `.drp`, raw camera timelines, and proprietary LUTs/presets) remain the intellectual property of Provider.
 
 ---
 
-## 9. GOVERNING LAW & DISPUTE RESOLUTION
-This Agreement shall be governed by and construed in accordance with the laws of India. Any unresolved disputes arising hereunder shall be subject to amicable settlement discussions, failing which disputes shall be resolved through arbitration in Chennai, Tamil Nadu, India.
+## 7. CONFIDENTIALITY
+Both parties agree to treat all unpublished commercial strategies, customer data, revenue metrics, and proprietary business insights shared during this engagement with strict confidentiality.
 
 ---
 
-## 10. ACCEPTANCE & SIGNATURES
+## 8. GOVERNING LAW & JURISDICTION
+This Agreement shall be governed by and construed in accordance with the laws of India. Any disputes arising out of or in connection with this Agreement shall be subject to the exclusive jurisdiction of the competent courts in **Chennai, Tamil Nadu, India**.
 
-By signing below or initiating payment against the attached Invoice, both parties confirm their agreement to these Terms & Conditions.
+---
 
-**GROOVE HUB (SERVICE PROVIDER)**  
-Authorized Signature: _______________________________  
-Name: Aaqil / Groove Hub Media Management  
-Title: Founder / Executive Producer  
-Date: October 12, 2026  
+### SIGNATURES & ACCEPTANCE
 
-**CLIENT / COMPANY**  
-Authorized Signature: _______________________________  
-Name: _____________________________________________  
-Title: ____________________________________________  
-Company / Entity: _________________________________  
-Date: _____________________________________________  
+**For Service Provider (GROVE HUB):**  
+Name: Aaqil  
+Title: Founder & Executive Director  
+Signature: __________________________ Date: __________________  
+
+**For Client:**  
+Business / Store Name: __________________________________________  
+Authorized Representative: _____________________________________  
+Signature: __________________________ Date: __________________  

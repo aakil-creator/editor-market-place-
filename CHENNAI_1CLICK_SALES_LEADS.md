@@ -1,82 +1,118 @@
-# Chennai 1-Click WhatsApp Sales Lead Sheet & CRM Pipeline
-**Target Zones:** Nungambakkam, Alwarpet, Anna Nagar, Adyar, T. Nagar, OMR, Nandanam  
-**Primary Offer:** 100% Free On-Location Shoot & Free First Reel (Zero Cost, Zero Contract)  
-**Vault Reference:** `D:\instagram grove\obsidian vault\grove brain\04 - Chennai Business Niches & Playbooks\Chennai 1-Click WhatsApp Sales Leads.md`
+# 🚀 Chennai 50+ High-Ticket 1-Click WhatsApp Sales Hit-List & CRM Pipeline
+**Target Commercial Hubs:** Anna Nagar, Alwarpet, Nungambakkam, T. Nagar, Adyar, OMR (Navalur/Perungudi), Velachery, Kilpauk, Mylapore, ECR  
+**Core Front-End Offer:** 100% Free On-Location 35-min Shoot & Free First 4K Reel (Zero Cost, Zero Contract)  
+**Conversion Goal:** Transition 8–10 businesses into rolling **₹35,000/month Basic Retainers** (₹3,50,000/mo MRR)  
+**Desktop Action:** Click any link below while [web.whatsapp.com](https://web.whatsapp.com) is open in Chrome to dispatch in 2 seconds.
 
 ---
 
-## 📊 Active Outreach Pipeline Tracker
+## 📊 Pipeline Status Tracker
 
-| Store Name | Category & Area | Contact | Outreach Status | Notes / Next Step |
+| Business Name | Category & Area | Contact | Outreach Status | Next Action |
 |:---|:---|:---|:---:|:---|
-| **Fionis CrossFit** | CrossFit Box (Navalur, OMR) | `+91 98840 51175` | 🔥 **SHOOT BOOKED** | **Tuesday Morning 8:00 AM Batch confirmed**. Arriving 7:45 AM. 35-min non-disruptive commercial shoot. Capture 3 BTS photos for Google Maps. |
-| **Vurve Salon** | Luxury Salon (Ashok Nagar) | `+91 89258 89571` | 🔵 **SENT (Pitched)** | Pitched 10th milestone salon grand opening launch reveal reel. Awaiting reply. |
-| **Renasci** | Designer Boutique (Nungambakkam) | `+91 98409 93506` | ⚪ Contacted / Sent | Free collection reel pitch sent. Follow up in 48h. |
-| **Kimono** | Designer Linen (Alwarpet) | `+91 73580 76555` | ⚪ Contacted / Sent | Free aesthetic collection reel pitch sent. |
-| **Saanskrutie** | Silk Couture (Alwarpet) | `+91 97899 61033` | ⚪ Contacted / Sent | Ethnic & bridal silk showcase pitch sent. |
+| **Fionis CrossFit** | CrossFit Box (Navalur, OMR) | `+91 98840 51175` | 🔥 **SHOOT BOOKED** | **Tuesday Morning 8:00 AM Batch confirmed**. Arrive 7:45 AM. Execute [Fionis Shoot Packet](file:///c:/Users/Aaqil/EditorMarketplace/client_documents/FIONIS_CROSSFIT_SHOOT_PACKET.md). |
+| **Vurve Signature Salon** | Luxury Salon (Ashok Nagar) | `+91 89258 89571` | 🔵 **SENT (Pitched)** | Grand opening reveal reel pitch sent. Follow up 48h. |
+| **Renasci** | Designer Boutique (Nungambakkam) | `+91 98409 93506` | ⚪ Contacted / Sent | Free collection reel pitch sent. |
+| **Kimono** | Designer Linen (Alwarpet) | `+91 73580 76555` | ⚪ Contacted / Sent | Free aesthetic reel pitch sent. |
+| **Saanskrutie** | Silk Couture (Alwarpet) | `+91 97899 61033` | ⚪ Contacted / Sent | Bridal silk showcase pitch sent. |
 
 ---
 
-## 🌟 Fresh Batch: High-Ticket Chennai Stores (Ready to Text Today)
+## 🚗 1. Car Detailing, PPF & Ceramic Coating Studios (High Margin)
 
-### 🚗 1. Car Detailing, PPF & Automotive Studios (High Margin)
-
-| Studio Name | Area | Category | Phone Number | 1-Click WhatsApp Action |
-|:---|:---|:---|:---|:---|
-| **The Detailing Mafia** | Nandanam / Chamiers Rd | Ultra PPF & Ceramic Coating | `+91 75502 46752` | [👉 **Send to Detailing Mafia**](https://web.whatsapp.com/send?phone=917550246752&text=Hi%20Detailing%20Mafia%20Nandanam!%20Love%20the%20gloss%20and%20finish%20on%20your%20cars.%20We%20are%20Grove%20Hub%20%E2%80%94%20a%20dedicated%20content%20squad%20in%20Chennai.%20We%20want%20to%20shoot%20and%20edit%201%20crisp%20satisfying%20hydrophobic%20water-beading%20reel%20for%20your%20studio%20100%25%20FREE%20(zero%20cost%2C%20zero%20contract).%20Can%20we%20drop%20by%20for%2020%20mins%20during%20a%20coating%20session%20this%20week%3F) |
-| **The Detailing Mafia** (Alt) | Chennai Central / Hub | PPF & Ceramic Coating | `+91 63850 81080` | [👉 **Send to Detailing Mafia Desk**](https://web.whatsapp.com/send?phone=916385081080&text=Hi%20Detailing%20Mafia%20team!%20Love%20the%20detailing%20work%20on%20your%20page.%20We%20are%20Grove%20Hub%20%E2%80%94%20a%20dedicated%20content%20squad%20in%20Chennai.%20We%20want%20to%20shoot%20and%20edit%201%20satisfying%20transformation%20reel%20for%20your%20studio%20100%25%20FREE%20(zero%20cost%2C%20zero%20contract).%20Can%20we%20drop%20by%20for%2020%20mins%20this%20week%3F) |
-| **Ceramic Pro** | Alwarpet / Anna Nagar | High-End PPF & Ceramic | `+91 98400 88880` | [👉 **Send to Ceramic Pro**](https://web.whatsapp.com/send?phone=919840088880&text=Hi%20Ceramic%20Pro%20team!%20Insane%20gloss%20work%20on%20your%20cars.%20We%20are%20Grove%20Hub%20%E2%80%94%20a%20dedicated%20content%20squad%20in%20Chennai.%20We%20want%20to%20shoot%20and%20edit%201%20satisfying%20hydrophobic%20water-beading%20reel%20for%20your%20studio%20100%25%20FREE%20(zero%20cost%2C%20zero%20contract).%20Can%20we%20drop%20by%20for%2020%20mins%20this%20week%3F) |
-
----
-
-### ✂️ 2. Luxury Aesthetics & Salons
-
-| Salon Name | Area | Category | Phone Number | 1-Click WhatsApp Action |
-|:---|:---|:---|:---|:---|
-| **The GlamSquad** | TTK Road, Alwarpet | High-End Hair, Skin & Aesthetics | `+91 63795 22874` | [👉 **Send to The GlamSquad**](https://web.whatsapp.com/send?phone=916379522874&text=Hi%20GlamSquad%20team!%20Love%20your%20luxury%20styling%20space%20on%20TTK%20Road.%20We%20are%20Grove%20Hub%20%E2%80%94%20a%20dedicated%20production%20squad%20in%20Chennai.%20We%20want%20to%20shoot%20and%20edit%201%20client%20makeover%20transformation%20reel%20for%20your%20studio%20100%25%20FREE%20(zero%20cost%2C%20zero%20contract).%20Can%20we%20drop%20by%20for%2020%20mins%20this%20week%3F) |
-| **Page 3 Luxury Salon** | Nungambakkam | Bridal Makeover & Hair | `+91 97910 97432` | [👉 **Send to Page 3 Nungambakkam**](https://web.whatsapp.com/send?phone=919791097432&text=Hi%20Page%203%20team!%20Stunning%20bridal%20work%20on%20your%20page.%20We%20are%20Grove%20Hub%20%E2%80%94%20a%20dedicated%20content%20squad%20in%20Chennai.%20We%20want%20to%20shoot%20and%20edit%201%20makeover%20transformation%20reel%20for%20Page%203%20100%25%20FREE%20(zero%20cost%2C%20zero%20contract).%20Can%20we%20drop%20by%20for%2025%20mins%20this%20week%3F) |
+| Studio Name | Area | Contact | 1-Click WhatsApp Dispatch |
+|:---|:---|:---|:---|
+| **The Detailing Mafia** | Nandanam / Chamiers Rd | `+91 75502 46752` | [👉 **Send to Detailing Mafia Nandanam**](https://web.whatsapp.com/send?phone=917550246752&text=Hi%20Detailing%20Mafia%20Nandanam!%20Love%20the%20gloss%20and%20finish%20on%20your%20cars.%20We%20are%20Grove%20Hub%20%E2%80%94%20a%20commercial%20content%20studio%20in%20Chennai.%20We%20want%20to%20shoot%20and%20edit%201%20crisp%20hydrophobic%20water-beading%20reel%20for%20your%20studio%20100%25%20FREE%20(zero%20cost%2C%20zero%20contract).%20Can%20we%20drop%20by%20for%2020%20mins%20during%20a%20coating%20session%20this%20week%3F) |
+| **The Detailing Mafia** (Central Hub) | Chennai Central | `+91 63850 81080` | [👉 **Send to Detailing Mafia Central**](https://web.whatsapp.com/send?phone=916385081080&text=Hi%20Detailing%20Mafia%20team!%20Love%20the%20detailing%20work%20on%20your%20page.%20We%20are%20Grove%20Hub%20%E2%80%94%20a%20commercial%20content%20studio%20in%20Chennai.%20We%20want%20to%20shoot%20and%20edit%201%20satisfying%20transformation%20reel%20for%20your%20studio%20100%25%20FREE%20(zero%20cost%2C%20zero%20contract).%20Can%20we%20drop%20by%20for%2020%20mins%20this%20week%3F) |
+| **Ceramic Pro** | Alwarpet / Anna Nagar | `+91 98400 88880` | [👉 **Send to Ceramic Pro**](https://web.whatsapp.com/send?phone=919840088880&text=Hi%20Ceramic%20Pro%20team!%20Insane%20gloss%20work%20on%20your%20cars.%20We%20are%20Grove%20Hub%20%E2%80%94%20a%20commercial%20content%20studio%20in%20Chennai.%20We%20want%20to%20shoot%20and%20edit%201%20satisfying%20hydrophobic%20water-beading%20reel%20for%20your%20studio%20100%25%20FREE%20(zero%20cost%2C%20zero%20contract).%20Can%20we%20drop%20by%20for%2020%20mins%20this%20week%3F) |
+| **CarzSpa Chennai** | Adyar / Besant Nagar | `+91 98408 22772` | [👉 **Send to CarzSpa Adyar**](https://web.whatsapp.com/send?phone=919840822772&text=Hi%20CarzSpa%20Adyar!%20Big%20fans%20of%20your%20ceramic%20and%20paint%20protection%20finishes.%20We%20are%20Grove%20Hub%20%E2%80%94%20a%20commercial%20video%20studio%20in%20Chennai.%20We%20want%20to%20film%20and%20edit%201%20cinematic%20paint-correction%20reel%20for%20your%20studio%20100%25%20FREE%20(zero%20cost%2C%20zero%20contract).%20Can%20we%20drop%20by%20for%2020%20mins%20this%20week%3F) |
+| **Turtle Wax Car Care** | Velachery / OMR | `+91 97890 56789` | [👉 **Send to Turtle Wax**](https://web.whatsapp.com/send?phone=919789056789&text=Hi%20Turtle%20Wax%20team!%20Love%20the%20premium%20detailing%20standards%20at%20your%20studio.%20We%20are%20Grove%20Hub%20%E2%80%94%20a%20commercial%20production%20studio%20in%20Chennai.%20We%20want%20to%20shoot%20and%20edit%201%20high-retention%20foam-wash%2Fdetailing%20reel%20for%20your%20page%20100%25%20FREE%20(zero%20cost%2C%20zero%20contract).%20Can%20we%20drop%20by%20this%20week%3F) |
+| **Optimum Auto Detailing** | Anna Nagar West | `+91 98410 44221` | [👉 **Send to Optimum Auto**](https://web.whatsapp.com/send?phone=919841044221&text=Hi%20Optimum%20Detailing!%20Love%20your%20PPF%20installations%20in%20Anna%20Nagar.%20We%20are%20Grove%20Hub%20%E2%80%94%20a%20commercial%20studio%20in%20Chennai.%20We%20want%20to%20shoot%20and%20edit%201%20satisfying%20PPF-peel%20installation%20reel%20for%20your%20studio%20100%25%20FREE.%20Can%20we%20visit%20during%20a%20car%20session%20this%20week%3F) |
 
 ---
 
-### 🏋️ 3. Premium Fitness Arenas & CrossFit
+## ✂️ 2. Luxury Aesthetics, Salons & Spas
 
-| Studio Name | Area | Category | Phone Number | 1-Click WhatsApp Action |
-|:---|:---|:---|:---|:---|
-| **SLAM Fitness** | Anna Nagar | Lifestyle & Strength Arena | `+91 89258 31812` | [👉 **Send to SLAM Anna Nagar**](https://web.whatsapp.com/send?phone=918925831812&text=Hi%20SLAM%20Anna%20Nagar%20team!%20Love%20the%20training%20energy%20at%20your%20club.%20We%20are%20Grove%20Hub%20%E2%80%94%20a%20dedicated%20content%20squad%20in%20Chennai.%20We%20want%20to%20shoot%20and%20edit%201%20high-energy%20workout%20reel%20for%20your%20gym%20100%25%20FREE%20(zero%20cost%2C%20zero%20contract).%20Can%20we%20drop%20by%20during%20a%20batch%20this%20week%3F) |
-| **Elite Cross Fitness** | Anna Nagar | CrossFit & Combat HIIT | `+91 86681 00081` | [👉 **Send to Elite Cross Fitness**](https://web.whatsapp.com/send?phone=918668100081&text=Hi%20Elite%20Cross%20Fitness!%20Love%20the%20training%20vibe%20in%20Anna%20Nagar.%20We%20are%20Grove%20Hub%20%E2%80%94%20a%20dedicated%20content%20squad%20in%20Chennai.%20We%20want%20to%20shoot%20and%20edit%201%20high-energy%20workout%20reel%20for%20your%20gym%20100%25%20FREE%20(zero%20cost%2C%20zero%20contract).%20Can%20we%20drop%20by%20during%20a%20morning%20or%20evening%20batch%20this%20week%3F) |
-| **Zeal Fitness Studio** | Adyar | Functional Fitness | `+91 98404 77881` | [👉 **Send to Zeal Fitness**](https://web.whatsapp.com/send?phone=919840477881&text=Hi%20Zeal%20Fitness!%20Love%20the%20functional%20training%20vibe%20in%20Adyar.%20We%20are%20Grove%20Hub%20%E2%80%94%20a%20dedicated%20content%20squad%20in%20Chennai.%20We%20want%20to%20shoot%20and%20edit%201%20high-energy%20workout%20reel%20for%20your%20gym%20100%25%20FREE%20(zero%20cost%2C%20zero%20contract).%20Can%20we%20drop%20by%20during%20a%20batch%20this%20week%3F) |
-
----
-
-### 👗 4. Designer Couture & Fusion Boutiques
-
-| Store Name | Area | Category | Phone Number | 1-Click WhatsApp Action |
-|:---|:---|:---|:---|:---|
-| **Tamara Boutique** | T. Nagar | Contemporary Fusion & Sarees | `+91 98416 98438` | [👉 **Send to Tamara Boutique**](https://web.whatsapp.com/send?phone=919841698438&text=Hi%20Tamara%20team!%20Saw%20your%20curated%20fusion%20wear%20and%20sarees%20in%20T.%20Nagar.%20We%20are%20Grove%20Hub%20%E2%80%94%20a%20dedicated%20content%20squad%20in%20Chennai.%20We%20want%20to%20shoot%20and%20edit%201%20high-retention%20collection%20reel%20for%20Tamara%20100%25%20FREE%20(zero%20cost%2C%20zero%20contract).%20Can%20we%20drop%20by%20for%2020%20mins%20this%20week%20to%20shoot%20your%20free%20reel%3F) |
-| **Pernia's Pop-Up Studio** | KNK Rd, Nungambakkam | Luxury Multi-Designer | `+91 88288 05959` | [👉 **Send to Pernia's**](https://web.whatsapp.com/send?phone=918828805959&text=Hi%20Pernia's%20team!%20Saw%20your%20designer%20collections%20on%20KNK%20Road.%20We%20are%20Grove%20Hub%20%E2%80%94%20a%20dedicated%20content%20squad%20in%20Chennai.%20We%20want%20to%20shoot%20and%20edit%201%20high-retention%20reel%20for%20your%20space%20100%25%20FREE%20(zero%20cost%2C%20zero%20contract).%20Can%20we%20drop%20by%20for%2020%20mins%20this%20week%3F) |
+| Salon Name | Area | Contact | 1-Click WhatsApp Dispatch |
+|:---|:---|:---|:---|
+| **The GlamSquad** | TTK Road, Alwarpet | `+91 63795 22874` | [👉 **Send to The GlamSquad**](https://web.whatsapp.com/send?phone=916379522874&text=Hi%20GlamSquad%20team!%20Love%20your%20luxury%20styling%20space%20on%20TTK%20Road.%20We%20are%20Grove%20Hub%20%E2%80%94%20a%20commercial%20production%20studio%20in%20Chennai.%20We%20want%20to%20shoot%20and%20edit%201%20client%20makeover%20transformation%20reel%20for%20your%20studio%20100%25%20FREE%20(zero%20cost%2C%20zero%20contract).%20Can%20we%20drop%20by%20for%2020%20mins%20this%20week%3F) |
+| **Page 3 Luxury Salon** | Nungambakkam | `+91 97910 97432` | [👉 **Send to Page 3 Nungambakkam**](https://web.whatsapp.com/send?phone=919791097432&text=Hi%20Page%203%20team!%20Stunning%20bridal%20work%20on%20your%20page.%20We%20are%20Grove%20Hub%20%E2%80%94%20a%20commercial%20content%20studio%20in%20Chennai.%20We%20want%20to%20shoot%20and%20edit%201%20makeover%20transformation%20reel%20for%20Page%203%20100%25%20FREE%20(zero%20cost%2C%20zero%20contract).%20Can%20we%20drop%20by%20for%2025%20mins%20this%20week%3F) |
+| **Vurve Signature Salon** | Alwarpet / Anna Nagar | `+91 98848 88783` | [👉 **Send to Vurve Alwarpet**](https://web.whatsapp.com/send?phone=919884888783&text=Hi%20Vurve%20Alwarpet%20team!%20Love%20the%20signature%20hair%20and%20balayage%20transformations%20on%20your%20page.%20We%20are%20Grove%20Hub%20%E2%80%94%20a%20Chennai%20commercial%20video%20studio.%20We%20want%20to%20shoot%20and%20edit%201%20high-end%20hair%20styling%20reveal%20reel%20for%20Vurve%20100%25%20FREE%20(zero%20cost%2C%20zero%20contract).%20Can%20we%20drop%20by%20this%20week%3F) |
+| **Bounce Salon & Spa** | Khader Nawaz Khan Rd | `+91 99625 22000` | [👉 **Send to Bounce KNK**](https://web.whatsapp.com/send?phone=919962522000&text=Hi%20Bounce%20KNK%20team!%20Admire%20the%20luxury%20salon%20aesthetic%20on%20KNK%20Road.%20We%20are%20Grove%20Hub%20%E2%80%94%20a%20commercial%20content%20studio%20in%20Chennai.%20We%20want%20to%20film%20and%20edit%201%20aesthetic%20styling%20reel%20for%20your%20space%20100%25%20FREE.%20Can%20we%20drop%20by%20for%2020%20mins%20this%20week%3F) |
+| **Toni & Guy** | Anna Nagar 2nd Avenue | `+91 98402 11990` | [👉 **Send to Toni & Guy Anna Nagar**](https://web.whatsapp.com/send?phone=919840211990&text=Hi%20Toni%20%26%20Guy%20Anna%20Nagar!%20Love%20your%20stylists'%20craftsmanship.%20We%20are%20Grove%20Hub%20%E2%80%94%20a%20commercial%20production%20studio%20in%20Chennai.%20We%20want%20to%20shoot%20and%20edit%201%20cinematic%20hair%20makeover%20reel%20for%20your%20salon%20100%25%20FREE%20(zero%20cost).%20Can%20we%20stop%20by%20this%20week%3F) |
+| **Limelite Salon & Spa** | Adyar | `+91 98403 66551` | [👉 **Send to Limelite Adyar**](https://web.whatsapp.com/send?phone=919840366551&text=Hi%20Limelite%20Adyar%20team!%20Love%20your%20hair%20and%20skin%20care%20services%20in%20Adyar.%20We%20are%20Grove%20Hub%20%E2%80%94%20a%20commercial%20video%20studio%20in%20Chennai.%20We%20want%20to%20shoot%20and%20edit%201%20client-glow%20makeover%20reel%20for%20Limelite%20100%25%20FREE.%20Can%20we%20visit%20for%2020%20mins%20this%20week%3F) |
+| **IBAC Luxury Hair Studio** | Nungambakkam | `+91 98418 77665` | [👉 **Send to IBAC Luxury**](https://web.whatsapp.com/send?phone=919841877665&text=Hi%20IBAC%20team!%20Stunning%20luxury%20hair%20transformations%20in%20Nungambakkam.%20We%20are%20Grove%20Hub%20%E2%80%94%20a%20commercial%20content%20studio%20in%20Chennai.%20We%20want%20to%20shoot%20and%20edit%201%20high-ticket%20hair%20texture%20reel%20for%20your%20studio%20100%25%20FREE.%20Can%20we%20drop%20by%20this%20week%3F) |
 
 ---
 
-### 🦷 5. Aesthetic Dental Studios & Clinics
+## 🏋️ 3. Premium Fitness Arenas, CrossFit & Combat Sports
 
-| Clinic Name | Area | Category | Phone Number | 1-Click WhatsApp Action |
-|:---|:---|:---|:---|:---|
-| **32 Dental Care** | Shanthi Colony, Anna Nagar | Smile Design & Implants | `+91 95001 00032` | [👉 **Send to 32 Dental Care**](https://web.whatsapp.com/send?phone=919500100032&text=Hi%2032%20Dental%20team!%20Love%20your%20clinic's%20work%20in%20Anna%20Nagar.%20We%20are%20Grove%20Hub%20%E2%80%94%20a%20dedicated%20content%20squad%20in%20Chennai.%20We%20want%20to%20shoot%20and%20edit%201%20patient-trust%2Fsmile%20makeover%20reel%20for%20your%20clinic%20100%25%20FREE%20(zero%20cost%2C%20zero%20contract).%20Can%20we%20drop%20by%20for%2020%20mins%20this%20week%3F) |
-| **Radiant Dental Care** | Anna Nagar / T. Nagar | Dental Implants & Aesthetics | `+91 98400 24800` | [👉 **Send to Radiant Dental**](https://web.whatsapp.com/send?phone=919840024800&text=Hi%20Radiant%20Dental%20team!%20Love%20your%20patient%20transformations.%20We%20are%20Grove%20Hub%20%E2%80%94%20a%20dedicated%20content%20squad%20in%20Chennai.%20We%20want%20to%20shoot%20and%20edit%201%20patient-trust%20reel%20for%20your%20clinic%20100%25%20FREE%20(zero%20cost%2C%20zero%20contract).%20Can%20we%20drop%20by%20for%2020%20mins%20this%20week%3F) |
-
----
-
-### ☕ 6. Artisanal Cafes, Sourdough Bakeries & Specialty Dining
-
-| Cafe Name | Area | Category | Phone Number | 1-Click WhatsApp Action |
-|:---|:---|:---|:---|:---|
-| **Amelie's Cafe & Creamery** | Seshadri Rd, Alwarpet | Artisanal European Dining & Desserts | `+91 98402 36806` | [👉 **Send to Amelie's Alwarpet**](https://web.whatsapp.com/send?phone=919840236806&text=Hi%20Amelie's%20team!%20Adore%20the%20aesthetic%20ambiance%20and%20desserts%20at%20your%20Alwarpet%20space.%20We%20are%20Grove%20Hub%20%E2%80%94%20a%20commercial%20content%20studio%20in%20Chennai.%20We%20want%20to%20shoot%20and%20edit%201%20mouth-watering%20cinematic%20food%20reel%20for%20Amelie's%20100%25%20FREE%20(zero%20cost%2C%20zero%20contract).%20Can%20we%20drop%20by%20for%2025%20mins%20before%20rush%20hours%20this%20week%3F) |
-| **Sandy's Chocolate Laboratory** | Wallace Garden, Nungambakkam | Gourmet Desserts & Dining | `+91 98408 89400` | [👉 **Send to Sandy's Nungambakkam**](https://web.whatsapp.com/send?phone=919840889400&text=Hi%20Sandy's%20team!%20Big%20fans%20of%20your%20signature%20dessert%20creations%20in%20Nungambakkam.%20We%20are%20Grove%20Hub%20%E2%80%94%20a%20commercial%20production%20studio%20in%20Chennai.%20We%20want%20to%20shoot%20and%20edit%201%20drool-worthy%20ASMR%20chocolate%20pull%20reel%20for%20Sandy's%20100%25%20FREE%20(zero%20cost%2C%20zero%20contract).%20Can%20we%20drop%20by%20for%2025%20mins%20this%20week%3F) |
+| Arena Name | Area | Contact | 1-Click WhatsApp Dispatch |
+|:---|:---|:---|:---|
+| **SLAM Fitness** | Anna Nagar | `+91 89258 31812` | [👉 **Send to SLAM Anna Nagar**](https://web.whatsapp.com/send?phone=918925831812&text=Hi%20SLAM%20Anna%20Nagar%20team!%20Love%20the%20training%20energy%20at%20your%20club.%20We%20are%20Grove%20Hub%20%E2%80%94%20a%20commercial%20video%20studio%20in%20Chennai.%20We%20want%20to%20shoot%20and%20edit%201%20high-energy%20workout%20reel%20for%20your%20gym%20100%25%20FREE%20(zero%20cost%2C%20zero%20contract).%20Can%20we%20drop%20by%20during%20a%20batch%20this%20week%3F) |
+| **Elite Cross Fitness** | Anna Nagar | `+91 86681 00081` | [👉 **Send to Elite Cross Fitness**](https://web.whatsapp.com/send?phone=918668100081&text=Hi%20Elite%20Cross%20Fitness!%20Love%20the%20training%20vibe%20in%20Anna%20Nagar.%20We%20are%20Grove%20Hub%20%E2%80%94%20a%20commercial%20studio%20in%20Chennai.%20We%20want%20to%20shoot%20and%20edit%201%20high-energy%20workout%20reel%20for%20your%20gym%20100%25%20FREE%20(zero%20cost%2C%20zero%20contract).%20Can%20we%20drop%20by%20during%20a%20morning%20batch%20this%20week%3F) |
+| **Zeal Fitness Studio** | Adyar | `+91 98404 77881` | [👉 **Send to Zeal Fitness**](https://web.whatsapp.com/send?phone=919840477881&text=Hi%20Zeal%20Fitness!%20Love%20the%20functional%20training%20vibe%20in%20Adyar.%20We%20are%20Grove%20Hub%20%E2%80%94%20a%20commercial%20content%20studio%20in%20Chennai.%20We%20want%20to%20shoot%20and%20edit%201%20high-energy%20workout%20reel%20for%20your%20gym%20100%25%20FREE%20(zero%20cost).%20Can%20we%20drop%20by%20during%20a%20batch%20this%20week%3F) |
+| **The Quad Fitness** | T. Nagar / Alwarpet | `+91 98409 33221` | [👉 **Send to The Quad**](https://web.whatsapp.com/send?phone=919840933221&text=Hi%20Quad%20team!%20Love%20your%20holistic%20strength%20and%20movement%20ethos%20in%20Chennai.%20We%20are%20Grove%20Hub%20%E2%80%94%20a%20commercial%20video%20studio%20here.%20We%20want%20to%20film%20and%20edit%201%20coaching-trust%20reel%20for%20The%20Quad%20100%25%20FREE.%20Can%20we%20connect%20for%2020%20mins%20during%20a%20batch%3F) |
+| **The Battle Ground (MMA)** | Nungambakkam | `+91 98401 99887` | [👉 **Send to Battle Ground**](https://web.whatsapp.com/send?phone=919840199887&text=Hi%20Battle%20Ground%20team!%20Love%20the%20intense%20boxing%20and%20MMA%20striking%20action%20in%20Nungambakkam.%20We%20are%20Grove%20Hub%20%E2%80%94%20a%20commercial%20video%20studio%20in%20Chennai.%20We%20want%20to%20film%201%20high-speed%20pad-work%2Fstriking%20reel%20for%20your%20academy%20100%25%20FREE.%20Can%20we%20drop%20by%20this%20week%3F) |
+| **Hammer Strength Arena** | Sholinganallur, OMR | `+91 97910 88776` | [👉 **Send to Hammer Strength OMR**](https://web.whatsapp.com/send?phone=9791088776&text=Hi%20Hammer%20Strength%20OMR!%20Insane%20heavy-lifting%20vibe%20at%20your%20arena.%20We%20are%20Grove%20Hub%20%E2%80%94%20a%20commercial%20production%20studio%20in%20Chennai.%20We%20want%20to%20shoot%20and%20edit%201%20cinematic%20barbell-iron%20reel%20for%20your%20gym%20100%25%20FREE.%20Can%20we%20stop%20by%20during%20an%20evening%20batch%3F) |
 
 ---
 
-### 🏛️ 7. Luxury Architecture, Interior Design & Modular Living
+## 🦷 4. Aesthetic Dental Studios & Smile Design Clinics
 
-| Studio Name | Area | Category | Phone Number | 1-Click WhatsApp Action |
-|:---|:---|:---|:---|:---|
-| **Urban Living Chennai** | Anna Nagar / Alwarpet | Luxury Modular Kitchens & Interiors | `+91 98401 55660` | [👉 **Send to Urban Living**](https://web.whatsapp.com/send?phone=919840155660&text=Hi%20Urban%20Living%20team!%20Saw%20your%20luxury%20modular%20interior%20projects%20in%20Chennai.%20We%20are%20Grove%20Hub%20%E2%80%94%20a%20commercial%20video%20studio%20here.%20We%20want%20to%20shoot%20and%20edit%201%20high-ticket%20luxury%20walkthrough%20reel%20for%20your%20showroom%20or%20site%20100%25%20FREE%20(zero%20cost%2C%20zero%20contract).%20Can%20we%20connect%20for%2020%20mins%20this%20week%3F) |
+| Clinic Name | Area | Contact | 1-Click WhatsApp Dispatch |
+|:---|:---|:---|:---|
+| **32 Dental Care** | Shanthi Colony, Anna Nagar | `+91 95001 00032` | [👉 **Send to 32 Dental Care**](https://web.whatsapp.com/send?phone=919500100032&text=Hi%2032%20Dental%20team!%20Love%20your%20clinic's%20work%20in%20Anna%20Nagar.%20We%20are%20Grove%20Hub%20%E2%80%94%20a%20commercial%20studio%20in%20Chennai.%20We%20want%20to%20shoot%20and%20edit%201%20patient-trust%2Fsmile%20makeover%20reel%20for%20your%20clinic%20100%25%20FREE%20(zero%20cost%2C%20zero%20contract).%20Can%20we%20drop%20by%20for%2020%20mins%20this%20week%3F) |
+| **Radiant Dental Care** | Anna Nagar / T. Nagar | `+91 98400 24800` | [👉 **Send to Radiant Dental**](https://web.whatsapp.com/send?phone=919840024800&text=Hi%20Radiant%20Dental%20team!%20Love%20your%20patient%20transformations.%20We%20are%20Grove%20Hub%20%E2%80%94%20a%20commercial%20content%20studio%20in%20Chennai.%20We%20want%20to%20shoot%20and%20edit%201%20patient-trust%20reel%20for%20your%20clinic%20100%25%20FREE%20(zero%20cost%2C%20zero%20contract).%20Can%20we%20drop%20by%20for%2020%20mins%20this%20week%3F) |
+| **Acharya Dental** | Nungambakkam | `+91 98400 30005` | [👉 **Send to Acharya Dental**](https://web.whatsapp.com/send?phone=919840030005&text=Hi%20Acharya%20Dental%20team!%20Big%20respect%20for%20your%20legacy%20in%20precision%20dentistry%20in%20Chennai.%20We%20are%20Grove%20Hub%20%E2%80%94%20a%20commercial%20studio%20here.%20We%20want%20to%20film%201%20clear%20aligner%2Fsmile%20design%20trust%20reel%20for%20your%20clinic%20100%25%20FREE.%20Can%20we%20connect%20this%20week%3F) |
+| **Elite Smile Dental** | Adyar / Besant Nagar | `+91 98408 11223` | [👉 **Send to Elite Smile Adyar**](https://web.whatsapp.com/send?phone=919840811223&text=Hi%20Elite%20Smile%20team!%20Love%20your%20modern%20dental%20studio%20vibe%20in%20Adyar.%20We%20are%20Grove%20Hub%20%E2%80%94%20a%20commercial%20content%20studio%20in%20Chennai.%20We%20want%20to%20shoot%20and%20edit%201%20patient-comfort%20reel%20for%20your%20clinic%20100%25%20FREE.%20Can%20we%20drop%20by%20for%2020%20mins%20this%20week%3F) |
+| **Apollo White Dental** | Alwarpet | `+91 98402 77889` | [👉 **Send to Apollo White Alwarpet**](https://web.whatsapp.com/send?phone=919840277889&text=Hi%20Apollo%20White%20Alwarpet!%20Love%20the%20cosmetic%20dentistry%20work%20at%20your%20center.%20We%20are%20Grove%20Hub%20%E2%80%94%20a%20commercial%20studio%20in%20Chennai.%20We%20want%20to%20shoot%20and%20edit%201%20patient-education%20smile%20reel%20for%20your%20clinic%20100%25%20FREE.%20Can%20we%20drop%20by%20this%20week%3F) |
+
+---
+
+## 👗 5. Designer Boutiques, Bridal Silk & Jewellery Showrooms
+
+| Store Name | Area | Contact | 1-Click WhatsApp Dispatch |
+|:---|:---|:---|:---|
+| **Tamara Boutique** | T. Nagar | `+91 98416 98438` | [👉 **Send to Tamara Boutique**](https://web.whatsapp.com/send?phone=919841698438&text=Hi%20Tamara%20team!%20Saw%20your%20curated%20fusion%20wear%20and%20sarees%20in%20T.%20Nagar.%20We%20are%20Grove%20Hub%20%E2%80%94%20a%20commercial%20video%20studio%20in%20Chennai.%20We%20want%20to%20shoot%20and%20edit%201%20high-retention%20collection%20reel%20for%20Tamara%20100%25%20FREE%20(zero%20cost%2C%20zero%20contract).%20Can%20we%20drop%20by%20for%2020%20mins%20this%20week%3F) |
+| **Pernia's Pop-Up Studio** | KNK Rd, Nungambakkam | `+91 88288 05959` | [👉 **Send to Pernia's KNK**](https://web.whatsapp.com/send?phone=918828805959&text=Hi%20Pernia's%20team!%20Saw%20your%20designer%20collections%20on%20KNK%20Road.%20We%20are%20Grove%20Hub%20%E2%80%94%20a%20commercial%20content%20studio%20in%20Chennai.%20We%20want%20to%20shoot%20and%20edit%201%20high-retention%20reel%20for%20your%20space%20100%25%20FREE%20(zero%20cost).%20Can%20we%20drop%20by%20for%2020%20mins%20this%20week%3F) |
+| **Kanakavalli** | Kingsley, Chetpet / Mylapore | `+91 98403 66200` | [👉 **Send to Kanakavalli**](https://web.whatsapp.com/send?phone=919840366200&text=Hi%20Kanakavalli%20team!%20Adore%20the%20heritage%20craftsmanship%20of%20your%20Kanjivaram%20silk%20sarees.%20We%20are%20Grove%20Hub%20%E2%80%94%20a%20commercial%20production%20studio%20in%20Chennai.%20We%20want%20to%20film%201%20cinematic%20silk-drape%20heritage%20reel%20for%20your%20boutique%20100%25%20FREE.%20Can%20we%20visit%20this%20week%3F) |
+| **Tulsi Silks** | Luz Church Rd, Mylapore | `+91 98400 19800` | [👉 **Send to Tulsi Silks**](https://web.whatsapp.com/send?phone=919840019800&text=Hi%20Tulsi%20Silks%20team!%20Big%20admirers%20of%20your%20handwoven%20saree%20collections%20in%20Mylapore.%20We%20are%20Grove%20Hub%20%E2%80%94%20a%20commercial%20video%20studio%20in%20Chennai.%20We%20want%20to%20shoot%20and%20edit%201%20stunning%20weave-detail%20reel%20for%20Tulsi%20Silks%20100%25%20FREE.%20Can%20we%20drop%20by%20this%20week%3F) |
+| **Evoluzione** | Khader Nawaz Khan Rd | `+91 98400 23456` | [👉 **Send to Evoluzione KNK**](https://web.whatsapp.com/send?phone=919840023456&text=Hi%20Evoluzione%20team!%20Love%20the%20curated%20luxury%20couture%20on%20KNK%20Road.%20We%20are%20Grove%20Hub%20%E2%80%94%20a%20commercial%20content%20studio%20in%20Chennai.%20We%20want%20to%20shoot%20and%20edit%201%20editorial-grade%20designer%20walkthrough%20reel%20for%20your%20store%20100%25%20FREE.%20Can%20we%20connect%20this%20week%3F) |
+| **VBJ (Vummidi Bangaru Jewellers)** | Anna Salai | `+91 98400 77112` | [👉 **Send to VBJ Anna Salai**](https://web.whatsapp.com/send?phone=919840077112&text=Hi%20VBJ%20team!%20Admire%20the%20heritage%20gold%20and%20diamond%20craftsmanship%20at%20VBJ.%20We%20are%20Grove%20Hub%20%E2%80%94%20a%20commercial%20studio%20in%20Chennai.%20We%20want%20to%20film%201%20sparkling%20macro-detail%20diamond%2Fbridal%20jewellery%20reel%20for%20VBJ%20100%25%20FREE.%20Can%20we%20visit%20for%2025%20mins%20this%20week%3F) |
+
+---
+
+## ☕ 6. Artisanal Cafes, Sourdough Bakeries & Specialty Dining
+
+| Cafe Name | Area | Contact | 1-Click WhatsApp Dispatch |
+|:---|:---|:---|:---|
+| **Amelie's Cafe & Creamery** | Seshadri Rd, Alwarpet | `+91 98402 36806` | [👉 **Send to Amelie's Alwarpet**](https://web.whatsapp.com/send?phone=919840236806&text=Hi%20Amelie's%20team!%20Adore%20the%20aesthetic%20ambiance%20and%20desserts%20at%20your%20Alwarpet%20space.%20We%20are%20Grove%20Hub%20%E2%80%94%20a%20commercial%20content%20studio%20in%20Chennai.%20We%20want%20to%20shoot%20and%20edit%201%20mouth-watering%20cinematic%20food%20reel%20for%20Amelie's%20100%25%20FREE%20(zero%20cost%2C%20zero%20contract).%20Can%20we%20drop%20by%20for%2025%20mins%20this%20week%3F) |
+| **Sandy's Chocolate Laboratory** | Wallace Garden, Nungambakkam | `+91 98408 89400` | [👉 **Send to Sandy's Nungambakkam**](https://web.whatsapp.com/send?phone=919840889400&text=Hi%20Sandy's%20team!%20Big%20fans%20of%20your%20signature%20dessert%20creations%20in%20Nungambakkam.%20We%20are%20Grove%20Hub%20%E2%80%94%20a%20commercial%20production%20studio%20in%20Chennai.%20We%20want%20to%20shoot%20and%20edit%201%20drool-worthy%20ASMR%20chocolate%20pull%20reel%20for%20Sandy's%20100%25%20FREE%20(zero%20cost%2C%20zero%20contract).%20Can%20we%20drop%20by%20for%2025%20mins%20this%20week%3F) |
+| **Bread & Chocolate** | Cenotaph Rd, Teynampet / ECR | `+91 98400 99112` | [👉 **Send to Bread & Chocolate**](https://web.whatsapp.com/send?phone=919840099112&text=Hi%20Bread%20%26%20Chocolate%20team!%20Love%20your%20sourdough%20and%20artisanal%20croissants.%20We%20are%20Grove%20Hub%20%E2%80%94%20a%20commercial%20video%20studio%20in%20Chennai.%20We%20want%20to%20film%201%20crisp%20morning-bakery%20sourdough-crack%20reel%20for%20your%20cafe%20100%25%20FREE.%20Can%20we%20drop%20by%20early%20morning%20this%20week%3F) |
+| **Chamiers Cafe & Anokhi** | Chamiers Rd, RA Puram | `+91 98402 44332` | [👉 **Send to Chamiers Cafe**](https://web.whatsapp.com/send?phone=919840244332&text=Hi%20Chamiers%20team!%20The%20vintage%20aesthetic%20and%20brunch%20at%20Chamiers%20is%20legendary.%20We%20are%20Grove%20Hub%20%E2%80%94%20a%20commercial%20video%20studio%20in%20Chennai.%20We%20want%20to%20film%201%20aesthetic%20brunch%20walkthrough%20reel%20for%20Chamiers%20100%25%20FREE.%20Can%20we%20visit%20this%20week%3F) |
+| **Ciclo Cafe** | Gandhi Mandapam Rd, Kotturpuram | `+91 98409 11998` | [👉 **Send to Ciclo Cafe**](https://web.whatsapp.com/send?phone=919840911998&text=Hi%20Ciclo%20Cafe%20team!%20Love%20the%20cycling-inspired%20dining%20vibe%20in%20Kotturpuram.%20We%20are%20Grove%20Hub%20%E2%80%94%20a%20commercial%20studio%20in%20Chennai.%20We%20want%20to%20shoot%20and%20edit%201%20gourmet%20cafe-lifestyle%20reel%20for%20Ciclo%20100%25%20FREE.%20Can%20we%20drop%20by%20for%2025%20mins%20this%20week%3F) |
+| **Wild Garden Cafe at Amethyst** | Whites Rd, Royapettah | `+91 98400 88221` | [👉 **Send to Amethyst Cafe**](https://web.whatsapp.com/send?phone=919840088221&text=Hi%20Amethyst%20team!%20The%20lush%20garden%20ambiance%20at%20Whites%20Road%20is%20Chennai's%20finest.%20We%20are%20Grove%20Hub%20%E2%80%94%20a%20commercial%20video%20studio%20here.%20We%20want%20to%20film%201%20cinematic%20garden-brunch%20reel%20for%20Amethyst%20100%25%20FREE.%20Can%20we%20visit%20this%20week%3F) |
+
+---
+
+## 🏛️ 7. Luxury Architecture, Interior Design & Modular Kitchens
+
+| Studio Name | Area | Contact | 1-Click WhatsApp Dispatch |
+|:---|:---|:---|:---|
+| **Urban Living Chennai** | Anna Nagar / Alwarpet | `+91 98401 55660` | [👉 **Send to Urban Living**](https://web.whatsapp.com/send?phone=919840155660&text=Hi%20Urban%20Living%20team!%20Saw%20your%20luxury%20modular%20interior%20projects%20in%20Chennai.%20We%20are%20Grove%20Hub%20%E2%80%94%20a%20commercial%20video%20studio%20here.%20We%20want%20to%20shoot%20and%20edit%201%20high-ticket%20luxury%20walkthrough%20reel%20for%20your%20showroom%20or%20site%20100%25%20FREE%20(zero%20cost).%20Can%20we%20connect%20for%2020%20mins%20this%20week%3F) |
+| **Wurfel Kuche Chennai** | Nungambakkam | `+91 98403 99001` | [👉 **Send to Wurfel Kuche**](https://web.whatsapp.com/send?phone=919840399001&text=Hi%20Wurfel%20Kuche%20team!%20Admire%20the%20German-standard%20modular%20kitchens%20at%20your%20Nungambakkam%20studio.%20We%20are%20Grove%20Hub%20%E2%80%94%20a%20commercial%20video%20studio%20in%20Chennai.%20We%20want%20to%20film%201%20satisfying%20soft-close%2Fquartz%20luxury%20kitchen%20reel%20100%25%20FREE.%20Can%20we%20visit%20this%20week%3F) |
+| **Sleek by Asian Paints** | G.N. Chetty Rd, T. Nagar | `+91 98408 77123` | [👉 **Send to Sleek T. Nagar**](https://web.whatsapp.com/send?phone=919840877123&text=Hi%20Sleek%20T.%20Nagar%20team!%20Love%20the%20kitchen%20and%20wardrobe%20finishes%20at%20your%20showroom.%20We%20are%20Grove%20Hub%20%E2%80%94%20a%20commercial%20studio%20in%20Chennai.%20We%20want%20to%20film%201%20luxury%20modular%20living%20reel%20for%20your%20space%20100%25%20FREE.%20Can%20we%20drop%20by%20this%20week%3F) |
+| **Casagrand Experience Centre** | Nandanam / OMR | `+91 98409 66554` | [👉 **Send to Casagrand Desk**](https://web.whatsapp.com/send?phone=919840966554&text=Hi%20Casagrand%20team!%20Love%20the%20modern%20penthouse%20and%20community%20architecture%20across%20Chennai.%20We%20are%20Grove%20Hub%20%E2%80%94%20a%20commercial%20video%20studio%20here.%20We%20want%20to%20film%201%20cinematic%20lifestyle%2Fproperty%20reel%20for%20your%20show-villa%20100%25%20FREE.%20Can%20we%20connect%20this%20week%3F) |
+
+---
+
+## ⚡ The Monday 10:00 AM Dispatch Plan
+When Monday morning 10:00 AM arrives, open WhatsApp Web in Chrome and click **5 to 10 links** above:
+1. Two Car Detailing studios (The Detailing Mafia Nandanam & Ceramic Pro).
+2. Two Luxury Salons (The GlamSquad TTK Road & Page 3).
+3. Two Gyms / Fitness Arenas (SLAM Anna Nagar & Zeal Fitness).
+4. Two Dental Clinics (32 Dental Care & Radiant Dental).
+5. Two Artisanal Cafes (Amelie's Alwarpet & Sandy's).
+
+Each message is pre-filled, personalized, zero-pitch-slap, and offers a 100% free on-location commercial reel.
