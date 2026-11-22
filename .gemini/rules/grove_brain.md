@@ -19,3 +19,8 @@ The canonical second brain for Grove Hub and EditorMarketplace is located at:
    - Whenever the user shares a new business idea, raw thought, client feedback, or marketing concept in conversation, log or append it directly to `D:\instagram grove\obsidian vault\grove brain\00 - Quick Notes & Ideas.md` (or the specific topic/niche note) so nothing is lost.
    - When the user says "save this", "note this", "remember this", or establishes a new rule, immediately persist it in the Obsidian vault and confirm the exact note updated.
    - Always keep the Obsidian knowledge graph and Antigravity in perfect lockstep.
+5. **Shoot & Google Maps SEO Reminder Protocol**:
+   Whenever the user mentions an upcoming shoot, an on-location shoot in progress, or having completed a shoot, Antigravity MUST proactively remind them:
+   - Take 3 quick behind-the-scenes (BTS) photos of lighting, setup, and action for Google Business Profile.
+   - Provide a pre-written 2-line Google Business update post draft.
+   - Provide the 1-click WhatsApp keyword-rich review link to send to the client upon reel delivery.
