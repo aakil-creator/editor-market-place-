@@ -1,0 +1,682 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Adyar Fitness Market Analysis - Fionis CrossFit</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap');
+
+    @page {
+      size: A4 portrait;
+      margin: 12mm 14mm 14mm 14mm;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: #FFFFFF;
+      color: #1E293B;
+      line-height: 1.5;
+      font-size: 13px;
+    }
+
+    .page {
+      width: 100%;
+      min-height: 270mm;
+      padding: 2mm 0;
+      page-break-after: always;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+    }
+
+    .page:last-child {
+      page-break-after: avoid;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 12px;
+      border-bottom: 2px solid #F1F5F9;
+      margin-bottom: 18px;
+    }
+
+    .brand-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-badge {
+      background: linear-gradient(135deg, #FF5722, #FF8A00);
+      color: #FFFFFF;
+      font-weight: 800;
+      font-size: 12px;
+      padding: 5px 12px;
+      border-radius: 6px;
+      letter-spacing: 0.5px;
+      font-family: 'Space Grotesk', sans-serif;
+    }
+
+    .brand-text {
+      font-size: 12.5px;
+      font-weight: 700;
+      color: #0F172A;
+    }
+
+    .doc-tag {
+      font-size: 10.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      background: #EFF6FF;
+      color: #2563EB;
+      border: 1px solid #BFDBFE;
+      padding: 4px 12px;
+      border-radius: 999px;
+    }
+
+    /* Hero Card */
+    .hero {
+      background: linear-gradient(135deg, #FFF7ED 0%, #FFFBEB 100%);
+      border: 1px solid #FED7AA;
+      border-radius: 14px;
+      padding: 20px 24px;
+      margin-bottom: 18px;
+      position: relative;
+    }
+
+    .hero-eyebrow {
+      color: #EA580C;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-bottom: 4px;
+    }
+
+    .hero-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 26px;
+      font-weight: 700;
+      color: #0F172A;
+      line-height: 1.2;
+      margin-bottom: 6px;
+    }
+
+    .hero-title span {
+      color: #FF5722;
+    }
+
+    .hero-desc {
+      font-size: 13px;
+      color: #475569;
+      margin-bottom: 12px;
+    }
+
+    .hero-meta {
+      display: flex;
+      gap: 18px;
+      font-size: 11.5px;
+      color: #64748B;
+      border-top: 1px solid #FDE68A;
+      padding-top: 10px;
+    }
+
+    .hero-meta strong {
+      color: #1E293B;
+    }
+
+    /* Core Metrics at a Glance */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+
+    .stat-card {
+      background: #F8FAFC;
+      border: 1px solid #E2E8F0;
+      border-radius: 12px;
+      padding: 16px;
+      text-align: center;
+      transition: all 0.2s ease;
+    }
+
+    .stat-card.orange {
+      border-top: 4px solid #FF5722;
+      background: #FFF7ED;
+    }
+    .stat-card.blue {
+      border-top: 4px solid #2563EB;
+      background: #EFF6FF;
+    }
+    .stat-card.amber {
+      border-top: 4px solid #D97706;
+      background: #FEF3C7;
+    }
+
+    .stat-num {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 28px;
+      font-weight: 800;
+      line-height: 1.1;
+      margin-bottom: 4px;
+    }
+
+    .stat-card.orange .stat-num { color: #EA580C; }
+    .stat-card.blue .stat-num { color: #1D4ED8; }
+    .stat-card.amber .stat-num { color: #B45309; }
+
+    .stat-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #334155;
+      margin-bottom: 2px;
+    }
+
+    .stat-note {
+      font-size: 10.5px;
+      color: #64748B;
+    }
+
+    /* Section Headers */
+    .section-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      color: #0F172A;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .bullet {
+      width: 8px;
+      height: 8px;
+      background: #FF5722;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    /* Competitor Table */
+    .table-wrap {
+      border: 1px solid #E2E8F0;
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+    }
+
+    .comp-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    .comp-table th {
+      background: #F1F5F9;
+      color: #475569;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      padding: 11px 14px;
+      border-bottom: 1px solid #E2E8F0;
+    }
+
+    .comp-table td {
+      padding: 11px 14px;
+      font-size: 12px;
+      color: #1E293B;
+      border-bottom: 1px solid #F1F5F9;
+      vertical-align: middle;
+    }
+
+    .comp-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .comp-table tr.highlight {
+      background: #FFF7ED;
+    }
+
+    .comp-table tr.highlight td {
+      font-weight: 600;
+    }
+
+    .rating-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      background: #FEF3C7;
+      color: #92400E;
+    }
+
+    .velocity-pill {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 10.5px;
+      font-weight: 700;
+    }
+
+    .pill-green {
+      background: #DCFCE7;
+      color: #15803D;
+    }
+
+    .pill-red {
+      background: #FEE2E2;
+      color: #B91C1C;
+    }
+
+    .pill-yellow {
+      background: #FEF9C3;
+      color: #854D0E;
+    }
+
+    /* Highlight Banner */
+    .highlight-card {
+      background: #EFF6FF;
+      border-left: 5px solid #2563EB;
+      border-radius: 0 10px 10px 0;
+      padding: 14px 18px;
+      margin-bottom: 14px;
+    }
+
+    .highlight-card-title {
+      font-size: 12.5px;
+      font-weight: 800;
+      color: #1D4ED8;
+      margin-bottom: 3px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .highlight-card-desc {
+      font-size: 12px;
+      color: #334155;
+      line-height: 1.45;
+    }
+
+    /* 2 Column Grid for Page 2 */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .feature-card {
+      background: #F8FAFC;
+      border: 1px solid #E2E8F0;
+      border-radius: 12px;
+      padding: 16px;
+    }
+
+    .feature-header {
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .feature-body {
+      font-size: 12px;
+      color: #475569;
+      line-height: 1.5;
+    }
+
+    /* 3 Action Pillars */
+    .pillars-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+
+    .pillar-box {
+      background: #FFFFFF;
+      border: 1px solid #E2E8F0;
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+    }
+
+    .pillar-box.p1 { border-top: 4px solid #FF5722; }
+    .pillar-box.p2 { border-top: 4px solid #2563EB; }
+    .pillar-box.p3 { border-top: 4px solid #059669; }
+
+    .pillar-tag {
+      font-size: 9.5px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+    }
+
+    .pillar-box.p1 .pillar-tag { color: #EA580C; }
+    .pillar-box.p2 .pillar-tag { color: #2563EB; }
+    .pillar-box.p3 .pillar-tag { color: #059669; }
+
+    .pillar-title {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: #0F172A;
+      margin-bottom: 6px;
+    }
+
+    .pillar-text {
+      font-size: 11px;
+      color: #64748B;
+      line-height: 1.45;
+    }
+
+    /* Shoot Plan Strip */
+    .shoot-strip {
+      background: #F1F5F9;
+      border: 1px solid #CBD5E1;
+      border-radius: 10px;
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    .shoot-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .time-badge {
+      background: #0F172A;
+      color: #FFFFFF;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 4px;
+    }
+
+    .shoot-desc {
+      font-size: 11.5px;
+      color: #334155;
+    }
+
+    /* Footer */
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 12px;
+      border-top: 1px solid #E2E8F0;
+      font-size: 10px;
+      color: #94A3B8;
+    }
+
+    .footer strong {
+      color: #475569;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ==================== PAGE 1 ==================== -->
+  <div class="page">
+    <div>
+      <!-- Header -->
+      <div class="header">
+        <div class="brand-wrap">
+          <div class="brand-badge">GROVE HUB</div>
+          <div class="brand-text">Commercial Content & Local Growth Partner</div>
+        </div>
+        <div class="doc-tag">MARKET ANALYSIS DOSSIER</div>
+      </div>
+
+      <!-- Hero Banner -->
+      <div class="hero">
+        <div class="hero-eyebrow">Local Fitness Landscape â€¢ OMR Navalur Micro-Market</div>
+        <h1 class="hero-title">Fionis CrossFit <span>Navalur</span></h1>
+        <p class="hero-desc">
+          A clear look at the 5 fitness facilities in Adyar, where Fionis stands on Google Reviews, and what it takes to attract more local walk-ins.
+        </p>
+        <div class="hero-meta">
+          <div>ðŸ“ <strong>Location:</strong> OMR, Beside Gokulam Sabari, Egattur, Navalur</div>
+          <div>ðŸŽ¯ <strong>Audience:</strong> Sholinganallur, Perungudi, Siruseri, Thoraipakkam</div>
+          <div>ðŸ“… <strong>Date:</strong> November 2026</div>
+        </div>
+      </div>
+
+      <!-- 3 Key Stats at a Glance -->
+      <div class="stats-row">
+        <div class="stat-card orange">
+          <div class="stat-num">5</div>
+          <div class="stat-label">Competitors in 3km</div>
+          <div class="stat-note">SLAM, F45, The Quad, 24x7 & Fionis</div>
+        </div>
+        <div class="stat-card amber">
+          <div class="stat-num">4.7 â˜…</div>
+          <div class="stat-label">Coaching Quality</div>
+          <div class="stat-note">High coaching score, but only ~50 reviews</div>
+        </div>
+        <div class="stat-card blue">
+          <div class="stat-num">450++</div>
+          <div class="stat-label">Top Competitor Reviews</div>
+          <div class="stat-note">SLAM captures majority of Google searches</div>
+        </div>
+      </div>
+
+      <!-- Section Title -->
+      <div class="section-title">
+        <span class="bullet"></span> Adyar Competitor Benchmarking Matrix
+      </div>
+
+      <!-- Competitor Table -->
+      <div class="table-wrap">
+        <table class="comp-table">
+          <thead>
+            <tr>
+              <th>Gym / Studio</th>
+              <th>Location</th>
+              <th>Google Rating</th>
+              <th>New Reviews / Mo</th>
+              <th>What They Lack</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>SLAM Lifestyle & Fitness</strong></td>
+              <td>Sholinganallur / Perungudi, OMR</td>
+              <td><span class="rating-pill">â˜… 4.8 (450++)</span></td>
+              <td><span class="velocity-pill pill-green">+12 to 15 / mo</span></td>
+              <td>Crowded floor, generic machines, zero coach form checks</td>
+            </tr>
+            <tr>
+              <td><strong>F45 Training</strong></td>
+              <td>Thoraipakkam, OMR</td>
+              <td><span class="rating-pill">â˜… 4.9 (210+)</span></td>
+              <td><span class="velocity-pill pill-green">+6 to 8 / mo</span></td>
+              <td>Expensive (â‚¹8kâ€“â‚¹10k/mo), rigid circuits, no Olympic barbell lifting</td>
+            </tr>
+            <tr>
+              <td><strong>The Quad</strong></td>
+              <td>OMR Corridor</td>
+              <td><span class="rating-pill">â˜… 4.8 (180+)</span></td>
+              <td><span class="velocity-pill pill-yellow">+4 to 6 / mo</span></td>
+              <td>Outdoor bootcamp format; no dedicated indoor rig in central Adyar</td>
+            </tr>
+            <tr>
+              <td><strong>24x7 Fitness Studio</strong></td>
+              <td>Thoraipakkam, OMR</td>
+              <td><span class="rating-pill">â˜… 4.8 (170+)</span></td>
+              <td><span class="velocity-pill pill-yellow">+5 to 7 / mo</span></td>
+              <td>Standard commercial gym with no specialized athletic training</td>
+            </tr>
+            <tr class="highlight">
+              <td><strong style="color: #EA580C;">Fionis CrossFit</strong></td>
+              <td><strong>Navalur, OMR</strong></td>
+              <td><span class="rating-pill">â˜… 4.7 (~40â€“60)</span></td>
+              <td><span class="velocity-pill pill-red">&lt; 2 / mo</span></td>
+              <td><strong>Best coaching & rig, but lowest review visibility on Google Maps</strong></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Google Maps Invisibility Callout -->
+      <div class="highlight-card">
+        <div class="highlight-card-title">
+          ðŸ“ The Google Maps Visibility Gap
+        </div>
+        <div class="highlight-card-desc">
+          When people in Sholinganallur and Thoraipakkam search for <em>"Best gym near Navalur OMR"</em> or <em>"CrossFit near me"</em>, Google displays SLAM and F45 at the top simply because they get <strong>10 to 15 new reviews every month</strong>. Even though Fionis offers far better coaching, prospective members end up walking into other gyms simply because they find them first.
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <div><strong>Grove Hub Studio</strong> â€¢ Commercial Video & Local Growth Partner</div>
+      <div>Page 1 of 2</div>
+    </div>
+  </div>
+
+  <!-- ==================== PAGE 2 ==================== -->
+  <div class="page">
+    <div>
+      <!-- Header -->
+      <div class="header">
+        <div class="brand-wrap">
+          <div class="brand-badge">GROVE HUB</div>
+          <div class="brand-text">Client Attraction & Action Blueprint</div>
+        </div>
+        <div class="doc-tag">HOW TO ATTRACT CLIENTS</div>
+      </div>
+
+      <!-- Section Title -->
+      <div class="section-title">
+        <span class="bullet"></span> What Stops People from Joining Fionis Today?
+      </div>
+
+      <!-- 2 Column: The Intimidation Problem vs The Fix -->
+      <div class="grid-2">
+        <div class="feature-card" style="border-left: 4px solid #EF4444; background: #FEF2F2;">
+          <div class="feature-header" style="color: #DC2626;">
+            ðŸ›‘ The "CrossFit Intimidation" Barrier
+          </div>
+          <div class="feature-body">
+            Adyar residents (doctors, corporate leaders, IT pros) often hesitate to visit because online posts show 100kg snatches and extreme workouts. They think:
+            <p style="margin-top: 6px; font-style: italic; color: #991B1B;">
+              "CrossFit is too intense for me. I haven't worked out in 3 years â€” I might injure my back."
+            </p>
+          </div>
+        </div>
+
+        <div class="feature-card" style="border-left: 4px solid #059669; background: #ECFDF5;">
+          <div class="feature-header" style="color: #059669;">
+            âœ… The Fix: Show Beginner-Friendly Coaching
+          </div>
+          <div class="feature-body">
+            When your videos show the coach actively correcting a memberâ€™s posture and real working professionals having fun in the 8 AM batch, that fear disappears.
+            <p style="margin-top: 6px; font-weight: 600; color: #065F46;">
+              Prospects see safety, coaching attention, and an welcoming community.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section Title -->
+      <div class="section-title">
+        <span class="bullet"></span> 3 Things That Attract New Walk-In Members
+      </div>
+
+      <!-- 3 Pillars Grid -->
+      <div class="pillars-3">
+        <div class="pillar-box p1">
+          <div class="pillar-tag">Pillar 1 â€¢ Reel Hook</div>
+          <div class="pillar-title">Coach Authority Cues</div>
+          <div class="pillar-text">
+            Short, sharp reels where the coach demonstrates proper deadlift or squat mechanics. Builds instant credibility for beginners scared of getting injured.
+          </div>
+        </div>
+
+        <div class="pillar-box p2">
+          <div class="pillar-tag">Pillar 2 â€¢ Community Proof</div>
+          <div class="pillar-title">Real Batch Energy</div>
+          <div class="pillar-text">
+            Cinematic shots of everyday professionals smiling, sweating, and high-fiving. Proves that Fionis is welcoming for Day 1 beginners.
+          </div>
+        </div>
+
+        <div class="pillar-box p3">
+          <div class="pillar-tag">Pillar 3 â€¢ Google 3-Pack</div>
+          <div class="pillar-title">5-Star Review Boost</div>
+          <div class="pillar-text">
+            A simple WhatsApp message sent to members after great classes, adding 10â€“15 keyword-rich Google reviews each month to overtake local competition.
+          </div>
+        </div>
+      </div>
+
+      <!-- Section Title -->
+      <div class="section-title">
+        <span class="bullet"></span> Tomorrow Morning's Shoot Plan (Tuesday 8 AM Batch)
+      </div>
+
+      <!-- Shoot Strip -->
+      <div class="shoot-strip">
+        <div class="shoot-item">
+          <span class="time-badge">7:45 AM</span>
+          <span class="shoot-desc"><strong>Arrival & Mic Check:</strong> 5-min prep with Head Coach.</span>
+        </div>
+        <div class="shoot-item">
+          <span class="time-badge">8:00 AM</span>
+          <span class="shoot-desc"><strong>Live WOD Capture:</strong> 20 mins capturing real batch energy.</span>
+        </div>
+        <div class="shoot-item">
+          <span class="time-badge">Next Day</span>
+          <span class="shoot-desc"><strong>Draft Delivered:</strong> 4K commercial reel on WhatsApp.</span>
+        </div>
+      </div>
+
+      <!-- Closing Note -->
+      <div style="background: #FFF7ED; border: 1px solid #FFEDD5; border-radius: 10px; padding: 14px 18px; text-align: center; margin-bottom: 12px;">
+        <span style="font-size: 12.5px; font-weight: 700; color: #EA580C;">
+          Goal: Showcase your authentic coaching and community so Adyar residents choose Fionis with zero hesitation.
+        </span>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <div><strong>Grove Hub Studio</strong> â€¢ Commercial Content & Local Growth Partner â€¢ Chennai</div>
+      <div>Page 2 of 2 â€¢ Confidential</div>
+    </div>
+  </div>
+
+</body>
+</html>
+
